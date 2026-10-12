@@ -1,0 +1,32 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================================================
+// NOTICE: DATA MODEL SPECIFICATION PENDING REVIEW
+// =============================================================================
+// The schema below is intentionally minimal / unmigrated.
+// In accordance with Phase 0 requirements:
+// DO NOT run migrations or finalize schema until the Data Model Specification
+// is formally reviewed and approved.
+//
+// Candidate models discussed for future phases:
+// - User (walletAddress, xId, xUsername, role, createdAt)
+// - WhitelistAllocation (userId, tier, allocationAmount, status)
+// - Campaign (slug, title, status, startsAt, endsAt)
+// - ClaimLog (userId, amount, txHash, status, claimedAt)
+// - GiftDistribution (senderId, recipientId, status, txHash)
+// =============================================================================
+
+model SchemaPlaceholder {
+  id        String   @id @default(cuid())
+  notes     String   @default("Pending final Data Model Specification review")
+  createdAt DateTime @default(now())
+}
