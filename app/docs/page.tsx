@@ -19,11 +19,10 @@ export default function DocsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white">
             ChimpHood Documentation
           </h1>
-          <Badge variant="default">Tahap 0</Badge>
+          <Badge variant="default">Stage 1</Badge>
         </div>
         <p className="text-gray-400">
-          Dokumentasi teknis, arsitektur sistem, dan daftar keputusan produk yang
-          tertunda.
+          Technical documentation, system architecture, and product decisions registry.
         </p>
       </div>
 
@@ -33,12 +32,12 @@ export default function DocsPage() {
             <div className="mb-2 w-fit rounded-lg bg-emerald-500/10 p-2 text-emerald-400">
               <Layers className="h-5 w-5" />
             </div>
-            <CardTitle>Arsitektur & Tech Stack</CardTitle>
-            <CardDescription>Fondasi teknologi yang digunakan</CardDescription>
+            <CardTitle>Architecture & Tech Stack</CardTitle>
+            <CardDescription>Core technology foundation and tooling</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1 text-xs text-gray-400">
             <p>• Framework: Next.js (App Router)</p>
-            <p>• Bahasa: TypeScript</p>
+            <p>• Language: TypeScript</p>
             <p>• Styling: Tailwind CSS v4</p>
             <p>• Database ORM: Prisma (PostgreSQL)</p>
             <p>• Testing: Vitest & React Testing Library</p>
@@ -50,21 +49,21 @@ export default function DocsPage() {
             <div className="mb-2 w-fit rounded-lg bg-blue-500/10 p-2 text-blue-400">
               <FileCode className="h-5 w-5" />
             </div>
-            <CardTitle>Dokumen Proyek</CardTitle>
-            <CardDescription>Arsip markdown lokal</CardDescription>
+            <CardTitle>Project Documentation</CardTitle>
+            <CardDescription>Local markdown repositories</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1 text-xs text-gray-400">
             <p>
-              • <code className="text-emerald-400">README.md</code>: Panduan cepat &
-              instruksi run
+              • <code className="text-emerald-400">README.md</code>: Quickstart &
+              execution guide
             </p>
             <p>
-              • <code className="text-emerald-400">docs/handoff.md</code>: Catatan handoff
-              teknis
+              • <code className="text-emerald-400">docs/handoff.md</code>: Technical
+              handoff notes
             </p>
             <p>
               • <code className="text-emerald-400">docs/pending-decisions.md</code>:
-              Daftar keputusan terbuka
+              Architecture decisions registry
             </p>
           </CardContent>
         </Card>
@@ -74,14 +73,14 @@ export default function DocsPage() {
             <div className="mb-2 w-fit rounded-lg bg-amber-500/10 p-2 text-amber-400">
               <HelpCircle className="h-5 w-5" />
             </div>
-            <CardTitle>Pending Decisions</CardTitle>
-            <CardDescription>Keputusan produk & teknis terbuka</CardDescription>
+            <CardTitle>Decisions & Specifications</CardTitle>
+            <CardDescription>Recorded product & technical architecture</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1 text-xs text-gray-400">
-            <p>• Provider autentikasi Web3 / SIWE</p>
-            <p>• Alur sesi dan penyimpanan token X OAuth</p>
-            <p>• Finalisasi schema Data Model Prisma</p>
-            <p>• Mekanisme on-chain vs off-chain Claim</p>
+            <p>• Web3 authentication & SIWE identity architecture</p>
+            <p>• Off-chain claim & allocation execution</p>
+            <p>• PostgreSQL 26-model schema & unique invariants</p>
+            <p>• Gift transfer engine & anti-sybil protections</p>
           </CardContent>
         </Card>
       </div>
@@ -89,9 +88,9 @@ export default function DocsPage() {
       {/* Deep-dive Document Preview */}
       <Card>
         <CardHeader>
-          <CardTitle>Tahap Selanjutnya (Roadmap)</CardTitle>
+          <CardTitle>Development Roadmap</CardTitle>
           <CardDescription>
-            Urutan langkah pengerjaan setelah Tahap 0 selesai dan diverifikasi
+            Implementation roadmap across project development phases
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -101,23 +100,23 @@ export default function DocsPage() {
                 0
               </span>
               <h4 className="font-semibold text-emerald-400">
-                Tahap 0: Project Foundation & Documentation (Selesai)
+                Stage 0: Project Foundation & Documentation (Completed)
               </h4>
               <p className="mt-1 text-sm text-gray-400">
-                Setup Next.js, TypeScript, Tailwind, ESLint, Prettier, Prisma scaffolding,
-                Vitest, dan dokumentasi handoff.
+                Setup Next.js, TypeScript, Tailwind CSS v4, ESLint, Prettier, Prisma
+                scaffolding, Vitest, and technical handoff.
               </p>
             </li>
             <li className="ml-6">
-              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 bg-gray-800 text-xs text-gray-400">
+              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-xs text-emerald-400">
                 1
               </span>
-              <h4 className="font-semibold text-gray-300">
-                Tahap 1: Data Model Specification & Database Migration
+              <h4 className="font-semibold text-emerald-400">
+                Stage 1: Data Model Specification & Database Foundation (Current)
               </h4>
-              <p className="mt-1 text-sm text-gray-500">
-                Review model entitas (User, Whitelist, Campaign, Claim), tetapkan relasi,
-                dan eksekusi migration Prisma.
+              <p className="mt-1 text-sm text-gray-400">
+                Designed 26 PostgreSQL models, relational constraints, performance
+                indexing, Prisma 7 config, and initial migration DDL.
               </p>
             </li>
             <li className="ml-6">
@@ -125,10 +124,11 @@ export default function DocsPage() {
                 2
               </span>
               <h4 className="font-semibold text-gray-300">
-                Tahap 2: Authentication & Social Identity
+                Stage 2: Authentication & Social Identity (Next)
               </h4>
               <p className="mt-1 text-sm text-gray-500">
-                Implementasi SIWE (Sign-In with Ethereum) dan X OAuth 2.0 PKCE.
+                Implement SIWE (Sign-In with Ethereum) and X OAuth 2.0 PKCE account
+                linking.
               </p>
             </li>
             <li className="ml-6">
@@ -136,10 +136,11 @@ export default function DocsPage() {
                 3
               </span>
               <h4 className="font-semibold text-gray-300">
-                Tahap 3: Whitelist & Claim Engine
+                Stage 3: Whitelist & Claim Engine
               </h4>
               <p className="mt-1 text-sm text-gray-500">
-                Mekanisme alokasi kuota, verifikasi eligibility, dan claim token/gift.
+                Quota allocation mechanisms, eligibility verification, drop periods, and
+                trait claim execution.
               </p>
             </li>
           </ol>

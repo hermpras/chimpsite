@@ -17,23 +17,23 @@ export default function HomePage() {
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Hero Section */}
       <div className="mx-auto mb-16 flex max-w-3xl flex-col items-center space-y-6 text-center">
-        <Badge variant="warning">Tahap 0: Foundation & Documentation</Badge>
+        <Badge variant="warning">Stage 1: Foundation & Data Architecture</Badge>
         <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">
           Welcome to <span className="text-emerald-400">ChimpHood</span>
         </h1>
         <p className="text-lg leading-relaxed text-gray-400">
-          Platform komunitas web3 terdesentralisasi untuk alokasi Whitelist, verifikasi
-          identitas, dan distribusi hadiah ekosistem.
+          Decentralized Web3 community platform for Whitelist allocation, identity
+          verification, and ecosystem rewards distribution.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
           <Link href="/whitelist">
             <Button size="lg" className="gap-2">
-              Buka Whitelist <ArrowRight className="h-4 w-4" />
+              Explore Whitelist <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
           <Link href="/docs">
             <Button variant="outline" size="lg">
-              Baca Dokumentasi
+              Read Documentation
             </Button>
           </Link>
         </div>
@@ -42,9 +42,9 @@ export default function HomePage() {
       {/* Global Notice */}
       <div className="mb-12">
         <PlaceholderNotice
-          title="Status Implementasi Saat Ini"
-          description="Aplikasi berada pada Tahap 0. Modul autentikasi (SIWE, X OAuth), Claim Engine, Gift Engine, Campaign Tracker, dan Admin Logic belum diaktifkan dan ditandai sebagai placeholder sesuai instruksi master."
-          phase="Tahap 0 Aktif"
+          title="Current Implementation Status"
+          description="The platform is in Stage 1 (Data Architecture). Functional modules for authentication (SIWE, X OAuth), Claim Engine, Gift Engine, Campaign Tracker, and live Whitelist allocation are not yet enabled and remain structured as placeholders."
+          phase="Stage 1 Active"
         />
       </div>
 
@@ -58,23 +58,23 @@ export default function HomePage() {
                 <div className="rounded-lg bg-emerald-500/10 p-2.5 text-emerald-400">
                   <Shield className="h-6 w-6" />
                 </div>
-                <Badge variant="warning">Kerangka</Badge>
+                <Badge variant="warning">Placeholder</Badge>
               </div>
               <CardTitle>Whitelist Allocation</CardTitle>
               <CardDescription>
-                Cek status kelayakan alokasi, tier whitelist, dan kriteria pendaftaran.
+                Check allocation eligibility, whitelist tiers, and registration criteria.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-gray-500">
-                Fitur pendaftaran dan claim engine sedang dalam persiapan model data.
+                Registration and Claim engine are in data model preparation.
               </p>
             </CardContent>
           </div>
           <div className="p-6 pt-0">
             <Link href="/whitelist" className="block w-full">
               <Button variant="secondary" className="w-full justify-between">
-                Ke Halaman Whitelist <ArrowRight className="h-4 w-4" />
+                Go to Whitelist <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -88,23 +88,23 @@ export default function HomePage() {
                 <div className="rounded-lg bg-purple-500/10 p-2.5 text-purple-400">
                   <User className="h-6 w-6" />
                 </div>
-                <Badge variant="warning">Kerangka</Badge>
+                <Badge variant="warning">Placeholder</Badge>
               </div>
               <CardTitle>User Profile</CardTitle>
               <CardDescription>
-                Hubungkan wallet Web3 dan akun X (Twitter) untuk mengelola tier identitas.
+                Connect Web3 wallet and X (Twitter) accounts to manage identity tiers.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-gray-500">
-                Fitur SIWE dan X OAuth 2.0 belum dikonfigurasi pada tahap ini.
+                SIWE and X OAuth 2.0 authentication will be configured in Stage 2.
               </p>
             </CardContent>
           </div>
           <div className="p-6 pt-0">
             <Link href="/profile" className="block w-full">
               <Button variant="secondary" className="w-full justify-between">
-                Ke Profil <ArrowRight className="h-4 w-4" />
+                Go to Profile <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -118,23 +118,25 @@ export default function HomePage() {
                 <div className="rounded-lg bg-blue-500/10 p-2.5 text-blue-400">
                   <FileText className="h-6 w-6" />
                 </div>
-                <Badge variant="default">Tersedia</Badge>
+                <Badge variant="default">Available</Badge>
               </div>
-              <CardTitle>Dokumentasi Proyek</CardTitle>
+              <CardTitle>Project Documentation</CardTitle>
               <CardDescription>
-                Panduan arsitektur, handoff catatan teknis, dan pending decisions proyek.
+                Architecture guides, technical handoff notes, and project decision
+                records.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-gray-500">
-                Akses cepat ke panduan setup dan dokumen keputusan arsitektur.
+                Quick access to setup guides, data specifications, and architectural
+                decisions.
               </p>
             </CardContent>
           </div>
           <div className="p-6 pt-0">
             <Link href="/docs" className="block w-full">
               <Button variant="secondary" className="w-full justify-between">
-                Buka Docs <ArrowRight className="h-4 w-4" />
+                View Docs <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -144,9 +146,9 @@ export default function HomePage() {
       {/* Foundation Verification Overview */}
       <Card>
         <CardHeader>
-          <CardTitle>Checklist Verifikasi Tahap 0</CardTitle>
+          <CardTitle>Foundation & Verification Checklist</CardTitle>
           <CardDescription>
-            Status fondasi teknis yang telah dikonfigurasi pada lingkungan kerja.
+            Technical foundation status configured in this workspace environment.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -173,7 +175,7 @@ export default function HomePage() {
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-              <span>Repository Git & .env.example sanitized</span>
+              <span>Git repository & sanitized environment (.env.example)</span>
             </div>
           </div>
         </CardContent>

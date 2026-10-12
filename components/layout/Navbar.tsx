@@ -27,7 +27,7 @@ export function Navbar() {
               CHIMP<span className="text-gray-100">HOOD</span>
             </span>
             <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-emerald-400 uppercase">
-              Tahap 0
+              Stage 1
             </span>
           </Link>
 
@@ -59,7 +59,7 @@ export function Navbar() {
             size="sm"
             onClick={() =>
               alert(
-                "Fitur Connect Wallet belum aktif (Placeholder Tahap 0). Menunggu spesifikasi SIWE/Web3.",
+                "Connect Wallet feature is not active yet (Stage 1 Placeholder). Awaiting SIWE/Web3 integration in Stage 2.",
               )
             }
           >
@@ -107,7 +107,7 @@ export function Navbar() {
               onClick={() => {
                 setMobileMenuOpen(false);
                 alert(
-                  "Fitur Connect Wallet belum aktif (Placeholder Tahap 0). Menunggu spesifikasi SIWE/Web3.",
+                  "Connect Wallet feature is not active yet (Stage 1 Placeholder). Awaiting SIWE/Web3 integration in Stage 2.",
                 );
               }}
             >

@@ -1,48 +1,43 @@
 # Pending Decisions Registry
 
-Dokumen ini mencatat seluruh keputusan arsitektur, teknis, dan produk yang belum difinalisasi. Sesuai prinsip instruksi master: **tidak mengarang keputusan produk**. Keputusan di bawah ini harus dikonfirmasi sebelum melanjutkan ke tahap implementasi terkait.
+This document records all architectural, technical, and product decisions. In accordance with the core principle: **do not invent product decisions**. The decisions below are updated based on the progress of Stage 1 (Data Model & Database Foundation).
 
 ---
 
-## 1. Autentikasi & Manajemen Sesi
+## 1. Authentication & Session Management (Stage 2)
 
-| ID          | Topik                               | Status             | Pertanyaan / Pilihan                                                                                                                         | Dampak                                                                                    |
-| ----------- | ----------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **DEC-001** | **Arsitektur Session Provider**     | `PENDING DECISION` | Apakah menggunakan **Auth.js (NextAuth v5)**, **Iron Session (stateless encrypted cookie)**, atau **Custom JWT stateless**?                  | Menentukan format token, penyimpanan sesi di database vs cookie, dan integrasi API route. |
-| **DEC-002** | **Web3 Wallet Connector Suite**     | `PENDING DECISION` | Pilihan toolkit wallet: **Wagmi v2 + AppKit (Reown)**, **RainbowKit**, atau **Privy / Dynamic**?                                             | Menentukan library dependensi client-side dan skema UI wallet modal.                      |
-| **DEC-003** | **Alur Sesi X (Twitter) OAuth 2.0** | `PENDING DECISION` | Apakah akun X diikat ke wallet pengguna melalui alur primary auth atau secondary linked account? Bagaimana mekanisme refresh token disimpan? | Menentukan skema relasi tabel `User` dan `SocialAccount`.                                 |
-
----
-
-## 2. Model Data & Database (Prisma)
-
-| ID          | Topik                                         | Status             | Pertanyaan / Pilihan                                                                                                                 | Dampak                                                                                        |
-| ----------- | --------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| **DEC-004** | **Spesifikasi Data Model Final**              | `PENDING DECISION` | Struktur tabel final untuk `User`, `WhitelistAllocation`, `Campaign`, `Claim`, dan `GiftDistribution` belum disahkan.                | **Blokade migrasi database**: Tidak boleh membuat atau menjalankan migrasi sebelum disetujui. |
-| **DEC-005** | **Identitas Utama Akun (Primary Identifier)** | `PENDING DECISION` | Apakah primary identifier pengguna adalah `wallet_address` (string), atau `cuid/uuid` independen yang dapat menautkan banyak wallet? | Struktur relasi one-to-many atau one-to-one pada database.                                    |
-| **DEC-006** | **Manajemen Multi-Chain**                     | `PENDING DECISION` | Apakah alokasi whitelist terbatas pada satu chain (misal Ethereum / Arbitrum) atau multi-chain?                                      | Menentukan kolom `chain_id` pada tabel transaksi dan alokasi.                                 |
+| ID          | Topic                                  | Status             | Question / Options                                                                                                    | Impact                                                                                  |
+| ----------- | -------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **DEC-001** | **Session Provider Architecture**      | `PENDING DECISION` | Whether to use **Auth.js (NextAuth v5)**, **Iron Session (stateless encrypted cookie)**, or **Custom JWT stateless**? | Determines token format, database session storage vs cookie, and API route integration. |
+| **DEC-002** | **Web3 Wallet Connector Suite**        | `PENDING DECISION` | Choice of wallet toolkit: **Wagmi v2 + AppKit (Reown)**, **RainbowKit**, or **Privy / Dynamic**?                      | Determines client-side dependency libraries and wallet modal UI patterns.               |
+| **DEC-003** | **X (Twitter) OAuth 2.0 Session Flow** | `PENDING DECISION` | How to implement token refresh and OAuth 2.0 PKCE when linking an X account to a primary wallet?                      | Account linking logic in Stage 2/3.                                                     |
 
 ---
 
-## 3. Claim Engine & Whitelist Allocation
+## 2. Data Model & Database (Stage 1 - Resolution Status)
 
-| ID          | Topik                                   | Status             | Pertanyaan / Pilihan                                                                                                                             | Dampak                                                                     |
-| ----------- | --------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| **DEC-007** | **Metode Verifikasi Alokasi Whitelist** | `PENDING DECISION` | Apakah alokasi diverifikasi murni melalui **Database PostgreSQL (Off-chain claim)** atau melalui **Merkle Proof On-Chain Smart Contract**?       | Menentukan kebutuhan smart contract deployer dan arsitektur backend claim. |
-| **DEC-008** | **Mekanisme Eksekusi Klaim (Gas Fee)**  | `PENDING DECISION` | Apakah klaim dilakukan oleh pengguna sendiri (user membayar gas) atau gasless melalui Relayer (misal Biconomy / Gelato / OpenZeppelin Defender)? | Menentukan integrasi relayer dan biaya operasional protokol.               |
-| **DEC-009** | **Gift Engine & Mekanisme Referral**    | `PENDING DECISION` | Bagaimana aturan pembagian alokasi hadiah? Apakah transferable, dan apa mekanisme proteksi anti-sybil?                                           | Logika validasi bisnis dan batas kuota.                                    |
-
----
-
-## 4. Admin Portal & Tata Kelola
-
-| ID          | Topik                     | Status             | Pertanyaan / Pilihan                                                                                                                   | Dampak                                         |
-| ----------- | ------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **DEC-010** | **Otorisasi Role Admin**  | `PENDING DECISION` | Apakah admin diverifikasi melalui whitelist alamat wallet (admin wallet list), secret API key, atau role di database?                  | Keamanan endpoint mutasi kampanye dan alokasi. |
-| **DEC-011** | **Audit Trail & Logging** | `PENDING DECISION` | Format logging untuk aktivitas administratif dan distribusi alokasi (misal event stream, tabel database audit, atau external service). | Kepatuhan keamanan data dan monitoring.        |
+| ID          | Topic                                        | Status                    | Decision Outcome & Reference                                                                                                                                                                                                         |
+| ----------- | -------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **DEC-004** | **Final Data Model Specification**           | `RESOLVED (Oct 13, 2026)` | PostgreSQL data model schema via Prisma completed with 26 entity models, relationships, unique constraints, and comprehensive indexing in `prisma/schema.prisma` alongside SQL migration review in `prisma/migrations/`.             |
+| **DEC-005** | **Primary Account Identifier**               | `RESOLVED (Oct 13, 2026)` | `User` is the root record with an independent ID (`cuid`), possessing a 1:1 relation to `WalletIdentity` (primary identity) and a 1:1 relation to `XIdentity` (linked social account).                                               |
+| **DEC-006** | **Multi-Chain Management**                   | `RESOLVED (Oct 13, 2026)` | No blockchain minting, smart contracts, or on-chain transfers. All allocations are recorded in PostgreSQL. The `chainId` column is retained as an EVM network reference (default 1 / Ethereum).                                      |
+| **DEC-007** | **Whitelist Allocation Verification Method** | `RESOLVED (Oct 13, 2026)` | Allocations are verified and tracked purely off-chain through PostgreSQL using separate lifecycle stages: `WLQualification` (qualification), `WLQueueEntry` (queue), `WLSlot` (slot allocation), and `WLStatusHistory`.              |
+| **DEC-008** | **Claim Execution Mechanism (Gas Fees)**     | `RESOLVED (Oct 13, 2026)` | No on-chain transactions; drop claims are conducted entirely off-chain without user gas fees or third-party relayers.                                                                                                                |
+| **DEC-009** | **Gift Engine & Trait Ownership**            | `RESOLVED (Oct 13, 2026)` | Each trait copy is a distinct `InventoryItem` entity with a unique edition. Gifting transfers an existing item rather than minting new copies. Pending gifts expire after 24 hours. Anti-sybil protections enforced via `AbuseFlag`. |
+| **DEC-010** | **Admin Role Authorization**                 | `RESOLVED (Oct 13, 2026)` | Admin authorization is defined through the `UserRole` enum (`USER`, `MODERATOR`, `ADMIN`, `SUPER_ADMIN`) and the `AdminRole` model with granular permission lists (`permissions: String[]`).                                         |
+| **DEC-011** | **Audit Trail & Logging**                    | `RESOLVED (Oct 13, 2026)` | Sensitive mutations, review actions, slot allocations, and bans are recorded in the PostgreSQL `AuditLog` table capturing the actor (`actorId`), action type, entity payload, and audit metadata.                                    |
 
 ---
 
-## Prosedur Pembaruan
+## 3. Advanced Policies & Business Rules (Pending Review)
 
-Setiap keputusan yang telah ditentukan harus diperbarui statusnya menjadi `RESOLVED` beserta tanggal, tautan keputusan, dan implikasi implementasinya.
+| ID          | Topic                                                          | Status             | Question / Options                                                                                                                                                                                         | Impact                                                                         |
+| ----------- | -------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **DEC-012** | **Ban Policy Matrix & Abuse Flag Thresholds**                  | `PENDING DECISION` | What are the specific numeric thresholds for automated bot/sybil flagging (e.g., repeated claim attempts within 1 minute, IP clustering) and the absolute authority hierarchy for revoking permanent bans? | Anti-sybil engine parameters and admin moderation workflows in future stages.  |
+| **DEC-013** | **Whitelist Queue Priority Score & Reconciliation Parameters** | `PENDING DECISION` | What is the exact formula for computing `priorityScore` in the Whitelist queue (e.g., pure campaign points vs combined trait ownership weighting)?                                                         | Slot allocation priority determination for the Whitelist queue service worker. |
+
+---
+
+## Update Procedure
+
+Every resolved decision must have its status updated to `RESOLVED` along with its date, decision reference, and implementation implications.

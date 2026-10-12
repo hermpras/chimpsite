@@ -1,77 +1,80 @@
 # ChimpHood Site
 
-Platform web terdesentralisasi untuk ekosistem ChimpHood (alokasi Whitelist, manajemen identitas Web3 & sosial, klaim hadiah, dan kampanye komunitas).
+Decentralized web platform for the ChimpHood ecosystem (Whitelist allocation, Web3 & social identity management, reward claims, and community campaigns).
 
 ---
 
-## 📌 Status Proyek: Tahap 0 (Project Foundation & Documentation)
+## 📌 Project Status: Stage 1 (Data Model & Database Foundation)
 
-Proyek saat ini berada di **Tahap 0**. Fokus tahap ini adalah penyiapan fondasi teknis, struktur direktori, linting, testing, ORM scaffolding, serta pencatatan keputusan produk.
+The project is currently in **Stage 1**. The focus of this stage is designing 26 PostgreSQL data models using Prisma ORM v7, enforcing unique constraints, establishing low-latency query indexes, preparing an isolated initial SQL migration script for review, and maintaining the product decision registry.
 
 > [!NOTE]
-> Fitur autentikasi (SIWE, X OAuth), claim engine, gift engine, alokasi WL on-chain, dan admin logic **belum diaktifkan** dan berstatus **Placeholder** sesuai batasan Tahap 0.
+> Functional business modules (SIWE authentication, X OAuth, claim engine, gift engine, campaign engine, and active WL allocation) **are not yet implemented** and await Stage 2 & subsequent phases.
+> Remote databases and production Supabase **are not modified** during this stage.
 
 ---
 
 ## 🛠️ Tech Stack
 
 - **Framework**: [Next.js](https://nextjs.org/) (App Router, React 19)
-- **Bahasa**: [TypeScript](https://www.typescriptlang.org/) (Strict mode)
+- **Language**: [TypeScript](https://www.typescriptlang.org/) (Strict mode)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) & PostCSS
-- **Database ORM**: [Prisma](https://www.prisma.io/) (PostgreSQL target)
+- **Database ORM**: [Prisma](https://www.prisma.io/) v7 (PostgreSQL target via `prisma.config.ts`)
 - **Code Quality**: ESLint (Next.js config) & Prettier
 - **Testing**: [Vitest](https://vitest.dev/) & [React Testing Library](https://testing-library.com/)
 
 ---
 
-## 📁 Struktur Direktori
+## 📁 Directory Structure
 
 ```text
 ChimpHood Site/
 ├── app/                      # Next.js App Router
-│   ├── docs/page.tsx         # Kerangka Dokumentasi & Arsitektur
-│   ├── profile/page.tsx      # Kerangka Halaman Profil Pengguna
-│   ├── whitelist/page.tsx    # Kerangka Halaman Whitelist & Kampanye
-│   ├── globals.css           # Konfigurasi Tailwind CSS v4 & theme
-│   ├── layout.tsx            # Root layout dengan Navbar & Footer
-│   └── page.tsx              # Halaman Beranda (Home)
-├── components/               # Komponen UI modular
+│   ├── docs/page.tsx         # Documentation & Architecture overview
+│   ├── profile/page.tsx      # User Profile & Identity framework
+│   ├── whitelist/page.tsx    # Whitelist & Campaigns portal
+│   ├── globals.css           # Tailwind CSS v4 config & theme styles
+│   ├── layout.tsx            # Root layout with Navbar & Footer
+│   └── page.tsx              # Home page
+├── components/               # Modular UI components
 │   ├── layout/               # Navbar, Footer
 │   └── ui/                   # Button, Card, Badge, PlaceholderNotice
-├── docs/                     # Dokumentasi teknis & arsitektur
-│   ├── handoff.md            # Catatan handoff teknis Tahap 0
-│   └── pending-decisions.md  # Keputusan produk/teknis yang belum final
-├── lib/                      # Helper & singleton client
+├── docs/                     # Technical documentation & architecture
+│   ├── handoff.md            # Stage 1 technical handoff notes
+│   └── pending-decisions.md  # Architectural & product decisions registry
+├── lib/                      # Helpers & singleton client
 │   ├── prisma.ts             # Prisma client singleton instance
 │   └── utils.ts              # cn helper (clsx + tailwind-merge)
-├── prisma/                   # Skema dan konfigurasi database
-│   └── schema.prisma         # Skema draf PostgreSQL (tanpa migrasi final)
+├── prisma/                   # Database schema and migrations
+│   ├── schema.prisma         # 26-model PostgreSQL schema
+│   └── migrations/           # Initial DDL SQL migration for review
 ├── server/                   # Server-side abstractions & DB entrypoint
-│   └── db.ts                 # Akses prisma terisolasi server
-├── tests/                    # Pengujian unit & integrasi dasar
-│   ├── navigation.test.tsx   # Pengujian render halaman
-│   ├── placeholder.test.tsx  # Pengujian komponen placeholder
-│   └── setup.ts              # Setup Vitest & jest-dom
-├── .env.example              # Template variabel lingkungan aman
-├── .gitignore                # Aturan ignore secret dan build artifacts
-├── next.config.mjs           # Konfigurasi Next.js
-├── postcss.config.mjs        # Konfigurasi PostCSS Tailwind
-├── eslint.config.mjs         # Konfigurasi ESLint Flat Config
-├── tsconfig.json             # Konfigurasi TypeScript
-├── vitest.config.ts          # Konfigurasi Vitest
-└── package.json              # Manajemen dependensi dan script
+│   └── db.ts                 # Server-isolated Prisma client access
+├── tests/                    # Unit, component, and schema tests
+│   ├── pages.test.tsx        # Page rendering and English copy tests
+│   ├── placeholder.test.tsx  # Placeholder UI component tests
+│   ├── schema.test.ts        # Schema specifications & Prisma client tests
+│   └── setup.ts              # Vitest & jest-dom setup
+├── .env.example              # Sanitized environment variables template
+├── .gitignore                # Git ignore rules for secrets and build artifacts
+├── next.config.mjs           # Next.js configuration
+├── package.json              # Dependency management and scripts
+├── postcss.config.mjs        # PostCSS Tailwind configuration
+├── prisma.config.ts          # Prisma 7 datasource configuration
+├── tsconfig.json             # TypeScript configuration
+└── vitest.config.mts         # Vitest configuration
 ```
 
 ---
 
-## 🚀 Memulai (Instruksi Menjalankan Aplikasi)
+## 🚀 Getting Started
 
-### 1. Prasyarat
+### 1. Prerequisites
 
 - Node.js `v20+`
 - npm `v10+`
 
-### 2. Kloning & Instalasi
+### 2. Clone & Install
 
 ```bash
 git clone <repository-url>
@@ -79,54 +82,48 @@ cd "ChimpHood Site"
 npm install
 ```
 
-### 3. Konfigurasi Lingkungan (.env)
+### 3. Environment Configuration (.env)
 
-Salin `.env.example` ke `.env.local`:
+Copy `.env.example` to `.env.local`:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Sesuaikan nilai `DATABASE_URL` jika sudah memiliki instance PostgreSQL lokal. _(Catatan: Koneksi database aktif belum diwajibkan untuk menjalankan kerangka UI Tahap 0)._
-
-### 4. Generate Prisma Client
+### 4. Validate & Generate Prisma Client
 
 ```bash
+# Validate schema
+npx prisma validate
+
+# Generate TypeScript client
 npm run prisma:generate
 ```
 
-### 5. Menjalankan Server Pengembangan
+### 5. Run Development Server
 
 ```bash
 npm run dev
 ```
 
-Buka [http://localhost:3000](http://localhost:3000) pada browser Anda.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🧪 Perintah Verifikasi & Testing
+## 🧪 Verification & Testing Commands
 
-| Perintah               | Deskripsi                                             |
-| ---------------------- | ----------------------------------------------------- |
-| `npm run lint`         | Menjalankan ESLint untuk memeriksa kualitas kode      |
-| `npm run typecheck`    | Menjalankan TypeScript type checking (`tsc --noEmit`) |
-| `npm run test`         | Menjalankan unit tests dengan Vitest                  |
-| `npm run build`        | Melakukan production build Next.js                    |
-| `npm run format:check` | Memeriksa format kode dengan Prettier                 |
-
----
-
-## 📑 Halaman Kerangka yang Tersedia
-
-1. **Home (`/`)**: Ringkasan platform, call-to-action navigasi, dan checklist verifikasi Tahap 0.
-2. **Whitelist (`/whitelist`)**: Kerangka pengecekan alokasi whitelist, ringkasan quest/campaign, dan alokasi gift.
-3. **Profile (`/profile`)**: Kerangka manajemen wallet Web3, akun X, dan status tingkatan (tier).
-4. **Docs (`/docs`)**: Dokumentasi interaktif mengenai tech stack, roadmap, dan pending decisions.
+| Command                | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `npx prisma validate`  | Check Prisma schema syntax and AST validity          |
+| `npm run typecheck`    | Run TypeScript strict type-checking (`tsc --noEmit`) |
+| `npm run lint`         | Run ESLint to verify code quality                    |
+| `npm run test`         | Run unit & integration test suites with Vitest       |
+| `npm run build`        | Execute Next.js production build                     |
+| `npm run format:check` | Verify code formatting with Prettier                 |
 
 ---
 
-## 🔗 Dokumentasi Lanjutan
+## 🔗 Further Documentation
 
-- [Catatan Handoff (docs/handoff.md)](./docs/handoff.md)
-- [Pending Decisions (docs/pending-decisions.md)](./docs/pending-decisions.md)
+- [Technical Handoff Notes (docs/handoff.md)](./docs/handoff.md)
+- [Pending Decisions Registry (docs/pending-decisions.md)](./docs/pending-decisions.md)

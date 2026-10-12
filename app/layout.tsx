@@ -4,8 +4,9 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
-  title: "ChimpHood Site - Foundation",
-  description: "ChimpHood Site - Tahap 0: Project Foundation & Documentation",
+  title: "ChimpHood — Web3 Collectible Ecosystem",
+  description:
+    "Decentralized Web3 community platform for Whitelist allocation, identity verification, and ecosystem rewards.",
 };
 
 export default function RootLayout({
@@ -14,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="en">
       <body className="flex min-h-screen flex-col bg-[#090a0f] text-gray-100 antialiased">
         <Navbar />
         <main className="flex-1">{children}</main>

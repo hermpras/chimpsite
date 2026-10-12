@@ -24,19 +24,19 @@ export default function WhitelistPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white">
             Whitelist Portal
           </h1>
-          <Badge variant="warning">Kerangka Placeholder</Badge>
+          <Badge variant="warning">Placeholder</Badge>
         </div>
         <p className="text-gray-400">
-          Cek kelayakan alokasi, status pendaftaran, dan informasi distribusi ChimpHood
-          Whitelist.
+          Check allocation eligibility, registration status, and ChimpHood Whitelist
+          distribution details.
         </p>
       </div>
 
       <div className="mb-8">
         <PlaceholderNotice
-          title="Claim Engine & Allocation Engine Dinonaktifkan"
-          description="Logika verifikasi on-chain/off-chain, perhitungan kuota whitelist, dan klaim gift sengaja dinonaktifkan pada Tahap 0 sampai Data Model Specification dan mekanisme smart contract difinalisasi."
-          phase="Tahap 0 Placeholder"
+          title="Claim Engine & Allocation Engine Disabled"
+          description="Verification logic, Whitelist quota calculations, and gift claims are intentionally disabled until Stage 2/3 implementation."
+          phase="Stage 1 Placeholder"
         />
       </div>
 
@@ -49,9 +49,9 @@ export default function WhitelistPage() {
                 <Search className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle>Cek Status Alokasi Whitelist</CardTitle>
+                <CardTitle>Check Whitelist Allocation Status</CardTitle>
                 <CardDescription>
-                  Masukkan alamat wallet EVM atau akun X untuk memeriksa status alokasi
+                  Enter an EVM wallet address or X handle to check allocation status
                 </CardDescription>
               </div>
             </div>
@@ -60,7 +60,7 @@ export default function WhitelistPage() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <input
                 type="text"
-                placeholder="0x... atau @handle (Placeholder UI)"
+                placeholder="0x... or @handle (UI Placeholder)"
                 value={addressInput}
                 onChange={(e) => setAddressInput(e.target.value)}
                 className="flex-1 rounded-lg border border-gray-700 bg-gray-900/60 px-4 py-2 text-sm text-gray-200 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
@@ -69,16 +69,16 @@ export default function WhitelistPage() {
                 variant="primary"
                 onClick={() =>
                   alert(
-                    "Pencarian alokasi belum aktif (Placeholder Tahap 0). Menunggu penetapan model data alokasi.",
+                    "Allocation check is not active yet (Stage 1 Placeholder). Awaiting live allocation query implementation.",
                   )
                 }
               >
-                Cek Kelayakan (Placeholder)
+                Check Eligibility (Placeholder)
               </Button>
             </div>
             <p className="text-xs text-gray-500">
-              * Data alokasi aktual akan bersumber dari database PostgreSQL dan Merkle
-              Tree verifikasi pada tahap berikutnya.
+              * Actual allocation data will be sourced from PostgreSQL database records in
+              subsequent stages.
             </p>
           </CardContent>
         </Card>
@@ -94,7 +94,7 @@ export default function WhitelistPage() {
                 <div>
                   <CardTitle>Campaigns & Quests</CardTitle>
                   <CardDescription>
-                    Misi komunitas untuk memperoleh alokasi
+                    Community missions to earn Whitelist allocation
                   </CardDescription>
                 </div>
               </div>
@@ -102,16 +102,16 @@ export default function WhitelistPage() {
             <CardContent>
               <div className="space-y-2 rounded-lg border border-gray-800 bg-gray-900/40 p-4 text-sm text-gray-400">
                 <div className="flex items-center justify-between border-b border-gray-800 pb-2">
-                  <span>Quest Komunitas Early Bird</span>
-                  <Badge variant="outline">Mendatang</Badge>
+                  <span>Early Bird Community Quest</span>
+                  <Badge variant="outline">Upcoming</Badge>
                 </div>
                 <div className="flex items-center justify-between border-b border-gray-800 py-2">
-                  <span>Kampanye Kreatif Konten X</span>
-                  <Badge variant="outline">Mendatang</Badge>
+                  <span>X Creative Content Campaign</span>
+                  <Badge variant="outline">Upcoming</Badge>
                 </div>
                 <div className="flex items-center justify-between pt-2">
-                  <span>Misi Referral ChimpHood</span>
-                  <Badge variant="outline">Mendatang</Badge>
+                  <span>ChimpHood Referral Mission</span>
+                  <Badge variant="outline">Upcoming</Badge>
                 </div>
               </div>
             </CardContent>
@@ -124,20 +124,19 @@ export default function WhitelistPage() {
                   <Gift className="h-5 w-5" />
                 </div>
                 <div>
-                  <CardTitle>Gift / Referral Allocation</CardTitle>
-                  <CardDescription>Distribusi alokasi hadiah</CardDescription>
+                  <CardTitle>Gifts & Referral Allocation</CardTitle>
+                  <CardDescription>Reward and gift distribution</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900/40 p-4 text-sm text-gray-400">
                 <p>
-                  Mekanisme pembagian hadiah (Gift Engine) antar member masih dalam
-                  status:{" "}
-                  <span className="font-semibold text-amber-300">PENDING DECISION</span>.
+                  Peer-to-peer gift distribution (Gift Engine) is currently:{" "}
+                  <span className="font-semibold text-amber-300">STAGE PLACEHOLDER</span>.
                 </p>
                 <Button variant="outline" size="sm" className="w-full" disabled>
-                  Klaim Gift (Belum Aktif)
+                  Claim Gift (Inactive)
                 </Button>
               </div>
             </CardContent>

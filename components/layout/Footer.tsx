@@ -8,7 +8,7 @@ export function Footer() {
         <div>
           <p className="font-semibold text-gray-200">ChimpHood Site</p>
           <p className="text-xs text-gray-500">
-            Tahap 0: Project Foundation & Documentation.
+            Web3 Collectible Ecosystem — Foundation & Data Architecture.
           </p>
         </div>
 

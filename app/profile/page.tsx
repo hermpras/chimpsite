@@ -1,6 +1,6 @@
 "use client";
 
-import { User, Wallet, Shield, AlertTriangle } from "lucide-react";
+import { User, Wallet, Shield, AlertTriangle, Sparkles } from "lucide-react";
 
 function XLogo(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -27,18 +27,18 @@ export default function ProfilePage() {
       <div className="mb-8 space-y-2">
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold tracking-tight text-white">User Profile</h1>
-          <Badge variant="warning">Kerangka Placeholder</Badge>
+          <Badge variant="warning">Placeholder</Badge>
         </div>
         <p className="text-gray-400">
-          Manajemen identitas terintegrasi Web3 Wallet dan akun X (Twitter).
+          Integrated identity management for Web3 Wallets and X (Twitter) accounts.
         </p>
       </div>
 
       <div className="mb-8">
         <PlaceholderNotice
-          title="Autentikasi Belum Aktif"
-          description="Logika autentikasi Sign-In with Ethereum (SIWE) dan OAuth 2.0 untuk X sengaja dinonaktifkan pada Tahap 0 sampai arsitektur auth & sesi difinalisasi."
-          phase="Tahap 0 Placeholder"
+          title="Authentication Not Active"
+          description="Sign-In with Ethereum (SIWE) and X OAuth 2.0 authentication flows are intentionally disabled until Stage 2."
+          phase="Stage 1 Placeholder"
         />
       </div>
 
@@ -52,13 +52,13 @@ export default function ProfilePage() {
               </div>
               <div>
                 <CardTitle>Web3 Wallet</CardTitle>
-                <CardDescription>Status koneksi wallet pengguna</CardDescription>
+                <CardDescription>User wallet connection status</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border border-dashed border-gray-700 bg-gray-900/40 p-4 text-center">
-              <p className="text-sm font-medium text-gray-400">Status: Belum Terhubung</p>
+              <p className="text-sm font-medium text-gray-400">Status: Not Connected</p>
               <p className="mt-1 font-mono text-xs text-gray-500">
                 0x000...0000 (Placeholder)
               </p>
@@ -67,7 +67,7 @@ export default function ProfilePage() {
               variant="outline"
               className="w-full"
               onClick={() =>
-                alert("Fitur Connect Wallet belum diaktifkan (Placeholder Tahap 0).")
+                alert("Connect Wallet feature is not enabled yet (Stage placeholder).")
               }
             >
               Connect Wallet (Placeholder)
@@ -84,23 +84,23 @@ export default function ProfilePage() {
               </div>
               <div>
                 <CardTitle>X (Twitter) Identity</CardTitle>
-                <CardDescription>Status verifikasi akun sosial</CardDescription>
+                <CardDescription>Social account verification status</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border border-dashed border-gray-700 bg-gray-900/40 p-4 text-center">
-              <p className="text-sm font-medium text-gray-400">Status: Belum Terhubung</p>
+              <p className="text-sm font-medium text-gray-400">Status: Not Connected</p>
               <p className="mt-1 text-xs text-gray-500">@username (Placeholder)</p>
             </div>
             <Button
               variant="outline"
               className="w-full"
               onClick={() =>
-                alert("Fitur X OAuth belum diaktifkan (Placeholder Tahap 0).")
+                alert("X OAuth feature is not enabled yet (Stage placeholder).")
               }
             >
-              Link Akun X (Placeholder)
+              Link X Account (Placeholder)
             </Button>
           </CardContent>
         </Card>
@@ -114,20 +114,51 @@ export default function ProfilePage() {
                   <Shield className="h-5 w-5" />
                 </div>
                 <div>
-                  <CardTitle>Tingkat Komunitas (Tier Status)</CardTitle>
+                  <CardTitle>Community Tier & Whitelist Status</CardTitle>
                   <CardDescription>
-                    Status keanggotaan dan alokasi whitelist yang terkait akun Anda
+                    Membership tier and Whitelist allocation associated with your account
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline">Tier Belum Ditetapkan</Badge>
+              <Badge variant="outline">Tier Unassigned</Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-4 text-sm text-gray-400">
               <p>
-                Informasi tier, reward poin, dan whitelist balance akan ditampilkan di
-                sini setelah schema database dan mekanisme alokasi disepakati.
+                Tier status, reward points, and Whitelist balances will be displayed here
+                once Stage 2 authentication and allocation engines are linked.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Collection & Inventory Overview */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-400">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle>Collection & Inventory</CardTitle>
+                  <CardDescription>
+                    Collected ChimpHood Traits, items, and ecosystem collectibles
+                  </CardDescription>
+                </div>
+              </div>
+              <Badge variant="outline">Inventory Empty</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border border-dashed border-gray-800 bg-gray-900/40 p-6 text-center">
+              <p className="text-sm font-medium text-gray-400">
+                No items or traits found in your inventory
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Drops, trait claims, and peer-to-peer gifts will appear in your collection
+                once active.
               </p>
             </div>
           </CardContent>

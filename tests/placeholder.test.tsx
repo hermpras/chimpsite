@@ -11,13 +11,21 @@ describe("UI Foundation Components", () => {
       <PlaceholderNotice
         title="Test Feature"
         description="This feature is a placeholder"
-        phase="Tahap 0"
+        phase="Stage 1"
       />,
     );
 
     expect(screen.getByText("Test Feature")).toBeInTheDocument();
     expect(screen.getByText("This feature is a placeholder")).toBeInTheDocument();
-    expect(screen.getByText("Tahap 0")).toBeInTheDocument();
+    expect(screen.getByText("Stage 1")).toBeInTheDocument();
+  });
+
+  it("renders PlaceholderNotice with default English props when optional props omitted", () => {
+    render(<PlaceholderNotice description="Default prop verification" />);
+
+    expect(screen.getByText("Feature Inactive (Placeholder)")).toBeInTheDocument();
+    expect(screen.getByText("Upcoming Stage")).toBeInTheDocument();
+    expect(screen.getByText("Default prop verification")).toBeInTheDocument();
   });
 
   it("renders Badge with default variant", () => {

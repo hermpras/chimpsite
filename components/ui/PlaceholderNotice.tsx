@@ -9,9 +9,9 @@ interface PlaceholderNoticeProps {
 }
 
 export function PlaceholderNotice({
-  title = "Fitur Belum Aktif (Placeholder)",
+  title = "Feature Inactive (Placeholder)",
   description,
-  phase = "Tahap Mendatang",
+  phase = "Upcoming Stage",
   className = "",
 }: PlaceholderNoticeProps) {
   return (

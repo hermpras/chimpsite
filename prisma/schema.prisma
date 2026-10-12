@@ -10,23 +10,754 @@ datasource db {
 }
 
 // =============================================================================
-// NOTICE: DATA MODEL SPECIFICATION PENDING REVIEW
-// =============================================================================
-// The schema below is intentionally minimal / unmigrated.
-// In accordance with Phase 0 requirements:
-// DO NOT run migrations or finalize schema until the Data Model Specification
-// is formally reviewed and approved.
-//
-// Candidate models discussed for future phases:
-// - User (walletAddress, xId, xUsername, role, createdAt)
-// - WhitelistAllocation (userId, tier, allocationAmount, status)
-// - Campaign (slug, title, status, startsAt, endsAt)
-// - ClaimLog (userId, amount, txHash, status, claimedAt)
-// - GiftDistribution (senderId, recipientId, status, txHash)
+// ENUMS
 // =============================================================================
 
-model SchemaPlaceholder {
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum TraitCategory {
+  BG
+  FUR
+  CLOTHING
+  HEADWEAR
+  EYEWEAR
+}
+
+enum TraitRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+enum InventoryAcquisitionType {
+  CLAIM
+  GIFT
+  ADMIN_AIRDROP
+  REWARD
+}
+
+enum DropStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum DropPeriodStatus {
+  PENDING_CONFIG
+  CONFIGURED
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum ClaimStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum GiftStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum CampaignCompatibilityMode {
+  FRESH_START
+  EXPLICIT_MAPPED
+  LEGACY_CARRIED
+}
+
+enum TaskType {
+  SOCIAL_X_FOLLOW
+  SOCIAL_X_REPOST
+  INVENTORY_HOLD
+  MANUAL_EVIDENCE
+  CUSTOM
+}
+
+enum TaskProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+enum EvidenceType {
+  URL
+  IMAGE_URL
+  TEXT_PROOF
+  OAUTH_VERIFICATION
+}
+
+enum EvidenceStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum WLProgramStatus {
+  UPCOMING
+  OPEN
+  PAUSED
+  FINALIZED
+  CLOSED
+}
+
+enum WLQualificationStatus {
+  QUALIFIED
+  DISQUALIFIED
+  REVOKED
+}
+
+enum WLQueueStatus {
+  WAITING
+  PROCESSED
+  EXPIRED
+  CANCELLED
+}
+
+enum WLSlotStatus {
+  ALLOCATED
+  CONFIRMED
+  REVOKED_MANUAL_ADMIN
+}
+
+enum WLPhase {
+  NONE
+  QUALIFIED
+  IN_QUEUE
+  SLOT_ALLOCATED
+  REVOKED
+}
+
+enum BanType {
+  PERMANENT
+  TEMPORARY
+  SHADOWBAN
+  FEATURE_RESTRICTION
+}
+
+enum BanScope {
+  FULL_SYSTEM
+  CLAIM_RESTRICTED
+  GIFT_RESTRICTED
+  WL_DISQUALIFIED
+}
+
+enum AbuseFlagType {
+  SYBIL_WALLET_CLUSTER
+  BOT_ACTIVITY
+  X_ACCOUNT_MISMATCH
+  RAPID_CLAIM_ATTEMPT
+  SUSPICIOUS_GIFT_LOOP
+  OTHER
+}
+
+enum AbuseSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AbuseFlagStatus {
+  OPEN
+  UNDER_REVIEW
+  DISMISSED
+  CONFIRMED_ACTION_TAKEN
+}
+
+enum AdminRoleType {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+  AUDITOR
+}
+
+// =============================================================================
+// IDENTITY & AUTHENTICATION
+// =============================================================================
+
+model User {
   id        String   @id @default(cuid())
-  notes     String   @default("Pending final Data Model Specification review")
+  role      UserRole @default(USER)
+  isBanned  Boolean  @default(false)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 1:1 Identity Relations (Wallet is primary, X is secondary linked)
+  wallet    WalletIdentity?
+  xIdentity XIdentity?
+
+  // Auth Sessions
+  sessions AuthSession[]
+
+  // Inventory & Economy
+  inventory InventoryItem[]
+  claims    Claim[]
+
+  // Gifts
+  sentGifts     Gift[] @relation("SentGifts")
+  receivedGifts Gift[] @relation("ReceivedGifts")
+
+  // Campaign & Tasks
+  taskProgress        TaskProgress[]
+  evidenceSubmissions EvidenceSubmission[]
+
+  // Whitelist Lifecycle
+  wlQualifications WLQualification[]
+  wlQueueEntries   WLQueueEntry[]
+  wlSlots          WLSlot[]
+  wlStatusHistory  WLStatusHistory[]
+
+  // Security, Admin & Audit
+  adminRole          AdminRole?
+  banRecords         BanRecord[]          @relation("UserBans")
+  issuedBans         BanRecord[]          @relation("IssuedBans")
+  abuseFlags         AbuseFlag[]          @relation("UserAbuseFlags")
+  reviewedAbuseFlags AbuseFlag[]          @relation("ReviewedAbuseFlags")
+  reviewedEvidences  EvidenceSubmission[] @relation("ReviewedEvidences")
+  auditLogs          AuditLog[]           @relation("UserAuditLogs")
+
+  @@index([role])
+  @@index([isBanned])
+  @@index([createdAt])
+}
+
+model WalletIdentity {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address    String   @unique // Normalized lowercase 0x... EVM address
+  chainId    Int      @default(1)
+  verifiedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([address])
+}
+
+model XIdentity {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xId             String   @unique // X (Twitter) Snowflake ID
+  username        String   // X handle (without @)
+  name            String?
+  profileImageUrl String?
+  connectedAt     DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([xId])
+  @@index([username])
+}
+
+model SiweNonce {
+  id         String    @id @default(cuid())
+  nonce      String    @unique
+  address    String?   // Expected wallet address for nonce
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([nonce, expiresAt])
+  @@index([expiresAt])
+}
+
+model AuthSession {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt, revokedAt])
+}
+
+// =============================================================================
+// TRAITS & INVENTORY
+// =============================================================================
+
+model Trait {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  category    TraitCategory
+  rarity      TraitRarity   @default(COMMON)
+  description String?
+  imageUrl    String
+  maxSupply   Int?
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  inventoryItems InventoryItem[]
+  dropPoolItems  DropPoolItem[]
+
+  @@index([category])
+  @@index([rarity])
+  @@index([isActive])
+}
+
+model InventoryItem {
+  id          String                  @id @default(cuid())
+  traitId     String
+  trait       Trait                   @relation(fields: [traitId], references: [id], onDelete: Restrict)
+  ownerId     String
+  owner       User                    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  edition     Int                     // Copy/edition number per trait (1, 2, 3...)
+  acquiredVia InventoryAcquisitionType @default(CLAIM)
+  isLocked    Boolean                 @default(false) // Locked when involved in pending gift
+  lockReason  String?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  claims Claim[]
+  gifts  Gift[]
+
+  @@unique([traitId, edition]) // Trait edition is unique
+  @@index([ownerId])
+  @@index([traitId])
+  @@index([ownerId, isLocked])
+}
+
+// =============================================================================
+// DROPS & CLAIMS
+// =============================================================================
+
+model Drop {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  title       String
+  description String?
+  status      DropStatus @default(DRAFT)
+  startsAt    DateTime
+  endsAt      DateTime
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  periods DropPeriod[]
+  claims  Claim[]
+
+  @@index([status, startsAt, endsAt])
+}
+
+model DropPeriod {
+  id                String           @id @default(cuid())
+  dropId            String
+  drop              Drop             @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  periodIndex       Int              // 1, 2, 3...
+  startsAt          DateTime         // UTC period start
+  endsAt            DateTime         // UTC period end
+  configLockAt      DateTime         // UTC config deadline (>= 15 mins before startsAt)
+  isStockConfigured Boolean          @default(false)
+  isStockLocked     Boolean          @default(false)
+  status            DropPeriodStatus @default(PENDING_CONFIG)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  poolItems DropPoolItem[]
+  claims    Claim[]
+
+  @@unique([dropId, periodIndex])
+  @@index([dropId, startsAt, endsAt])
+  @@index([status, startsAt])
+}
+
+model DropPoolItem {
+  id             String     @id @default(cuid())
+  periodId       String
+  period         DropPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  traitId        String
+  trait          Trait      @relation(fields: [traitId], references: [id], onDelete: Restrict)
+  allocatedStock Int        // Must be >= 0
+  claimedStock   Int        @default(0) // Must be >= 0 and <= allocatedStock
+  remainingStock Int        // Must be >= 0
+  weight         Int        @default(100) // RNG roll weight (> 0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  claims Claim[]
+
+  @@unique([periodId, traitId])
+  @@index([periodId])
+  @@index([traitId])
+}
+
+model Claim {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  dropId          String
+  drop            Drop           @relation(fields: [dropId], references: [id], onDelete: Restrict)
+  periodId        String
+  period          DropPeriod     @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  dropPoolItemId  String?
+  dropPoolItem    DropPoolItem?  @relation(fields: [dropPoolItemId], references: [id], onDelete: SetNull)
+  inventoryItemId String         @unique // Exactly 1 inventory item minted/assigned per claim
+  inventoryItem   InventoryItem  @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  status          ClaimStatus    @default(SUCCESS)
+  claimedAt       DateTime       @default(now())
+  ipAddress       String?
+  userAgent       String?
+
+  @@unique([userId, dropId, periodId]) // Strictly 1 claim per wallet per drop per period
+  @@index([userId, claimedAt])
+  @@index([dropId, periodId])
+  @@index([claimedAt])
+}
+
+// =============================================================================
+// GIFTS
+// =============================================================================
+
+model Gift {
+  id                 String        @id @default(cuid())
+  senderId           String
+  sender             User          @relation("SentGifts", fields: [senderId], references: [id], onDelete: Restrict)
+  receiverId         String
+  receiver           User          @relation("ReceivedGifts", fields: [receiverId], references: [id], onDelete: Restrict)
+  inventoryItemId    String
+  inventoryItem      InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  status             GiftStatus    @default(PENDING)
+  expiresAt          DateTime      // UTC timestamp, exactly 24h after createdAt
+  decidedAt          DateTime?     // When accepted, rejected, cancelled, or expired
+  cancellationReason String?
+  rejectionReason    String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([senderId, status])
+  @@index([receiverId, status])
+  @@index([inventoryItemId])
+  @@index([status, expiresAt]) // Optimized for pending expired sweeps
+}
+
+// =============================================================================
+// CAMPAIGN & EVIDENCE
+// =============================================================================
+
+model PromoCampaign {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  title       String
+  description String?
+  wlProgramId String         // Mandatory relation to WL Program
+  wlProgram   WLProgram      @relation(fields: [wlProgramId], references: [id], onDelete: Restrict)
+  status      CampaignStatus @default(DRAFT)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  versions CampaignVersion[]
+
+  @@index([wlProgramId])
+  @@index([status])
+}
+
+model CampaignVersion {
+  id                      String                    @id @default(cuid())
+  campaignId              String
+  campaign                PromoCampaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  versionNumber           Int                       // 1, 2, 3...
+  changeNotes             String?
+  isCurrent               Boolean                   @default(false)
+  compatibilityMode       CampaignCompatibilityMode @default(FRESH_START)
+  compatibleFromVersionId String?
+  compatibleFromVersion   CampaignVersion?          @relation("VersionCompatibility", fields: [compatibleFromVersionId], references: [id], onDelete: SetNull)
+  successorVersions       CampaignVersion[]         @relation("VersionCompatibility")
+  startsAt                DateTime
+  endsAt                  DateTime?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+
+  tasks        CampaignTask[]
+  taskProgress TaskProgress[]
+
+  @@unique([campaignId, versionNumber])
+  @@index([campaignId, isCurrent])
+  @@index([startsAt, endsAt])
+}
+
+model CampaignTask {
+  id                  String          @id @default(cuid())
+  versionId           String
+  version             CampaignVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  taskCode            String          // e.g. "FOLLOW_X_CHIMPHOOD"
+  title               String
+  description         String?
+  taskType            TaskType        @default(CUSTOM)
+  requirementMetadata Json?           // Expected config: target handle, tweet id, required trait, etc.
+  points              Int             @default(10)
+  isRequired          Boolean         @default(true)
+  sortOrder           Int             @default(0)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  taskProgress        TaskProgress[]
+  evidenceSubmissions EvidenceSubmission[]
+
+  @@unique([versionId, taskCode])
+  @@index([versionId, sortOrder])
+  @@index([taskType])
+}
+
+model TaskProgress {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  versionId   String
+  version     CampaignVersion    @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  taskId      String
+  task        CampaignTask       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  status      TaskProgressStatus @default(NOT_STARTED)
+  verifiedAt  DateTime?
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  evidenceSubmissions EvidenceSubmission[]
+
+  @@unique([userId, versionId, taskId])
+  @@index([userId, status])
+  @@index([versionId, status])
+  @@index([taskId, status])
+}
+
+model EvidenceSubmission {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  taskId         String
+  task           CampaignTask   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskProgressId String
+  taskProgress   TaskProgress   @relation(fields: [taskProgressId], references: [id], onDelete: Cascade)
+  submissionType EvidenceType   @default(URL)
+  payload        String         // Link, tweet url, or proof string
+  status         EvidenceStatus @default(PENDING_REVIEW)
+  reviewerId     String?
+  reviewer       User?          @relation("ReviewedEvidences", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewerNotes  String?
+  reviewedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId, taskId])
+  @@index([taskProgressId])
+  @@index([reviewerId])
+}
+
+// =============================================================================
+// WHITELIST (WL) LIFECYCLE
+// =============================================================================
+
+model WLProgram {
+  id                  String          @id @default(cuid())
+  slug                String          @unique
+  name                String
+  description         String?
+  totalSlots          Int             // Total WL capacity (> 0)
+  allocatedSlotsCount Int             @default(0)
+  status              WLProgramStatus @default(UPCOMING)
+  startsAt            DateTime
+  endsAt              DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  campaigns       PromoCampaign[]
+  qualifications  WLQualification[]
+  queueEntries    WLQueueEntry[]
+  slots           WLSlot[]
+  statusHistories WLStatusHistory[]
+
+  @@index([status])
+  @@index([startsAt, endsAt])
+}
+
+model WLQualification {
+  id                 String                @id @default(cuid())
+  programId          String
+  program            WLProgram             @relation(fields: [programId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status             WLQualificationStatus @default(QUALIFIED)
+  qualificationScore Int                   @default(0)
+  qualifiedAt        DateTime              @default(now())
+  disqualifiedAt     DateTime?
+  reason             String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@unique([programId, userId])
+  @@index([programId, status])
+  @@index([userId])
+}
+
+model WLQueueEntry {
+  id            String        @id @default(cuid())
+  programId     String
+  program       WLProgram     @relation(fields: [programId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  queueNumber   Int           // Stable tie-breaker sequence number within program
+  joinedAt      DateTime      @default(now()) // High precision timestamp
+  priorityScore Int           @default(0)     // Tie-break priority
+  status        WLQueueStatus @default(WAITING)
+  processedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([programId, userId])
+  @@unique([programId, queueNumber])
+  @@index([programId, status, priorityScore, joinedAt, queueNumber])
+}
+
+model WLSlot {
+  id          String       @id @default(cuid())
+  programId   String
+  program     WLProgram    @relation(fields: [programId], references: [id], onDelete: Restrict)
+  slotNumber  Int          // Sequential 1 .. totalSlots
+  userId      String       // User holding this slot
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status      WLSlotStatus @default(ALLOCATED)
+  allocatedAt DateTime     @default(now())
+  confirmedAt DateTime?
+  allocatedBy String?      // e.g. "QUEUE_WORKER", "ADMIN_MANUAL"
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([programId, slotNumber]) // Slot index within program is strictly unique
+  @@unique([programId, userId])     // A user cannot receive two slots in the same program
+  @@index([programId, status])
+  @@index([userId])
+}
+
+model WLStatusHistory {
+  id        String    @id @default(cuid())
+  programId String
+  program   WLProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  fromPhase WLPhase   @default(NONE)
+  toPhase   WLPhase
+  action    String    // e.g. "QUALIFIED_VIA_CAMPAIGN", "JOINED_QUEUE", "SLOT_ASSIGNED"
+  actorId   String?   // User or admin ID, or null for system
+  metadata  Json?
+  createdAt DateTime  @default(now())
+
+  @@index([programId, userId, createdAt])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// SECURITY, ADMINISTRATION & AUDIT
+// =============================================================================
+
+model AdminRole {
+  id          String        @id @default(cuid())
+  userId      String        @unique
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleType    AdminRoleType @default(MODERATOR)
+  permissions String[]      // e.g. ["MANAGE_DROPS", "MANAGE_WL", "REVIEW_EVIDENCE", "MANAGE_BANS"]
+  assignedBy  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([roleType])
+}
+
+model BanRecord {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation("UserBans", fields: [userId], references: [id], onDelete: Restrict)
+  banType          BanType   @default(PERMANENT)
+  scope            BanScope  @default(FULL_SYSTEM)
+  reason           String
+  evidence         String?
+  issuedById       String
+  issuedBy         User      @relation("IssuedBans", fields: [issuedById], references: [id], onDelete: Restrict)
+  issuedAt         DateTime  @default(now())
+  expiresAt        DateTime?
+  isActive         Boolean   @default(true)
+  revokedAt        DateTime?
+  revokedById      String?
+  revocationReason String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId, isActive])
+  @@index([banType, isActive])
+  @@index([scope, isActive])
+  @@index([issuedAt])
+}
+
+model AbuseFlag {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation("UserAbuseFlags", fields: [userId], references: [id], onDelete: Restrict)
+  flagType        AbuseFlagType
+  severity        AbuseSeverity   @default(LOW)
+  details         Json?
+  status          AbuseFlagStatus @default(OPEN)
+  reviewedById    String?
+  reviewedBy      User?           @relation("ReviewedAbuseFlags", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?
+  resolutionNotes String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId, status])
+  @@index([severity, status])
+  @@index([flagType, status])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("UserAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+  actorIp    String?
+  userAgent  String?
+  action     String   // e.g. "BAN_USER", "LOCK_STOCK", "ASSIGN_WL_SLOT"
+  entityType String   // e.g. "User", "DropPeriod", "WLSlot", "Gift"
+  entityId   String
+  oldValues  Json?
+  newValues  Json?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
 }
