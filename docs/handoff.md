@@ -399,3 +399,50 @@ verification on byte-identical copies: `prisma generate` PASS, `tsc` PASS,
 `next build` PASS (all five auth routes dynamic). The real browser flow
 (connect → MetaMask sign → verify → session → refresh persistence →
 logout revocation) was confirmed working locally by the operator.
+
+---
+
+## 9. Stage 3 Progress — Whitelist Lifecycle & Drops/Claims Engines (Oct 16, 2026)
+
+### Implemented Architecture & Services:
+
+1. **Drops & Claims Engine (`server/drops/`)**:
+   - `schedule.ts`: Shared 2-hour UTC cycles (`[00:00-02:00, 02:00-04:00, ...]`) with 30-minute claim windows. 15-minute stock freeze window (`configLockAt <= startsAt - 15m`).
+   - `claim.ts`: Atomic claim execution in PostgreSQL transaction. Strict invariant enforcement:
+     - 1 claim per user per drop per period (`@@unique([userId, dropId, periodId])`).
+     - Allocated/confirmed WL slot holders are strictly prohibited from claiming drops.
+     - Atomic stock decrement (`remainingStock > 0` condition) prevents race-condition over-allocation.
+     - Transparent pool item probability calculation.
+     - Rejection of claims outside 30-minute window or when periods are emergency-cancelled.
+     - Sequential trait edition minting.
+   - API: `GET /api/drops/current` and `POST /api/drops/claim`.
+
+2. **Gifting Engine (`server/inventory/gift.ts`)**:
+   - Separate inventory workflow:
+     - Duplicate-only rule: sender must own >= 2 copies of the trait (retaining >= 1 copy).
+     - Recipient must not already own the trait (`RECIPIENT_ALREADY_OWNS_TRAIT`).
+     - Daily limit: strictly 1 gift sent per wallet per UTC calendar day.
+     - 24-hour expiration (`expiresAt = createdAt + 24h`). Expired gifts unlock sender item and cannot be accepted.
+     - Acceptance transfers item ownership to recipient atomically and unlocks item.
+     - Cancellation/rejection unlocks the item for the sender.
+   - API: `GET /api/gifts`, `POST /api/gifts`, and `POST /api/gifts/[id]` (`ACCEPT`, `REJECT`, `CANCEL`).
+
+3. **Whitelist Lifecycle & Qualification Engine (`server/whitelist/qualification.ts`)**:
+   - 5 required trait categories (`BG`, `FUR`, `CLOTHING`, `HEADWEAR`, `EYEWEAR`).
+   - Verified EVM wallet and linked X account required.
+   - Mandatory campaign tasks verified.
+   - First-qualified-first-allocated capacity: creates `WLSlot` when `allocatedSlotsCount < totalSlots`.
+   - Queue management when capacity is full: creates `WLQueueEntry` ordered by `joinedAt` (timestamp when requirements were first satisfied) with stable tie-breaker `queueNumber`. No arbitrary priority score formula.
+   - Re-qualification timestamp update: if user was disqualified/rejected and requalifies, `qualifiedAt` updates to the new qualification timestamp.
+   - Queue reconciler: `reconcileQueueSlots` assigns newly available slots to queued users in proper queue order.
+   - API: `GET /api/whitelist/status` (supports public address lookup and authenticated session) and `POST /api/whitelist/qualify`.
+
+4. **Social & Auditing (`server/social/x.ts` & `server/audit/audit.ts`)**:
+   - Fail-closed X OAuth 2.0 PKCE initiation and token exchange. Never fakes verification without real provider callback. Returns 503 if unconfigured.
+   - Immutable audit logging helper for administrative mutations.
+   - API: `GET /api/social/x/status`, `GET /api/social/x/connect`, `GET /api/social/x/callback`.
+
+5. **UI & Client Integration**:
+   - `app/whitelist/page.tsx`: Whitelist Status Checker, 5-category checklist, Phase badge, and Hourly Drop & Trait Claim card.
+   - `app/profile/page.tsx`: Dynamic Whitelist status display and X identity status integration.
+   - `lib/whitelist/client.ts` and `lib/drops/client.ts`: Client API helpers.

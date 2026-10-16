@@ -58,12 +58,16 @@ describe("Public Pages English Copy Rendering", () => {
   });
 
   it("renders WhitelistPage with English portal headings and campaigns", () => {
-    const { container } = render(<WhitelistPage />);
+    const { container } = render(
+      <Providers>
+        <WhitelistPage />
+      </Providers>,
+    );
     expect(screen.getByText("Whitelist Portal")).toBeInTheDocument();
     expect(screen.getByText("Check Whitelist Allocation Status")).toBeInTheDocument();
     expect(screen.getByText("Campaigns & Quests")).toBeInTheDocument();
     expect(screen.getByText("Gifts & Referral Allocation")).toBeInTheDocument();
-    expect(screen.getByText("Check Eligibility (Placeholder)")).toBeInTheDocument();
+    expect(screen.getByText("Check Eligibility")).toBeInTheDocument();
 
     for (const pattern of INDONESIAN_UI_WORDS) {
       expect(container.textContent).not.toMatch(pattern);
