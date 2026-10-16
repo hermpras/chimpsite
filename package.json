@@ -19,13 +19,22 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.0",
+    "@tanstack/react-query": "^5.104.2",
+    "@wagmi/core": "^3.6.5",
     "clsx": "^2.1.1",
+    "dotenv": "^18.0.8",
+    "iron-session": "^8.0.4",
     "lucide-react": "^1.55.0",
     "next": "^16.3.5",
+    "pg": "^8.23.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "tailwind-merge": "^3.7.0"
+    "siwe": "^3.0.0",
+    "tailwind-merge": "^3.7.0",
+    "viem": "^2.57.5",
+    "wagmi": "^3.7.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

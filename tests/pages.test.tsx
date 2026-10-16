@@ -5,6 +5,7 @@ import HomePage from "@/app/page";
 import DocsPage from "@/app/docs/page";
 import WhitelistPage from "@/app/whitelist/page";
 import ProfilePage from "@/app/profile/page";
+import { Providers } from "@/components/providers";
 
 // Mock next/navigation
 vi.mock("next/navigation", () => ({
@@ -69,14 +70,24 @@ describe("Public Pages English Copy Rendering", () => {
     }
   });
 
-  it("renders ProfilePage with English identity, wallet, and collection placeholders", () => {
-    const { container } = render(<ProfilePage />);
+  it("renders ProfilePage with live SIWE wallet card and remaining placeholders", () => {
+    // The wallet card uses wagmi hooks, so it needs the real providers.
+    const { container } = render(
+      <Providers>
+        <ProfilePage />
+      </Providers>,
+    );
     expect(screen.getByText("User Profile")).toBeInTheDocument();
     expect(screen.getByText("Web3 Wallet")).toBeInTheDocument();
+    expect(screen.getByText("Sign in with Ethereum (SIWE)")).toBeInTheDocument();
     expect(screen.getByText("X (Twitter) Identity")).toBeInTheDocument();
+    expect(screen.getByText("X OAuth Not Active Yet")).toBeInTheDocument();
     expect(screen.getByText("Community Tier & Whitelist Status")).toBeInTheDocument();
     expect(screen.getByText("Collection & Inventory")).toBeInTheDocument();
     expect(screen.getByText("Inventory Empty")).toBeInTheDocument();
+    // The Stage 1 wallet placeholder is gone.
+    expect(screen.queryByText(/Connect Wallet \(Placeholder\)/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/0x000\.\.\.0000/i)).not.toBeInTheDocument();
 
     for (const pattern of INDONESIAN_UI_WORDS) {
       expect(container.textContent).not.toMatch(pattern);

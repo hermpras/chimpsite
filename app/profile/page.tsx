@@ -1,6 +1,6 @@
 "use client";
 
-import { User, Wallet, Shield, AlertTriangle, Sparkles } from "lucide-react";
+import { User, Shield, AlertTriangle, Sparkles } from "lucide-react";
 
 function XLogo(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { PlaceholderNotice } from "@/components/ui/PlaceholderNotice";
+import { WalletConnectCard } from "@/components/auth/WalletConnectCard";
 
 export default function ProfilePage() {
   return (
@@ -36,44 +37,15 @@ export default function ProfilePage() {
 
       <div className="mb-8">
         <PlaceholderNotice
-          title="Authentication Not Active"
-          description="Sign-In with Ethereum (SIWE) and X OAuth 2.0 authentication flows are intentionally disabled until Stage 2."
-          phase="Stage 1 Placeholder"
+          title="X OAuth Not Active Yet"
+          description="Sign-In with Ethereum (SIWE) is now active — connect your wallet below. X (Twitter) OAuth 2.0 account linking is still pending."
+          phase="Stage 2 In Progress"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Wallet Connection Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-400">
-                <Wallet className="h-5 w-5" />
-              </div>
-              <div>
-                <CardTitle>Web3 Wallet</CardTitle>
-                <CardDescription>User wallet connection status</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border border-dashed border-gray-700 bg-gray-900/40 p-4 text-center">
-              <p className="text-sm font-medium text-gray-400">Status: Not Connected</p>
-              <p className="mt-1 font-mono text-xs text-gray-500">
-                0x000...0000 (Placeholder)
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() =>
-                alert("Connect Wallet feature is not enabled yet (Stage placeholder).")
-              }
-            >
-              Connect Wallet (Placeholder)
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Wallet Connection Section — live SIWE login (Stage 2) */}
+        <WalletConnectCard />
 
         {/* X (Twitter) Account Section */}
         <Card>
