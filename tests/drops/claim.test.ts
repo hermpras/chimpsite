@@ -17,6 +17,7 @@ function createMockPrisma() {
     claims: [] as any[],
     inventoryItems: [] as any[],
     traits: [] as any[],
+    auditLogs: [] as any[],
   };
 
   const hooks = {
@@ -177,6 +178,13 @@ function createMockPrisma() {
           store.inventoryItems.push(record);
           uncommittedItems.push(record);
           return record;
+        }),
+      },
+      auditLog: {
+        create: vi.fn(async ({ data }: any) => {
+          const r = { id: `audit-${store.auditLogs.length + 1}`, ...data };
+          store.auditLogs.push(r);
+          return r;
         }),
       },
     };
@@ -612,6 +620,28 @@ describe("Drop Claim Engine", () => {
 
       expect(mockPrisma._store.claims).toHaveLength(2);
       expect(mockPrisma._store.inventoryItems).toHaveLength(2);
+    });
+
+    it("records DROP_CLAIM_MINTED in AuditLog", async () => {
+      const res = await claimDrop(mockPrisma, {
+        userId: "user-audit-1",
+        dropId: "drop-1",
+        periodId: "period-1",
+        now: baseTime,
+        ipAddress: "192.168.1.1",
+        userAgent: "ChimpBrowser/1.0",
+      });
+
+      const auditRecord = mockPrisma._store.auditLogs.find(
+        (log: any) => log.action === "DROP_CLAIM_MINTED" && log.entityId === res.claim.id,
+      );
+      expect(auditRecord).toBeDefined();
+      expect(auditRecord.actorId).toBe("user-audit-1");
+      expect(auditRecord.actorIp).toBe("192.168.1.1");
+      expect(auditRecord.userAgent).toBe("ChimpBrowser/1.0");
+      expect(auditRecord.entityType).toBe("Claim");
+      expect(auditRecord.newValues.dropId).toBe("drop-1");
+      expect(auditRecord.newValues.periodId).toBe("period-1");
     });
   });
 });

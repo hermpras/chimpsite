@@ -22,6 +22,7 @@ function createMockPrisma() {
     queueEntries: [] as any[],
     slots: [] as any[],
     statusHistories: [] as any[],
+    auditLogs: [] as any[],
   };
 
   const tx = {
@@ -314,6 +315,13 @@ function createMockPrisma() {
       create: vi.fn(async ({ data }: any) => {
         const record = { id: `hist-${store.statusHistories.length + 1}`, ...data };
         store.statusHistories.push(record);
+        return record;
+      }),
+    },
+    auditLog: {
+      create: vi.fn(async ({ data }: any) => {
+        const record = { id: `audit-${store.auditLogs.length + 1}`, ...data };
+        store.auditLogs.push(record);
         return record;
       }),
     },
@@ -971,5 +979,78 @@ describe("Whitelist Lifecycle & Qualification Engine", () => {
     // Slot record in store remains ALLOCATED
     const storedSlot = mockPrisma._store.slots.find((s) => s.userId === "dave");
     expect(storedSlot?.status).toBe("ALLOCATED");
+  });
+
+  describe("Audit Log Verification", () => {
+    it("records WL_SLOT_ALLOCATED when user qualifies directly into a slot", async () => {
+      setupFullQualifiedUser("audit-user-1");
+
+      const res = await evaluateUserQualification(mockPrisma, {
+        userId: "audit-user-1",
+        programId: "program-1",
+        now: baseTime,
+      });
+
+      expect(res.phase).toBe("SLOT_ALLOCATED");
+      const log = mockPrisma._store.auditLogs.find(
+        (l: any) => l.action === "WL_SLOT_ALLOCATED" && l.actorId === "audit-user-1",
+      );
+      expect(log).toBeDefined();
+      expect(log.entityType).toBe("WLSlot");
+      expect(log.newValues.slotNumber).toBe(res.slotNumber);
+    });
+
+    it("records WL_DISQUALIFIED when previously qualified user fails requirements", async () => {
+      // User is currently QUALIFIED
+      mockPrisma._store.users.push({
+        id: "audit-user-2",
+        wallet: { address: "0xqual..." },
+        xIdentity: null, // missing X
+        banRecords: [],
+      });
+      mockPrisma._store.qualifications.push({
+        id: "qual-audit-2",
+        programId: "program-1",
+        userId: "audit-user-2",
+        status: "QUALIFIED",
+        qualifiedAt: baseTime,
+      });
+
+      await evaluateUserQualification(mockPrisma, {
+        userId: "audit-user-2",
+        programId: "program-1",
+        now: new Date(baseTime.getTime() + 1000),
+      });
+
+      const log = mockPrisma._store.auditLogs.find(
+        (l: any) => l.action === "WL_DISQUALIFIED" && l.actorId === "audit-user-2",
+      );
+      expect(log).toBeDefined();
+      expect(log.entityType).toBe("WLQualification");
+      expect(log.entityId).toBe("qual-audit-2");
+      expect(log.newValues.status).toBe("DISQUALIFIED");
+    });
+
+    it("records WL_SLOT_ALLOCATED_QUEUE when queue reconciler allocates a slot", async () => {
+      setupFullQualifiedUser("audit-queue-user");
+      mockPrisma._store.queueEntries.push({
+        id: "qe-audit-1",
+        programId: "program-1",
+        userId: "audit-queue-user",
+        queueNumber: 1,
+        status: "WAITING",
+        joinedAt: baseTime,
+      });
+
+      const res = await reconcileQueueSlots(mockPrisma, "program-1", new Date(baseTime.getTime() + 2000));
+      expect(res.slotsFilled).toBe(1);
+
+      const log = mockPrisma._store.auditLogs.find(
+        (l: any) => l.action === "WL_SLOT_ALLOCATED_QUEUE" && l.actorId === "audit-queue-user",
+      );
+      expect(log).toBeDefined();
+      expect(log.entityType).toBe("WLSlot");
+      expect(log.newValues.queueNumber).toBe(1);
+    });
   });
 });

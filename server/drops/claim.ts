@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { isWithinClaimWindow } from "./schedule";
+import { recordAuditLog } from "../audit/audit";
 
 export class DropClaimError extends Error {
   code: string;
@@ -183,9 +184,10 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
             userId: input.userId,
             isActive: true,
             scope: { in: ["FULL_SYSTEM", "CLAIM_RESTRICTED"] },
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
           },
         });
-        if (activeBan) {
+        if (activeBan && (!activeBan.expiresAt || activeBan.expiresAt > now)) {
           throw new DropClaimError(
             "USER_BANNED_FROM_CLAIMS",
             "Your account is restricted from claiming drops.",
@@ -332,6 +334,19 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
           include: { trait: true },
         });
 
+        // Re-verify period status to prevent race conditions with concurrent emergency close
+        const activePeriodCheck = await tx.dropPeriod.findUnique({
+          where: { id: input.periodId },
+          select: { status: true },
+        });
+        if (!activePeriodCheck || activePeriodCheck.status !== "ACTIVE") {
+          throw new DropClaimError(
+            "PERIOD_CANCELLED",
+            "The drop period is closed or has been cancelled by an administrator.",
+            410,
+          );
+        }
+
         // 10. Record Claim
         const claim = await tx.claim.create({
           data: {
@@ -344,6 +359,23 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
             claimedAt: now,
             ipAddress: input.ipAddress ?? null,
             userAgent: input.userAgent ?? null,
+          },
+        });
+
+        await recordAuditLog(tx, {
+          actorId: input.userId,
+          actorIp: input.ipAddress ?? null,
+          userAgent: input.userAgent ?? null,
+          action: "DROP_CLAIM_MINTED",
+          entityType: "Claim",
+          entityId: claim.id,
+          newValues: {
+            dropId: input.dropId,
+            periodId: input.periodId,
+            dropPoolItemId: winningItem.id,
+            inventoryItemId: inventoryItem.id,
+            traitId: winningItem.traitId,
+            edition: nextEdition,
           },
         });
 
@@ -384,3 +416,10 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
     409,
   );
 }
+
+export {
+  emergencyCloseDropPeriod,
+  emergencyCloseDropWindow,
+  type EmergencyCloseDropInput,
+  type EmergencyCloseDropResult,
+} from "./emergency-close";

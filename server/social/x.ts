@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import crypto from "node:crypto";
 import { sealData, unsealData } from "iron-session";
 import { getSessionOptions } from "@/lib/auth/session";
+import { recordAuditLog } from "../audit/audit";
 
 export const X_OAUTH_COOKIE_NAME = "chimphood_x_oauth";
 export const X_OAUTH_COOKIE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -293,22 +294,46 @@ export async function linkXAccountWithCode(
     );
   }
 
-  // Upsert X identity for the user
-  const xIdentity = await prisma.xIdentity.upsert({
-    where: { userId: input.userId },
-    create: {
-      userId: input.userId,
-      xId,
-      username,
-      name: meData.data.name ?? null,
-      profileImageUrl: meData.data.profile_image_url ?? null,
-    },
-    update: {
-      xId,
-      username,
-      name: meData.data.name ?? null,
-      profileImageUrl: meData.data.profile_image_url ?? null,
-    },
+  // Upsert X identity for the user and record audit log atomically
+  const runTransaction =
+    typeof (prisma as any).$transaction === "function"
+      ? (fn: (tx: any) => Promise<any>) => (prisma as any).$transaction(fn)
+      : (fn: (tx: any) => Promise<any>) => fn(prisma);
+
+  const xIdentity = await runTransaction(async (tx) => {
+    const record = await tx.xIdentity.upsert({
+      where: { userId: input.userId },
+      create: {
+        userId: input.userId,
+        xId,
+        username,
+        name: meData.data.name ?? null,
+        profileImageUrl: meData.data.profile_image_url ?? null,
+      },
+      update: {
+        xId,
+        username,
+        name: meData.data.name ?? null,
+        profileImageUrl: meData.data.profile_image_url ?? null,
+      },
+    });
+
+    await recordAuditLog(tx, {
+      actorId: input.userId,
+      action: "X_IDENTITY_LINKED",
+      entityType: "XIdentity",
+      entityId: record.id,
+      newValues: {
+        userId: input.userId,
+        xId,
+        username,
+      },
+      metadata: {
+        name: meData.data.name ?? null,
+      },
+    });
+
+    return record;
   });
 
   return xIdentity;

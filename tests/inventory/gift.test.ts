@@ -16,6 +16,7 @@ function createMockPrisma() {
     inventoryItems: [] as any[],
     traits: [] as any[],
     users: [] as any[],
+    auditLogs: [] as any[],
   };
 
   const banRecord = {
@@ -164,6 +165,17 @@ function createMockPrisma() {
               });
             }
             return item;
+          }),
+        },
+        auditLog: {
+          create: vi.fn(async ({ data }: any) => {
+            const r = { id: `audit-${store.auditLogs.length + 1}`, ...data };
+            store.auditLogs.push(r);
+            undoStack.push(() => {
+              const idx = store.auditLogs.indexOf(r);
+              if (idx !== -1) store.auditLogs.splice(idx, 1);
+            });
+            return r;
           }),
         },
       };
@@ -747,6 +759,35 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
       const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
       expect(item?.isLocked).toBe(false);
       expect(item?.ownerId).toBe("sender-1");
+    });
+
+    it("records GIFT_SENT and GIFT_ACCEPTED in AuditLog", async () => {
+      const createdGift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-1",
+        now: baseTime,
+      });
+
+      const sentLog = mockPrisma._store.auditLogs.find(
+        (log: any) => log.action === "GIFT_SENT" && log.entityId === createdGift.id,
+      );
+      expect(sentLog).toBeDefined();
+      expect(sentLog.actorId).toBe("sender-1");
+      expect(sentLog.entityType).toBe("Gift");
+
+      await acceptGift(mockPrisma, {
+        userId: "receiver-1",
+        giftId: createdGift.id,
+        now: new Date(baseTime.getTime() + 1000),
+      });
+
+      const acceptedLog = mockPrisma._store.auditLogs.find(
+        (log: any) => log.action === "GIFT_ACCEPTED" && log.entityId === createdGift.id,
+      );
+      expect(acceptedLog).toBeDefined();
+      expect(acceptedLog.actorId).toBe("receiver-1");
+      expect(acceptedLog.newValues.ownerId).toBe("receiver-1");
     });
   });
 });

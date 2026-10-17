@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { recordAuditLog } from "../audit/audit";
 
 export class GiftError extends Error {
   code: string;
@@ -55,9 +56,10 @@ export async function sendGift(prisma: PrismaClient, input: SendGiftInput) {
         userId: input.senderId,
         isActive: true,
         scope: { in: ["FULL_SYSTEM", "GIFT_RESTRICTED"] },
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       },
     });
-    if (senderBan) {
+    if (senderBan && (!senderBan.expiresAt || senderBan.expiresAt > now)) {
       throw new GiftError(
         "SENDER_GIFT_RESTRICTED",
         "Your account is restricted from gifting.",
@@ -70,9 +72,10 @@ export async function sendGift(prisma: PrismaClient, input: SendGiftInput) {
         userId: input.receiverId,
         isActive: true,
         scope: { in: ["FULL_SYSTEM", "GIFT_RESTRICTED"] },
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       },
     });
-    if (receiverBan) {
+    if (receiverBan && (!receiverBan.expiresAt || receiverBan.expiresAt > now)) {
       throw new GiftError(
         "RECEIVER_GIFT_RESTRICTED",
         "The recipient is restricted from receiving gifts.",
@@ -169,6 +172,20 @@ export async function sendGift(prisma: PrismaClient, input: SendGiftInput) {
         inventoryItem: { include: { trait: true } },
         sender: { include: { wallet: true } },
         receiver: { include: { wallet: true } },
+      },
+    });
+
+    await recordAuditLog(tx, {
+      actorId: input.senderId,
+      action: "GIFT_SENT",
+      entityType: "Gift",
+      entityId: gift.id,
+      newValues: {
+        senderId: input.senderId,
+        receiverId: input.receiverId,
+        inventoryItemId: item.id,
+        status: "PENDING",
+        expiresAt,
       },
     });
 
@@ -275,6 +292,27 @@ export async function acceptGift(prisma: PrismaClient, input: ResolveGiftInput) 
         lockReason: null,
       },
       include: { trait: true },
+    });
+
+    await recordAuditLog(tx, {
+      actorId: input.userId,
+      action: "GIFT_ACCEPTED",
+      entityType: "Gift",
+      entityId: gift.id,
+      oldValues: {
+        ownerId: gift.senderId,
+        status: "PENDING",
+      },
+      newValues: {
+        ownerId: input.userId,
+        status: "ACCEPTED",
+        inventoryItemId: gift.inventoryItemId,
+      },
+      metadata: {
+        senderId: gift.senderId,
+        receiverId: input.userId,
+        inventoryItemId: gift.inventoryItemId,
+      },
     });
 
     const updatedGift = await tx.gift.findUnique({

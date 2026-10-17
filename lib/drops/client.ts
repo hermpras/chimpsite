@@ -93,3 +93,20 @@ export async function resolveGiftItem(
   }
   return data;
 }
+
+export async function emergencyCloseDropWindow(
+  periodId: string,
+  dropId?: string,
+  reason?: string,
+) {
+  const res = await fetch("/api/drops/emergency-close", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ periodId, dropId, reason }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Emergency close failed.");
+  }
+  return data;
+}

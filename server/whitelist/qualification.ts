@@ -212,7 +212,12 @@ export async function evaluateUserQualification(
           include: {
             wallet: true,
             xIdentity: true,
-            banRecords: { where: { isActive: true } },
+            banRecords: {
+              where: {
+                isActive: true,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+              },
+            },
           },
         });
 
@@ -243,7 +248,10 @@ export async function evaluateUserQualification(
 
         // Check ban
         const isBanned = user.banRecords.some(
-          (b) => b.scope === "FULL_SYSTEM" || b.scope === "WL_DISQUALIFIED",
+          (b) =>
+            b.isActive &&
+            (!b.expiresAt || b.expiresAt > now) &&
+            (b.scope === "FULL_SYSTEM" || b.scope === "WL_DISQUALIFIED"),
         );
         if (isBanned) {
           missingRequirements.push("Account is banned or disqualified from Whitelist.");
@@ -521,6 +529,15 @@ export async function evaluateUserQualification(
                 metadata: { missingRequirements },
               },
             });
+            await recordAuditLog(tx, {
+              actorId: input.userId,
+              action: "WL_DISQUALIFIED",
+              entityType: "WLQualification",
+              entityId: existingQual.id,
+              oldValues: { status: "QUALIFIED" },
+              newValues: { status: "DISQUALIFIED", reason: missingRequirements.join("; ") },
+              metadata: { missingRequirements, programId: input.programId },
+            });
           }
 
           return {
@@ -642,6 +659,19 @@ export async function evaluateUserQualification(
                 toPhase: "SLOT_ALLOCATED",
                 action: "SLOT_ALLOCATED_CAPACITY_AVAILABLE",
                 metadata: { slotNumber: newSlot.slotNumber },
+              },
+            });
+
+            await recordAuditLog(tx, {
+              actorId: input.userId,
+              action: "WL_SLOT_ALLOCATED",
+              entityType: "WLSlot",
+              entityId: newSlot.id,
+              newValues: {
+                programId: input.programId,
+                slotNumber: newSlot.slotNumber,
+                status: "ALLOCATED",
+                allocatedBy: "QUALIFICATION_ENGINE",
               },
             });
 
@@ -867,7 +897,7 @@ export async function reconcileQueueSlots(
             break;
           }
 
-          await tx.wLSlot.create({
+          const allocatedSlot = await tx.wLSlot.create({
             data: {
               programId,
               userId: entry.userId,
@@ -886,6 +916,20 @@ export async function reconcileQueueSlots(
               toPhase: "SLOT_ALLOCATED",
               action: "RECONCILED_FROM_QUEUE",
               metadata: { slotNumber, queueNumber: entry.queueNumber },
+            },
+          });
+
+          await recordAuditLog(tx, {
+            actorId: entry.userId,
+            action: "WL_SLOT_ALLOCATED_QUEUE",
+            entityType: "WLSlot",
+            entityId: allocatedSlot.id,
+            newValues: {
+              programId,
+              slotNumber,
+              status: "ALLOCATED",
+              allocatedBy: "QUEUE_RECONCILER",
+              queueNumber: entry.queueNumber,
             },
           });
 
@@ -942,3 +986,12 @@ export async function getUserQualificationStatus(
     readOnly: true,
   });
 }
+
+export {
+  revokeWlSlot,
+  revokeSlot,
+  WlSlotRevokeError,
+  AdminSlotRevokeError,
+  type RevokeWlSlotInput,
+  type RevokeWlSlotResult,
+} from "./revoke";

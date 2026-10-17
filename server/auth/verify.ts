@@ -181,7 +181,48 @@ export async function verifySiweLogin(
   const wallet = await findOrCreateWalletIdentity(prisma, verifiedAddress, chainId);
 
   // 5. Banned users cannot obtain a session.
-  if (wallet.user.isBanned) {
+  let isSuspended = wallet.user.isBanned;
+
+  if (isSuspended && (prisma as any).banRecord) {
+    // If user.isBanned was previously set to true, verify whether there is still an active unexpired FULL_SYSTEM ban
+    const activeFullBan = await (prisma as any).banRecord.findFirst({
+      where: {
+        userId: wallet.user.id,
+        isActive: true,
+        scope: "FULL_SYSTEM",
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+    });
+
+    const anyBanRecord = await (prisma as any).banRecord.findFirst({
+      where: { userId: wallet.user.id },
+    });
+
+    // If the user has ban history but NO active/unexpired FULL_SYSTEM ban remains, auto-heal user.isBanned
+    if (!activeFullBan && anyBanRecord) {
+      isSuspended = false;
+      if ((prisma as any).user?.update) {
+        await (prisma as any).user.update({
+          where: { id: wallet.user.id },
+          data: { isBanned: false },
+        });
+      }
+    }
+  } else if (!isSuspended && (prisma as any).banRecord) {
+    const activeBan = await (prisma as any).banRecord.findFirst({
+      where: {
+        userId: wallet.user.id,
+        isActive: true,
+        scope: "FULL_SYSTEM",
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+    });
+    if (activeBan && (!activeBan.expiresAt || activeBan.expiresAt > now)) {
+      isSuspended = true;
+    }
+  }
+
+  if (isSuspended) {
     throw new SiweAuthError("ACCOUNT_SUSPENDED", 403);
   }
 

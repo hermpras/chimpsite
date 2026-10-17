@@ -13,7 +13,7 @@
  * imported dynamically so loading this module never touches the request
  * scope (mirrors the route testability convention).
  */
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, AdminRoleType } from "@prisma/client";
 import {
   generateSessionToken,
   hashSessionToken,
@@ -169,4 +169,182 @@ export async function destroySessionCookie(): Promise<void> {
   const { getIronSession } = await import("iron-session");
   const session = await getIronSession<SessionData>(await cookies(), getSessionOptions());
   session.destroy();
+}
+
+export class AdminAuthError extends Error {
+  code: "UNAUTHORIZED" | "FORBIDDEN";
+  status: 401 | 403;
+
+  constructor(code: "UNAUTHORIZED" | "FORBIDDEN", message: string, status: 401 | 403) {
+    super(message);
+    this.name = "AdminAuthError";
+    this.code = code;
+    this.status = status;
+  }
+
+  toResponse(): Response {
+    return Response.json(
+      { error: this.code, message: this.message },
+      { status: this.status },
+    );
+  }
+}
+
+export interface ValidatedAdminRole {
+  id: string;
+  userId: string;
+  roleType: AdminRoleType;
+  permissions: string[];
+  assignedBy?: string | null;
+}
+
+export interface ValidatedAdminSession extends ValidatedSession {
+  adminRole: ValidatedAdminRole;
+}
+
+export interface RequireAdminSessionOptions {
+  /** Required specific permission, e.g. "MANAGE_DROPS", "MANAGE_WL", "MANAGE_BANS". */
+  requiredPermission?: string;
+  /** Required minimum role type, e.g. "SUPER_ADMIN", "ADMIN", "MODERATOR". */
+  requiredRole?: AdminRoleType;
+  /** Optional pre-validated session to avoid duplicate cookie / DB lookups. */
+  session?: ValidatedSession | null;
+}
+
+export type RequireAdminSessionInput = string | RequireAdminSessionOptions;
+
+export type AdminAuthCheckResult =
+  | {
+      ok: true;
+      session: ValidatedAdminSession;
+    }
+  | {
+      ok: false;
+      error: "UNAUTHORIZED" | "FORBIDDEN";
+      status: 401 | 403;
+      message: string;
+    };
+
+export const ADMIN_ROLE_LEVELS: Record<AdminRoleType | string, number> = {
+  SUPER_ADMIN: 3,
+  ADMIN: 2,
+  MODERATOR: 1,
+  AUDITOR: 0,
+};
+
+/**
+ * Validates request session and verifies that the authenticated user possesses
+ * the required AdminRole and permissions in the database.
+ * Returns a result object ({ ok: true, session } or { ok: false, error, status, message }).
+ */
+export async function checkAdminSession(
+  prisma: PrismaClient,
+  input?: RequireAdminSessionInput,
+): Promise<AdminAuthCheckResult> {
+  const options: RequireAdminSessionOptions =
+    typeof input === "string" ? { requiredPermission: input } : (input ?? {});
+
+  // 1. Authenticate session (use provided session or authenticate current request)
+  let session: ValidatedSession | null;
+  if (options.session !== undefined) {
+    session = options.session;
+  } else {
+    session = await authenticateRequest(prisma);
+  }
+
+  if (!session) {
+    return {
+      ok: false,
+      error: "UNAUTHORIZED",
+      status: 401,
+      message: "Authentication required to access admin resources.",
+    };
+  }
+
+  // 2. Query database for AdminRole record (untrusted client data is never used)
+  const roleRecord = await prisma.adminRole.findUnique({
+    where: { userId: session.userId },
+    select: {
+      id: true,
+      userId: true,
+      roleType: true,
+      permissions: true,
+      assignedBy: true,
+    },
+  });
+
+  if (!roleRecord) {
+    return {
+      ok: false,
+      error: "FORBIDDEN",
+      status: 403,
+      message: "Admin access required. No admin role assigned to this account.",
+    };
+  }
+
+  const roleType = roleRecord.roleType as AdminRoleType;
+  const permissions: string[] = Array.isArray(roleRecord.permissions)
+    ? roleRecord.permissions
+    : [];
+
+  // 3. Verify required role level if specified
+  if (options.requiredRole) {
+    const userLevel = ADMIN_ROLE_LEVELS[roleType] ?? -1;
+    const requiredLevel = ADMIN_ROLE_LEVELS[options.requiredRole] ?? 999;
+    if (userLevel < requiredLevel) {
+      return {
+        ok: false,
+        error: "FORBIDDEN",
+        status: 403,
+        message: `Insufficient role level: requires ${options.requiredRole}, account has ${roleType}.`,
+      };
+    }
+  }
+
+  // 4. Verify required permission if specified
+  if (options.requiredPermission) {
+    const isSuperAdmin = roleType === "SUPER_ADMIN";
+    const hasWildcard = permissions.includes("*");
+    const hasSpecificPermission = permissions.includes(options.requiredPermission);
+
+    if (!isSuperAdmin && !hasWildcard && !hasSpecificPermission) {
+      return {
+        ok: false,
+        error: "FORBIDDEN",
+        status: 403,
+        message: `Missing required admin permission: ${options.requiredPermission}.`,
+      };
+    }
+  }
+
+  const validatedAdminRole: ValidatedAdminRole = {
+    id: roleRecord.id,
+    userId: roleRecord.userId,
+    roleType,
+    permissions,
+    assignedBy: roleRecord.assignedBy ?? null,
+  };
+
+  return {
+    ok: true,
+    session: {
+      ...session,
+      adminRole: validatedAdminRole,
+    },
+  };
+}
+
+/**
+ * Requires a valid authenticated admin session with the specified permissions/role.
+ * Throws AdminAuthError with status 401 (UNAUTHORIZED) or 403 (FORBIDDEN).
+ */
+export async function requireAdminSession(
+  prisma: PrismaClient,
+  input?: RequireAdminSessionInput,
+): Promise<ValidatedAdminSession> {
+  const result = await checkAdminSession(prisma, input);
+  if (!result.ok) {
+    throw new AdminAuthError(result.error, result.message, result.status);
+  }
+  return result.session;
 }

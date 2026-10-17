@@ -167,16 +167,21 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
         }),
       });
 
+      const mockAuditCreate = vi.fn().mockResolvedValue({ id: "audit-1" });
       const mockPrisma = {
         xIdentity: {
           findUnique: vi.fn().mockResolvedValue(null),
           upsert: vi.fn().mockResolvedValue({
+            id: "x-ident-1",
             userId: "user-1",
             xId: "x-123456",
             username: "chimphood_fan",
             name: "Chimp Fan",
             profileImageUrl: "https://x.com/avatar.png",
           }),
+        },
+        auditLog: {
+          create: mockAuditCreate,
         },
       } as unknown as PrismaClient;
 
@@ -189,6 +194,20 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
       expect(result.xId).toBe("x-123456");
       expect(result.username).toBe("chimphood_fan");
       expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockAuditCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          actorId: "user-1",
+          action: "X_IDENTITY_LINKED",
+          entityType: "XIdentity",
+          entityId: "x-ident-1",
+          newValues: {
+            userId: "user-1",
+            xId: "x-123456",
+            username: "chimphood_fan",
+          },
+        }),
+        select: { id: true },
+      });
     });
 
     it("rejects linking if X account is already linked to another profile (409)", async () => {

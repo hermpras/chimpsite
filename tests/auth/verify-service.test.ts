@@ -40,6 +40,12 @@ interface FakeSessionRow {
   ipAddress?: string;
   userAgent?: string;
 }
+interface FakeBanRecordRow {
+  userId: string;
+  isActive: boolean;
+  scope: string;
+  expiresAt: Date | null;
+}
 
 /** Fake Prisma store with honest conditional-update semantics for siweNonce. */
 function makeFakePrisma() {
@@ -127,8 +133,45 @@ function makeFakePrisma() {
     ),
   };
 
-  const prisma = { siweNonce, walletIdentity, authSession } as unknown as PrismaClient;
-  return { prisma, nonces, wallets, sessions };
+  const bans: FakeBanRecordRow[] = [];
+  const banRecord = {
+    findFirst: vi.fn(async (args: any) => {
+      const now = new Date();
+      return (
+        bans.find((b) => {
+          if (b.userId !== args.where.userId) return false;
+          if (args.where.isActive !== undefined && b.isActive !== args.where.isActive) return false;
+          if (args.where.scope && b.scope !== args.where.scope) return false;
+          if (args.where.OR && b.expiresAt) {
+            const gtObj = args.where.OR.find((cond: any) => cond.expiresAt?.gt);
+            if (gtObj && gtObj.expiresAt.gt >= b.expiresAt) return false;
+          }
+          return true;
+        }) || null
+      );
+    }),
+  };
+
+  const user = {
+    update: vi.fn(async (args: any) => {
+      for (const w of wallets.values()) {
+        if (w.user.id === args.where.id) {
+          Object.assign(w.user, args.data);
+          return w.user;
+        }
+      }
+      return null;
+    }),
+  };
+
+  const prisma = {
+    siweNonce,
+    walletIdentity,
+    authSession,
+    banRecord,
+    user,
+  } as unknown as PrismaClient;
+  return { prisma, nonces, wallets, sessions, bans };
 }
 
 function seedNonce(
@@ -430,6 +473,88 @@ describe("verifySiweLogin", () => {
       address,
       chainId: 1,
       user: { id: "user_banned", isBanned: true },
+    });
+
+    await expectSiweError(
+      verifySiweLogin(prisma, { message, signature }, VERIFY_OPTS),
+      "ACCOUNT_SUSPENDED",
+      403,
+    );
+    expect(sessions).toHaveLength(0);
+  });
+
+  it("rejects login when active unexpired temporary FULL_SYSTEM ban is present", async () => {
+    const { prisma, nonces, wallets, sessions, bans } = makeFakePrisma();
+    const signer = Wallet.createRandom();
+    const address = signer.address.toLowerCase();
+    const row = seedNonce(nonces);
+    const { message, signature } = await signLogin(signer, row.nonce);
+    wallets.set(address, {
+      address,
+      chainId: 1,
+      user: { id: "user_temp_active", isBanned: false },
+    });
+    bans.push({
+      userId: "user_temp_active",
+      isActive: true,
+      scope: "FULL_SYSTEM",
+      expiresAt: new Date(Date.now() + 3600_000), // in the future
+    });
+
+    await expectSiweError(
+      verifySiweLogin(prisma, { message, signature }, VERIFY_OPTS),
+      "ACCOUNT_SUSPENDED",
+      403,
+    );
+    expect(sessions).toHaveLength(0);
+  });
+
+  it("allows login and clears isBanned after temporary FULL_SYSTEM ban expires", async () => {
+    const { prisma, nonces, wallets, sessions, bans } = makeFakePrisma();
+    const signer = Wallet.createRandom();
+    const address = signer.address.toLowerCase();
+    const row = seedNonce(nonces);
+    const { message, signature } = await signLogin(signer, row.nonce);
+    wallets.set(address, {
+      address,
+      chainId: 1,
+      user: { id: "user_temp_expired", isBanned: true },
+    });
+    bans.push({
+      userId: "user_temp_expired",
+      isActive: true,
+      scope: "FULL_SYSTEM",
+      expiresAt: new Date(Date.now() - 10_000), // in the past
+    });
+
+    const res = await verifySiweLogin(prisma, { message, signature }, VERIFY_OPTS);
+    expect(res.userId).toBe("user_temp_expired");
+    expect(wallets.get(address)!.user.isBanned).toBe(false); // auto-healed!
+    expect(sessions).toHaveLength(1);
+  });
+
+  it("overlapping bans: expired temporary ban does not unblock an active permanent ban", async () => {
+    const { prisma, nonces, wallets, sessions, bans } = makeFakePrisma();
+    const signer = Wallet.createRandom();
+    const address = signer.address.toLowerCase();
+    const row = seedNonce(nonces);
+    const { message, signature } = await signLogin(signer, row.nonce);
+    wallets.set(address, {
+      address,
+      chainId: 1,
+      user: { id: "user_overlap", isBanned: true },
+    });
+    bans.push({
+      userId: "user_overlap",
+      isActive: true,
+      scope: "FULL_SYSTEM",
+      expiresAt: new Date(Date.now() - 10_000), // expired temporary ban
+    });
+    bans.push({
+      userId: "user_overlap",
+      isActive: true,
+      scope: "FULL_SYSTEM",
+      expiresAt: null, // permanent active ban
     });
 
     await expectSiweError(
