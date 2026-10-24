@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { submitTaskEvidence, getTaskEvidence } from "@/lib/tasks/client";
+import {
+  submitTaskEvidence,
+  getTaskEvidence,
+  fetchActiveTasks,
+} from "@/lib/tasks/client";
 
 describe("Task Evidence Client (lib/tasks/client.ts)", () => {
   beforeEach(() => {
@@ -102,6 +106,75 @@ describe("Task Evidence Client (lib/tasks/client.ts)", () => {
       await expect(getTaskEvidence("task_123", { userId: "other" })).rejects.toThrow(
         "Not authorized",
       );
+    });
+  });
+
+  describe("fetchActiveTasks()", () => {
+    it("calls GET /api/tasks without query params by default", async () => {
+      const mockResponse = {
+        configured: true,
+        campaigns: [
+          {
+            id: "c1",
+            slug: "early-bird",
+            title: "Early Bird",
+            status: "ACTIVE",
+            tasks: [
+              {
+                id: "t1",
+                taskCode: "T1",
+                title: "Follow X",
+                isRequired: true,
+              },
+            ],
+          },
+        ],
+      };
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await fetchActiveTasks();
+
+      expect(fetchSpy).toHaveBeenCalledWith("/api/tasks", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it("appends ?programSlug= when programSlug option is passed", async () => {
+      const mockResponse = {
+        configured: true,
+        campaigns: [],
+      };
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await fetchActiveTasks("custom-slug");
+
+      expect(fetchSpy).toHaveBeenCalledWith("/api/tasks?programSlug=custom-slug", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it("throws error on non-ok response", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({
+          error: "SERVER_ERROR",
+          message: "Internal server error",
+        }),
+      } as Response);
+
+      await expect(fetchActiveTasks()).rejects.toThrow("Internal server error");
     });
   });
 });
