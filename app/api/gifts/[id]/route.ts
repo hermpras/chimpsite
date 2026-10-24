@@ -1,7 +1,13 @@
 import { prisma } from "@/server/db";
 import { authenticateRequest } from "@/server/auth/session";
 import { acceptGift, rejectOrCancelGift, GiftError } from "@/server/inventory/gift";
+import { safeTriggerAvatarUpdate } from "@/server/inventory/avatar-renderer";
 import { readLimitedBody } from "@/lib/auth/body-limit";
+import {
+  checkRateLimit,
+  GIFTS_RESOLVE_RATE_LIMIT_MAX,
+  GIFTS_RESOLVE_RATE_LIMIT_WINDOW_MS,
+} from "@/lib/auth/rate-limit";
 
 export async function POST(
   request: Request,
@@ -15,6 +21,36 @@ export async function POST(
   const { id: giftId } = await props.params;
   if (!giftId) {
     return Response.json({ error: "MISSING_ID" }, { status: 400 });
+  }
+
+  try {
+    const rateLimitKey = `gifts-resolve:${session.address || session.userId}`;
+    const limit = await checkRateLimit(
+      rateLimitKey,
+      GIFTS_RESOLVE_RATE_LIMIT_MAX,
+      GIFTS_RESOLVE_RATE_LIMIT_WINDOW_MS,
+    );
+    if (!limit.allowed) {
+      return Response.json(
+        {
+          error: "RATE_LIMITED",
+          message: "Too many gift resolution requests. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limit.retryAfterSeconds) },
+        },
+      );
+    }
+  } catch (err: unknown) {
+    console.error(`POST /api/gifts/${giftId} rate limit failure:`, err);
+    return Response.json(
+      {
+        error: "SERVER_ERROR",
+        message: "Rate limit service temporarily unavailable.",
+      },
+      { status: 500 },
+    );
   }
 
   const bodyResult = await readLimitedBody(request);
@@ -43,6 +79,13 @@ export async function POST(
         userId: session.userId,
         giftId,
       });
+
+      // Task 3-C: Trigger avatar update for recipient and sender
+      safeTriggerAvatarUpdate(prisma, session.userId);
+      if (result.gift?.senderId) {
+        safeTriggerAvatarUpdate(prisma, result.gift.senderId);
+      }
+
       return Response.json({ success: true, result });
     } else {
       const result = await rejectOrCancelGift(prisma, {

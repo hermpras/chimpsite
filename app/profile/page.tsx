@@ -26,11 +26,20 @@ import {
   fetchWhitelistStatus,
   type WhitelistStatusResponse,
 } from "@/lib/whitelist/client";
+import { fetchUserInventory, type InventoryItemData } from "@/lib/inventory/client";
+import { TraitGrid } from "@/components/inventory/TraitGrid";
 
 export default function ProfilePage() {
   const { status, sessionAddress, walletAddress } = useSiweAuth();
   const address = sessionAddress || walletAddress;
   const [wlData, setWlData] = useState<WhitelistStatusResponse | null>(null);
+  const [loadedAddress, setLoadedAddress] = useState<string | null>(null);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemData[]>([]);
+  const [inventoryError, setInventoryError] = useState<string | null>(null);
+
+  const isInventoryLoading = Boolean(
+    address && loadedAddress !== address && !inventoryError,
+  );
 
   useEffect(() => {
     if (status === "authenticated" && address) {
@@ -39,6 +48,30 @@ export default function ProfilePage() {
         .catch((err) => console.error("Error fetching profile WL status:", err));
     }
   }, [status, address]);
+
+  useEffect(() => {
+    let ignore = false;
+    if (address) {
+      fetchUserInventory(address)
+        .then((data) => {
+          if (!ignore) {
+            setInventoryItems(data.items || []);
+            setLoadedAddress(address);
+            setInventoryError(null);
+          }
+        })
+        .catch((err) => {
+          if (!ignore) {
+            console.error("Error fetching profile inventory:", err);
+            setInventoryError(err.message || "Failed to load inventory.");
+            setLoadedAddress(address);
+          }
+        });
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [address]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
@@ -178,19 +211,58 @@ export default function ProfilePage() {
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline">Inventory Empty</Badge>
+              {isInventoryLoading ? (
+                <Badge variant="outline">Loading...</Badge>
+              ) : inventoryError ? (
+                <Badge variant="warning">Inventory Error</Badge>
+              ) : inventoryItems.length > 0 ? (
+                <Badge variant="default">
+                  {inventoryItems.length} {inventoryItems.length === 1 ? "Item" : "Items"}
+                </Badge>
+              ) : (
+                <Badge variant="outline">Inventory Empty</Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border border-dashed border-gray-800 bg-gray-900/40 p-6 text-center">
-              <p className="text-sm font-medium text-gray-400">
-                No items or traits found in your inventory
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Drops, trait claims, and peer-to-peer gifts will appear in your collection
-                once active.
-              </p>
-            </div>
+            {isInventoryLoading ? (
+              <div
+                data-testid="inventory-loading"
+                className="rounded-lg border border-gray-800 bg-gray-900/40 p-6 text-center"
+              >
+                <p className="text-sm font-medium text-gray-400">
+                  Loading your inventory...
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Fetching collected traits and items.
+                </p>
+              </div>
+            ) : inventoryError ? (
+              <div
+                data-testid="inventory-error"
+                className="rounded-lg border border-rose-900/30 bg-rose-950/20 p-6 text-center"
+              >
+                <p className="text-sm font-medium text-rose-400">
+                  Unable to load inventory
+                </p>
+                <p className="mt-1 text-xs text-gray-400">{inventoryError}</p>
+              </div>
+            ) : inventoryItems.length > 0 ? (
+              <TraitGrid items={inventoryItems} />
+            ) : (
+              <div
+                data-testid="inventory-empty"
+                className="rounded-lg border border-dashed border-gray-800 bg-gray-900/40 p-6 text-center"
+              >
+                <p className="text-sm font-medium text-gray-400">
+                  No items or traits found in your inventory
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Drops, trait claims, and peer-to-peer gifts will appear in your
+                  collection once active.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

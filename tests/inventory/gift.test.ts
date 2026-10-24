@@ -19,6 +19,10 @@ function createMockPrisma() {
     auditLogs: [] as any[],
   };
 
+  const hooks = {
+    onAuditCreate: null as ((data: any) => Promise<void> | void) | null,
+  };
+
   const banRecord = {
     findFirst: vi.fn(async ({ where }: any) => {
       return (
@@ -169,6 +173,9 @@ function createMockPrisma() {
         },
         auditLog: {
           create: vi.fn(async ({ data }: any) => {
+            if (hooks.onAuditCreate) {
+              await hooks.onAuditCreate(data);
+            }
             const r = { id: `audit-${store.auditLogs.length + 1}`, ...data };
             store.auditLogs.push(r);
             undoStack.push(() => {
@@ -190,9 +197,13 @@ function createMockPrisma() {
       }
     }),
     _store: store,
+    _hooks: hooks,
   };
 
-  return prisma as unknown as PrismaClient & { _store: typeof store };
+  return prisma as unknown as PrismaClient & {
+    _store: typeof store;
+    _hooks: typeof hooks;
+  };
 }
 
 describe("Gift Engine (Separate Inventory Workflow)", () => {
@@ -344,6 +355,93 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
     );
     expect(storedItem?.acquiredVia).toBe("GIFT");
     expect(storedItem?.ownerId).toBe("receiver-1");
+  });
+
+  it("Task 5-C: rejects acceptance with 403 when recipient is banned with FULL_SYSTEM before acceptance", async () => {
+    const gift = await sendGift(mockPrisma, {
+      senderId: "sender-1",
+      receiverId: "receiver-1",
+      inventoryItemId: "item-hat-2",
+      now: baseTime,
+    });
+
+    // Ban recipient with FULL_SYSTEM after gift was created
+    mockPrisma._store.bans.push({
+      id: "ban-recv-1",
+      userId: "receiver-1",
+      isActive: true,
+      scope: "FULL_SYSTEM",
+      expiresAt: null,
+    });
+
+    await expect(
+      acceptGift(mockPrisma, {
+        userId: "receiver-1",
+        giftId: gift.id,
+        now: new Date("2026-10-16T15:00:00.000Z"),
+      }),
+    ).rejects.toMatchObject({
+      name: "GiftError",
+      code: "RECEIVER_GIFT_RESTRICTED",
+      status: 403,
+    });
+  });
+
+  it("Task 5-C: rejects acceptance with 403 when recipient is banned with GIFT_RESTRICTED after gift was sent", async () => {
+    const gift = await sendGift(mockPrisma, {
+      senderId: "sender-1",
+      receiverId: "receiver-1",
+      inventoryItemId: "item-hat-2",
+      now: baseTime,
+    });
+
+    // Add scoped ban to recipient
+    mockPrisma._store.bans.push({
+      id: "ban-recv-2",
+      userId: "receiver-1",
+      isActive: true,
+      scope: "GIFT_RESTRICTED",
+      expiresAt: new Date("2026-10-20T00:00:00.000Z"),
+    });
+
+    await expect(
+      acceptGift(mockPrisma, {
+        userId: "receiver-1",
+        giftId: gift.id,
+        now: new Date("2026-10-16T15:00:00.000Z"),
+      }),
+    ).rejects.toMatchObject({
+      name: "GiftError",
+      code: "RECEIVER_GIFT_RESTRICTED",
+      status: 403,
+    });
+  });
+
+  it("Task 5-C: permits acceptance when recipient ban has already expired", async () => {
+    const gift = await sendGift(mockPrisma, {
+      senderId: "sender-1",
+      receiverId: "receiver-1",
+      inventoryItemId: "item-hat-2",
+      now: baseTime,
+    });
+
+    // Add expired ban
+    mockPrisma._store.bans.push({
+      id: "ban-recv-expired",
+      userId: "receiver-1",
+      isActive: true,
+      scope: "GIFT_RESTRICTED",
+      expiresAt: new Date("2026-10-16T13:00:00.000Z"),
+    });
+
+    const res = await acceptGift(mockPrisma, {
+      userId: "receiver-1",
+      giftId: gift.id,
+      now: new Date("2026-10-16T15:00:00.000Z"),
+    });
+
+    expect(res.gift.status).toBe("ACCEPTED");
+    expect(res.item.ownerId).toBe("receiver-1");
   });
 
   it("rejects acceptance, retains EXPIRED status, and unlocks item if gift has expired (past 24h)", async () => {
@@ -788,6 +886,39 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
       expect(acceptedLog).toBeDefined();
       expect(acceptedLog.actorId).toBe("receiver-1");
       expect(acceptedLog.newValues.ownerId).toBe("receiver-1");
+    });
+
+    it("rolls back gift acceptance and item ownership when audit log creation fails", async () => {
+      const createdGift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-1",
+        now: baseTime,
+      });
+
+      mockPrisma._hooks.onAuditCreate = (data: any) => {
+        if (data.action === "GIFT_ACCEPTED") {
+          throw new Error("Audit log database failure");
+        }
+      };
+
+      await expect(
+        acceptGift(mockPrisma, {
+          userId: "receiver-1",
+          giftId: createdGift.id,
+          now: new Date(baseTime.getTime() + 1000),
+        }),
+      ).rejects.toThrow("Audit log database failure");
+
+      const giftRecord = mockPrisma._store.gifts.find((g) => g.id === createdGift.id);
+      expect(giftRecord?.status).toBe("PENDING");
+      const itemRecord = mockPrisma._store.inventoryItems.find(
+        (i) => i.id === "item-hat-1",
+      );
+      expect(itemRecord?.ownerId).toBe("sender-1");
+      expect(itemRecord?.isLocked).toBe(true);
+
+      mockPrisma._hooks.onAuditCreate = null;
     });
   });
 });

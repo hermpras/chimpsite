@@ -215,6 +215,23 @@ export async function acceptGift(prisma: PrismaClient, input: ResolveGiftInput) 
         403,
       );
     }
+
+    // Invariant: Receiver must not have an active FULL_SYSTEM or GIFT_RESTRICTED ban
+    const receiverBan = await tx.banRecord.findFirst({
+      where: {
+        userId: input.userId,
+        isActive: true,
+        scope: { in: ["FULL_SYSTEM", "GIFT_RESTRICTED"] },
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+    });
+    if (receiverBan && (!receiverBan.expiresAt || receiverBan.expiresAt > now)) {
+      throw new GiftError(
+        "RECEIVER_GIFT_RESTRICTED",
+        "Your account is restricted from receiving gifts.",
+        403,
+      );
+    }
     if (gift.status !== "PENDING") {
       throw new GiftError(
         "GIFT_NOT_PENDING",

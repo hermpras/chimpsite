@@ -3,6 +3,11 @@ import { authenticateRequest } from "@/server/auth/session";
 import { sendGift, GiftError } from "@/server/inventory/gift";
 import { normalizeAddress } from "@/lib/auth/address";
 import { readLimitedBody } from "@/lib/auth/body-limit";
+import {
+  checkRateLimit,
+  GIFTS_SEND_RATE_LIMIT_MAX,
+  GIFTS_SEND_RATE_LIMIT_WINDOW_MS,
+} from "@/lib/auth/rate-limit";
 
 export async function GET(): Promise<Response> {
   const session = await authenticateRequest(prisma);
@@ -54,6 +59,36 @@ export async function POST(request: Request): Promise<Response> {
   const session = await authenticateRequest(prisma);
   if (!session) {
     return Response.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  }
+
+  try {
+    const rateLimitKey = `gifts-send:${session.address || session.userId}`;
+    const limit = await checkRateLimit(
+      rateLimitKey,
+      GIFTS_SEND_RATE_LIMIT_MAX,
+      GIFTS_SEND_RATE_LIMIT_WINDOW_MS,
+    );
+    if (!limit.allowed) {
+      return Response.json(
+        {
+          error: "RATE_LIMITED",
+          message: "Too many gift requests. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limit.retryAfterSeconds) },
+        },
+      );
+    }
+  } catch (err: unknown) {
+    console.error("POST /api/gifts rate limit failure:", err);
+    return Response.json(
+      {
+        error: "SERVER_ERROR",
+        message: "Rate limit service temporarily unavailable.",
+      },
+      { status: 500 },
+    );
   }
 
   const bodyResult = await readLimitedBody(request);
