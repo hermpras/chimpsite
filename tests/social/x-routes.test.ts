@@ -254,7 +254,10 @@ describe("X OAuth 2.0 API Routes", () => {
 
       // First call succeeds
       const res1 = await callbackGET(makeReq());
-      expect(res1.status).toBe(200);
+      expect(res1.status).toBe(302);
+      expect(res1.headers.get("Location")).toBe(
+        "http://localhost:3000/profile?x_linked=1",
+      );
 
       // Second replayed call with same state is rejected
       const res2 = await callbackGET(makeReq());
@@ -357,10 +360,10 @@ describe("X OAuth 2.0 API Routes", () => {
       );
 
       const res = await callbackGET(req);
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data.success).toBe(true);
-      expect(data.xIdentity.username).toBe("chimphood_user");
+      expect(res.status).toBe(302);
+      expect(res.headers.get("Location")).toBe(
+        "http://localhost:3000/profile?x_linked=1",
+      );
 
       // Verify codeVerifier was passed strictly from cookie to linkXAccountWithCode
       expect(mockLinkXAccountWithCode).toHaveBeenCalledWith(

@@ -142,13 +142,20 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    const xIdentity = await linkXAccountWithCode(prisma, {
+    await linkXAccountWithCode(prisma, {
       userId: session.userId,
       code,
       codeVerifier: oauthState.codeVerifier,
     });
 
-    return Response.json({ success: true, xIdentity }, { headers: clearCookieHeader });
+    const redirectUrl = new URL("/profile?x_linked=1", request.url);
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: redirectUrl.toString(),
+        ...clearCookieHeader,
+      },
+    });
   } catch (err: unknown) {
     if (err instanceof XOAuthError) {
       return Response.json(

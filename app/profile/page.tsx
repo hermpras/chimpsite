@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { User, Shield, AlertTriangle, Sparkles } from "lucide-react";
+import React, { useState, useEffect, Suspense } from "react";
+import { User, Shield, AlertTriangle, Sparkles, CheckCircle2 } from "lucide-react";
+import * as navigation from "next/navigation";
 
 function XLogo(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { PlaceholderNotice } from "@/components/ui/PlaceholderNotice";
 import { WalletConnectCard } from "@/components/auth/WalletConnectCard";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import {
@@ -29,13 +29,73 @@ import {
 import { fetchUserInventory, type InventoryItemData } from "@/lib/inventory/client";
 import { TraitGrid } from "@/components/inventory/TraitGrid";
 
-export default function ProfilePage() {
+function getNavigationSearchParams(): URLSearchParams | null {
+  try {
+    const nav = navigation as { useSearchParams?: () => URLSearchParams };
+    if (nav && typeof nav.useSearchParams === "function") {
+      return nav.useSearchParams();
+    }
+  } catch {
+    // Fallback for test environments where useSearchParams is not in next/navigation mock
+  }
+  if (typeof window !== "undefined") {
+    return new URLSearchParams(window.location.search);
+  }
+  return null;
+}
+
+function ProfileContent() {
+  const searchParams = getNavigationSearchParams();
+  const xLinked = searchParams?.get("x_linked");
+  const xError = searchParams?.get("x_error") || searchParams?.get("error");
+
   const { status, sessionAddress, walletAddress } = useSiweAuth();
   const address = sessionAddress || walletAddress;
   const [wlData, setWlData] = useState<WhitelistStatusResponse | null>(null);
   const [loadedAddress, setLoadedAddress] = useState<string | null>(null);
   const [inventoryItems, setInventoryItems] = useState<InventoryItemData[]>([]);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
+  const [isLinking, setIsLinking] = useState(false);
+  const [xActionError, setXActionError] = useState<string | null>(null);
+
+  const xErrorMessage =
+    xActionError ||
+    (xError
+      ? xError === "access_denied"
+        ? "Authorization was denied by user. Please try connecting your X account again."
+        : `Failed to link X account (${xError}). Please try again.`
+      : null);
+
+  const handleLinkX = () => {
+    if (status !== "authenticated") {
+      setXActionError("Please connect and authenticate your Web3 wallet first.");
+      return;
+    }
+
+    setIsLinking(true);
+    setXActionError(null);
+    fetch("/api/social/x/connect")
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || "Failed to initiate X connection.");
+        }
+        return data;
+      })
+      .then((data) => {
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error(
+            data.message || "X OAuth is not configured in this environment.",
+          );
+        }
+      })
+      .catch((err) => {
+        setIsLinking(false);
+        setXActionError(err.message || "X OAuth is not configured in this environment.");
+      });
+  };
 
   const isInventoryLoading = Boolean(
     address && loadedAddress !== address && !inventoryError,
@@ -47,7 +107,7 @@ export default function ProfilePage() {
         .then(setWlData)
         .catch((err) => console.error("Error fetching profile WL status:", err));
     }
-  }, [status, address]);
+  }, [status, address, xLinked]);
 
   useEffect(() => {
     let ignore = false;
@@ -86,13 +146,42 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      <div className="mb-8">
-        <PlaceholderNotice
-          title="X OAuth Not Active Yet"
-          description="Sign-In with Ethereum (SIWE) is now active — connect your wallet below. X (Twitter) OAuth 2.0 account linking is still pending."
-          phase="Stage 2 In Progress"
-        />
-      </div>
+      {/* Callback / Status Feedback Alerts */}
+      {xLinked && (
+        <div
+          role="status"
+          data-testid="x-link-success-banner"
+          className="mb-8 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-200"
+        >
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-400" />
+            <div>
+              <p className="font-semibold text-emerald-400">
+                X Account Successfully Linked
+              </p>
+              <p className="mt-0.5 text-sm text-gray-300">
+                Your X (Twitter) profile has been verified and connected to your account.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {xErrorMessage && (
+        <div
+          role="alert"
+          data-testid="x-link-error-banner"
+          className="mb-8 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-rose-200"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-rose-400" />
+            <div>
+              <p className="font-semibold text-rose-400">X Authentication Failed</p>
+              <p className="mt-0.5 text-sm text-gray-300">{xErrorMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Wallet Connection Section — live SIWE login (Stage 2) */}
@@ -121,28 +210,20 @@ export default function ProfilePage() {
               <p className="mt-1 text-xs text-gray-500">
                 {wlData?.status?.details.xUsername
                   ? `@${wlData.status.details.xUsername}`
-                  : "@username (Placeholder)"}
+                  : "No X account linked"}
               </p>
             </div>
             <Button
-              variant="outline"
+              variant={wlData?.status?.details.hasLinkedX ? "outline" : "primary"}
               className="w-full"
-              onClick={() => {
-                fetch("/api/social/x/connect")
-                  .then((res) => res.json())
-                  .then((data) => {
-                    if (data.url) {
-                      window.location.href = data.url;
-                    } else {
-                      alert(
-                        data.message || "X OAuth is not configured in this environment.",
-                      );
-                    }
-                  })
-                  .catch(() => alert("X OAuth is not configured in this environment."));
-              }}
+              disabled={isLinking || Boolean(wlData?.status?.details.hasLinkedX)}
+              onClick={handleLinkX}
             >
-              Link X Account (Placeholder)
+              {isLinking
+                ? "Connecting..."
+                : wlData?.status?.details.hasLinkedX
+                  ? "X Account Connected"
+                  : "Link X Account"}
             </Button>
           </CardContent>
         </Card>
@@ -267,5 +348,19 @@ export default function ProfilePage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-5xl px-4 py-12 text-gray-400 sm:px-6 lg:px-8">
+          Loading profile...
+        </div>
+      }
+    >
+      <ProfileContent />
+    </Suspense>
   );
 }
