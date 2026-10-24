@@ -167,14 +167,30 @@ All secret keys and sensitive credentials are read strictly on the server-side a
 - **Purpose**: Specifies the initial EVM wallet address to be granted `SUPER_ADMIN` privileges in staging or production environments using the isolated bootstrap script (`server/admin/bootstrap.ts`).
 - **Scope**: Server / CLI only. Never exposed to browser or client bundles.
 - **Format**: Valid 0x-prefixed 40-hex-character EVM address (e.g., `0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed`). Automatically normalized to lowercase prior to database persistence.
-- **Fail-Closed Behavior**: If neither the CLI argument nor `INITIAL_SUPER_ADMIN_ADDRESS` is provided, or if the format is invalid, the script immediately exits with code 1 and a clear diagnostic message.
-- **Idempotency & Safety**:
-  - The script does not depend on `devPromoteToAdmin` (which is disabled in production).
-  - No public HTTP endpoints are exposed for admin promotion.
-  - Repeated executions are completely idempotent: existing super admins are preserved without duplicate records or demoting permissions.
-  - The script operates within an atomic database transaction and records an immutable audit trail (`AuditLog`) per DEC-011.
-  - Never prints secrets, connection strings, or authentication tokens to stdout/stderr.
-- **Manual Operator Execution**:
+- **Required Environment Variables**:
+  - `DATABASE_URL`: PostgreSQL connection string (must have read/write access to `User`, `WalletIdentity`, `AdminRole`, `AuditLog`).
+  - `INITIAL_SUPER_ADMIN_ADDRESS`: EVM wallet address to bootstrap (required if not passed as CLI argument).
+- **Fail-Closed & Validation Behavior**:
+  - If neither the CLI argument nor `INITIAL_SUPER_ADMIN_ADDRESS` is provided, or if the format is invalid (not 0x + 40 hex characters), the script immediately exits with code 1 and a clear diagnostic message.
+- **Behavior when Super Admin Already Exists**:
+  - **Different Wallet**: If an active (unbanned) Super Admin already exists in the database for a different account, execution is **strictly rejected** with exit code 1 (`SUPER_ADMIN_ALREADY_EXISTS`). No new records are created, and existing accounts, roles, permissions, and ban records are left completely untouched.
+  - **Same Wallet (Pengulangan / Idempotency)**: If executed repeatedly with the _same_ wallet address as the active Super Admin, the script completes idempotently (`ALREADY_SUPER_ADMIN`), ensuring wildcard permissions (`*`) without creating duplicates, demoting permissions, or changing ban status.
+  - **Banned Super Admin**: If the only existing Super Admin is banned (`isBanned: true`), the platform has no _active_ Super Admin; bootstrapping a new wallet is permitted to restore administrative operations, while the banned account remains banned and all `BanRecord`s remain intact.
+- **Concurrency & Transaction Safety**:
+  - Operates inside an atomic database transaction.
+  - Uses PostgreSQL transaction-level advisory locks (`SELECT pg_advisory_xact_lock(837264821)`) for cross-process concurrency and an in-process mutex for concurrent worker threads.
+  - If two bootstrap processes race concurrently, exactly one succeeds and the other rejects without creating duplicate Super Admins.
+- **Ban Integrity & Non-Tampering**:
+  - Never clears user ban status (`isBanned` is preserved).
+  - Never modifies, revokes, or deletes `BanRecord` entries.
+- **Audit Logging**:
+  - Every creation or promotion is immutably logged to `AuditLog` (`action: "BOOTSTRAP_SUPER_ADMIN"`).
+- **Isolation & Security**:
+  - Strictly isolated from HTTP traffic; no public endpoints exist for admin promotion.
+  - Decoupled from `devPromoteToAdmin` (which is blocked in production).
+  - Does NOT run automatically on server startup.
+  - Never logs secrets, connection strings, or authentication tokens to stdout/stderr.
+- **Explicit Operator Execution**:
   ```bash
   # Option 1: Via npm script with environment variable
   INITIAL_SUPER_ADMIN_ADDRESS="0x..." DATABASE_URL="postgresql://..." npm run admin:bootstrap

@@ -446,3 +446,54 @@ logout revocation) was confirmed working locally by the operator.
    - `app/whitelist/page.tsx`: Whitelist Status Checker, 5-category checklist, Phase badge, and Hourly Drop & Trait Claim card.
    - `app/profile/page.tsx`: Dynamic Whitelist status display and X identity status integration.
    - `lib/whitelist/client.ts` and `lib/drops/client.ts`: Client API helpers.
+
+---
+
+## 10. Initial Super Admin Bootstrap Mechanism (Task B-3)
+
+### Overview
+
+Task B-3 implements a production-grade, isolated bootstrap mechanism (`server/admin/bootstrap.ts`) to initialize the first `SUPER_ADMIN` account safely in staging and production environments.
+
+### Core Security Invariants
+
+1. **Isolated & Explicit Execution**:
+   - Strictly executed out-of-band via CLI (`npm run admin:bootstrap`).
+   - Decoupled from `devPromoteToAdmin` (`server/admin/dev-promote.ts`), which is blocked in production.
+   - No public HTTP endpoints exist for admin promotion.
+   - Never runs automatically during application startup.
+2. **Environment Configuration**:
+   - Requires `INITIAL_SUPER_ADMIN_ADDRESS` (or passed as CLI argument) and `DATABASE_URL`.
+   - Never commits real wallet addresses or secrets to source code.
+3. **Address Validation**:
+   - Validates that the input is a valid 0x-prefixed 40-hex-character EVM address and normalizes to lowercase prior to database queries.
+4. **First Super Admin Constraint**:
+   - Only creates or promotes the Super Admin if no active (unbanned) Super Admin exists in the database.
+5. **Rejection when Active Super Admin Already Exists**:
+   - If an active Super Admin already exists for another wallet, the script **strictly rejects** execution with exit code 1 (`SUPER_ADMIN_ALREADY_EXISTS`), preserving all existing roles, permissions, and ban records without modification.
+6. **Idempotent Repeated Runs**:
+   - Running the script repeatedly with the _same_ wallet address is completely idempotent (`action: "ALREADY_SUPER_ADMIN"`). It ensures wildcard permissions (`*`) without creating duplicate records or modifying unaffected users.
+7. **Concurrency Safety**:
+   - Runs within an atomic database transaction.
+   - Protected against multi-process race conditions via PostgreSQL transaction-level advisory locks (`SELECT pg_advisory_xact_lock(837264821)`).
+   - Protected within the Node.js runtime via an in-process mutex queue (`AsyncLock`).
+   - If concurrent bootstrap invocations race, strictly one succeeds and competing invocations fail closed.
+8. **Ban Status Non-Tampering**:
+   - Never clears user ban status (`isBanned` remains unchanged).
+   - Never modifies, updates, or deletes `BanRecord` entries.
+   - If the previous Super Admin was banned, a new active Super Admin may be bootstrapped to restore administration, leaving the banned account intact.
+9. **Audit Trail**:
+   - Administrative mutations are immutably logged to `AuditLog` (`action: "BOOTSTRAP_SUPER_ADMIN"`).
+
+### Operator Usage
+
+```bash
+# Option 1: Via npm script with environment variable
+INITIAL_SUPER_ADMIN_ADDRESS="0x..." DATABASE_URL="postgresql://..." npm run admin:bootstrap
+
+# Option 2: Via npm script with CLI argument
+DATABASE_URL="postgresql://..." npm run admin:bootstrap -- 0x...
+
+# Option 3: Via standalone Node runner
+DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
+```

@@ -98,6 +98,26 @@ function createMockPrisma() {
         findUnique: vi.fn(async ({ where }: any) => {
           return store.users.find((u) => u.id === where.id) || null;
         }),
+        findFirst: vi.fn(async ({ where, include }: any) => {
+          const match = store.users.find((u) => {
+            if (where?.isBanned !== undefined && u.isBanned !== where.isBanned)
+              return false;
+            if (where?.role && u.role !== where.role) return false;
+            return true;
+          });
+          if (!match) return null;
+          const wallet = include?.wallet
+            ? store.walletIdentities.find((w) => w.userId === match.id) || null
+            : undefined;
+          const adminRole = include?.adminRole
+            ? store.adminRoles.find((r) => r.userId === match.id) || null
+            : undefined;
+          return {
+            ...match,
+            ...(wallet !== undefined ? { wallet } : {}),
+            ...(adminRole !== undefined ? { adminRole } : {}),
+          };
+        }),
         create: vi.fn(async ({ data, include }: any) => {
           const userId = `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
           const user = {
@@ -154,6 +174,34 @@ function createMockPrisma() {
       adminRole: {
         findUnique: vi.fn(async ({ where }: any) => {
           return store.adminRoles.find((r) => r.userId === where.userId) || null;
+        }),
+        findFirst: vi.fn(async ({ where, include }: any) => {
+          const match = store.adminRoles.find((r) => {
+            if (where?.roleType && r.roleType !== where.roleType) return false;
+            if (where?.user?.isBanned !== undefined) {
+              const u = store.users.find((usr) => usr.id === r.userId);
+              if (!u || u.isBanned !== where.user.isBanned) return false;
+            }
+            return true;
+          });
+          if (!match) return null;
+          let user: any = undefined;
+          if (include?.user) {
+            const u = store.users.find((usr) => usr.id === match.userId);
+            if (u) {
+              const wallet = include.user.include?.wallet
+                ? store.walletIdentities.find((w) => w.userId === u.id) || null
+                : undefined;
+              user = {
+                ...u,
+                ...(wallet !== undefined ? { wallet } : {}),
+              };
+            }
+          }
+          return {
+            ...match,
+            ...(user !== undefined ? { user } : {}),
+          };
         }),
         create: vi.fn(async ({ data }: any) => {
           // Verify unique constraint on userId
@@ -216,6 +264,7 @@ function createMockPrisma() {
           return { id: record.id };
         }),
       },
+      $executeRaw: vi.fn(async () => 1),
     };
   };
 
@@ -864,6 +913,269 @@ describe("Task B-3: Super Admin Bootstrap Service", () => {
   });
 
   // ---------------------------------------------------------------------------
+  // 5. Behavior when Active Super Admin Already Exists
+  // ---------------------------------------------------------------------------
+  describe("Scenario 5: Active Super Admin Already Exists", () => {
+    it("rejects bootstrap when an active Super Admin already exists for a different address", async () => {
+      const { client, store } = createMockPrisma();
+
+      // Seed an existing active Super Admin
+      const activeSuperAdmin = {
+        id: "usr_active_super",
+        role: "SUPER_ADMIN",
+        isBanned: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const activeWallet = {
+        id: "wal_active_super",
+        userId: activeSuperAdmin.id,
+        address: NORMALIZED_ADDRESS,
+        chainId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const activeRole = {
+        id: "adm_active_super",
+        userId: activeSuperAdmin.id,
+        roleType: "SUPER_ADMIN",
+        permissions: ["*"],
+        assignedBy: "FOUNDER",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      store.users.push(activeSuperAdmin);
+      store.walletIdentities.push(activeWallet);
+      store.adminRoles.push(activeRole);
+
+      // Attempting to bootstrap a DIFFERENT address must be rejected
+      await expect(bootstrapSuperAdmin(client, SECOND_VALID_ADDRESS)).rejects.toThrow(
+        BootstrapError,
+      );
+
+      try {
+        await bootstrapSuperAdmin(client, SECOND_VALID_ADDRESS);
+      } catch (err: any) {
+        expect(err.code).toBe("SUPER_ADMIN_ALREADY_EXISTS");
+        expect(err.message).toContain(
+          "An active Super Admin already exists in the system",
+        );
+      }
+
+      // Verify no new entities or audit logs were created
+      expect(store.users).toHaveLength(1);
+      expect(store.walletIdentities).toHaveLength(1);
+      expect(store.adminRoles).toHaveLength(1);
+      expect(store.auditLogs).toHaveLength(0);
+
+      // Verify original active Super Admin is untouched
+      expect(activeSuperAdmin.role).toBe("SUPER_ADMIN");
+      expect(activeRole.roleType).toBe("SUPER_ADMIN");
+    });
+
+    it("does not mutate an existing standard user if rejected due to active Super Admin presence", async () => {
+      const { client, store } = createMockPrisma();
+
+      // Active Super Admin
+      store.users.push({
+        id: "usr_active_admin",
+        role: "SUPER_ADMIN",
+        isBanned: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      store.walletIdentities.push({
+        id: "wal_active_admin",
+        userId: "usr_active_admin",
+        address: NORMALIZED_ADDRESS,
+        chainId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      store.adminRoles.push({
+        id: "adm_active_admin",
+        userId: "usr_active_admin",
+        roleType: "SUPER_ADMIN",
+        permissions: ["*"],
+        assignedBy: "SYSTEM",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Another normal user exists
+      const normalUser = {
+        id: "usr_regular_target",
+        role: "USER",
+        isBanned: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      store.users.push(normalUser);
+      store.walletIdentities.push({
+        id: "wal_regular_target",
+        userId: normalUser.id,
+        address: SECOND_VALID_ADDRESS.toLowerCase(),
+        chainId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Run bootstrap for the normal user -> should reject
+      await expect(bootstrapSuperAdmin(client, SECOND_VALID_ADDRESS)).rejects.toThrow(
+        BootstrapError,
+      );
+
+      // Regular user's role MUST remain USER and not be promoted
+      expect(normalUser.role).toBe("USER");
+      expect(store.adminRoles).toHaveLength(1); // Only active super admin's role
+    });
+
+    it("permits bootstrapping a new wallet if the only existing Super Admin is BANNED", async () => {
+      const { client, store } = createMockPrisma();
+
+      // Banned Super Admin
+      const bannedSuper = {
+        id: "usr_banned_super",
+        role: "SUPER_ADMIN",
+        isBanned: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const bannedWallet = {
+        id: "wal_banned_super",
+        userId: bannedSuper.id,
+        address: NORMALIZED_ADDRESS,
+        chainId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const bannedAdminRole = {
+        id: "adm_banned_super",
+        userId: bannedSuper.id,
+        roleType: "SUPER_ADMIN",
+        permissions: ["*"],
+        assignedBy: "ORIGINAL_FOUNDER",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const banRecord = {
+        id: "ban_super_record",
+        userId: bannedSuper.id,
+        banType: "PERMANENT",
+        scope: "FULL_SYSTEM",
+        reason: "Compromised key",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      store.users.push(bannedSuper);
+      store.walletIdentities.push(bannedWallet);
+      store.adminRoles.push(bannedAdminRole);
+      store.banRecords.push(banRecord);
+
+      // Bootstrapping SECOND_VALID_ADDRESS should succeed because no *active* Super Admin exists
+      const result = await bootstrapSuperAdmin(client, SECOND_VALID_ADDRESS);
+      expect(result.ok).toBe(true);
+      expect(result.action).toBe("CREATED");
+      expect(result.address).toBe(SECOND_VALID_ADDRESS.toLowerCase());
+
+      // The banned Super Admin remains banned and their ban records remain intact
+      expect(bannedSuper.isBanned).toBe(true);
+      expect(store.banRecords).toHaveLength(1);
+      expect(store.banRecords[0].isActive).toBe(true);
+
+      // Now there are 2 users and 2 admin roles
+      expect(store.users).toHaveLength(2);
+      expect(store.adminRoles).toHaveLength(2);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 6. Concurrency Handling
+  // ---------------------------------------------------------------------------
+  describe("Scenario 6: Concurrency Handling", () => {
+    it("handles two concurrent bootstrap operations with DIFFERENT addresses: exactly one succeeds and one is rejected", async () => {
+      const { client, store } = createMockPrisma();
+
+      // Fire both concurrently
+      const [result1, result2] = await Promise.allSettled([
+        bootstrapSuperAdmin(client, VALID_CHECKSUM_ADDRESS),
+        bootstrapSuperAdmin(client, SECOND_VALID_ADDRESS),
+      ]);
+
+      const fulfilled = [result1, result2].filter(
+        (r): r is PromiseFulfilledResult<any> => r.status === "fulfilled",
+      );
+      const rejected = [result1, result2].filter(
+        (r): r is PromiseRejectedResult => r.status === "rejected",
+      );
+
+      // Exactly one succeeds, and exactly one is rejected
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+
+      expect(fulfilled[0].value.ok).toBe(true);
+      expect(fulfilled[0].value.action).toBe("CREATED");
+
+      expect(rejected[0].reason).toBeInstanceOf(BootstrapError);
+      expect(rejected[0].reason.code).toBe("SUPER_ADMIN_ALREADY_EXISTS");
+
+      // Verify strictly ONE Super Admin was created in the database
+      expect(store.users).toHaveLength(1);
+      expect(store.walletIdentities).toHaveLength(1);
+      expect(store.adminRoles).toHaveLength(1);
+      expect(store.adminRoles[0].roleType).toBe("SUPER_ADMIN");
+    });
+
+    it("handles two concurrent bootstrap operations with the SAME address: both complete safely without duplicate records", async () => {
+      const { client, store } = createMockPrisma();
+
+      const [res1, res2] = await Promise.all([
+        bootstrapSuperAdmin(client, VALID_CHECKSUM_ADDRESS),
+        bootstrapSuperAdmin(client, VALID_CHECKSUM_ADDRESS),
+      ]);
+
+      expect(res1.ok).toBe(true);
+      expect(res2.ok).toBe(true);
+
+      const actions = [res1.action, res2.action].sort();
+      expect(actions).toEqual(["ALREADY_SUPER_ADMIN", "CREATED"]);
+
+      // Verify no duplicate users or roles exist
+      expect(store.users).toHaveLength(1);
+      expect(store.walletIdentities).toHaveLength(1);
+      expect(store.adminRoles).toHaveLength(1);
+    });
+
+    it("handles 5 concurrent bootstrap attempts competing for the first Super Admin slot", async () => {
+      const { client, store } = createMockPrisma();
+
+      const addresses = [
+        VALID_CHECKSUM_ADDRESS,
+        SECOND_VALID_ADDRESS,
+        "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
+        "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      ];
+
+      const results = await Promise.allSettled(
+        addresses.map((addr) => bootstrapSuperAdmin(client, addr)),
+      );
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(4);
+
+      // Verify only 1 Super Admin in store
+      expect(store.users).toHaveLength(1);
+      expect(store.adminRoles).toHaveLength(1);
+      expect(store.adminRoles[0].roleType).toBe("SUPER_ADMIN");
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // 7. Security & Information Leakage Protection
   // ---------------------------------------------------------------------------
   describe("Security & Secret Isolation", () => {
@@ -936,6 +1248,47 @@ describe("Task B-3: Super Admin Bootstrap Service", () => {
       expect(code).toBe(0);
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("[BOOTSTRAP SUCCESS]"));
       logSpy.mockRestore();
+    });
+
+    it("returns exit code 1 with error when active Super Admin already exists in CLI invocation", async () => {
+      const { client, store } = createMockPrisma();
+      // Pre-seed active super admin
+      store.users.push({
+        id: "usr_active_cli",
+        role: "SUPER_ADMIN",
+        isBanned: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      store.walletIdentities.push({
+        id: "wal_active_cli",
+        userId: "usr_active_cli",
+        address: NORMALIZED_ADDRESS,
+        chainId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      store.adminRoles.push({
+        id: "adm_active_cli",
+        userId: "usr_active_cli",
+        roleType: "SUPER_ADMIN",
+        permissions: ["*"],
+        assignedBy: "FOUNDER",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const code = await runBootstrapCli(
+        [SECOND_VALID_ADDRESS],
+        { DATABASE_URL: "postgresql://localhost:5432/test" },
+        client,
+      );
+      expect(code).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("An active Super Admin already exists in the system"),
+      );
+      errorSpy.mockRestore();
     });
   });
 });
