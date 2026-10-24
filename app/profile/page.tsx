@@ -33,6 +33,10 @@ import type { GiftItemData } from "@/lib/inventory/gift-client";
 import { TraitGrid } from "@/components/inventory/TraitGrid";
 import { GiftsSection } from "@/components/inventory/GiftsSection";
 import { GiftModal } from "@/components/inventory/GiftModal";
+import { UserAvatar } from "@/components/inventory/UserAvatar";
+import { shortenAddress } from "@/lib/auth/address";
+
+const TRAIT_CATEGORIES = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
 
 function getNavigationSearchParams(): URLSearchParams | null {
   try {
@@ -70,6 +74,10 @@ function ProfileContent() {
   const [selectedItemForGift, setSelectedItemForGift] =
     useState<InventoryItemData | null>(null);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+
+  // Avatar state (I-3)
+  const [avatarVersion, setAvatarVersion] = useState<number>(() => Date.now());
+  const ownedCategories = new Set(inventoryItems.map((item) => item.trait.category));
 
   const xErrorMessage =
     xActionError ||
@@ -123,6 +131,7 @@ function ProfileContent() {
         setInventoryItems(data.items || []);
         setLoadedAddress(addr);
         setInventoryError(null);
+        setAvatarVersion(Date.now());
       } catch (err: unknown) {
         console.error("Error fetching profile inventory:", err);
         const msg = err instanceof Error ? err.message : "Failed to load inventory.";
@@ -150,6 +159,7 @@ function ProfileContent() {
 
   const handleRefreshAll = React.useCallback(async () => {
     await Promise.all([refreshInventory(), refreshGifts()]);
+    setAvatarVersion(Date.now());
   }, [refreshInventory, refreshGifts]);
 
   const handleOpenGiftModal = (item: InventoryItemData) => {
@@ -215,15 +225,31 @@ function ProfileContent() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Page Header */}
-      <div className="mb-8 space-y-2">
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold tracking-tight text-white">User Profile</h1>
-          <Badge variant="default">Stage 3</Badge>
+      {/* Page Header with Character Avatar */}
+      <div className="mb-8 flex flex-col items-start gap-5 rounded-2xl border border-gray-800 bg-[#0c0e17]/60 p-6 backdrop-blur sm:flex-row sm:items-center">
+        <UserAvatar
+          identifier={address}
+          hasInventory={inventoryItems.length > 0}
+          version={avatarVersion}
+          size="lg"
+          showRefreshButton={status === "authenticated" && inventoryItems.length > 0}
+          onRefresh={handleRefreshAll}
+        />
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-white">User Profile</h1>
+            <Badge variant="default">Stage 3</Badge>
+          </div>
+          <p className="text-sm text-gray-400">
+            Integrated identity management for Web3 Wallets and X (Twitter) accounts.
+          </p>
+          {address && (
+            <p className="font-mono text-xs text-gray-400">
+              Connected:{" "}
+              <span className="text-emerald-400">{shortenAddress(address)}</span>
+            </p>
+          )}
         </div>
-        <p className="text-gray-400">
-          Integrated identity management for Web3 Wallets and X (Twitter) accounts.
-        </p>
       </div>
 
       {/* Callback / Status Feedback Alerts */}
@@ -409,7 +435,51 @@ function ProfileContent() {
                 <p className="mt-1 text-xs text-gray-400">{inventoryError}</p>
               </div>
             ) : inventoryItems.length > 0 ? (
-              <TraitGrid items={inventoryItems} onGiftItem={handleOpenGiftModal} />
+              <div className="space-y-6">
+                {/* 5-Category Trait Collection Overview */}
+                <div
+                  className="rounded-lg border border-gray-800 bg-gray-950/60 p-4"
+                  data-testid="trait-collection-summary"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
+                      Trait Collection (
+                      {TRAIT_CATEGORIES.filter((c) => ownedCategories.has(c)).length}/5
+                      Categories Owned)
+                    </h4>
+                    <span className="text-xs text-gray-400">
+                      {TRAIT_CATEGORIES.every((c) => ownedCategories.has(c))
+                        ? "Full Character Set Complete"
+                        : "Collect all 5 categories to complete avatar"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    {TRAIT_CATEGORIES.map((category) => {
+                      const isHeld = ownedCategories.has(category);
+                      return (
+                        <div
+                          key={category}
+                          data-testid={`collection-category-${category.toLowerCase()}`}
+                          className={`flex items-center gap-2 rounded-lg border p-2.5 text-xs transition-colors ${
+                            isHeld
+                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 shadow-sm"
+                              : "border-gray-800 bg-gray-900/30 text-gray-500 opacity-60 grayscale"
+                          }`}
+                        >
+                          {isHeld ? (
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                          ) : (
+                            <div className="h-4 w-4 shrink-0 rounded-full border border-gray-600 bg-gray-800" />
+                          )}
+                          <span className="font-semibold tracking-wide">{category}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <TraitGrid items={inventoryItems} onGiftItem={handleOpenGiftModal} />
+              </div>
             ) : (
               <div
                 data-testid="inventory-empty"
