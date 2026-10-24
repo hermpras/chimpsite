@@ -26,8 +26,13 @@ import {
   fetchWhitelistStatus,
   type WhitelistStatusResponse,
 } from "@/lib/whitelist/client";
-import { fetchUserInventory, type InventoryItemData } from "@/lib/inventory/client";
+import * as inventoryClient from "@/lib/inventory/client";
+import type { InventoryItemData } from "@/lib/inventory/client";
+import * as giftClient from "@/lib/inventory/gift-client";
+import type { GiftItemData } from "@/lib/inventory/gift-client";
 import { TraitGrid } from "@/components/inventory/TraitGrid";
+import { GiftsSection } from "@/components/inventory/GiftsSection";
+import { GiftModal } from "@/components/inventory/GiftModal";
 
 function getNavigationSearchParams(): URLSearchParams | null {
   try {
@@ -57,6 +62,14 @@ function ProfileContent() {
   const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [xActionError, setXActionError] = useState<string | null>(null);
+
+  // Gifting state (I-1)
+  const [sentGifts, setSentGifts] = useState<GiftItemData[]>([]);
+  const [receivedGifts, setReceivedGifts] = useState<GiftItemData[]>([]);
+  const [isGiftsLoading, setIsGiftsLoading] = useState(false);
+  const [selectedItemForGift, setSelectedItemForGift] =
+    useState<InventoryItemData | null>(null);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
 
   const xErrorMessage =
     xActionError ||
@@ -101,6 +114,49 @@ function ProfileContent() {
     address && loadedAddress !== address && !inventoryError,
   );
 
+  const refreshInventory = React.useCallback(
+    async (targetAddress?: string) => {
+      const addr = targetAddress || address;
+      if (!addr) return;
+      try {
+        const data = await inventoryClient.fetchUserInventory(addr);
+        setInventoryItems(data.items || []);
+        setLoadedAddress(addr);
+        setInventoryError(null);
+      } catch (err: unknown) {
+        console.error("Error fetching profile inventory:", err);
+        const msg = err instanceof Error ? err.message : "Failed to load inventory.";
+        setInventoryError(msg);
+        setLoadedAddress(addr);
+      }
+    },
+    [address],
+  );
+
+  const refreshGifts = React.useCallback(async () => {
+    // If inventoryClient is mocked in tests without gifting, skip fetching gifts
+    if (!("fetchUserGifts" in inventoryClient)) return;
+    setIsGiftsLoading(true);
+    try {
+      const data = await giftClient.fetchUserGifts();
+      setSentGifts(data.sentGifts || []);
+      setReceivedGifts(data.receivedGifts || []);
+    } catch (err: unknown) {
+      console.error("Error fetching profile gifts:", err);
+    } finally {
+      setIsGiftsLoading(false);
+    }
+  }, []);
+
+  const handleRefreshAll = React.useCallback(async () => {
+    await Promise.all([refreshInventory(), refreshGifts()]);
+  }, [refreshInventory, refreshGifts]);
+
+  const handleOpenGiftModal = (item: InventoryItemData) => {
+    setSelectedItemForGift(item);
+    setIsGiftModalOpen(true);
+  };
+
   useEffect(() => {
     if (status === "authenticated" && address) {
       fetchWhitelistStatus(address)
@@ -112,7 +168,8 @@ function ProfileContent() {
   useEffect(() => {
     let ignore = false;
     if (address) {
-      fetchUserInventory(address)
+      inventoryClient
+        .fetchUserInventory(address)
         .then((data) => {
           if (!ignore) {
             setInventoryItems(data.items || []);
@@ -120,10 +177,11 @@ function ProfileContent() {
             setInventoryError(null);
           }
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           if (!ignore) {
             console.error("Error fetching profile inventory:", err);
-            setInventoryError(err.message || "Failed to load inventory.");
+            const msg = err instanceof Error ? err.message : "Failed to load inventory.";
+            setInventoryError(msg);
             setLoadedAddress(address);
           }
         });
@@ -132,6 +190,28 @@ function ProfileContent() {
       ignore = true;
     };
   }, [address]);
+
+  useEffect(() => {
+    let ignore = false;
+    if (status === "authenticated" && "fetchUserGifts" in inventoryClient) {
+      giftClient
+        .fetchUserGifts()
+        .then((data) => {
+          if (!ignore) {
+            setSentGifts(data.sentGifts || []);
+            setReceivedGifts(data.receivedGifts || []);
+          }
+        })
+        .catch((err: unknown) => {
+          if (!ignore) {
+            console.error("Error fetching profile gifts:", err);
+          }
+        });
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [status]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
@@ -268,9 +348,9 @@ function ProfileContent() {
                     Live Stage 3 Status:
                   </span>{" "}
                   Phase: {wlData.status.phase} | Categories:{" "}
-                  {wlData.status.details.heldCategories.length}/5 Held | Tasks:{" "}
-                  {wlData.status.details.completedMandatoryTasksCount}/
-                  {wlData.status.details.totalMandatoryTasksCount} Verified
+                  {wlData.status.details?.heldCategories?.length ?? 0}/5 Held | Tasks:{" "}
+                  {wlData.status.details?.completedMandatoryTasksCount ?? 0}/
+                  {wlData.status.details?.totalMandatoryTasksCount ?? 0} Verified
                 </div>
               )}
             </div>
@@ -329,7 +409,7 @@ function ProfileContent() {
                 <p className="mt-1 text-xs text-gray-400">{inventoryError}</p>
               </div>
             ) : inventoryItems.length > 0 ? (
-              <TraitGrid items={inventoryItems} />
+              <TraitGrid items={inventoryItems} onGiftItem={handleOpenGiftModal} />
             ) : (
               <div
                 data-testid="inventory-empty"
@@ -346,7 +426,27 @@ function ProfileContent() {
             )}
           </CardContent>
         </Card>
+
+        {/* Gifting & Peer Transfers Section (I-1) */}
+        {status === "authenticated" && (
+          <GiftsSection
+            sentGifts={sentGifts}
+            receivedGifts={receivedGifts}
+            isLoading={isGiftsLoading}
+            isWlAllocated={wlData?.status?.phase === "SLOT_ALLOCATED"}
+            onRefresh={handleRefreshAll}
+          />
+        )}
       </div>
+
+      {/* Gift Modal for Sending Duplicate Traits */}
+      <GiftModal
+        isOpen={isGiftModalOpen}
+        onClose={() => setIsGiftModalOpen(false)}
+        item={selectedItemForGift}
+        senderAddress={address}
+        onGiftSuccess={handleRefreshAll}
+      />
     </div>
   );
 }

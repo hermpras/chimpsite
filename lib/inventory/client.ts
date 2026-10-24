@@ -23,6 +23,9 @@ export interface UserInventoryResponse {
   message?: string;
 }
 
+// Re-export gifting utilities & types (I-1)
+export * from "./gift-client";
+
 /**
  * Client helper to fetch user inventory by wallet address.
  */

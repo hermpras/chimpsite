@@ -98,6 +98,36 @@ describe("TraitGrid Component & Profile Inventory States", () => {
       expect(screen.getByTestId("locked-badge")).toBeInTheDocument();
       expect(screen.getByText("Locked")).toBeInTheDocument();
     });
+
+    it("renders Gift button only on duplicate items when onGiftItem is provided", () => {
+      const duplicateCopy: InventoryItemData = {
+        id: "item-1-dup",
+        edition: 2,
+        acquiredVia: "DROP",
+        acquiredAt: "2026-10-15T12:00:00.000Z",
+        isLocked: false,
+        lockReason: null,
+        trait: {
+          id: "t-1",
+          name: "Diamond Grill",
+          category: "FUR",
+          rarity: "LEGENDARY",
+          imageUrl: "https://assets.chimphood.io/traits/grill.png",
+        },
+      };
+
+      const onGiftSpy = vi.fn();
+      render(
+        <TraitGrid items={[...sampleItems, duplicateCopy]} onGiftItem={onGiftSpy} />,
+      );
+
+      // t-1 has 2 copies (item-1 and item-1-dup) -> both have Gift button
+      expect(screen.getByTestId("gift-button-item-1")).toBeInTheDocument();
+      expect(screen.getByTestId("gift-button-item-1-dup")).toBeInTheDocument();
+
+      // t-2 has only 1 copy (item-2) -> does NOT have Gift button
+      expect(screen.queryByTestId("gift-button-item-2")).not.toBeInTheDocument();
+    });
   });
 
   describe("ProfilePage Inventory States", () => {

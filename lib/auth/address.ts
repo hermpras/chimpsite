@@ -10,6 +10,14 @@
 const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
 /**
+ * Check if a string is a valid EVM address format.
+ */
+export function isValidAddress(address: string): boolean {
+  if (!address || typeof address !== "string") return false;
+  return EVM_ADDRESS_RE.test(address.trim());
+}
+
+/**
  * Validate and normalize an EVM address to lowercase hex.
  * Throws if the input does not match the expected format.
  */
