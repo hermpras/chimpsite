@@ -71,12 +71,12 @@ export function UserAvatar({
     }
   };
 
-  // State 1: Fallback (No identifier or user has no inventory items)
+  // State 1: Fallback (No identifier or user explicitly has no inventory items)
   if (!identifier || hasInventory === false) {
     return (
       <div
         data-testid={isSm ? "navbar-avatar-fallback" : "avatar-fallback"}
-        className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-gray-800 bg-[#0d111c] text-gray-500 shadow-inner ${containerClass} ${className}`}
+        className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-gray-800 bg-[#0d111c] text-gray-400 shadow-inner ${containerClass} ${className}`}
         title="No character avatar (no traits in inventory)"
       >
         <User className={iconClass} />
@@ -84,15 +84,13 @@ export function UserAvatar({
     );
   }
 
-  const avatarUrl = getAvatarPublicUrl(identifier, version);
-
-  // State 2: Error state (Image failed to load or render error occurred)
-  if (imgError || renderError) {
+  // State 2: Explicit render error (e.g. manual re-render failed on server)
+  if (renderError) {
     if (isSm) {
       return (
         <div
           data-testid="navbar-avatar-fallback"
-          className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-rose-900/40 bg-rose-950/20 text-rose-400 ${containerClass} ${className}`}
+          className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-gray-800 bg-[#0d111c] text-gray-400 ${containerClass} ${className}`}
           title="Avatar unavailable"
         >
           <User className={iconClass} />
@@ -105,7 +103,7 @@ export function UserAvatar({
         <div
           data-testid="avatar-error"
           className={`relative flex shrink-0 flex-col items-center justify-center overflow-hidden border border-rose-900/50 bg-rose-950/20 text-rose-400 shadow-inner ${containerClass} ${className}`}
-          title={renderError || "Avatar render error"}
+          title={renderError}
         >
           <AlertTriangle className="h-6 w-6 text-rose-400" />
           <span className="mt-1 text-[10px] font-medium text-rose-300">Error</span>
@@ -128,7 +126,23 @@ export function UserAvatar({
     );
   }
 
-  // State 3 & 4: Loading & Loaded Image
+  // State 3: Image failed to load (e.g. 404 because user has no active traits yet).
+  // Gracefully fallback to clean generic User icon instead of an alarming red error badge.
+  if (imgError) {
+    return (
+      <div
+        data-testid={isSm ? "navbar-avatar-fallback" : "avatar-fallback"}
+        className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-gray-800 bg-[#0d111c] text-gray-400 shadow-inner ${containerClass} ${className}`}
+        title="No character avatar (no traits in inventory)"
+      >
+        <User className={iconClass} />
+      </div>
+    );
+  }
+
+  const avatarUrl = getAvatarPublicUrl(identifier, version);
+
+  // State 4: Loading & Loaded Image
   return (
     <div className="relative inline-block">
       <div

@@ -149,7 +149,7 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
       expect(screen.queryByTestId("avatar-loading")).not.toBeInTheDocument();
     });
 
-    it("renders error state when image fails to load", () => {
+    it("renders fallback state when image fails to load (e.g. 404 no traits)", () => {
       render(
         <UserAvatar
           identifier={testAddress}
@@ -161,8 +161,7 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
       const img = screen.getByTestId("avatar-image");
       fireEvent.error(img);
 
-      expect(screen.getByTestId("avatar-error")).toBeInTheDocument();
-      expect(screen.getByTestId("avatar-retry-btn")).toBeInTheDocument();
+      expect(screen.getByTestId("avatar-fallback")).toBeInTheDocument();
     });
 
     it("triggers re-render on manual refresh button click and updates avatar", async () => {
