@@ -1,7 +1,13 @@
 import { prisma } from "@/server/db";
 import { authenticateRequest } from "@/server/auth/session";
 import { claimDrop, DropClaimError } from "@/server/drops/claim";
+import { safeTriggerAvatarUpdate } from "@/server/inventory/avatar-renderer";
 import { readLimitedBody } from "@/lib/auth/body-limit";
+import {
+  checkRateLimit,
+  DROPS_CLAIM_RATE_LIMIT_MAX,
+  DROPS_CLAIM_RATE_LIMIT_WINDOW_MS,
+} from "@/lib/auth/rate-limit";
 
 function clientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -15,6 +21,36 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json(
       { error: "UNAUTHORIZED", message: "Sign-in required to claim drops." },
       { status: 401 },
+    );
+  }
+
+  try {
+    const rateLimitKey = `drops-claim:${session.address || session.userId}`;
+    const limit = await checkRateLimit(
+      rateLimitKey,
+      DROPS_CLAIM_RATE_LIMIT_MAX,
+      DROPS_CLAIM_RATE_LIMIT_WINDOW_MS,
+    );
+    if (!limit.allowed) {
+      return Response.json(
+        {
+          error: "RATE_LIMITED",
+          message: "Too many claim attempts. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limit.retryAfterSeconds) },
+        },
+      );
+    }
+  } catch (err: unknown) {
+    console.error("POST /api/drops/claim rate limit failure:", err);
+    return Response.json(
+      {
+        error: "SERVER_ERROR",
+        message: "Rate limit service temporarily unavailable.",
+      },
+      { status: 500 },
     );
   }
 
@@ -51,6 +87,9 @@ export async function POST(request: Request): Promise<Response> {
       ipAddress: clientIp(request),
       userAgent: request.headers.get("user-agent") ?? undefined,
     });
+
+    // Task 3-C: Trigger background avatar re-render on inventory acquisition
+    safeTriggerAvatarUpdate(prisma, session.userId);
 
     return Response.json({
       success: true,

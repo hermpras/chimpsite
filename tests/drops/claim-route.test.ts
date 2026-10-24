@@ -7,6 +7,14 @@ vi.mock("@/server/auth/session", () => ({
   authenticateRequest: vi.fn(),
 }));
 
+vi.mock("@/lib/auth/rate-limit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth/rate-limit")>();
+  return {
+    ...actual,
+    checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+  };
+});
+
 vi.mock("@/server/drops/claim", () => ({
   claimDrop: vi.fn(),
   DropClaimError: class DropClaimError extends Error {
@@ -23,6 +31,7 @@ vi.mock("@/server/drops/claim", () => ({
 
 import { authenticateRequest } from "@/server/auth/session";
 import { claimDrop, DropClaimError } from "@/server/drops/claim";
+import { checkRateLimit } from "@/lib/auth/rate-limit";
 
 describe("POST /api/drops/claim route", () => {
   beforeEach(() => {
@@ -117,5 +126,54 @@ describe("POST /api/drops/claim route", () => {
     expect(res.status).toBe(403);
     const body = await res.json();
     expect(body.error).toBe("WL_HOLDER_CLAIM_PROHIBITED");
+  });
+
+  it("returns 429 when rate limit is exceeded on claim (Task 3-B)", async () => {
+    vi.mocked(authenticateRequest).mockResolvedValue({
+      sessionId: "s1",
+      userId: "u1",
+      address: "0x123",
+    });
+
+    vi.mocked(checkRateLimit).mockResolvedValueOnce({
+      allowed: false,
+      retryAfterSeconds: 45,
+    });
+
+    const req = new Request("http://localhost:3000/api/drops/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dropId: "d1", periodId: "p1" }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("45");
+    const body = await res.json();
+    expect(body.error).toBe("RATE_LIMITED");
+    expect(checkRateLimit).toHaveBeenCalledWith("drops-claim:0x123", 5, 120_000);
+  });
+
+  it("returns 500 when rate limiter fails closed (Task 3-B)", async () => {
+    vi.mocked(authenticateRequest).mockResolvedValue({
+      sessionId: "s1",
+      userId: "u1",
+      address: "0x123",
+    });
+
+    vi.mocked(checkRateLimit).mockRejectedValueOnce(
+      new Error("Redis connection dropped"),
+    );
+
+    const req = new Request("http://localhost:3000/api/drops/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dropId: "d1", periodId: "p1" }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe("SERVER_ERROR");
   });
 });

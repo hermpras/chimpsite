@@ -1,9 +1,6 @@
 import { prisma } from "@/server/db";
 import { requireAdminSession, AdminAuthError } from "@/server/auth/session";
-import {
-  emergencyCloseDropPeriod,
-  DropClaimError,
-} from "@/server/drops/claim";
+import { emergencyCloseDropPeriod, DropClaimError } from "@/server/drops/claim";
 import { readLimitedBody } from "@/lib/auth/body-limit";
 
 function clientIp(request: Request): string {
@@ -50,14 +47,22 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  if (body.reason !== undefined && body.reason !== null && typeof body.reason !== "string") {
+  if (
+    body.reason !== undefined &&
+    body.reason !== null &&
+    typeof body.reason !== "string"
+  ) {
     return Response.json(
       { error: "INVALID_INPUT", message: "reason must be a string." },
       { status: 400 },
     );
   }
 
-  if (body.dropId !== undefined && body.dropId !== null && typeof body.dropId !== "string") {
+  if (
+    body.dropId !== undefined &&
+    body.dropId !== null &&
+    typeof body.dropId !== "string"
+  ) {
     return Response.json(
       { error: "INVALID_INPUT", message: "dropId must be a string." },
       { status: 400 },

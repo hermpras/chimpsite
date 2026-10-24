@@ -23,11 +23,13 @@ function createMockPrisma() {
   const hooks = {
     onInventoryItemCreate: null as ((data: any) => Promise<void> | void) | null,
     onClaimCreate: null as ((data: any) => Promise<void> | void) | null,
+    onAuditCreate: null as ((data: any) => Promise<void> | void) | null,
   };
 
   const createTxClient = () => {
     const uncommittedItems: any[] = [];
     const uncommittedClaims: any[] = [];
+    const uncommittedAuditLogs: any[] = [];
     const stockDeltas: Array<{ id: string; remaining: number; claimed: number }> = [];
 
     const rollback = () => {
@@ -38,6 +40,10 @@ function createMockPrisma() {
       for (const claim of uncommittedClaims) {
         const idx = store.claims.indexOf(claim);
         if (idx !== -1) store.claims.splice(idx, 1);
+      }
+      for (const audit of uncommittedAuditLogs) {
+        const idx = store.auditLogs.indexOf(audit);
+        if (idx !== -1) store.auditLogs.splice(idx, 1);
       }
       for (const delta of stockDeltas) {
         const poolItem = store.poolItems.find((p) => p.id === delta.id);
@@ -182,8 +188,12 @@ function createMockPrisma() {
       },
       auditLog: {
         create: vi.fn(async ({ data }: any) => {
+          if (hooks.onAuditCreate) {
+            await hooks.onAuditCreate(data);
+          }
           const r = { id: `audit-${store.auditLogs.length + 1}`, ...data };
           store.auditLogs.push(r);
+          uncommittedAuditLogs.push(r);
           return r;
         }),
       },
@@ -642,6 +652,41 @@ describe("Drop Claim Engine", () => {
       expect(auditRecord.entityType).toBe("Claim");
       expect(auditRecord.newValues.dropId).toBe("drop-1");
       expect(auditRecord.newValues.periodId).toBe("period-1");
+    });
+
+    it("rolls back claim, stock, and inventory item if audit log creation fails", async () => {
+      const poolBg = mockPrisma._store.poolItems.find((p: any) => p.id === "pool-1")!;
+      const initialRemaining = poolBg.remainingStock;
+      const initialClaimed = poolBg.claimedStock;
+
+      mockPrisma._hooks.onAuditCreate = () => {
+        throw new Error("Audit log database failure");
+      };
+
+      await expect(
+        claimDrop(mockPrisma, {
+          userId: "user-audit-fail",
+          dropId: "drop-1",
+          periodId: "period-1",
+          now: baseTime,
+        }),
+      ).rejects.toThrow("Audit log database failure");
+
+      expect(
+        mockPrisma._store.claims.find((c: any) => c.userId === "user-audit-fail"),
+      ).toBeUndefined();
+      expect(
+        mockPrisma._store.inventoryItems.find(
+          (i: any) => i.ownerId === "user-audit-fail",
+        ),
+      ).toBeUndefined();
+      expect(poolBg.remainingStock).toBe(initialRemaining);
+      expect(poolBg.claimedStock).toBe(initialClaimed);
+      expect(
+        mockPrisma._store.auditLogs.find((l: any) => l.actorId === "user-audit-fail"),
+      ).toBeUndefined();
+
+      mockPrisma._hooks.onAuditCreate = null;
     });
   });
 });

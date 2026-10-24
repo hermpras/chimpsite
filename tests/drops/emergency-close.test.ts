@@ -137,8 +137,7 @@ function createMockPrisma() {
           for (const c of store.claims) {
             const matchesPeriod =
               where.periodId === undefined || c.periodId === where.periodId;
-            const matchesStatus =
-              where.status === undefined || c.status === where.status;
+            const matchesStatus = where.status === undefined || c.status === where.status;
             if (matchesPeriod && matchesStatus) {
               claimStatusSnapshots.push({ id: c.id, status: c.status });
               if (data.status) {
@@ -414,7 +413,9 @@ describe("Emergency Close for Active Drop Windows (Task 1-C)", () => {
     });
 
     // Verify completed claim remains SUCCESS
-    const completedClaim = mockPrisma._store.claims.find((c) => c.id === claimRes.claim.id);
+    const completedClaim = mockPrisma._store.claims.find(
+      (c) => c.id === claimRes.claim.id,
+    );
     expect(completedClaim?.status).toBe("SUCCESS");
 
     // Verify completed inventory item remains intact
