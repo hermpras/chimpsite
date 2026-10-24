@@ -525,4 +525,23 @@ describe("requireAdminSession & checkAdminSession", () => {
       message: expect.stringContaining("MANAGE_DROPS"),
     });
   });
+
+  it("does not emit diagnostic debug logs to console during role verification", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const prisma = fakeAdminPrisma({
+        adminRoleRecord: {
+          id: "role_1",
+          userId: "user_admin",
+          roleType: "ADMIN",
+          permissions: ["MANAGE_DROPS"],
+        },
+      });
+
+      await checkAdminSession(prisma, { session: validAdminSession });
+      expect(consoleSpy).not.toHaveBeenCalled();
+    } finally {
+      consoleSpy.mockRestore();
+    }
+  });
 });

@@ -262,7 +262,6 @@ export async function checkAdminSession(
   }
 
   // 2. Query database for AdminRole record (untrusted client data is never used)
-  console.log(`[checkAdminSession] Current session userId: "${session.userId}"`);
   const roleRecord = await prisma.adminRole.findUnique({
     where: { userId: session.userId },
     select: {
@@ -273,7 +272,6 @@ export async function checkAdminSession(
       assignedBy: true,
     },
   });
-  console.log(`[checkAdminSession] Found roleRecord in DB:`, roleRecord);
 
   if (!roleRecord) {
     return {
