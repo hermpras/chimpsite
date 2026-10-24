@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "admin:bootstrap": "node scripts/bootstrap-super-admin.mjs"
   },
   "keywords": [],
   "author": "",

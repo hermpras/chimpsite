@@ -16,21 +16,22 @@ All secret keys and sensitive credentials are read strictly on the server-side a
 
 ## 2. Environment Variables Matrix
 
-| Variable Name              | Required                  | Default                 | Scope               | Description                                                                                 |
-| :------------------------- | :------------------------ | :---------------------- | :------------------ | :------------------------------------------------------------------------------------------ |
-| `DATABASE_URL`             | **Yes**                   | —                       | Server              | PostgreSQL connection string for Prisma ORM v7                                              |
-| `SESSION_SECRET`           | **Yes**                   | —                       | Server              | 32+ character key for Iron Session cookie encryption (`chimphood_session`)                  |
-| `SIWE_DOMAIN`              | **Yes** (for SIWE)        | —                       | Server              | Expected domain for EIP-4361 SIWE message validation (fails closed if unset)                |
-| `SIWE_URI`                 | **Yes** (for SIWE)        | —                       | Server              | Expected canonical origin URI for SIWE message validation (fails closed if unset)           |
-| `ALLOWED_CHAIN_IDS`        | No                        | `1`                     | Server / Public API | Comma-separated EVM chain IDs allowed for wallet authentication                             |
-| `X_CLIENT_ID`              | Optional / Feature        | —                       | Server              | Twitter / X OAuth 2.0 Client ID for social identity verification                            |
-| `X_CLIENT_SECRET`          | Optional / Feature        | —                       | Server              | Twitter / X OAuth 2.0 Client Secret                                                         |
-| `X_REDIRECT_URI`           | Optional / Feature        | —                       | Server              | Twitter / X OAuth 2.0 Redirect URI registered in developer portal                           |
-| `NEXT_PUBLIC_APP_URL`      | No                        | `http://localhost:3000` | Shared / Client     | Canonical public URL used for absolute links                                                |
-| `CRON_SECRET`              | Optional / Cron           | —                       | Server              | Bearer secret token used to authorize automated background jobs (Vercel Cron)               |
-| `UPSTASH_REDIS_REST_URL`   | **Yes** (Prod/Serverless) | —                       | Server              | Upstash Redis REST API URL for distributed rate limiting & OAuth replay protection          |
-| `UPSTASH_REDIS_REST_TOKEN` | **Yes** (Prod/Serverless) | —                       | Server              | Upstash Redis REST API bearer token for distributed rate limiting & OAuth replay protection |
-| `NODE_ENV`                 | Automatic                 | `development`           | Node.js Runtime     | Environment mode (`development`, `production`, `test`)                                      |
+| Variable Name                 | Required                    | Default                 | Scope               | Description                                                                                 |
+| :---------------------------- | :-------------------------- | :---------------------- | :------------------ | :------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                | **Yes**                     | —                       | Server              | PostgreSQL connection string for Prisma ORM v7                                              |
+| `SESSION_SECRET`              | **Yes**                     | —                       | Server              | 32+ character key for Iron Session cookie encryption (`chimphood_session`)                  |
+| `SIWE_DOMAIN`                 | **Yes** (for SIWE)          | —                       | Server              | Expected domain for EIP-4361 SIWE message validation (fails closed if unset)                |
+| `SIWE_URI`                    | **Yes** (for SIWE)          | —                       | Server              | Expected canonical origin URI for SIWE message validation (fails closed if unset)           |
+| `ALLOWED_CHAIN_IDS`           | No                          | `1`                     | Server / Public API | Comma-separated EVM chain IDs allowed for wallet authentication                             |
+| `X_CLIENT_ID`                 | Optional / Feature          | —                       | Server              | Twitter / X OAuth 2.0 Client ID for social identity verification                            |
+| `X_CLIENT_SECRET`             | Optional / Feature          | —                       | Server              | Twitter / X OAuth 2.0 Client Secret                                                         |
+| `X_REDIRECT_URI`              | Optional / Feature          | —                       | Server              | Twitter / X OAuth 2.0 Redirect URI registered in developer portal                           |
+| `NEXT_PUBLIC_APP_URL`         | No                          | `http://localhost:3000` | Shared / Client     | Canonical public URL used for absolute links                                                |
+| `CRON_SECRET`                 | Optional / Cron             | —                       | Server              | Bearer secret token used to authorize automated background jobs (Vercel Cron)               |
+| `UPSTASH_REDIS_REST_URL`      | **Yes** (Prod/Serverless)   | —                       | Server              | Upstash Redis REST API URL for distributed rate limiting & OAuth replay protection          |
+| `UPSTASH_REDIS_REST_TOKEN`    | **Yes** (Prod/Serverless)   | —                       | Server              | Upstash Redis REST API bearer token for distributed rate limiting & OAuth replay protection |
+| `INITIAL_SUPER_ADMIN_ADDRESS` | Optional (Bootstrap script) | —                       | Server / CLI        | 0x-prefixed EVM wallet address to initialize the primary SUPER_ADMIN role (Task B-3)        |
+| `NODE_ENV`                    | Automatic                   | `development`           | Node.js Runtime     | Environment mode (`development`, `production`, `test`)                                      |
 
 ---
 
@@ -159,6 +160,34 @@ All secret keys and sensitive credentials are read strictly on the server-side a
 
 ---
 
+### 3.8 Super Admin Bootstrap Configuration (Task B-3)
+
+#### `INITIAL_SUPER_ADMIN_ADDRESS`
+
+- **Purpose**: Specifies the initial EVM wallet address to be granted `SUPER_ADMIN` privileges in staging or production environments using the isolated bootstrap script (`server/admin/bootstrap.ts`).
+- **Scope**: Server / CLI only. Never exposed to browser or client bundles.
+- **Format**: Valid 0x-prefixed 40-hex-character EVM address (e.g., `0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed`). Automatically normalized to lowercase prior to database persistence.
+- **Fail-Closed Behavior**: If neither the CLI argument nor `INITIAL_SUPER_ADMIN_ADDRESS` is provided, or if the format is invalid, the script immediately exits with code 1 and a clear diagnostic message.
+- **Idempotency & Safety**:
+  - The script does not depend on `devPromoteToAdmin` (which is disabled in production).
+  - No public HTTP endpoints are exposed for admin promotion.
+  - Repeated executions are completely idempotent: existing super admins are preserved without duplicate records or demoting permissions.
+  - The script operates within an atomic database transaction and records an immutable audit trail (`AuditLog`) per DEC-011.
+  - Never prints secrets, connection strings, or authentication tokens to stdout/stderr.
+- **Manual Operator Execution**:
+  ```bash
+  # Option 1: Via npm script with environment variable
+  INITIAL_SUPER_ADMIN_ADDRESS="0x..." DATABASE_URL="postgresql://..." npm run admin:bootstrap
+
+  # Option 2: Via npm script with CLI argument
+  DATABASE_URL="postgresql://..." npm run admin:bootstrap -- 0x...
+
+  # Option 3: Via standalone Node runner
+  DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
+  ```
+
+---
+
 ## 4. Setup Guide
 
 ### 4.1 Local Development Quickstart
@@ -189,4 +218,5 @@ All secret keys and sensitive credentials are read strictly on the server-side a
 - [ ] Generate and set `CRON_SECRET` for Vercel Cron authorization (`/api/cron/sweep-gifts`, `/api/cron/cleanup-auth`).
 - [ ] Configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for shared distributed rate limiting and OAuth state replay protection.
 - [ ] If X integration is enabled, configure registered OAuth 2.0 credentials and production redirect URI.
+- [ ] Bootstrap initial `SUPER_ADMIN` wallet using the isolated script: `INITIAL_SUPER_ADMIN_ADDRESS="0x..." npm run admin:bootstrap`.
 - [ ] Run verification suite: `npm run test && npm run typecheck && npm run lint`.
