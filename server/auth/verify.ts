@@ -85,19 +85,40 @@ async function findOrCreateWalletIdentity(
 ) {
   const existing = await prisma.walletIdentity.findUnique({
     where: { address },
-    include: { user: true },
+    include: {
+      user: {
+        select: {
+          id: true,
+          isBanned: true,
+        },
+      },
+    },
   });
   if (existing) return existing;
   try {
     return await prisma.walletIdentity.create({
       data: { address, chainId, user: { create: {} } },
-      include: { user: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            isBanned: true,
+          },
+        },
+      },
     });
   } catch (err) {
     if (isUniqueViolation(err)) {
       const winner = await prisma.walletIdentity.findUnique({
         where: { address },
-        include: { user: true },
+        include: {
+          user: {
+            select: {
+              id: true,
+              isBanned: true,
+            },
+          },
+        },
       });
       if (winner) return winner;
     }

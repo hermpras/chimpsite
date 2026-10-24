@@ -464,4 +464,65 @@ describe("requireAdminSession & checkAdminSession", () => {
       expect(check.error).toBe("FORBIDDEN");
     }
   });
+
+  it("fails with 401 UNAUTHORIZED when session is explicitly passed as null", async () => {
+    const prisma = fakeAdminPrisma();
+    const check = await checkAdminSession(prisma, { session: null });
+    expect(check.ok).toBe(false);
+    if (!check.ok) {
+      expect(check.status).toBe(401);
+      expect(check.error).toBe("UNAUTHORIZED");
+      expect(check.message).toContain("Authentication required");
+    }
+
+    await expect(requireAdminSession(prisma, { session: null })).rejects.toMatchObject({
+      status: 401,
+      code: "UNAUTHORIZED",
+    });
+  });
+
+  it("authorizes admin when no specific permission or role is required", async () => {
+    const prisma = fakeAdminPrisma({
+      adminRoleRecord: {
+        id: "role_default",
+        userId: "user_admin",
+        roleType: "ADMIN",
+        permissions: ["ANY_PERMISSION"],
+      },
+    });
+
+    const check = await checkAdminSession(prisma, { session: validAdminSession });
+    expect(check.ok).toBe(true);
+    if (check.ok) {
+      expect(check.session.userId).toBe("user_admin");
+      expect(check.session.adminRole.roleType).toBe("ADMIN");
+      expect(check.session.adminRole.assignedBy).toBeNull();
+    }
+
+    const result = await requireAdminSession(prisma, { session: validAdminSession });
+    expect(result.userId).toBe("user_admin");
+    expect(result.adminRole.id).toBe("role_default");
+  });
+
+  it("fails with 403 FORBIDDEN when using string shorthand for a permission the user lacks", async () => {
+    const prisma = fakeAdminPrisma({
+      adminRoleRecord: {
+        id: "role_mod",
+        userId: "user_admin",
+        roleType: "MODERATOR",
+        permissions: ["MANAGE_WL"],
+      },
+    });
+
+    await expect(
+      requireAdminSession(prisma, {
+        session: validAdminSession,
+        requiredPermission: "MANAGE_DROPS",
+      }),
+    ).rejects.toMatchObject({
+      status: 403,
+      code: "FORBIDDEN",
+      message: expect.stringContaining("MANAGE_DROPS"),
+    });
+  });
 });

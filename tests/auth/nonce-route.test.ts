@@ -1,5 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { GET, PUT, DELETE, PATCH, HEAD, OPTIONS, POST } from "@/app/api/auth/nonce/route";
+
+vi.mock("@/lib/auth/rate-limit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth/rate-limit")>();
+  return {
+    ...actual,
+    checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    __clearRateLimitBuckets: vi.fn(),
+  };
+});
 
 // NOTE: the happy-path POST requires a live database and is not tested here.
 // The issuance logic is covered by tests/auth/nonce-service.test.ts with a

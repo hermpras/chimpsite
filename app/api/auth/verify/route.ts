@@ -52,19 +52,24 @@ function clientMessageFor(status: number): string {
 
 export async function POST(request: Request): Promise<Response> {
   const ip = clientIp(request);
-  const limit = checkRateLimit(
-    `siwe-verify:${ip}`,
-    NONCE_RATE_LIMIT_MAX,
-    NONCE_RATE_LIMIT_WINDOW_MS,
-  );
-  if (!limit.allowed) {
-    return Response.json(
-      { error: clientMessageFor(429) },
-      {
-        status: 429,
-        headers: { "Retry-After": String(limit.retryAfterSeconds) },
-      },
+  try {
+    const limit = await checkRateLimit(
+      `siwe-verify:${ip}`,
+      NONCE_RATE_LIMIT_MAX,
+      NONCE_RATE_LIMIT_WINDOW_MS,
     );
+    if (!limit.allowed) {
+      return Response.json(
+        { error: clientMessageFor(429) },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limit.retryAfterSeconds) },
+        },
+      );
+    }
+  } catch (err) {
+    console.error("POST /api/auth/verify rate limiter failure:", err);
+    return Response.json({ error: "Authentication unavailable." }, { status: 500 });
   }
 
   let body: unknown;

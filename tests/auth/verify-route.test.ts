@@ -18,10 +18,13 @@ import { __clearRateLimitBuckets } from "@/lib/auth/rate-limit";
 
 // vi.mock factories are hoisted above top-level statements, so the mocks
 // must be created via vi.hoisted().
-const { mockVerifySiweLogin, mockSealSessionCookie } = vi.hoisted(() => ({
-  mockVerifySiweLogin: vi.fn(),
-  mockSealSessionCookie: vi.fn(),
-}));
+const { mockVerifySiweLogin, mockSealSessionCookie, mockCheckRateLimit } = vi.hoisted(
+  () => ({
+    mockVerifySiweLogin: vi.fn(),
+    mockSealSessionCookie: vi.fn(),
+    mockCheckRateLimit: vi.fn(),
+  }),
+);
 
 vi.mock("@/server/auth/verify", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/server/auth/verify")>();
@@ -30,6 +33,14 @@ vi.mock("@/server/auth/verify", async (importOriginal) => {
 vi.mock("@/server/auth/session", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/server/auth/session")>();
   return { ...actual, sealSessionCookie: mockSealSessionCookie };
+});
+vi.mock("@/lib/auth/rate-limit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth/rate-limit")>();
+  return {
+    ...actual,
+    checkRateLimit: mockCheckRateLimit,
+    __clearRateLimitBuckets: vi.fn(),
+  };
 });
 // The route dynamically imports the DB client inside POST — stub it so the
 // module can never touch a real database.
@@ -52,6 +63,8 @@ beforeEach(() => {
   process.env.SESSION_SECRET = "test-session-secret-0123456789abcdef";
   mockVerifySiweLogin.mockReset();
   mockSealSessionCookie.mockReset();
+  mockCheckRateLimit.mockReset();
+  mockCheckRateLimit.mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
   __clearRateLimitBuckets();
 });
 
@@ -184,6 +197,29 @@ describe("POST /api/auth/verify", () => {
     const res = await POST(postJson({}));
 
     expect(res.status).toBe(400);
+    expect(mockVerifySiweLogin).not.toHaveBeenCalled();
+  });
+
+  it("rejects with 429 when rate limit is exceeded", async () => {
+    mockCheckRateLimit.mockResolvedValueOnce({ allowed: false, retryAfterSeconds: 45 });
+
+    const res = await POST(postJson({ message: "m", signature: "s" }));
+
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("45");
+    const body = (await res.json()) as { error?: string };
+    expect(body.error).toBe("Too many requests. Please try again later.");
+    expect(mockVerifySiweLogin).not.toHaveBeenCalled();
+  });
+
+  it("fails closed with 500 when rate limiter fails", async () => {
+    mockCheckRateLimit.mockRejectedValueOnce(new Error("Redis connection timed out"));
+
+    const res = await POST(postJson({ message: "m", signature: "s" }));
+
+    expect(res.status).toBe(500);
+    const body = (await res.json()) as { error?: string };
+    expect(body.error).toBe("Authentication unavailable.");
     expect(mockVerifySiweLogin).not.toHaveBeenCalled();
   });
 });

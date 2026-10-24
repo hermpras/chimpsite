@@ -140,7 +140,8 @@ function makeFakePrisma() {
       return (
         bans.find((b) => {
           if (b.userId !== args.where.userId) return false;
-          if (args.where.isActive !== undefined && b.isActive !== args.where.isActive) return false;
+          if (args.where.isActive !== undefined && b.isActive !== args.where.isActive)
+            return false;
           if (args.where.scope && b.scope !== args.where.scope) return false;
           if (args.where.OR && b.expiresAt) {
             const gtObj = args.where.OR.find((cond: any) => cond.expiresAt?.gt);

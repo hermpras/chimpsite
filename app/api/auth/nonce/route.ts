@@ -30,18 +30,26 @@ function clientIp(request: Request): string {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const limit = checkRateLimit(
-    `siwe-nonce:${clientIp(request)}`,
-    NONCE_RATE_LIMIT_MAX,
-    NONCE_RATE_LIMIT_WINDOW_MS,
-  );
-  if (!limit.allowed) {
+  try {
+    const limit = await checkRateLimit(
+      `siwe-nonce:${clientIp(request)}`,
+      NONCE_RATE_LIMIT_MAX,
+      NONCE_RATE_LIMIT_WINDOW_MS,
+    );
+    if (!limit.allowed) {
+      return Response.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limit.retryAfterSeconds) },
+        },
+      );
+    }
+  } catch (err) {
+    console.error("POST /api/auth/nonce rate limit failure:", err);
     return Response.json(
-      { error: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(limit.retryAfterSeconds) },
-      },
+      { error: "Authentication service temporarily unavailable." },
+      { status: 500 },
     );
   }
 
