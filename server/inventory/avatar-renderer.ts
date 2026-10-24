@@ -265,16 +265,31 @@ export async function renderUserAvatar(
 
     // 4. Persist in PostgreSQL (User.avatarPng) with concurrency check:
     // Only update if avatarUpdatedAt is null or older than renderStartedAt.
-    await prisma.user.updateMany({
-      where: {
-        id: userId,
-        OR: [{ avatarUpdatedAt: null }, { avatarUpdatedAt: { lte: renderStartedAt } }],
-      },
-      data: {
-        avatarPng: new Uint8Array(pngBuffer),
-        avatarUpdatedAt: renderStartedAt,
-      },
-    });
+    try {
+      await prisma.user.updateMany({
+        where: {
+          id: userId,
+          OR: [{ avatarUpdatedAt: null }, { avatarUpdatedAt: { lte: renderStartedAt } }],
+        },
+        data: {
+          avatarPng: new Uint8Array(pngBuffer),
+          avatarUpdatedAt: renderStartedAt,
+        },
+      });
+    } catch (persistErr: unknown) {
+      const err = persistErr as { code?: string; message?: string };
+      if (
+        err?.code === "P2022" ||
+        (typeof err?.message === "string" &&
+          (err.message.includes("avatarPng") || err.message.includes("ColumnNotFound")))
+      ) {
+        console.warn(
+          `[renderUserAvatar] avatarPng column not accessible in DB during updateMany for user ${userId}. Serving rendered PNG directly.`,
+        );
+      } else {
+        throw persistErr;
+      }
+    }
 
     const publicUrl = buildAvatarPublicUrl(userId, renderStartedAt);
 
@@ -309,21 +324,57 @@ export async function getAvatarRecord(
     return null;
   }
 
+  const isColumnNotFoundError = (err: unknown) => {
+    const error = err as { code?: string; message?: string };
+    return (
+      error?.code === "P2022" ||
+      (typeof error?.message === "string" &&
+        (error.message.includes("avatarPng") || error.message.includes("ColumnNotFound")))
+    );
+  };
+
   // 1. Try lookup by User ID
-  const user = await prisma.user.findUnique({
-    where: { id: identifier },
-    select: {
-      id: true,
-      avatarPng: true,
-      avatarUpdatedAt: true,
-    },
-  });
+  let user: {
+    id: string;
+    avatarPng?: Uint8Array | Buffer | null;
+    avatarUpdatedAt?: Date | null;
+  } | null = null;
+
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: identifier },
+      select: {
+        id: true,
+        avatarPng: true,
+        avatarUpdatedAt: true,
+      },
+    });
+  } catch (err: unknown) {
+    if (isColumnNotFoundError(err)) {
+      console.warn(
+        `[getAvatarRecord] avatarPng column not accessible in DB for user ${identifier}, falling back to id-only lookup.`,
+      );
+      try {
+        const fallbackUser = await prisma.user.findUnique({
+          where: { id: identifier },
+          select: { id: true },
+        });
+        if (fallbackUser) {
+          user = { id: fallbackUser.id, avatarPng: null, avatarUpdatedAt: null };
+        }
+      } catch {
+        user = null;
+      }
+    } else {
+      throw err;
+    }
+  }
 
   if (user) {
     return {
       userId: user.id,
       pngBuffer: user.avatarPng ? Buffer.from(user.avatarPng) : null,
-      updatedAt: user.avatarUpdatedAt,
+      updatedAt: user.avatarUpdatedAt ?? null,
     };
   }
 
@@ -335,27 +386,66 @@ export async function getAvatarRecord(
     return null;
   }
 
-  const wallet = await prisma.walletIdentity.findUnique({
-    where: { address: normalizedAddress },
-    select: {
-      user: {
-        select: {
-          id: true,
-          avatarPng: true,
-          avatarUpdatedAt: true,
+  let walletUser: {
+    id: string;
+    avatarPng?: Uint8Array | Buffer | null;
+    avatarUpdatedAt?: Date | null;
+  } | null = null;
+
+  try {
+    const wallet = await prisma.walletIdentity.findUnique({
+      where: { address: normalizedAddress },
+      select: {
+        user: {
+          select: {
+            id: true,
+            avatarPng: true,
+            avatarUpdatedAt: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!wallet || !wallet.user) {
+    if (wallet?.user) {
+      walletUser = wallet.user;
+    }
+  } catch (err: unknown) {
+    if (isColumnNotFoundError(err)) {
+      console.warn(
+        `[getAvatarRecord] avatarPng column not accessible in DB for address ${identifier}, falling back to id-only lookup.`,
+      );
+      try {
+        const fallbackWallet = await prisma.walletIdentity.findUnique({
+          where: { address: normalizedAddress },
+          select: {
+            user: {
+              select: { id: true },
+            },
+          },
+        });
+        if (fallbackWallet?.user) {
+          walletUser = {
+            id: fallbackWallet.user.id,
+            avatarPng: null,
+            avatarUpdatedAt: null,
+          };
+        }
+      } catch {
+        walletUser = null;
+      }
+    } else {
+      throw err;
+    }
+  }
+
+  if (!walletUser) {
     return null;
   }
 
   return {
-    userId: wallet.user.id,
-    pngBuffer: wallet.user.avatarPng ? Buffer.from(wallet.user.avatarPng) : null,
-    updatedAt: wallet.user.avatarUpdatedAt,
+    userId: walletUser.id,
+    pngBuffer: walletUser.avatarPng ? Buffer.from(walletUser.avatarPng) : null,
+    updatedAt: walletUser.avatarUpdatedAt ?? null,
   };
 }
 

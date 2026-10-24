@@ -487,6 +487,43 @@ describe("Task 3-C — getAvatarRecord", () => {
       },
     });
   });
+
+  it("handles P2022 column not found error gracefully during User lookup", async () => {
+    const p2022Err = Object.assign(
+      new Error("The column `User.avatarPng` does not exist in the current database."),
+      { code: "P2022" },
+    );
+    mockUserFindUnique
+      .mockRejectedValueOnce(p2022Err)
+      .mockResolvedValueOnce({ id: "u-missing-col" });
+
+    const record = await getAvatarRecord(mockPrisma, "u-missing-col");
+    expect(record).toEqual({
+      userId: "u-missing-col",
+      pngBuffer: null,
+      updatedAt: null,
+    });
+  });
+
+  it("handles P2022 column not found error gracefully during wallet lookup", async () => {
+    const address = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const p2022Err = Object.assign(
+      new Error("The column `User.avatarPng` does not exist in the current database."),
+      { code: "P2022" },
+    );
+
+    mockUserFindUnique.mockResolvedValueOnce(null);
+    mockWalletFindUnique
+      .mockRejectedValueOnce(p2022Err)
+      .mockResolvedValueOnce({ user: { id: "u-wallet-fallback" } });
+
+    const record = await getAvatarRecord(mockPrisma, address);
+    expect(record).toEqual({
+      userId: "u-wallet-fallback",
+      pngBuffer: null,
+      updatedAt: null,
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
