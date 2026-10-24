@@ -32,6 +32,16 @@ interface MockStore {
     createdAt: Date;
     updatedAt: Date;
   }>;
+  banRecords: Array<{
+    id: string;
+    userId: string;
+    banType: string;
+    scope: string;
+    reason: string;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
   auditLogs: Array<{
     id: string;
     actorId: string | null;
@@ -52,6 +62,7 @@ function createMockPrisma() {
     users: [],
     walletIdentities: [],
     adminRoles: [],
+    banRecords: [],
     auditLogs: [],
   };
 
@@ -173,6 +184,25 @@ function createMockPrisma() {
           if (data.assignedBy !== undefined) role.assignedBy = data.assignedBy;
           role.updatedAt = new Date();
           return role;
+        }),
+      },
+      banRecord: {
+        findMany: vi.fn(async ({ where }: any) => {
+          return store.banRecords.filter(
+            (b) => !where?.userId || b.userId === where.userId,
+          );
+        }),
+        delete: vi.fn(async () => {
+          throw new Error("Ban records should not be deleted during bootstrap");
+        }),
+        deleteMany: vi.fn(async () => {
+          throw new Error("Ban records should not be deleted during bootstrap");
+        }),
+        update: vi.fn(async () => {
+          throw new Error("Ban records should not be updated during bootstrap");
+        }),
+        updateMany: vi.fn(async () => {
+          throw new Error("Ban records should not be updated during bootstrap");
         }),
       },
       auditLog: {
@@ -417,7 +447,7 @@ describe("Task B-3: Super Admin Bootstrap Service", () => {
       });
     });
 
-    it("unbans user if the target user was previously banned", async () => {
+    it("preserves active ban status and does not unban user during bootstrap promotion", async () => {
       const { client, store } = createMockPrisma();
 
       const bannedUser = {
@@ -435,13 +465,43 @@ describe("Task B-3: Super Admin Bootstrap Service", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+      const banRecord = {
+        id: "ban_123",
+        userId: bannedUser.id,
+        banType: "PERMANENT",
+        scope: "FULL_SYSTEM",
+        reason: "Severe policy violation",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       store.users.push(bannedUser);
       store.walletIdentities.push(wallet);
+      store.banRecords.push(banRecord);
 
       const result = await bootstrapSuperAdmin(client, VALID_CHECKSUM_ADDRESS);
       expect(result.ok).toBe(true);
-      expect(bannedUser.isBanned).toBe(false);
+      expect(result.action).toBe("PROMOTED");
+      expect(result.role).toBe("SUPER_ADMIN");
+
+      // Verify ban status is NOT cleared and remains active
+      expect(bannedUser.isBanned).toBe(true);
       expect(bannedUser.role).toBe("SUPER_ADMIN");
+
+      // Verify AdminRole was created with SUPER_ADMIN
+      expect(store.adminRoles).toHaveLength(1);
+      expect(store.adminRoles[0].userId).toBe(bannedUser.id);
+      expect(store.adminRoles[0].roleType).toBe("SUPER_ADMIN");
+      expect(store.adminRoles[0].permissions).toEqual(["*"]);
+
+      // Verify ban record is untouched and unmodified
+      expect(store.banRecords).toHaveLength(1);
+      expect(store.banRecords[0].id).toBe("ban_123");
+      expect(store.banRecords[0].isActive).toBe(true);
+
+      // Verify only BOOTSTRAP_SUPER_ADMIN audit log is recorded (no unban audit log)
+      expect(store.auditLogs).toHaveLength(1);
+      expect(store.auditLogs[0].action).toBe("BOOTSTRAP_SUPER_ADMIN");
     });
   });
 
@@ -485,6 +545,66 @@ describe("Task B-3: Super Admin Bootstrap Service", () => {
       expect(store.adminRoles[0].id).toBe(createdRoleId);
       expect(store.adminRoles[0].roleType).toBe("SUPER_ADMIN");
       expect(store.adminRoles[0].permissions).toEqual(["*"]);
+    });
+
+    it("is idempotent for banned users: keeps ban active across repeated runs without modifying ban records", async () => {
+      const { client, store } = createMockPrisma();
+
+      const bannedUser = {
+        id: "usr_banned_idempotent",
+        role: "USER",
+        isBanned: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const wallet = {
+        id: "wal_banned_idempotent",
+        userId: bannedUser.id,
+        address: NORMALIZED_ADDRESS,
+        chainId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const banRecord = {
+        id: "ban_idem_1",
+        userId: bannedUser.id,
+        banType: "PERMANENT",
+        scope: "FULL_SYSTEM",
+        reason: "Policy violation",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      store.users.push(bannedUser);
+      store.walletIdentities.push(wallet);
+      store.banRecords.push(banRecord);
+
+      // Run 1: Promotes user to SUPER_ADMIN without modifying isBanned or BanRecord
+      const run1 = await bootstrapSuperAdmin(client, VALID_CHECKSUM_ADDRESS);
+      expect(run1.ok).toBe(true);
+      expect(run1.action).toBe("PROMOTED");
+      expect(bannedUser.isBanned).toBe(true);
+      expect(bannedUser.role).toBe("SUPER_ADMIN");
+      expect(store.banRecords).toHaveLength(1);
+      expect(store.banRecords[0].isActive).toBe(true);
+
+      // Run 2: Already SUPER_ADMIN — retains isBanned: true and does not alter BanRecord
+      const run2 = await bootstrapSuperAdmin(client, VALID_CHECKSUM_ADDRESS);
+      expect(run2.ok).toBe(true);
+      expect(run2.action).toBe("ALREADY_SUPER_ADMIN");
+      expect(bannedUser.isBanned).toBe(true);
+      expect(bannedUser.role).toBe("SUPER_ADMIN");
+      expect(store.banRecords).toHaveLength(1);
+      expect(store.banRecords[0].isActive).toBe(true);
+
+      // Run 3: Lowercase address idempotency check
+      const run3 = await bootstrapSuperAdmin(client, NORMALIZED_ADDRESS);
+      expect(run3.ok).toBe(true);
+      expect(run3.action).toBe("ALREADY_SUPER_ADMIN");
+      expect(bannedUser.isBanned).toBe(true);
+      expect(bannedUser.role).toBe("SUPER_ADMIN");
+      expect(store.banRecords).toHaveLength(1);
+      expect(store.banRecords[0].isActive).toBe(true);
     });
   });
 
@@ -628,6 +748,118 @@ describe("Task B-3: Super Admin Bootstrap Service", () => {
       expect(result.permissions).toContain("*");
       expect(result.permissions).toContain("CUSTOM_PERMISSION");
       expect(existingRole.permissions).toEqual(["CUSTOM_PERMISSION", "*"]);
+    });
+
+    it("preserves ban status if an existing SUPER_ADMIN is currently banned", async () => {
+      const { client, store } = createMockPrisma();
+
+      const bannedSuperAdmin = {
+        id: "usr_super_banned",
+        role: "SUPER_ADMIN",
+        isBanned: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const wallet = {
+        id: "wal_super_banned",
+        userId: bannedSuperAdmin.id,
+        address: NORMALIZED_ADDRESS,
+        chainId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const adminRole = {
+        id: "adm_super_banned",
+        userId: bannedSuperAdmin.id,
+        roleType: "SUPER_ADMIN",
+        permissions: ["*"],
+        assignedBy: "FOUNDER",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const banRecord = {
+        id: "ban_super_123",
+        userId: bannedSuperAdmin.id,
+        banType: "PERMANENT",
+        scope: "FULL_SYSTEM",
+        reason: "Compromised credential containment",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      store.users.push(bannedSuperAdmin);
+      store.walletIdentities.push(wallet);
+      store.adminRoles.push(adminRole);
+      store.banRecords.push(banRecord);
+
+      const result = await bootstrapSuperAdmin(client, VALID_CHECKSUM_ADDRESS);
+
+      expect(result.ok).toBe(true);
+      expect(result.action).toBe("ALREADY_SUPER_ADMIN");
+      expect(bannedSuperAdmin.isBanned).toBe(true);
+      expect(bannedSuperAdmin.role).toBe("SUPER_ADMIN");
+      expect(store.banRecords).toHaveLength(1);
+      expect(store.banRecords[0].isActive).toBe(true);
+      expect(store.auditLogs).toHaveLength(0); // No role changes needed, so no audit log
+    });
+
+    it("preserves ban status when upgrading a banned user from a lower admin role", async () => {
+      const { client, store } = createMockPrisma();
+
+      const bannedMod = {
+        id: "usr_mod_banned",
+        role: "MODERATOR",
+        isBanned: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const wallet = {
+        id: "wal_mod_banned",
+        userId: bannedMod.id,
+        address: NORMALIZED_ADDRESS,
+        chainId: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const adminRole = {
+        id: "adm_mod_banned",
+        userId: bannedMod.id,
+        roleType: "MODERATOR",
+        permissions: ["REVIEW_EVIDENCE"],
+        assignedBy: "DEV_PORTAL",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const banRecord = {
+        id: "ban_mod_123",
+        userId: bannedMod.id,
+        banType: "PERMANENT",
+        scope: "FULL_SYSTEM",
+        reason: "Malicious activity",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      store.users.push(bannedMod);
+      store.walletIdentities.push(wallet);
+      store.adminRoles.push(adminRole);
+      store.banRecords.push(banRecord);
+
+      const result = await bootstrapSuperAdmin(client, VALID_CHECKSUM_ADDRESS);
+
+      expect(result.ok).toBe(true);
+      expect(result.action).toBe("PROMOTED");
+      expect(bannedMod.isBanned).toBe(true);
+      expect(bannedMod.role).toBe("SUPER_ADMIN");
+      expect(adminRole.roleType).toBe("SUPER_ADMIN");
+      expect(adminRole.permissions).toEqual(["REVIEW_EVIDENCE", "*"]);
+      expect(store.banRecords).toHaveLength(1);
+      expect(store.banRecords[0].isActive).toBe(true);
+
+      // Verify audit log records role upgrade only (no unban)
+      expect(store.auditLogs).toHaveLength(1);
+      expect(store.auditLogs[0].action).toBe("BOOTSTRAP_SUPER_ADMIN");
+      expect(store.auditLogs[0].newValues).toMatchObject({ roleType: "SUPER_ADMIN" });
     });
   });
 

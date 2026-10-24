@@ -81,10 +81,10 @@ export function validateBootstrapAddress(rawAddress: unknown): string {
  *  2. Validate and normalize address to lowercase.
  *  3. In a transaction:
  *     - If user + wallet does not exist: create User (SUPER_ADMIN), WalletIdentity, AdminRole (SUPER_ADMIN, ["*"]), AuditLog.
- *     - If user exists but has no AdminRole: promote User (SUPER_ADMIN, isBanned: false), create AdminRole (SUPER_ADMIN, ["*"]), AuditLog.
+ *     - If user exists but has no AdminRole: promote User (SUPER_ADMIN), create AdminRole (SUPER_ADMIN, ["*"]), AuditLog. (Preserves existing ban status).
  *     - If user exists and already has AdminRole:
- *         * If roleType === "SUPER_ADMIN": ensure "*" wildcard is in permissions, ensure user is unbanned. Return ALREADY_SUPER_ADMIN.
- *         * If roleType !== "SUPER_ADMIN": upgrade role to "SUPER_ADMIN", ensure "*" is included in permissions, create AuditLog.
+ *         * If roleType === "SUPER_ADMIN": ensure "*" wildcard is in permissions. Return ALREADY_SUPER_ADMIN. (Preserves existing ban status).
+ *         * If roleType !== "SUPER_ADMIN": upgrade role to "SUPER_ADMIN", ensure "*" is included in permissions, create AuditLog. (Preserves existing ban status).
  */
 export async function bootstrapSuperAdmin(
   prisma: PrismaClient,
@@ -183,7 +183,6 @@ export async function bootstrapSuperAdmin(
         where: { id: user.id },
         data: {
           role: "SUPER_ADMIN",
-          isBanned: false,
         },
       });
 
@@ -249,11 +248,11 @@ export async function bootstrapSuperAdmin(
         });
       }
 
-      // Ensure user record is marked SUPER_ADMIN and unbanned
-      if (user.role !== "SUPER_ADMIN" || user.isBanned) {
+      // Ensure user record is marked SUPER_ADMIN (preserves existing ban status)
+      if (user.role !== "SUPER_ADMIN") {
         await tx.user.update({
           where: { id: user.id },
-          data: { role: "SUPER_ADMIN", isBanned: false },
+          data: { role: "SUPER_ADMIN" },
         });
       }
 
@@ -282,7 +281,6 @@ export async function bootstrapSuperAdmin(
       where: { id: user.id },
       data: {
         role: "SUPER_ADMIN",
-        isBanned: false,
       },
     });
 
