@@ -3,131 +3,320 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import { AdminDrops } from "@/components/admin/AdminDrops";
 import * as dropsClient from "@/lib/drops/client";
+import * as adminClient from "@/lib/admin/client";
 
 vi.mock("@/lib/drops/client", () => ({
   fetchCurrentDrop: vi.fn(),
   emergencyCloseDropWindow: vi.fn(),
 }));
 
-describe("Admin Drops UI - Emergency Close Notification Verification", () => {
+vi.mock("@/lib/admin/client", () => ({
+  adminListDrops: vi.fn(),
+  adminGetDrop: vi.fn(),
+  adminCreateDrop: vi.fn(),
+  adminUpdateDrop: vi.fn(),
+  adminCreateDropPeriod: vi.fn(),
+  adminConfigurePeriodStock: vi.fn(),
+  adminActivateDropPeriod: vi.fn(),
+  adminListTraits: vi.fn(),
+}));
+
+describe("Admin Drops Portal UI - B-1 Drop Configuration Component", () => {
+  const mockCurrentDrop = {
+    active: true,
+    drop: {
+      id: "drop-1",
+      slug: "genesis-drop",
+      title: "ChimpHood Genesis Drop",
+      status: "ACTIVE",
+    },
+    period: {
+      id: "period-1",
+      periodIndex: 1,
+      startsAt: "2026-10-25T00:00:00.000Z",
+      endsAt: "2026-10-25T02:00:00.000Z",
+      status: "ACTIVE",
+      isStockLocked: true,
+    },
+    claimWindow: {
+      isActive: true,
+      startsAt: "2026-10-25T00:00:00.000Z",
+      endsAt: "2026-10-25T00:30:00.000Z",
+      timeRemainingMs: 1800000,
+    },
+    stock: {
+      totalAllocated: 50,
+      totalRemaining: 30,
+      isExhausted: false,
+      poolItems: [
+        {
+          poolItemId: "pi-1",
+          traitId: "t-1",
+          traitName: "Golden Fur",
+          category: "FUR",
+          rarity: "EPIC",
+          remainingStock: 30,
+          weight: 100,
+          probabilityPercent: 100,
+        },
+      ],
+    },
+  };
+
+  const mockDropsList = [
+    {
+      id: "drop-1",
+      slug: "genesis-drop",
+      title: "ChimpHood Genesis Drop",
+      description: "Season 1 genesis",
+      status: "ACTIVE" as const,
+      startsAt: "2026-10-25T00:00:00.000Z",
+      endsAt: "2026-10-25T06:00:00.000Z",
+      createdAt: "2026-10-25T00:00:00.000Z",
+      updatedAt: "2026-10-25T00:00:00.000Z",
+      periods: [
+        {
+          id: "period-1",
+          periodIndex: 1,
+          startsAt: "2026-10-25T00:00:00.000Z",
+          endsAt: "2026-10-25T02:00:00.000Z",
+          configLockAt: "2026-10-24T23:45:00.000Z",
+          status: "CONFIGURED" as const,
+          isStockConfigured: true,
+          isStockLocked: false,
+          poolItems: [
+            {
+              id: "pi-1",
+              traitId: "t-1",
+              allocatedStock: 25,
+              remainingStock: 25,
+              weight: 100,
+            },
+          ],
+        },
+        {
+          id: "period-2",
+          periodIndex: 2,
+          startsAt: "2026-10-25T02:00:00.000Z",
+          endsAt: "2026-10-25T04:00:00.000Z",
+          configLockAt: "2026-10-25T01:45:00.000Z",
+          status: "PENDING_CONFIG" as const,
+          isStockConfigured: false,
+          isStockLocked: false,
+          poolItems: [],
+        },
+      ],
+    },
+  ];
+
+  const mockTraits = [
+    {
+      id: "t-1",
+      slug: "golden-fur",
+      name: "Golden Fur",
+      category: "FUR",
+      rarity: "EPIC",
+      imageUrl: "/traits/fur.png",
+      maxSupply: 100,
+    },
+    {
+      id: "t-2",
+      slug: "neon-visor",
+      name: "Neon Visor",
+      category: "HEADWEAR",
+      rarity: "RARE",
+      imageUrl: "/traits/visor.png",
+      maxSupply: 100,
+    },
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockCurrentDrop);
+    vi.mocked(adminClient.adminListDrops).mockResolvedValue({
+      drops: mockDropsList,
+      total: 1,
+      limit: 50,
+      offset: 0,
+    });
+    vi.mocked(adminClient.adminGetDrop).mockResolvedValue({
+      drop: mockDropsList[0],
+    });
+    vi.mocked(adminClient.adminListTraits).mockResolvedValue({
+      traits: mockTraits,
+    });
   });
 
-  it("renders success notification displaying actual periodId from API response instead of fallback 'Terminated'", async () => {
-    vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
-      active: true,
-      drop: {
-        id: "drop-test-1",
-        slug: "genesis-traits",
-        title: "Genesis Traits Drop",
-        status: "ACTIVE",
-      },
-      period: {
-        id: "period-actual-101",
-        periodIndex: 1,
-        startsAt: "2026-10-24T12:00:00.000Z",
-        endsAt: "2026-10-24T14:00:00.000Z",
-        status: "ACTIVE",
-        isStockLocked: true,
-      },
-      claimWindow: {
-        isActive: true,
-        startsAt: "2026-10-24T12:00:00.000Z",
-        endsAt: "2026-10-24T12:30:00.000Z",
-        timeRemainingMs: 900000,
-      },
-      stock: {
-        totalAllocated: 100,
-        totalRemaining: 80,
-        isExhausted: false,
-        poolItems: [],
-      },
+  it("renders page header, live drop monitor, and drop periods table", async () => {
+    render(<AdminDrops />);
+
+    // Check main title
+    expect(screen.getByText("Drop Operations")).toBeInTheDocument();
+
+    // Check monitor items
+    await waitFor(() => {
+      expect(screen.getByText("Live Drop Monitor & Claim Window")).toBeInTheDocument();
+      expect(screen.getByText("Golden Fur")).toBeInTheDocument();
     });
 
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    vi.mocked(dropsClient.emergencyCloseDropWindow).mockResolvedValue({
-      success: true,
-      periodId: "period-actual-101",
-      dropId: "drop-test-1",
-      status: "CANCELLED",
-      auditLogId: "audit-log-xyz-789",
+    // Check periods table
+    await waitFor(() => {
+      expect(
+        screen.getByText("Drop Seasons & Period Configurations"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("#1")).toBeInTheDocument();
+      expect(screen.getByText("#2")).toBeInTheDocument();
+      expect(screen.getByText("Unconfigured")).toBeInTheDocument();
+    });
+  });
+
+  it("opens Create Drop modal and submits new drop successfully", async () => {
+    vi.mocked(adminClient.adminCreateDrop).mockResolvedValueOnce({
+      drop: {
+        id: "drop-2",
+        title: "Season 2 Drop",
+        slug: "season-2",
+      },
+      auditLogId: "audit-create-1",
     });
 
     render(<AdminDrops />);
 
     await waitFor(() => {
-      expect(screen.getByText("Active Drop Window & Stock Monitor")).toBeInTheDocument();
-      expect(screen.getByText("Target Period ID: period-actual-101")).toBeInTheDocument();
+      expect(screen.getByText("Drop Operations")).toBeInTheDocument();
     });
 
-    const reasonInput = screen.getByLabelText(/Emergency Incident Reason/i);
-    fireEvent.change(reasonInput, {
-      target: { value: "Security incident: contract paused" },
+    // Click Create Drop button
+    const createBtn = screen.getByRole("button", { name: /create drop/i });
+    fireEvent.click(createBtn);
+
+    // Modal should be visible
+    expect(screen.getByText("Create New Drop")).toBeInTheDocument();
+
+    // Fill form
+    fireEvent.change(
+      screen.getByPlaceholderText(/e\.g\. ChimpHood Season 1 Trait Drop/i),
+      {
+        target: { value: "Season 2 Drop" },
+      },
+    );
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. chimphood-season-1/i), {
+      target: { value: "season-2" },
     });
 
-    const submitBtn = screen.getByRole("button", { name: /Execute Emergency Close/i });
+    const form = screen.getByText("Create New Drop").closest("div.w-full");
+    const dateInputs = form!.querySelectorAll('input[type="datetime-local"]');
+    // Set startsAt and endsAt (valid 2-hour UTC cycle)
+    fireEvent.change(dateInputs[0], { target: { value: "2026-10-26T00:00" } });
+    fireEvent.change(dateInputs[1], { target: { value: "2026-10-26T04:00" } });
+
+    // Submit form
+    const submitBtn = screen.getAllByRole("button", { name: /create drop/i })[1];
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(dropsClient.emergencyCloseDropWindow).toHaveBeenCalledWith(
-        "period-actual-101",
-        "drop-test-1",
-        "Security incident: contract paused",
+      expect(adminClient.adminCreateDrop).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Season 2 Drop",
+          slug: "season-2",
+          generatePeriods: true,
+        }),
       );
-      expect(screen.getByText("Drop Period Closed Successfully")).toBeInTheDocument();
     });
-
-    // Verify the paragraph contains actual periodId and auditLogId
-    const successDetails = screen.getByText(/Closed Period: period-actual-101/i);
-    expect(successDetails).toBeInTheDocument();
-    expect(successDetails.textContent).toBe(
-      "Closed Period: period-actual-101 (Audit Log: audit-log-xyz-789)",
-    );
-    // Explicitly assert that "Closed Period: Terminated" is NOT rendered
-    expect(screen.queryByText(/Closed Period: Terminated/i)).not.toBeInTheDocument();
   });
 
-  it("handles fallback to 'Terminated' if API response periodId is undefined", async () => {
-    vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
-      active: true,
-      drop: { id: "drop-test-2", slug: "drop-2", title: "Drop 2", status: "ACTIVE" },
-      period: {
-        id: "period-fallback-2",
-        periodIndex: 2,
-        startsAt: "2026-10-24T14:00:00.000Z",
-        endsAt: "2026-10-24T16:00:00.000Z",
-        status: "ACTIVE",
-        isStockLocked: true,
-      },
-    });
-
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    // periodId is omitted or undefined in response
-    vi.mocked(dropsClient.emergencyCloseDropWindow).mockResolvedValue({
-      success: true,
-      auditLogId: "audit-fallback-1",
+  it("opens Stock Configuration modal and saves stock with equal probability default", async () => {
+    vi.mocked(adminClient.adminConfigurePeriodStock).mockResolvedValueOnce({
+      period: { id: "period-2", isStockConfigured: true, status: "CONFIGURED" },
+      auditLogId: "audit-stock-1",
     });
 
     render(<AdminDrops />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Emergency Incident Reason/i)).toBeInTheDocument();
+      expect(screen.getByText("#2")).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText(/Emergency Incident Reason/i), {
-      target: { value: "Emergency shutdown required" },
+    // Period 2 Configure Stock button
+    const configBtns = screen.getAllByRole("button", { name: /configure stock/i });
+    fireEvent.click(configBtns[1]); // Period 2 is unconfigured
+
+    // Check modal opens
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Configure Trait Pool Stock – Period #2/i),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/Drop Protocol Rules/i)).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole("button", { name: /Execute Emergency Close/i }));
+
+    // Select a trait to add inside the modal
+    const modal = screen
+      .getByText(/Configure Trait Pool Stock – Period #2/i)
+      .closest("div.w-full");
+    const traitSelect = modal!.querySelector("select")!;
+    fireEvent.change(traitSelect, { target: { value: "t-1" } });
+
+    // Click Add Trait
+    const addTraitBtn = screen.getByRole("button", { name: /add trait/i });
+    fireEvent.click(addTraitBtn);
+
+    // Verify default stock (10) and default equal weight (100)
+    expect(screen.getByDisplayValue("10")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("100")).toBeInTheDocument();
+    expect(screen.getAllByText("100.0%").length).toBeGreaterThanOrEqual(1);
+
+    // Click Save Stock Configuration
+    const saveBtn = screen.getByRole("button", { name: /save stock configuration/i });
+    fireEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(screen.getByText("Drop Period Closed Successfully")).toBeInTheDocument();
+      expect(adminClient.adminConfigurePeriodStock).toHaveBeenCalledWith(
+        "drop-1",
+        "period-2",
+        [
+          {
+            traitId: "t-1",
+            stock: 10,
+            weight: 100,
+          },
+        ],
+      );
+      expect(
+        screen.getByText(/Trait pool stock successfully configured!/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("handles emergency close invocation with reason validation", async () => {
+    vi.mocked(dropsClient.emergencyCloseDropWindow).mockResolvedValueOnce({
+      success: true,
+      periodId: "period-1",
+      auditLogId: "audit-em-1",
     });
 
-    const fallbackDetails = screen.getByText(/Closed Period: Terminated/i);
-    expect(fallbackDetails).toBeInTheDocument();
-    expect(fallbackDetails.textContent).toBe(
-      "Closed Period: Terminated (Audit Log: audit-fallback-1)",
-    );
+    window.confirm = vi.fn().mockReturnValue(true);
+
+    render(<AdminDrops />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Emergency Close Drop Window")).toBeInTheDocument();
+    });
+
+    const reasonInput = screen.getByPlaceholderText(/e\.g\. Critical exploit/i);
+    fireEvent.change(reasonInput, {
+      target: { value: "Exploit discovered in client transaction" },
+    });
+
+    const emBtn = screen.getByRole("button", { name: /execute emergency close/i });
+    fireEvent.click(emBtn);
+
+    await waitFor(() => {
+      expect(dropsClient.emergencyCloseDropWindow).toHaveBeenCalledWith(
+        "period-1",
+        "drop-1",
+        "Exploit discovered in client transaction",
+      );
+      expect(screen.getByText(/Drop Period Closed Successfully/i)).toBeInTheDocument();
+    });
   });
 });

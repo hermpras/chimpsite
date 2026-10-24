@@ -50,7 +50,8 @@ export async function GET(request: Request): Promise<Response> {
     });
   }
 
-  const claimWindowActive = isWithinClaimWindow(activePeriod.startsAt, now);
+  const claimWindowActive =
+    activePeriod.status === "ACTIVE" && isWithinClaimWindow(activePeriod.startsAt, now);
   const claimWindowEndsAt = new Date(activePeriod.startsAt.getTime() + 30 * 60 * 1000);
   const timeRemainingWindowMs = Math.max(0, claimWindowEndsAt.getTime() - now.getTime());
 

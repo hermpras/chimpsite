@@ -50,6 +50,17 @@ vi.mock("@/lib/admin/client", () => ({
     success: true,
     auditLogId: "audit-2",
   }),
+  adminListUsers: vi
+    .fn()
+    .mockResolvedValue({ users: [], total: 0, limit: 10, offset: 0 }),
+  adminListSlots: vi
+    .fn()
+    .mockResolvedValue({ slots: [], total: 0, limit: 10, offset: 0 }),
+  adminListDrops: vi
+    .fn()
+    .mockResolvedValue({ drops: [], total: 0, limit: 50, offset: 0 }),
+  adminListTraits: vi.fn().mockResolvedValue({ traits: [] }),
+  adminGetDrop: vi.fn().mockResolvedValue({ drop: null }),
 }));
 
 vi.mock("@/lib/drops/client", () => ({

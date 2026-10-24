@@ -388,3 +388,187 @@ export async function adminListSlots(
   }
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Drop Operations
+// ---------------------------------------------------------------------------
+
+export interface AdminDropRecord {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  status: "DRAFT" | "SCHEDULED" | "ACTIVE" | "PAUSED" | "ENDED";
+  startsAt: string;
+  endsAt: string;
+  createdAt: string;
+  updatedAt: string;
+  periods: Array<{
+    id: string;
+    periodIndex: number;
+    startsAt: string;
+    endsAt: string;
+    configLockAt: string;
+    status: "PENDING_CONFIG" | "CONFIGURED" | "ACTIVE" | "ENDED" | "CANCELLED";
+    isStockConfigured: boolean;
+    isStockLocked: boolean;
+    _count?: { poolItems: number; claims: number };
+  }>;
+}
+
+export interface AdminListDropsResponse {
+  drops: AdminDropRecord[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function adminListDrops(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AdminListDropsResponse> {
+  const q = new URLSearchParams();
+  if (params?.limit !== undefined) q.set("limit", String(params.limit));
+  if (params?.offset !== undefined) q.set("offset", String(params.offset));
+  const query = q.toString() ? `?${q.toString()}` : "";
+
+  const res = await fetch(`/api/admin/drops${query}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to list drops.");
+  }
+  return data;
+}
+
+export async function adminGetDrop(dropIdOrSlug: string): Promise<{ drop: any }> {
+  const res = await fetch(`/api/admin/drops/${encodeURIComponent(dropIdOrSlug)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch drop details.");
+  }
+  return data;
+}
+
+export interface AdminCreateDropInput {
+  slug: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  description?: string | null;
+  status?: string;
+  generatePeriods?: boolean;
+}
+
+export async function adminCreateDrop(input: AdminCreateDropInput) {
+  const res = await fetch("/api/admin/drops", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to create drop.");
+  }
+  return data;
+}
+
+export interface AdminUpdateDropInput {
+  title?: string;
+  description?: string | null;
+  status?: string;
+}
+
+export async function adminUpdateDrop(dropId: string, input: AdminUpdateDropInput) {
+  const res = await fetch(`/api/admin/drops/${encodeURIComponent(dropId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update drop.");
+  }
+  return data;
+}
+
+export async function adminCreateDropPeriod(dropId: string, startsAt: string) {
+  const res = await fetch(`/api/admin/drops/${encodeURIComponent(dropId)}/periods`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ startsAt }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to add drop period.");
+  }
+  return data;
+}
+
+export interface TraitStockItemInput {
+  traitId: string;
+  stock: number;
+  weight?: number;
+}
+
+export async function adminConfigurePeriodStock(
+  dropId: string,
+  periodId: string,
+  items: TraitStockItemInput[],
+) {
+  const res = await fetch(
+    `/api/admin/drops/${encodeURIComponent(dropId)}/periods/${encodeURIComponent(periodId)}/stock`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    },
+  );
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to configure period stock.");
+  }
+  return data;
+}
+
+export async function adminActivateDropPeriod(dropId: string, periodId: string) {
+  const res = await fetch(
+    `/api/admin/drops/${encodeURIComponent(dropId)}/periods/${encodeURIComponent(periodId)}/activate`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to activate drop period.");
+  }
+  return data;
+}
+
+export interface AdminTraitRecord {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  rarity: string;
+  imageUrl: string;
+  maxSupply: number | null;
+}
+
+export async function adminListTraits(): Promise<{ traits: AdminTraitRecord[] }> {
+  const res = await fetch("/api/admin/traits", {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch traits.");
+  }
+  return data;
+}

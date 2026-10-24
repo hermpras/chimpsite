@@ -148,4 +148,40 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
     expect(data).not.toHaveProperty("token");
     expect(data).not.toHaveProperty("secret");
   });
+
+  it("INVARIANT: claim window is inactive if period was not opened (e.g. status PENDING_CONFIG when stock was unconfigured)", async () => {
+    const now = new Date();
+    mockDropFindFirst.mockResolvedValue({
+      id: "drop-unopened",
+      slug: "drop-unopened",
+      title: "Unopened Drop",
+      status: "ACTIVE",
+      startsAt: new Date(now.getTime() - 60 * 60 * 1000),
+      endsAt: new Date(now.getTime() + 60 * 60 * 1000),
+      periods: [
+        {
+          id: "period-unconfigured",
+          dropId: "drop-unopened",
+          periodIndex: 1,
+          startsAt: new Date(now.getTime() - 5 * 60 * 1000),
+          endsAt: new Date(now.getTime() + 115 * 60 * 1000),
+          status: "PENDING_CONFIG", // Stock was unconfigured -> period not opened!
+          isStockLocked: false,
+          poolItems: [],
+        },
+      ],
+    });
+
+    const req = new Request("http://localhost:3000/api/drops/current", {
+      method: "GET",
+    });
+
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+
+    expect(data.active).toBe(true);
+    // Period was not opened, so claim window MUST NOT be active
+    expect(data.claimWindow.isActive).toBe(false);
+  });
 });
