@@ -134,6 +134,7 @@ All secret keys and sensitive credentials are read strictly on the server-side a
 - **Routes protected**:
   - `/api/cron/sweep-gifts` (Task 2-A) — hourly gift expiry sweep, Vercel schedule `0 * * * *`
   - `/api/cron/cleanup-auth` (Task 2-C) — auth nonce & session cleanup, Vercel schedule `*/15 * * * *`
+  - `/api/cron/reconcile-queue` (Task O-4) — hourly whitelist queue reconciliation, Vercel schedule `0 * * * *`
 - **Fail-Closed Behavior**: If `CRON_SECRET` is unset on the server, cron routes fail immediately with HTTP 500 (`SERVER_MISCONFIGURED`). Requests with invalid or missing bearer tokens are rejected with HTTP 401 (`UNAUTHORIZED`).
 - **Generation**:
   ```bash
@@ -231,7 +232,7 @@ All secret keys and sensitive credentials are read strictly on the server-side a
 - [ ] Set `SIWE_DOMAIN` to production domain without protocol (e.g., `chimphood.xyz`).
 - [ ] Set `SIWE_URI` to production HTTPS URL without trailing slash (e.g., `https://chimphood.xyz`).
 - [ ] Configure `ALLOWED_CHAIN_IDS` matching supported production networks.
-- [ ] Generate and set `CRON_SECRET` for Vercel Cron authorization (`/api/cron/sweep-gifts`, `/api/cron/cleanup-auth`).
+- [ ] Generate and set `CRON_SECRET` for Vercel Cron authorization (`/api/cron/sweep-gifts`, `/api/cron/cleanup-auth`, `/api/cron/reconcile-queue`).
 - [ ] Configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for shared distributed rate limiting and OAuth state replay protection.
 - [ ] If X integration is enabled, configure registered OAuth 2.0 credentials and production redirect URI.
 - [ ] Bootstrap initial `SUPER_ADMIN` wallet using the isolated script: `INITIAL_SUPER_ADMIN_ADDRESS="0x..." npm run admin:bootstrap`.

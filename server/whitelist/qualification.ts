@@ -974,6 +974,55 @@ export async function reconcileQueueSlots(
 }
 
 /**
+ * Reconciles open whitelist programs in the database (O-4).
+ * Iterates through all OPEN programs and reconciles their waiting queues.
+ * Safe for concurrent invocations and fully idempotent.
+ */
+export async function reconcileAllOpenPrograms(
+  prisma: PrismaClient,
+  now: Date = new Date(),
+  maxRetries: number = MAX_WL_RETRIES,
+): Promise<{
+  processedPrograms: number;
+  totalSlotsFilled: number;
+  results: Array<{
+    programId: string;
+    slotsFilled: number;
+    openSlotsRemaining: number;
+  }>;
+}> {
+  const openPrograms = await prisma.wLProgram.findMany({
+    where: { status: "OPEN" },
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const results: Array<{
+    programId: string;
+    slotsFilled: number;
+    openSlotsRemaining: number;
+  }> = [];
+
+  let totalSlotsFilled = 0;
+
+  for (const program of openPrograms) {
+    const res = await reconcileQueueSlots(prisma, program.id, now, maxRetries);
+    results.push({
+      programId: program.id,
+      slotsFilled: res.slotsFilled,
+      openSlotsRemaining: res.openSlotsRemaining,
+    });
+    totalSlotsFilled += res.slotsFilled;
+  }
+
+  return {
+    processedPrograms: openPrograms.length,
+    totalSlotsFilled,
+    results,
+  };
+}
+
+/**
  * Read-only status evaluation that performs zero mutations or side-effects.
  */
 export async function getUserQualificationStatus(

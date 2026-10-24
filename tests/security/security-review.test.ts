@@ -170,20 +170,25 @@ describe("Task 5-C: Security Review Verification Suite", () => {
     it("SECR-04: verifies cron endpoints require authorization headers and secrets", () => {
       const sweepCronRoute = join(rootDir, "app/api/cron/sweep-gifts/route.ts");
       const authCronRoute = join(rootDir, "app/api/cron/cleanup-auth/route.ts");
+      const queueCronRoute = join(rootDir, "app/api/cron/reconcile-queue/route.ts");
 
       expect(existsSync(sweepCronRoute)).toBe(true);
       expect(existsSync(authCronRoute)).toBe(true);
+      expect(existsSync(queueCronRoute)).toBe(true);
 
       const sweepContent = readFileSync(sweepCronRoute, "utf-8");
       const authContent = readFileSync(authCronRoute, "utf-8");
+      const queueContent = readFileSync(queueCronRoute, "utf-8");
 
-      // Both cron routes must check CRON_SECRET or Authorization bearer
+      // All cron routes must check CRON_SECRET or Authorization bearer
       expect(sweepContent).toContain("CRON_SECRET");
       expect(authContent).toContain("CRON_SECRET");
+      expect(queueContent).toContain("CRON_SECRET");
 
-      // Task 5-C: Both cron routes must use timingSafeEqualString
+      // Constant-time auth comparison across cron routes
       expect(sweepContent).toContain("timingSafeEqualString");
       expect(authContent).toContain("timingSafeEqualString");
+      expect(queueContent).toContain("timingSafeEqualString");
     });
   });
 });
