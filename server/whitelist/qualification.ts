@@ -535,7 +535,10 @@ export async function evaluateUserQualification(
               entityType: "WLQualification",
               entityId: existingQual.id,
               oldValues: { status: "QUALIFIED" },
-              newValues: { status: "DISQUALIFIED", reason: missingRequirements.join("; ") },
+              newValues: {
+                status: "DISQUALIFIED",
+                reason: missingRequirements.join("; "),
+              },
               metadata: { missingRequirements, programId: input.programId },
             });
           }

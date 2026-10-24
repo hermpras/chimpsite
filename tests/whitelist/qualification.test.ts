@@ -25,6 +25,10 @@ function createMockPrisma() {
     auditLogs: [] as any[],
   };
 
+  const hooks = {
+    onAuditCreate: null as ((data: any) => Promise<void> | void) | null,
+  };
+
   const tx = {
     user: {
       findUnique: vi.fn(async ({ where }: any) => {
@@ -320,6 +324,9 @@ function createMockPrisma() {
     },
     auditLog: {
       create: vi.fn(async ({ data }: any) => {
+        if (hooks.onAuditCreate) {
+          await hooks.onAuditCreate(data);
+        }
         const record = { id: `audit-${store.auditLogs.length + 1}`, ...data };
         store.auditLogs.push(record);
         return record;
@@ -328,12 +335,117 @@ function createMockPrisma() {
   };
 
   const prisma = {
-    $transaction: vi.fn(async (cb: (txClient: typeof tx) => any) => cb(tx)),
+    $transaction: vi.fn(async (cb: (txClient: typeof tx) => any) => {
+      const createdSlots: any[] = [];
+      const createdHistories: any[] = [];
+      const createdAudits: any[] = [];
+      const updatedQuals: Array<{ qual: any; prev: any }> = [];
+      const updatedQueueEntries: Array<{ qe: any; prev: any }> = [];
+      const programDeltas: Array<{ prog: any; delta: number }> = [];
+
+      const txWithTracking: any = {
+        ...tx,
+        wLSlot: {
+          ...tx.wLSlot,
+          create: vi.fn(async (args: any) => {
+            const res = await tx.wLSlot.create(args);
+            createdSlots.push(res);
+            return res;
+          }),
+        },
+        wLStatusHistory: {
+          ...tx.wLStatusHistory,
+          create: vi.fn(async (args: any) => {
+            const res = await tx.wLStatusHistory.create(args);
+            createdHistories.push(res);
+            return res;
+          }),
+        },
+        auditLog: {
+          ...tx.auditLog,
+          create: vi.fn(async (args: any) => {
+            const res = await tx.auditLog.create(args);
+            createdAudits.push(res);
+            return res;
+          }),
+        },
+        wLProgram: {
+          ...tx.wLProgram,
+          update: vi.fn(async (args: any) => {
+            const p = store.programs.find((prog) => prog.id === args.where.id);
+            if (p && args.data.allocatedSlotsCount?.increment) {
+              programDeltas.push({
+                prog: p,
+                delta: args.data.allocatedSlotsCount.increment,
+              });
+            }
+            return tx.wLProgram.update(args);
+          }),
+        },
+        wLQualification: {
+          ...tx.wLQualification,
+          update: vi.fn(async (args: any) => {
+            const q = store.qualifications.find((qual) => qual.id === args.where.id);
+            if (q) {
+              updatedQuals.push({ qual: q, prev: { ...q } });
+            }
+            return tx.wLQualification.update(args);
+          }),
+        },
+        wLQueueEntry: {
+          ...tx.wLQueueEntry,
+          updateMany: vi.fn(async (args: any) => {
+            const matches = store.queueEntries.filter(
+              (qe) =>
+                (!args.where.id || qe.id === args.where.id) &&
+                (!args.where.programId || qe.programId === args.where.programId) &&
+                (!args.where.userId || qe.userId === args.where.userId) &&
+                (!args.where.status || qe.status === args.where.status),
+            );
+            for (const m of matches) {
+              updatedQueueEntries.push({ qe: m, prev: { ...m } });
+            }
+            return tx.wLQueueEntry.updateMany(args);
+          }),
+        },
+      };
+
+      try {
+        return await cb(txWithTracking);
+      } catch (err) {
+        for (const s of createdSlots) {
+          const idx = store.slots.indexOf(s);
+          if (idx !== -1) store.slots.splice(idx, 1);
+        }
+        for (const h of createdHistories) {
+          const idx = store.statusHistories.indexOf(h);
+          if (idx !== -1) store.statusHistories.splice(idx, 1);
+        }
+        for (const a of createdAudits) {
+          const idx = store.auditLogs.indexOf(a);
+          if (idx !== -1) store.auditLogs.splice(idx, 1);
+        }
+        for (const { qual, prev } of updatedQuals) {
+          Object.assign(qual, prev);
+        }
+        for (const { qe, prev } of updatedQueueEntries) {
+          Object.assign(qe, prev);
+        }
+        for (const { prog, delta } of programDeltas) {
+          prog.allocatedSlotsCount -= delta;
+        }
+        throw err;
+      }
+    }),
     ...tx,
-  } as unknown as PrismaClient & { _store: typeof store };
+  } as unknown as PrismaClient & { _store: typeof store; _hooks: typeof hooks };
 
   (prisma as any)._store = store;
-  return prisma as unknown as PrismaClient & { _store: typeof store };
+  (prisma as any)._hooks = hooks;
+  return prisma as unknown as PrismaClient & {
+    _store: typeof store;
+    _hooks: typeof hooks;
+  };
 }
 
 describe("Whitelist Lifecycle & Qualification Engine", () => {
@@ -1042,15 +1154,129 @@ describe("Whitelist Lifecycle & Qualification Engine", () => {
         joinedAt: baseTime,
       });
 
-      const res = await reconcileQueueSlots(mockPrisma, "program-1", new Date(baseTime.getTime() + 2000));
+      const res = await reconcileQueueSlots(
+        mockPrisma,
+        "program-1",
+        new Date(baseTime.getTime() + 2000),
+      );
       expect(res.slotsFilled).toBe(1);
 
       const log = mockPrisma._store.auditLogs.find(
-        (l: any) => l.action === "WL_SLOT_ALLOCATED_QUEUE" && l.actorId === "audit-queue-user",
+        (l: any) =>
+          l.action === "WL_SLOT_ALLOCATED_QUEUE" && l.actorId === "audit-queue-user",
       );
       expect(log).toBeDefined();
       expect(log.entityType).toBe("WLSlot");
       expect(log.newValues.queueNumber).toBe(1);
+    });
+
+    it("rolls back slot allocation and status history when audit log creation fails during direct qualification", async () => {
+      setupFullQualifiedUser("audit-rollback-user");
+
+      mockPrisma._hooks.onAuditCreate = (data: any) => {
+        if (data.action === "WL_SLOT_ALLOCATED") {
+          throw new Error("Audit log database failure");
+        }
+      };
+
+      await expect(
+        evaluateUserQualification(mockPrisma, {
+          userId: "audit-rollback-user",
+          programId: "program-1",
+          now: baseTime,
+          maxRetries: 0,
+        }),
+      ).rejects.toThrow("Audit log database failure");
+
+      const slot = mockPrisma._store.slots.find(
+        (s) => s.userId === "audit-rollback-user",
+      );
+      expect(slot).toBeUndefined();
+      const prog = mockPrisma._store.programs.find((p) => p.id === "program-1")!;
+      expect(prog.allocatedSlotsCount).toBe(0);
+      expect(
+        mockPrisma._store.statusHistories.find((h) => h.userId === "audit-rollback-user"),
+      ).toBeUndefined();
+      expect(
+        mockPrisma._store.auditLogs.find((l) => l.actorId === "audit-rollback-user"),
+      ).toBeUndefined();
+
+      mockPrisma._hooks.onAuditCreate = null;
+    });
+
+    it("rolls back disqualification when audit log creation fails", async () => {
+      mockPrisma._store.users.push({
+        id: "audit-user-disqual-fail",
+        wallet: { address: "0xdisqual..." },
+        xIdentity: null,
+        banRecords: [],
+      });
+      mockPrisma._store.qualifications.push({
+        id: "qual-disqual-fail",
+        programId: "program-1",
+        userId: "audit-user-disqual-fail",
+        status: "QUALIFIED",
+        qualifiedAt: baseTime,
+      });
+
+      mockPrisma._hooks.onAuditCreate = (data: any) => {
+        if (data.action === "WL_DISQUALIFIED") {
+          throw new Error("Audit log database failure");
+        }
+      };
+
+      await expect(
+        evaluateUserQualification(mockPrisma, {
+          userId: "audit-user-disqual-fail",
+          programId: "program-1",
+          now: new Date(baseTime.getTime() + 1000),
+          maxRetries: 0,
+        }),
+      ).rejects.toThrow("Audit log database failure");
+
+      const qual = mockPrisma._store.qualifications.find(
+        (q) => q.id === "qual-disqual-fail",
+      );
+      expect(qual?.status).toBe("QUALIFIED");
+
+      mockPrisma._hooks.onAuditCreate = null;
+    });
+
+    it("rolls back queue reconciliation when audit log creation fails", async () => {
+      setupFullQualifiedUser("audit-queue-fail-user");
+      mockPrisma._store.queueEntries.push({
+        id: "qe-audit-fail-1",
+        programId: "program-1",
+        userId: "audit-queue-fail-user",
+        queueNumber: 1,
+        status: "WAITING",
+        joinedAt: baseTime,
+      });
+
+      mockPrisma._hooks.onAuditCreate = (data: any) => {
+        if (data.action === "WL_SLOT_ALLOCATED_QUEUE") {
+          throw new Error("Audit log database failure");
+        }
+      };
+
+      await expect(
+        reconcileQueueSlots(
+          mockPrisma,
+          "program-1",
+          new Date(baseTime.getTime() + 2000),
+          0,
+        ),
+      ).rejects.toThrow("Audit log database failure");
+
+      expect(
+        mockPrisma._store.slots.find((s) => s.userId === "audit-queue-fail-user"),
+      ).toBeUndefined();
+      const qe = mockPrisma._store.queueEntries.find((e) => e.id === "qe-audit-fail-1");
+      expect(qe?.status).toBe("WAITING");
+      const prog = mockPrisma._store.programs.find((p) => p.id === "program-1")!;
+      expect(prog.allocatedSlotsCount).toBe(0);
+
+      mockPrisma._hooks.onAuditCreate = null;
     });
   });
 });

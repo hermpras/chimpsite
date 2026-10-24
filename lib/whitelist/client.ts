@@ -61,4 +61,7 @@ export async function submitWhitelistQualification(programId?: string) {
 export {
   adminRevokeSlot,
   type AdminRevokeSlotInput,
+  adminReconcileQueue,
+  type AdminReconcileQueueInput,
+  type AdminReconcileQueueResponse,
 } from "@/lib/admin/client";

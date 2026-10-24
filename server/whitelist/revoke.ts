@@ -47,14 +47,22 @@ export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
   adminUserId: string;
   reason: string | null;
 } {
-  if (!input.adminUserId || typeof input.adminUserId !== "string" || !input.adminUserId.trim()) {
+  if (
+    !input.adminUserId ||
+    typeof input.adminUserId !== "string" ||
+    !input.adminUserId.trim()
+  ) {
     throw new WlSlotRevokeError("UNAUTHORIZED", "Admin authentication is required.", 401);
   }
 
-  const slotId = input.slotId && typeof input.slotId === "string" ? input.slotId.trim() : undefined;
+  const slotId =
+    input.slotId && typeof input.slotId === "string" ? input.slotId.trim() : undefined;
   const programId =
-    input.programId && typeof input.programId === "string" ? input.programId.trim() : undefined;
-  const userId = input.userId && typeof input.userId === "string" ? input.userId.trim() : undefined;
+    input.programId && typeof input.programId === "string"
+      ? input.programId.trim()
+      : undefined;
+  const userId =
+    input.userId && typeof input.userId === "string" ? input.userId.trim() : undefined;
   const slotNumber =
     typeof input.slotNumber === "number" &&
     Number.isInteger(input.slotNumber) &&
@@ -70,7 +78,11 @@ export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
     );
   }
 
-  if (input.reason !== undefined && input.reason !== null && typeof input.reason !== "string") {
+  if (
+    input.reason !== undefined &&
+    input.reason !== null &&
+    typeof input.reason !== "string"
+  ) {
     throw new WlSlotRevokeError("INVALID_INPUT", "Reason must be a string.", 400);
   }
 
