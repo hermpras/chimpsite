@@ -1,13 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  POST,
-  GET,
-  PUT,
-  DELETE,
-  PATCH,
-  HEAD,
-  OPTIONS,
-} from "@/app/api/admin/ban/route";
+import { POST, GET, PUT, DELETE, PATCH, HEAD, OPTIONS } from "@/app/api/admin/ban/route";
 import {
   POST as USERS_BAN_POST,
   GET as USERS_BAN_GET,
@@ -94,9 +86,33 @@ describe("Admin Ban Route Suite", () => {
   describe("HTTP Method Enforcement (405 Method Not Allowed)", () => {
     it("returns 405 on all unsupported HTTP methods with Allow: POST header", async () => {
       const endpoints = [
-        { name: "ban/route", get: GET, put: PUT, del: DELETE, patch: PATCH, head: HEAD, opt: OPTIONS },
-        { name: "users/ban/route", get: USERS_BAN_GET, put: USERS_BAN_PUT, del: USERS_BAN_DELETE, patch: USERS_BAN_PATCH, head: USERS_BAN_HEAD, opt: USERS_BAN_OPTIONS },
-        { name: "users/[id]/ban/route", get: USER_ID_BAN_GET, put: USER_ID_BAN_PUT, del: USER_ID_BAN_DELETE, patch: USER_ID_BAN_PATCH, head: USER_ID_BAN_HEAD, opt: USER_ID_BAN_OPTIONS },
+        {
+          name: "ban/route",
+          get: GET,
+          put: PUT,
+          del: DELETE,
+          patch: PATCH,
+          head: HEAD,
+          opt: OPTIONS,
+        },
+        {
+          name: "users/ban/route",
+          get: USERS_BAN_GET,
+          put: USERS_BAN_PUT,
+          del: USERS_BAN_DELETE,
+          patch: USERS_BAN_PATCH,
+          head: USERS_BAN_HEAD,
+          opt: USERS_BAN_OPTIONS,
+        },
+        {
+          name: "users/[id]/ban/route",
+          get: USER_ID_BAN_GET,
+          put: USER_ID_BAN_PUT,
+          del: USER_ID_BAN_DELETE,
+          patch: USER_ID_BAN_PATCH,
+          head: USER_ID_BAN_HEAD,
+          opt: USER_ID_BAN_OPTIONS,
+        },
       ];
 
       for (const ep of endpoints) {
@@ -114,7 +130,11 @@ describe("Admin Ban Route Suite", () => {
   describe("Authentication & Authorization Enforcement", () => {
     it("returns 401 when request is unauthenticated", async () => {
       vi.mocked(requireAdminSession).mockRejectedValue(
-        new AdminAuthError("UNAUTHORIZED", "Authentication required to access admin resources.", 401),
+        new AdminAuthError(
+          "UNAUTHORIZED",
+          "Authentication required to access admin resources.",
+          401,
+        ),
       );
 
       const req = new Request("http://localhost:3000/api/admin/ban", {
@@ -133,7 +153,11 @@ describe("Admin Ban Route Suite", () => {
 
     it("returns 403 when authenticated user lacks MANAGE_BANS permission", async () => {
       vi.mocked(requireAdminSession).mockRejectedValue(
-        new AdminAuthError("FORBIDDEN", "Missing required admin permission: MANAGE_BANS.", 403),
+        new AdminAuthError(
+          "FORBIDDEN",
+          "Missing required admin permission: MANAGE_BANS.",
+          403,
+        ),
       );
 
       const req = new Request("http://localhost:3000/api/admin/ban", {
@@ -218,7 +242,11 @@ describe("Admin Ban Route Suite", () => {
 
     it("maps AdminBanError (e.g. 400 CANNOT_BAN_SELF) cleanly", async () => {
       vi.mocked(banUser).mockRejectedValue(
-        new AdminBanError("CANNOT_BAN_SELF", "Administrators cannot ban their own account.", 400),
+        new AdminBanError(
+          "CANNOT_BAN_SELF",
+          "Administrators cannot ban their own account.",
+          400,
+        ),
       );
 
       const req = new Request("http://localhost:3000/api/admin/ban", {
@@ -235,7 +263,11 @@ describe("Admin Ban Route Suite", () => {
 
     it("maps AdminBanError (e.g. 403 CANNOT_BAN_SUPER_ADMIN) cleanly", async () => {
       vi.mocked(banUser).mockRejectedValue(
-        new AdminBanError("CANNOT_BAN_SUPER_ADMIN", "Super administrators cannot be banned.", 403),
+        new AdminBanError(
+          "CANNOT_BAN_SUPER_ADMIN",
+          "Super administrators cannot be banned.",
+          403,
+        ),
       );
 
       const req = new Request("http://localhost:3000/api/admin/ban", {
@@ -251,7 +283,9 @@ describe("Admin Ban Route Suite", () => {
     });
 
     it("maps unexpected server error to 500 SERVER_ERROR without exposing internal traces", async () => {
-      vi.mocked(banUser).mockRejectedValue(new Error("FATAL database corruption: details..."));
+      vi.mocked(banUser).mockRejectedValue(
+        new Error("FATAL database corruption: details..."),
+      );
 
       const req = new Request("http://localhost:3000/api/admin/ban", {
         method: "POST",

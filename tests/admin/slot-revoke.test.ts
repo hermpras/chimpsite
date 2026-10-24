@@ -116,7 +116,10 @@ function createMockPrisma() {
         updateMany: vi.fn(async ({ where, data }: any) => {
           let count = 0;
           for (const s of store.wlSlots) {
-            if (s.id === where.id && (!where.status?.in || where.status.in.includes(s.status))) {
+            if (
+              s.id === where.id &&
+              (!where.status?.in || where.status.in.includes(s.status))
+            ) {
               slotSnapshots.push({ id: s.id, status: s.status, notes: s.notes });
               s.status = data.status;
               if (data.notes !== undefined) s.notes = data.notes;
@@ -133,7 +136,10 @@ function createMockPrisma() {
         update: vi.fn(async ({ where, data }: any) => {
           const p = store.wlPrograms.find((prog) => prog.id === where.id);
           if (p) {
-            programSnapshots.push({ id: p.id, allocatedSlotsCount: p.allocatedSlotsCount });
+            programSnapshots.push({
+              id: p.id,
+              allocatedSlotsCount: p.allocatedSlotsCount,
+            });
             if (data.allocatedSlotsCount?.decrement) {
               p.allocatedSlotsCount = Math.max(
                 0,
@@ -213,11 +219,14 @@ function createMockPrisma() {
         }),
         updateMany: vi.fn(async ({ where, data }: any) => {
           const item = store.poolItems.find(
-            (i) => i.id === where.id && i.remainingStock >= (where.remainingStock?.gte ?? 0),
+            (i) =>
+              i.id === where.id && i.remainingStock >= (where.remainingStock?.gte ?? 0),
           );
           if (item) {
-            if (data.claimedStock?.increment) item.claimedStock += data.claimedStock.increment;
-            if (data.remainingStock?.decrement) item.remainingStock -= data.remainingStock.decrement;
+            if (data.claimedStock?.increment)
+              item.claimedStock += data.claimedStock.increment;
+            if (data.remainingStock?.decrement)
+              item.remainingStock -= data.remainingStock.decrement;
             return { count: 1 };
           }
           return { count: 0 };
@@ -376,14 +385,18 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
         validateRevokeWlSlotInput({
           adminUserId: "admin-1",
         }),
-      ).toThrowError(/valid slotId or \(programId with userId or slotNumber\) is required/);
+      ).toThrowError(
+        /valid slotId or \(programId with userId or slotNumber\) is required/,
+      );
 
       expect(() =>
         validateRevokeWlSlotInput({
           slotId: "",
           adminUserId: "admin-1",
         }),
-      ).toThrowError(/valid slotId or \(programId with userId or slotNumber\) is required/);
+      ).toThrowError(
+        /valid slotId or \(programId with userId or slotNumber\) is required/,
+      );
     });
 
     it("rejects invalid non-string reason", () => {

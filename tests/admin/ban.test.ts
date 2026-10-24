@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   banUser,
+  revokeBan,
   validateAdminBanInput,
   AdminBanError,
   VALID_BAN_TYPES,
@@ -42,6 +43,12 @@ function createMockPrisma() {
     const uncommittedAuditLogs: any[] = [];
     const userSnapshots: Array<{ id: string; isBanned: boolean }> = [];
     const sessionRevocations: Array<{ id: string; revokedAt: Date | null }> = [];
+    const banMutationSnapshots: Array<{
+      id: string;
+      isActive: boolean;
+      revokedAt: Date | null;
+      revokedById: string | null;
+    }> = [];
 
     const rollback = () => {
       for (const ban of uncommittedBans) {
@@ -59,6 +66,14 @@ function createMockPrisma() {
       for (const snap of sessionRevocations) {
         const s = store.authSessions.find((sess) => sess.id === snap.id);
         if (s) s.revokedAt = snap.revokedAt;
+      }
+      for (const snap of banMutationSnapshots) {
+        const b = store.bans.find((ban) => ban.id === snap.id);
+        if (b) {
+          b.isActive = snap.isActive;
+          b.revokedAt = snap.revokedAt;
+          b.revokedById = snap.revokedById;
+        }
       }
     };
 
@@ -87,13 +102,17 @@ function createMockPrisma() {
         }),
       },
       banRecord: {
+        findUnique: vi.fn(async ({ where }: any) => {
+          return store.bans.find((b) => b.id === where.id) || null;
+        }),
         findFirst: vi.fn(async ({ where }: any) => {
           return (
             store.bans.find((b) => {
               if (b.userId !== where.userId) return false;
               if (!b.isActive) return false;
               if (where.scope?.in && !where.scope.in.includes(b.scope)) return false;
-              if (typeof where.scope === "string" && b.scope !== where.scope) return false;
+              if (typeof where.scope === "string" && b.scope !== where.scope)
+                return false;
               if (where.OR && b.expiresAt) {
                 const gtObj = where.OR.find((cond: any) => cond.expiresAt?.gt);
                 if (gtObj && gtObj.expiresAt.gt >= b.expiresAt) return false;
@@ -113,12 +132,27 @@ function createMockPrisma() {
           uncommittedBans.push(record);
           return record;
         }),
+        update: vi.fn(async ({ where, data }: any) => {
+          const ban = store.bans.find((b) => b.id === where.id);
+          if (!ban) throw new Error("Ban record not found");
+          banMutationSnapshots.push({
+            id: ban.id,
+            isActive: ban.isActive,
+            revokedAt: ban.revokedAt ?? null,
+            revokedById: ban.revokedById ?? null,
+          });
+          Object.assign(ban, data);
+          return ban;
+        }),
       },
       authSession: {
         updateMany: vi.fn(async ({ where, data }: any) => {
           let count = 0;
           for (const s of store.authSessions) {
-            if (s.userId === where.userId && (where.revokedAt === null ? s.revokedAt === null : true)) {
+            if (
+              s.userId === where.userId &&
+              (where.revokedAt === null ? s.revokedAt === null : true)
+            ) {
               sessionRevocations.push({ id: s.id, revokedAt: s.revokedAt });
               s.revokedAt = data.revokedAt;
               count++;
@@ -276,12 +310,19 @@ function createMockPrisma() {
         const s = store.authSessions.find((sess) => sess.token === where.token);
         if (!s) return null;
         const u = store.users.find((user) => user.id === s.userId);
-        return { ...s, user: { isBanned: u?.isBanned ?? false, wallet: { address: "0xuser" } } };
+        return {
+          ...s,
+          user: { isBanned: u?.isBanned ?? false, wallet: { address: "0xuser" } },
+        };
       }),
     },
     auditLog: {
       create: vi.fn(async ({ data }: any) => {
-        const record = { id: `audit-${store.auditLogs.length + 1}`, ...data, createdAt: new Date() };
+        const record = {
+          id: `audit-${store.auditLogs.length + 1}`,
+          ...data,
+          createdAt: new Date(),
+        };
         store.auditLogs.push(record);
         return record;
       }),
@@ -551,13 +592,17 @@ describe("Admin Ban Service (banUser)", () => {
       expect(res.banRecord.issuedById).toBe("admin-1");
 
       // Verify target user model updated
-      const updatedUser = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
+      const updatedUser = mockPrisma._store.users.find(
+        (u: any) => u.id === "user-target-1",
+      );
       expect(updatedUser?.isBanned).toBe(true);
 
       // Verify target sessions revoked
       const sess1 = mockPrisma._store.authSessions.find((s: any) => s.id === "sess-1");
       const sess2 = mockPrisma._store.authSessions.find((s: any) => s.id === "sess-2");
-      const adminSess = mockPrisma._store.authSessions.find((s: any) => s.id === "sess-3");
+      const adminSess = mockPrisma._store.authSessions.find(
+        (s: any) => s.id === "sess-3",
+      );
       expect(sess1?.revokedAt).toEqual(now);
       expect(sess2?.revokedAt).toEqual(now);
       expect(adminSess?.revokedAt).toBeNull(); // admin session untouched
@@ -600,7 +645,9 @@ describe("Admin Ban Service (banUser)", () => {
       const user = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
       expect(user?.isBanned).toBe(false);
 
-      const sess = mockPrisma._store.authSessions.find((s: any) => s.id === "sess-user-claim");
+      const sess = mockPrisma._store.authSessions.find(
+        (s: any) => s.id === "sess-user-claim",
+      );
       expect(sess?.revokedAt).toBeNull(); // Sessions remain valid for profile viewing
     });
 
@@ -730,7 +777,9 @@ describe("Admin Ban Service (banUser)", () => {
       const user = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
       expect(user?.isBanned).toBe(false);
 
-      const sess = mockPrisma._store.authSessions.find((s: any) => s.id === "sess-rollback");
+      const sess = mockPrisma._store.authSessions.find(
+        (s: any) => s.id === "sess-rollback",
+      );
       expect(sess?.revokedAt).toBeNull();
     });
   });
@@ -835,7 +884,9 @@ describe("Admin Ban Service (banUser)", () => {
       expect(claim).toBeDefined();
       expect(claim?.status).toBe("SUCCESS");
 
-      const item = mockPrisma._store.inventoryItems.find((i: any) => i.id === "inv-item-1");
+      const item = mockPrisma._store.inventoryItems.find(
+        (i: any) => i.id === "inv-item-1",
+      );
       expect(item).toBeDefined();
       expect(item?.ownerId).toBe("user-target-1");
     });
@@ -871,7 +922,7 @@ describe("Admin Ban Service (banUser)", () => {
     });
   });
 
-  describe("Temporary Ban Expiration Semantics", () => {
+  describe("Temporary Ban Expiration Semantics — banUser", () => {
     it("temporary CLAIM_RESTRICTED ban blocks claims during validity and stops applying after expiresAt", async () => {
       mockPrisma._store.drops.push({ id: "drop-exp", status: "ACTIVE" });
       mockPrisma._store.periods.push({
@@ -925,7 +976,11 @@ describe("Admin Ban Service (banUser)", () => {
     });
 
     it("temporary GIFT_RESTRICTED ban stops restricting gifts after expiresAt", async () => {
-      mockPrisma._store.users.push({ id: "user-receiver-exp", role: "USER", isBanned: false });
+      mockPrisma._store.users.push({
+        id: "user-receiver-exp",
+        role: "USER",
+        isBanned: false,
+      });
       mockPrisma._store.inventoryItems.push({
         id: "item-gift-exp",
         ownerId: "user-target-1",
@@ -1001,6 +1056,331 @@ describe("Admin Ban Service (banUser)", () => {
       expect(resNew.success).toBe(true);
       expect(resNew.alreadyBanned).toBe(false); // Recognized that prior temporary ban expired
       expect(mockPrisma._store.bans).toHaveLength(2);
+    });
+  });
+});
+
+describe("Admin Ban Service (revokeBan)", () => {
+  let mockPrisma: any;
+  const now = new Date("2026-10-17T12:00:00Z");
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+
+    // Acting admin
+    mockPrisma._store.users.push({
+      id: "admin-1",
+      role: "ADMIN",
+      isBanned: false,
+    });
+    mockPrisma._store.adminRoles.push({
+      id: "role-admin-1",
+      userId: "admin-1",
+      roleType: "ADMIN",
+      permissions: ["MANAGE_BANS"],
+    });
+
+    // Super admin
+    mockPrisma._store.users.push({
+      id: "super-admin-1",
+      role: "SUPER_ADMIN",
+      isBanned: false,
+    });
+
+    // Regular target user
+    mockPrisma._store.users.push({
+      id: "user-target-1",
+      role: "USER",
+      isBanned: true,
+    });
+  });
+
+  describe("Input Validation", () => {
+    it("rejects missing or empty adminUserId", async () => {
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "ban-1",
+          adminUserId: "",
+        }),
+      ).rejects.toThrow("Admin authentication is required.");
+
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "ban-1",
+          adminUserId: "   ",
+        }),
+      ).rejects.toThrow("Admin authentication is required.");
+    });
+
+    it("rejects missing or empty banId", async () => {
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "",
+          adminUserId: "admin-1",
+        }),
+      ).rejects.toThrow("banId is required.");
+
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "   ",
+          adminUserId: "admin-1",
+        }),
+      ).rejects.toThrow("banId is required.");
+    });
+  });
+
+  describe("Ban Record Lookups & Guard Conditions", () => {
+    it("throws BAN_NOT_FOUND with 404 when banId does not exist", async () => {
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "non-existent-ban",
+          adminUserId: "admin-1",
+          now,
+        }),
+      ).rejects.toMatchObject({ code: "BAN_NOT_FOUND", status: 404 });
+    });
+
+    it("throws BAN_ALREADY_INACTIVE with 409 when ban is already inactive", async () => {
+      mockPrisma._store.bans.push({
+        id: "ban-inactive",
+        userId: "user-target-1",
+        scope: "FULL_SYSTEM",
+        banType: "PERMANENT",
+        isActive: false,
+        expiresAt: null,
+        revokedAt: new Date(now.getTime() - 1000),
+        revokedById: "admin-1",
+      });
+
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "ban-inactive",
+          adminUserId: "admin-1",
+          now,
+        }),
+      ).rejects.toMatchObject({ code: "BAN_ALREADY_INACTIVE", status: 409 });
+    });
+  });
+
+  describe("Successful Execution & State Transitions", () => {
+    it("revokes a FULL_SYSTEM PERMANENT ban: marks isActive=false, restores isBanned=false, emits AuditLog", async () => {
+      mockPrisma._store.bans.push({
+        id: "ban-perm-1",
+        userId: "user-target-1",
+        scope: "FULL_SYSTEM",
+        banType: "PERMANENT",
+        isActive: true,
+        expiresAt: null,
+        revokedAt: null,
+        revokedById: null,
+      });
+
+      const result = await revokeBan(mockPrisma, {
+        banId: "ban-perm-1",
+        adminUserId: "admin-1",
+        reason: "Appeal accepted — identity verified.",
+        now,
+        ipAddress: "10.0.0.1",
+        userAgent: "ChimpAdmin/1.0",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.banId).toBe("ban-perm-1");
+      expect(result.isActive).toBe(false);
+      expect(result.revokedAt).toEqual(now);
+      expect(result.auditLogId).toBeDefined();
+
+      // Ban record deactivated
+      const ban = mockPrisma._store.bans.find((b: any) => b.id === "ban-perm-1");
+      expect(ban?.isActive).toBe(false);
+      expect(ban?.revokedAt).toEqual(now);
+      expect(ban?.revokedById).toBe("admin-1");
+
+      // User.isBanned restored to false (no remaining FULL_SYSTEM bans)
+      const user = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
+      expect(user?.isBanned).toBe(false);
+
+      // AuditLog written
+      const audit = mockPrisma._store.auditLogs.find(
+        (l: any) => l.action === "REVOKE_BAN" && l.entityId === "ban-perm-1",
+      );
+      expect(audit).toBeDefined();
+      expect(audit.actorId).toBe("admin-1");
+      expect(audit.actorIp).toBe("10.0.0.1");
+      expect(audit.userAgent).toBe("ChimpAdmin/1.0");
+      expect(audit.entityType).toBe("BanRecord");
+      expect(audit.oldValues.isActive).toBe(true);
+      expect(audit.newValues.isActive).toBe(false);
+      expect(audit.metadata.reason).toBe("Appeal accepted — identity verified.");
+    });
+
+    it("revokes a feature-scoped ban (CLAIM_RESTRICTED): does NOT alter user.isBanned", async () => {
+      // User has a FULL_SYSTEM ban keeping isBanned=true
+      mockPrisma._store.bans.push({
+        id: "ban-full",
+        userId: "user-target-1",
+        scope: "FULL_SYSTEM",
+        banType: "PERMANENT",
+        isActive: true,
+        expiresAt: null,
+        revokedAt: null,
+        revokedById: null,
+      });
+      // Also a CLAIM_RESTRICTED ban to revoke
+      mockPrisma._store.bans.push({
+        id: "ban-claim",
+        userId: "user-target-1",
+        scope: "CLAIM_RESTRICTED",
+        banType: "FEATURE_RESTRICTION",
+        isActive: true,
+        expiresAt: null,
+        revokedAt: null,
+        revokedById: null,
+      });
+
+      await revokeBan(mockPrisma, {
+        banId: "ban-claim",
+        adminUserId: "admin-1",
+        now,
+      });
+
+      // Feature-scoped ban deactivated
+      const claimBan = mockPrisma._store.bans.find((b: any) => b.id === "ban-claim");
+      expect(claimBan?.isActive).toBe(false);
+
+      // isBanned remains true — FULL_SYSTEM ban still active
+      const user = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
+      expect(user?.isBanned).toBe(true);
+    });
+
+    it("preserves isBanned=true when multiple FULL_SYSTEM bans exist and only one is revoked", async () => {
+      // Two FULL_SYSTEM bans
+      mockPrisma._store.bans.push(
+        {
+          id: "ban-full-a",
+          userId: "user-target-1",
+          scope: "FULL_SYSTEM",
+          banType: "PERMANENT",
+          isActive: true,
+          expiresAt: null,
+          revokedAt: null,
+          revokedById: null,
+        },
+        {
+          id: "ban-full-b",
+          userId: "user-target-1",
+          scope: "FULL_SYSTEM",
+          banType: "TEMPORARY",
+          isActive: true,
+          expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+          revokedAt: null,
+          revokedById: null,
+        },
+      );
+
+      await revokeBan(mockPrisma, {
+        banId: "ban-full-a",
+        adminUserId: "super-admin-1",
+        now,
+      });
+
+      // ban-full-a deactivated
+      const banA = mockPrisma._store.bans.find((b: any) => b.id === "ban-full-a");
+      expect(banA?.isActive).toBe(false);
+
+      // isBanned stays true — ban-full-b is still active
+      const user = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
+      expect(user?.isBanned).toBe(true);
+    });
+
+    it("restores isBanned=false once the last FULL_SYSTEM ban is revoked", async () => {
+      mockPrisma._store.bans.push({
+        id: "ban-last-full",
+        userId: "user-target-1",
+        scope: "FULL_SYSTEM",
+        banType: "PERMANENT",
+        isActive: true,
+        expiresAt: null,
+        revokedAt: null,
+        revokedById: null,
+      });
+
+      await revokeBan(mockPrisma, {
+        banId: "ban-last-full",
+        adminUserId: "admin-1",
+        now,
+      });
+
+      const user = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
+      expect(user?.isBanned).toBe(false);
+    });
+
+    it("revokes a TEMPORARY ban before its expiry and emits correct metadata", async () => {
+      const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      mockPrisma._store.bans.push({
+        id: "ban-temp-1",
+        userId: "user-target-1",
+        scope: "GIFT_RESTRICTED",
+        banType: "TEMPORARY",
+        isActive: true,
+        expiresAt,
+        revokedAt: null,
+        revokedById: null,
+      });
+
+      const result = await revokeBan(mockPrisma, {
+        banId: "ban-temp-1",
+        adminUserId: "admin-1",
+        reason: "Situation resolved early.",
+        now,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(false);
+
+      const audit = mockPrisma._store.auditLogs.find(
+        (l: any) => l.action === "REVOKE_BAN" && l.entityId === "ban-temp-1",
+      );
+      expect(audit).toBeDefined();
+      expect(audit.metadata.bannedScope).toBe("GIFT_RESTRICTED");
+      expect(audit.metadata.reason).toBe("Situation resolved early.");
+    });
+  });
+
+  describe("Transactional Consistency", () => {
+    it("rolls back ban deactivation and isBanned restoration when auditLog creation fails", async () => {
+      mockPrisma._store.bans.push({
+        id: "ban-rollback",
+        userId: "user-target-1",
+        scope: "FULL_SYSTEM",
+        banType: "PERMANENT",
+        isActive: true,
+        expiresAt: null,
+        revokedAt: null,
+        revokedById: null,
+      });
+
+      // Hook audit create to simulate failure
+      mockPrisma._hooks.onAuditCreate = () => {
+        throw new Error("Disk full — audit write failed");
+      };
+
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "ban-rollback",
+          adminUserId: "admin-1",
+          now,
+        }),
+      ).rejects.toThrow("Disk full — audit write failed");
+
+      // Ban record must still be active (rollback)
+      const ban = mockPrisma._store.bans.find((b: any) => b.id === "ban-rollback");
+      expect(ban?.isActive).toBe(true);
+      expect(ban?.revokedAt).toBeNull();
+
+      // User isBanned unchanged
+      const user = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
+      expect(user?.isBanned).toBe(true);
     });
   });
 });

@@ -17,13 +17,8 @@ import {
   HEAD as ID_HEAD,
   OPTIONS as ID_OPTIONS,
 } from "@/app/api/admin/whitelist/slots/[id]/revoke/route";
-import {
-  POST as WL_POST,
-  GET as WL_GET,
-} from "@/app/api/whitelist/slots/revoke/route";
-import {
-  POST as ALIAS_POST,
-} from "@/app/api/admin/slots/revoke/route";
+import { POST as WL_POST, GET as WL_GET } from "@/app/api/whitelist/slots/revoke/route";
+import { POST as ALIAS_POST } from "@/app/api/admin/slots/revoke/route";
 
 vi.mock("@/server/db", () => ({ prisma: { __fake: true } }));
 
@@ -260,7 +255,11 @@ describe("Admin Whitelist Slot Revoke API Routes", () => {
     it("returns 409 when slot is already revoked", async () => {
       vi.mocked(requireAdminSession).mockResolvedValue(validAdminSession as any);
       vi.mocked(revokeWlSlot).mockRejectedValue(
-        new WlSlotRevokeError("SLOT_ALREADY_REVOKED", "Whitelist slot is already revoked.", 409),
+        new WlSlotRevokeError(
+          "SLOT_ALREADY_REVOKED",
+          "Whitelist slot is already revoked.",
+          409,
+        ),
       );
 
       const req = new Request("http://localhost:3000/api/admin/whitelist/slots/revoke", {
@@ -292,13 +291,18 @@ describe("Admin Whitelist Slot Revoke API Routes", () => {
         auditLogId: "audit-param-1",
       });
 
-      const req = new Request("http://localhost:3000/api/admin/whitelist/slots/slot-param-123/revoke", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "Param route revocation" }),
-      });
+      const req = new Request(
+        "http://localhost:3000/api/admin/whitelist/slots/slot-param-123/revoke",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: "Param route revocation" }),
+        },
+      );
 
-      const res = await ID_POST(req, { params: Promise.resolve({ id: "slot-param-123" }) });
+      const res = await ID_POST(req, {
+        params: Promise.resolve({ id: "slot-param-123" }),
+      });
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.success).toBe(true);

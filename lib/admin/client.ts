@@ -43,3 +43,224 @@ export async function adminRevokeSlot(input: AdminRevokeSlotInput) {
   }
   return data;
 }
+
+export interface AdminReconcileQueueInput {
+  programId: string;
+}
+
+export interface AdminReconcileQueueResponse {
+  success: boolean;
+  programId: string;
+  slotsFilled: number;
+  openSlotsRemaining: number;
+}
+
+export async function adminReconcileQueue(
+  input: AdminReconcileQueueInput,
+): Promise<AdminReconcileQueueResponse> {
+  const res = await fetch("/api/admin/wl/reconcile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Queue reconciliation failed.");
+  }
+  return data;
+}
+
+export interface AdminListEvidenceInput {
+  status?: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+  taskId?: string;
+  userId?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export async function adminListEvidence(input?: AdminListEvidenceInput) {
+  const params = new URLSearchParams();
+  if (input?.status) params.set("status", input.status);
+  if (input?.taskId) params.set("taskId", input.taskId);
+  if (input?.userId) params.set("userId", input.userId);
+  if (input?.limit !== undefined) params.set("limit", String(input.limit));
+  if (input?.offset !== undefined) params.set("offset", String(input.offset));
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`/api/admin/evidence${query}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to list evidence submissions.");
+  }
+  return data;
+}
+
+export async function adminGetEvidence(submissionId: string) {
+  const res = await fetch(`/api/admin/evidence/${encodeURIComponent(submissionId)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      data.message || data.error || "Failed to retrieve evidence submission.",
+    );
+  }
+  return data;
+}
+
+export interface AdminReviewEvidenceInput {
+  status: "APPROVED" | "REJECTED";
+  reviewerNotes?: string | null;
+}
+
+export async function adminReviewEvidence(
+  submissionId: string,
+  input: AdminReviewEvidenceInput,
+) {
+  const res = await fetch(
+    `/api/admin/evidence/${encodeURIComponent(submissionId)}/review`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      data.message || data.error || "Failed to review evidence submission.",
+    );
+  }
+  return data;
+}
+
+export interface AdminRevokeBanInput {
+  banId: string;
+  reason?: string | null;
+}
+
+export async function adminRevokeBan(input: AdminRevokeBanInput) {
+  const res = await fetch("/api/admin/ban/revoke", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to revoke user ban.");
+  }
+  return data;
+}
+
+export interface AdminListCampaignsInput {
+  wlProgramId?: string;
+  status?: string;
+}
+
+export async function adminListCampaigns(input?: AdminListCampaignsInput) {
+  const params = new URLSearchParams();
+  if (input?.wlProgramId) params.set("wlProgramId", input.wlProgramId);
+  if (input?.status) params.set("status", input.status);
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`/api/admin/campaigns${query}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to list campaigns.");
+  }
+  return data;
+}
+
+export async function adminGetCampaign(campaignId: string) {
+  const res = await fetch(`/api/admin/campaigns/${encodeURIComponent(campaignId)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to retrieve campaign.");
+  }
+  return data;
+}
+
+export interface AdminCreateCampaignInput {
+  slug: string;
+  title: string;
+  description?: string | null;
+  wlProgramId: string;
+  initialVersion?: {
+    startsAt: string;
+    endsAt?: string | null;
+    changeNotes?: string | null;
+    compatibilityMode?: string;
+  };
+}
+
+export async function adminCreateCampaign(input: AdminCreateCampaignInput) {
+  const res = await fetch("/api/admin/campaigns", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to create campaign.");
+  }
+  return data;
+}
+
+export interface AdminUpdateCampaignInput {
+  title?: string;
+  description?: string | null;
+  status?: string;
+}
+
+export async function adminUpdateCampaign(
+  campaignId: string,
+  input: AdminUpdateCampaignInput,
+) {
+  const res = await fetch(`/api/admin/campaigns/${encodeURIComponent(campaignId)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update campaign.");
+  }
+  return data;
+}
+
+export async function adminListCampaignTasks(
+  campaignId: string,
+  versionNumber: number | string,
+) {
+  const res = await fetch(
+    `/api/admin/campaigns/${encodeURIComponent(campaignId)}/versions/${encodeURIComponent(String(versionNumber))}/tasks`,
+    {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to list campaign tasks.");
+  }
+  return data;
+}

@@ -1,6 +1,24 @@
 import type { PrismaClient, BanType, BanScope } from "@prisma/client";
 import { recordAuditLog } from "../audit/audit";
 
+export interface RevokeBanInput {
+  banId: string;
+  adminUserId: string;
+  reason?: string | null;
+  now?: Date;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}
+
+export interface RevokeBanResult {
+  success: true;
+  banId: string;
+  userId: string;
+  isActive: false;
+  revokedAt: Date;
+  auditLogId: string;
+}
+
 export class AdminBanError extends Error {
   code: string;
   status: number;
@@ -72,7 +90,11 @@ export function validateAdminBanInput(input: AdminBanUserInput): {
     throw new AdminBanError("INVALID_INPUT", "Target userId is required.", 400);
   }
 
-  if (!input.adminUserId || typeof input.adminUserId !== "string" || !input.adminUserId.trim()) {
+  if (
+    !input.adminUserId ||
+    typeof input.adminUserId !== "string" ||
+    !input.adminUserId.trim()
+  ) {
     throw new AdminBanError("UNAUTHORIZED", "Admin authentication is required.", 401);
   }
 
@@ -181,7 +203,10 @@ export async function banUser(
     }
 
     // 3. Authority checks on administrative target accounts
-    if (targetUser.role === "SUPER_ADMIN" || targetUser.adminRole?.roleType === "SUPER_ADMIN") {
+    if (
+      targetUser.role === "SUPER_ADMIN" ||
+      targetUser.adminRole?.roleType === "SUPER_ADMIN"
+    ) {
       throw new AdminBanError(
         "CANNOT_BAN_SUPER_ADMIN",
         "Super administrators cannot be banned.",
@@ -212,7 +237,10 @@ export async function banUser(
       },
     });
 
-    if (existingActiveBan && (!existingActiveBan.expiresAt || existingActiveBan.expiresAt > now)) {
+    if (
+      existingActiveBan &&
+      (!existingActiveBan.expiresAt || existingActiveBan.expiresAt > now)
+    ) {
       return {
         success: true,
         userId: targetUser.id,
@@ -245,7 +273,10 @@ export async function banUser(
         },
       });
 
-      if (existingFullSystemBan && (!existingFullSystemBan.expiresAt || existingFullSystemBan.expiresAt > now)) {
+      if (
+        existingFullSystemBan &&
+        (!existingFullSystemBan.expiresAt || existingFullSystemBan.expiresAt > now)
+      ) {
         return {
           success: true,
           userId: targetUser.id,
@@ -355,6 +386,90 @@ export async function banUser(
         expiresAt: banRecord.expiresAt,
         isActive: banRecord.isActive,
       },
+      auditLogId: auditRecord.id,
+    };
+  });
+}
+
+/**
+ * Revokes (lifts) an active ban record.
+ *
+ * Atomically marks the BanRecord as inactive and restores user.isBanned if no
+ * other active FULL_SYSTEM bans remain. Emits an AuditLog entry.
+ */
+export async function revokeBan(
+  prisma: PrismaClient,
+  rawInput: RevokeBanInput,
+): Promise<RevokeBanResult> {
+  const now = rawInput.now ?? new Date();
+
+  if (!rawInput.adminUserId?.trim()) {
+    throw new AdminBanError("UNAUTHORIZED", "Admin authentication is required.", 401);
+  }
+  if (!rawInput.banId?.trim()) {
+    throw new AdminBanError("INVALID_INPUT", "banId is required.", 400);
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    const ban = await tx.banRecord.findUnique({ where: { id: rawInput.banId } });
+    if (!ban) {
+      throw new AdminBanError("BAN_NOT_FOUND", "Ban record not found.", 404);
+    }
+    if (!ban.isActive) {
+      throw new AdminBanError(
+        "BAN_ALREADY_INACTIVE",
+        "This ban is already inactive.",
+        409,
+      );
+    }
+
+    // Atomically deactivate the ban record
+    const updatedBan = await tx.banRecord.update({
+      where: { id: ban.id },
+      data: { isActive: false, revokedAt: now, revokedById: rawInput.adminUserId },
+    });
+
+    // Restore user.isBanned only when no remaining active FULL_SYSTEM bans exist
+    if (ban.scope === "FULL_SYSTEM") {
+      const remainingFullSystemBan = await tx.banRecord.findFirst({
+        where: {
+          userId: ban.userId,
+          isActive: true,
+          scope: "FULL_SYSTEM",
+          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+        },
+      });
+      if (!remainingFullSystemBan) {
+        await tx.user.update({
+          where: { id: ban.userId },
+          data: { isBanned: false },
+        });
+      }
+    }
+
+    const auditRecord = await recordAuditLog(tx, {
+      actorId: rawInput.adminUserId,
+      actorIp: rawInput.ipAddress ?? null,
+      userAgent: rawInput.userAgent ?? null,
+      action: "REVOKE_BAN",
+      entityType: "BanRecord",
+      entityId: ban.id,
+      oldValues: { isActive: true },
+      newValues: { isActive: false, revokedAt: now.toISOString() },
+      metadata: {
+        targetUserId: ban.userId,
+        adminUserId: rawInput.adminUserId,
+        reason: rawInput.reason ?? null,
+        bannedScope: ban.scope,
+      },
+    });
+
+    return {
+      success: true,
+      banId: updatedBan.id,
+      userId: updatedBan.userId,
+      isActive: false as const,
+      revokedAt: now,
       auditLogId: auditRecord.id,
     };
   });
