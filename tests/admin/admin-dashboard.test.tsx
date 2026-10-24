@@ -61,6 +61,9 @@ vi.mock("@/lib/admin/client", () => ({
     .mockResolvedValue({ drops: [], total: 0, limit: 50, offset: 0 }),
   adminListTraits: vi.fn().mockResolvedValue({ traits: [] }),
   adminGetDrop: vi.fn().mockResolvedValue({ drop: null }),
+  adminListWLPrograms: vi.fn().mockResolvedValue({ programs: [], total: 0 }),
+  adminCreateWLProgram: vi.fn().mockResolvedValue({ success: true }),
+  adminUpdateWLProgram: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 vi.mock("@/lib/drops/client", () => ({

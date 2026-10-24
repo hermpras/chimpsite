@@ -572,3 +572,114 @@ export async function adminListTraits(): Promise<{ traits: AdminTraitRecord[] }>
   }
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Whitelist (WL) Programs
+// ---------------------------------------------------------------------------
+
+export interface AdminWLProgramRecord {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  totalSlots: number;
+  allocatedSlotsCount: number;
+  status: "UPCOMING" | "OPEN" | "PAUSED" | "FINALIZED" | "CLOSED";
+  startsAt: string;
+  endsAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  campaignsCount?: number;
+  slotsCount?: number;
+  queueEntriesCount?: number;
+}
+
+export interface AdminCreateWLProgramInput {
+  slug: string;
+  name: string;
+  description?: string | null;
+  totalSlots: number;
+  status?: string;
+  startsAt: string;
+  endsAt?: string | null;
+}
+
+export interface AdminUpdateWLProgramInput {
+  name?: string;
+  description?: string | null;
+  totalSlots?: number;
+  status?: string;
+  startsAt?: string;
+  endsAt?: string | null;
+}
+
+export async function adminListWLPrograms(params?: {
+  status?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ programs: AdminWLProgramRecord[]; total: number }> {
+  const query = new URLSearchParams();
+  if (params?.status) query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+  if (params?.limit !== undefined) query.set("limit", String(params.limit));
+  if (params?.offset !== undefined) query.set("offset", String(params.offset));
+
+  const qs = query.toString();
+  const url = qs ? `/api/admin/wl-programs?${qs}` : "/api/admin/wl-programs";
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch whitelist programs.");
+  }
+  return data;
+}
+
+export async function adminGetWLProgram(
+  idOrSlug: string,
+): Promise<{ program: AdminWLProgramRecord }> {
+  const res = await fetch(`/api/admin/wl-programs/${encodeURIComponent(idOrSlug)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch whitelist program.");
+  }
+  return data;
+}
+
+export async function adminCreateWLProgram(
+  input: AdminCreateWLProgramInput,
+): Promise<{ program: AdminWLProgramRecord; auditLogId: string }> {
+  const res = await fetch("/api/admin/wl-programs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to create whitelist program.");
+  }
+  return data;
+}
+
+export async function adminUpdateWLProgram(
+  programId: string,
+  input: AdminUpdateWLProgramInput,
+): Promise<{ program: AdminWLProgramRecord; auditLogId: string }> {
+  const res = await fetch(`/api/admin/wl-programs/${encodeURIComponent(programId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update whitelist program.");
+  }
+  return data;
+}

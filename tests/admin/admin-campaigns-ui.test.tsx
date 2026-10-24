@@ -11,6 +11,7 @@ vi.mock("@/lib/admin/client", () => ({
   adminCreateCampaign: vi.fn(),
   adminUpdateCampaign: vi.fn(),
   adminListCampaignTasks: vi.fn(),
+  adminListWLPrograms: vi.fn().mockResolvedValue({ programs: [], total: 0 }),
 }));
 
 describe("Local Testing - Admin Dashboard Campaigns Menu", () => {

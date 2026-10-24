@@ -27,6 +27,8 @@ import {
   adminCreateCampaign,
   adminUpdateCampaign,
   adminListCampaignTasks,
+  adminListWLPrograms,
+  type AdminWLProgramRecord,
 } from "@/lib/admin/client";
 
 interface CampaignItem {
@@ -81,9 +83,29 @@ export function AdminCampaigns() {
   const [newStartsAt, setNewStartsAt] = useState("");
   const [creating, setCreating] = useState(false);
 
+  // WL Programs for selection
+  const [wlPrograms, setWlPrograms] = useState<AdminWLProgramRecord[]>([]);
+  const [manualProgramEntry, setManualProgramEntry] = useState(false);
+
   // Status updating in progress
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    adminListWLPrograms()
+      .then((res) => {
+        if (isMounted) {
+          setWlPrograms(res.programs || []);
+        }
+      })
+      .catch(() => {
+        // non-blocking
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [showCreateForm]);
 
   useEffect(() => {
     let isMounted = true;
@@ -137,6 +159,7 @@ export function AdminCampaigns() {
       setNewTitle("");
       setNewDescription("");
       setNewWlProgramId("");
+      setManualProgramEntry(false);
       setNewStartsAt("");
       setReloadKey((k) => k + 1);
     } catch (err: unknown) {
@@ -295,21 +318,49 @@ export function AdminCampaigns() {
                   />
                 </div>
                 <div>
-                  <label
-                    htmlFor="camp-wl"
-                    className="mb-1 block text-xs font-medium text-gray-400"
-                  >
-                    Whitelist Program ID *
-                  </label>
-                  <input
-                    id="camp-wl"
-                    type="text"
-                    placeholder="e.g. wl-program-genesis"
-                    value={newWlProgramId}
-                    onChange={(e) => setNewWlProgramId(e.target.value)}
-                    required
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                  />
+                  <div className="mb-1 flex items-center justify-between">
+                    <label
+                      htmlFor="camp-wl"
+                      className="block text-xs font-medium text-gray-400"
+                    >
+                      Whitelist Program ID *
+                    </label>
+                    {wlPrograms.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setManualProgramEntry(!manualProgramEntry)}
+                        className="text-[11px] text-emerald-400 hover:underline"
+                      >
+                        {manualProgramEntry ? "Select from list" : "Enter manually"}
+                      </button>
+                    )}
+                  </div>
+                  {wlPrograms.length > 0 && !manualProgramEntry ? (
+                    <select
+                      id="camp-wl"
+                      value={newWlProgramId}
+                      onChange={(e) => setNewWlProgramId(e.target.value)}
+                      required
+                      className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    >
+                      <option value="">Select a Whitelist Program...</option>
+                      {wlPrograms.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({p.slug}) — Capacity: {p.totalSlots} [{p.status}]
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      id="camp-wl"
+                      type="text"
+                      placeholder="e.g. wl-program-genesis"
+                      value={newWlProgramId}
+                      onChange={(e) => setNewWlProgramId(e.target.value)}
+                      required
+                      className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    />
+                  )}
                 </div>
                 <div>
                   <label

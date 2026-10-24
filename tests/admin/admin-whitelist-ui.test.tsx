@@ -11,6 +11,9 @@ vi.mock("@/lib/admin/client", () => ({
   adminListSlots: vi
     .fn()
     .mockResolvedValue({ slots: [], total: 0, limit: 10, offset: 0 }),
+  adminListWLPrograms: vi.fn().mockResolvedValue({ programs: [], total: 0 }),
+  adminCreateWLProgram: vi.fn(),
+  adminUpdateWLProgram: vi.fn(),
 }));
 
 vi.mock("@/lib/whitelist/client", () => ({
