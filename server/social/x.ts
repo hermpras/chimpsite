@@ -1,8 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
 import crypto from "node:crypto";
 import { sealData, unsealData } from "iron-session";
+import { Redis } from "@upstash/redis";
 import { getSessionOptions } from "@/lib/auth/session";
 import { recordAuditLog } from "../audit/audit";
+import { timingSafeEqualString } from "@/lib/auth/timing-safe";
+
+export { timingSafeEqualString };
 
 export const X_OAUTH_COOKIE_NAME = "chimphood_x_oauth";
 export const X_OAUTH_COOKIE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -98,47 +102,6 @@ export async function getXOAuthStateFromRequest(
   return unsealXOAuthState(cookieVal);
 }
 
-/**
- * Constant-time string comparison to prevent timing attacks on state validation.
- */
-export function timingSafeEqualString(a: string, b: string): boolean {
-  const bufA = Buffer.from(a, "utf8");
-  const bufB = Buffer.from(b, "utf8");
-  if (bufA.length !== bufB.length) {
-    return false;
-  }
-  return crypto.timingSafeEqual(bufA, bufB);
-}
-
-// In-memory replay tracking for consumed OAuth states
-const consumedOAuthStates = new Set<string>();
-
-/**
- * Atomically marks state as consumed. Returns false if state was already consumed.
- */
-export function markStateConsumed(state: string): boolean {
-  if (consumedOAuthStates.has(state)) {
-    return false;
-  }
-  consumedOAuthStates.add(state);
-  const timer = setTimeout(
-    () => {
-      consumedOAuthStates.delete(state);
-    },
-    15 * 60 * 1000,
-  );
-  timer.unref?.();
-  return true;
-}
-
-export function isStateConsumed(state: string): boolean {
-  return consumedOAuthStates.has(state);
-}
-
-export function __clearConsumedOAuthStates(): void {
-  consumedOAuthStates.clear();
-}
-
 export class XOAuthError extends Error {
   code: string;
   status: number;
@@ -148,6 +111,132 @@ export class XOAuthError extends Error {
     this.code = code;
     this.status = status;
   }
+}
+
+export interface XOAuthRedisTarget {
+  set(
+    key: string,
+    value: string,
+    opts?: { ex?: number; nx?: boolean },
+  ): Promise<string | null>;
+  get(key: string): Promise<string | null>;
+  del(key: string): Promise<number>;
+}
+
+export const X_OAUTH_STATE_TTL_SECONDS = 600; // 10 minutes (matches X_OAUTH_COOKIE_TTL_MS)
+export const X_OAUTH_STATE_KEY_PREFIX = "@chimphood/oauth_state:";
+
+let xRedisClient: Redis | null = null;
+let customOAuthRedis: XOAuthRedisTarget | null = null;
+
+function getXRedisClient(): XOAuthRedisTarget {
+  if (customOAuthRedis) {
+    return customOAuthRedis;
+  }
+
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+
+  if (!url || !token) {
+    throw new XOAuthError(
+      "OAUTH_STORAGE_NOT_CONFIGURED",
+      "Missing Upstash Redis credentials for OAuth state storage. UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be configured.",
+      500,
+    );
+  }
+
+  if (!xRedisClient) {
+    xRedisClient = new Redis({ url, token });
+  }
+  return xRedisClient;
+}
+
+/**
+ * Atomically marks OAuth state as consumed in shared Redis storage with TTL.
+ * Returns false if state was already consumed (preventing replay attacks).
+ * Fails closed if Redis is unavailable or unconfigured.
+ */
+export async function markStateConsumed(state: string): Promise<boolean> {
+  const redis = getXRedisClient();
+  const key = `${X_OAUTH_STATE_KEY_PREFIX}${state}`;
+
+  try {
+    const result = await redis.set(key, "1", {
+      ex: X_OAUTH_STATE_TTL_SECONDS,
+      nx: true,
+    });
+    return result === "OK";
+  } catch (err: unknown) {
+    if (err instanceof XOAuthError) {
+      throw err;
+    }
+    console.error("markStateConsumed Redis failure:", err);
+    throw new XOAuthError(
+      "OAUTH_STORAGE_ERROR",
+      "OAuth state storage unavailable due to Redis failure.",
+      500,
+    );
+  }
+}
+
+/**
+ * Checks whether an OAuth state has already been consumed in Redis storage.
+ */
+export async function isStateConsumed(state: string): Promise<boolean> {
+  const redis = getXRedisClient();
+  const key = `${X_OAUTH_STATE_KEY_PREFIX}${state}`;
+
+  try {
+    const result = await redis.get(key);
+    return result !== null;
+  } catch (err: unknown) {
+    if (err instanceof XOAuthError) {
+      throw err;
+    }
+    console.error("isStateConsumed Redis failure:", err);
+    throw new XOAuthError(
+      "OAUTH_STORAGE_ERROR",
+      "OAuth state storage unavailable due to Redis failure.",
+      500,
+    );
+  }
+}
+
+/**
+ * Clears a consumed state from Redis storage (DEL).
+ */
+export async function clearConsumedState(state: string): Promise<void> {
+  const redis = getXRedisClient();
+  const key = `${X_OAUTH_STATE_KEY_PREFIX}${state}`;
+
+  try {
+    await redis.del(key);
+  } catch (err: unknown) {
+    if (err instanceof XOAuthError) {
+      throw err;
+    }
+    console.error("clearConsumedState Redis failure:", err);
+    throw new XOAuthError(
+      "OAUTH_STORAGE_ERROR",
+      "OAuth state storage unavailable due to Redis failure.",
+      500,
+    );
+  }
+}
+
+/**
+ * Test hook: resets cached Redis connection or custom test mock.
+ */
+export function __clearConsumedOAuthStates(): void {
+  xRedisClient = null;
+  customOAuthRedis = null;
+}
+
+/**
+ * Test hook: injects a custom Redis target for isolated testing.
+ */
+export function __setTestOAuthRedis(client: XOAuthRedisTarget | null): void {
+  customOAuthRedis = client;
 }
 
 export interface XConfig {
@@ -243,9 +332,14 @@ export async function linkXAccountWithCode(
 
   if (!tokenRes.ok) {
     const errorText = await tokenRes.text();
+    console.error(
+      "X OAuth token exchange failed (HTTP %d): %s",
+      tokenRes.status,
+      errorText,
+    );
     throw new XOAuthError(
       "X_TOKEN_EXCHANGE_FAILED",
-      `Failed to exchange token with X: ${errorText}`,
+      "Failed to exchange authorization code with X.",
       400,
     );
   }

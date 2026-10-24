@@ -83,13 +83,28 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   // Prevent replay of already-consumed OAuth state
-  if (!markStateConsumed(state)) {
+  try {
+    const isFirstUse = await markStateConsumed(state);
+    if (!isFirstUse) {
+      return Response.json(
+        {
+          error: "OAUTH_STATE_REPLAYED",
+          message: "OAuth state has already been consumed.",
+        },
+        { status: 400, headers: clearCookieHeader },
+      );
+    }
+  } catch (err: unknown) {
+    if (err instanceof XOAuthError) {
+      return Response.json(
+        { error: err.code, message: err.message },
+        { status: err.status, headers: clearCookieHeader },
+      );
+    }
+    console.error("GET /api/social/x/callback replay check error:", err);
     return Response.json(
-      {
-        error: "OAUTH_STATE_REPLAYED",
-        message: "OAuth state has already been consumed.",
-      },
-      { status: 400, headers: clearCookieHeader },
+      { error: "SERVER_ERROR", message: "Failed to verify OAuth state." },
+      { status: 500, headers: clearCookieHeader },
     );
   }
 

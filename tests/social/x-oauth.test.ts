@@ -11,14 +11,39 @@ import {
   buildClearXOAuthCookie,
   timingSafeEqualString,
   markStateConsumed,
+  isStateConsumed,
+  clearConsumedState,
   __clearConsumedOAuthStates,
+  __setTestOAuthRedis,
   X_OAUTH_COOKIE_NAME,
+  X_OAUTH_STATE_KEY_PREFIX,
+  X_OAUTH_STATE_TTL_SECONDS,
   type XOAuthStatePayload,
 } from "@/server/social/x";
 import type { PrismaClient } from "@prisma/client";
 
+// Mock @upstash/redis so tests run without real network I/O
+const { mockSet, mockGet, mockDel } = vi.hoisted(() => ({
+  mockSet: vi.fn(),
+  mockGet: vi.fn(),
+  mockDel: vi.fn(),
+}));
+
+vi.mock("@upstash/redis", () => {
+  class MockRedis {
+    set = mockSet;
+    get = mockGet;
+    del = mockDel;
+    constructor(public opts: unknown) {}
+  }
+  return {
+    Redis: MockRedis,
+  };
+});
+
 describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
   const originalEnv = process.env;
+  let simulatedStore: Map<string, string>;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
@@ -26,7 +51,30 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
     delete process.env.X_CLIENT_SECRET;
     delete process.env.X_REDIRECT_URI;
     process.env.SESSION_SECRET = "test-session-secret-0123456789abcdef";
+    process.env.UPSTASH_REDIS_REST_URL = "https://mock-redis.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "mock-redis-token-12345";
     __clearConsumedOAuthStates();
+
+    mockSet.mockReset();
+    mockGet.mockReset();
+    mockDel.mockReset();
+
+    simulatedStore = new Map();
+    mockSet.mockImplementation(
+      async (key: string, value: string, opts?: { ex?: number; nx?: boolean }) => {
+        if (opts?.nx && simulatedStore.has(key)) {
+          return null;
+        }
+        simulatedStore.set(key, value);
+        return "OK";
+      },
+    );
+    mockGet.mockImplementation(async (key: string) => {
+      return simulatedStore.get(key) ?? null;
+    });
+    mockDel.mockImplementation(async (key: string) => {
+      return simulatedStore.delete(key) ? 1 : 0;
+    });
   });
 
   afterEach(() => {
@@ -123,19 +171,125 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
     });
   });
 
-  describe("Timing-Safe Equality & Replay Prevention", () => {
+  describe("Timing-Safe Equality", () => {
     it("timingSafeEqualString returns true for identical strings and false for mismatched or unequal lengths", () => {
       expect(timingSafeEqualString("hello12345", "hello12345")).toBe(true);
       expect(timingSafeEqualString("hello12345", "hello12346")).toBe(false);
       expect(timingSafeEqualString("hello12345", "hello")).toBe(false);
       expect(timingSafeEqualString("", "")).toBe(true);
     });
+  });
 
-    it("markStateConsumed rejects replay attempts of the exact same state", () => {
+  describe("Redis OAuth State Replay Protection (Task 0-D)", () => {
+    it("allows new state on first consumption and blocks replayed state", async () => {
       const state = "unique-state-12345";
-      expect(markStateConsumed(state)).toBe(true);
+      const firstResult = await markStateConsumed(state);
+      expect(firstResult).toBe(true);
+
       // Immediate second attempt with same state must be rejected as replay
-      expect(markStateConsumed(state)).toBe(false);
+      const secondResult = await markStateConsumed(state);
+      expect(secondResult).toBe(false);
+    });
+
+    it("handles multiple distinct states independently", async () => {
+      expect(await markStateConsumed("state-alpha")).toBe(true);
+      expect(await markStateConsumed("state-beta")).toBe(true);
+      expect(await markStateConsumed("state-alpha")).toBe(false);
+      expect(await markStateConsumed("state-beta")).toBe(false);
+      expect(await markStateConsumed("state-gamma")).toBe(true);
+    });
+
+    it("passes TTL 600s and NX flag to Redis set with expected key prefix", async () => {
+      const state = "ttl-test-state";
+      await markStateConsumed(state);
+
+      expect(mockSet).toHaveBeenCalledWith(`${X_OAUTH_STATE_KEY_PREFIX}${state}`, "1", {
+        ex: X_OAUTH_STATE_TTL_SECONDS,
+        nx: true,
+      });
+      expect(X_OAUTH_STATE_TTL_SECONDS).toBe(600);
+    });
+
+    it("correctly inspects consumption status with isStateConsumed", async () => {
+      const state = "check-status-state";
+      expect(await isStateConsumed(state)).toBe(false);
+
+      await markStateConsumed(state);
+      expect(await isStateConsumed(state)).toBe(true);
+      expect(mockGet).toHaveBeenCalledWith(`${X_OAUTH_STATE_KEY_PREFIX}${state}`);
+    });
+
+    it("allows clearing consumed state with clearConsumedState", async () => {
+      const state = "cleared-state";
+      expect(await markStateConsumed(state)).toBe(true);
+      expect(await isStateConsumed(state)).toBe(true);
+
+      await clearConsumedState(state);
+      expect(mockDel).toHaveBeenCalledWith(`${X_OAUTH_STATE_KEY_PREFIX}${state}`);
+      expect(await isStateConsumed(state)).toBe(false);
+
+      // Can be consumed again after deletion
+      expect(await markStateConsumed(state)).toBe(true);
+    });
+
+    it("fails closed with 500 when UPSTASH_REDIS_REST_URL is missing", async () => {
+      delete process.env.UPSTASH_REDIS_REST_URL;
+      __clearConsumedOAuthStates();
+
+      await expect(markStateConsumed("any-state")).rejects.toMatchObject({
+        name: "XOAuthError",
+        code: "OAUTH_STORAGE_NOT_CONFIGURED",
+        status: 500,
+      });
+
+      await expect(isStateConsumed("any-state")).rejects.toMatchObject({
+        name: "XOAuthError",
+        code: "OAUTH_STORAGE_NOT_CONFIGURED",
+        status: 500,
+      });
+
+      await expect(clearConsumedState("any-state")).rejects.toMatchObject({
+        name: "XOAuthError",
+        code: "OAUTH_STORAGE_NOT_CONFIGURED",
+        status: 500,
+      });
+    });
+
+    it("fails closed with 500 when UPSTASH_REDIS_REST_TOKEN is missing", async () => {
+      delete process.env.UPSTASH_REDIS_REST_TOKEN;
+      __clearConsumedOAuthStates();
+
+      await expect(markStateConsumed("any-state")).rejects.toMatchObject({
+        name: "XOAuthError",
+        code: "OAUTH_STORAGE_NOT_CONFIGURED",
+        status: 500,
+      });
+    });
+
+    it("fails closed with 500 on Redis set failure without silent fallback", async () => {
+      mockSet.mockRejectedValueOnce(new Error("Redis ECONNREFUSED"));
+
+      await expect(markStateConsumed("failing-state")).rejects.toMatchObject({
+        name: "XOAuthError",
+        code: "OAUTH_STORAGE_ERROR",
+        status: 500,
+      });
+    });
+
+    it("fails closed with 500 on Redis get or del failure", async () => {
+      mockGet.mockRejectedValueOnce(new Error("Redis read timeout"));
+      await expect(isStateConsumed("timeout-state")).rejects.toMatchObject({
+        name: "XOAuthError",
+        code: "OAUTH_STORAGE_ERROR",
+        status: 500,
+      });
+
+      mockDel.mockRejectedValueOnce(new Error("Redis write failure"));
+      await expect(clearConsumedState("del-fail-state")).rejects.toMatchObject({
+        name: "XOAuthError",
+        code: "OAUTH_STORAGE_ERROR",
+        status: 500,
+      });
     });
   });
 
@@ -210,6 +364,69 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
       });
     });
 
+    it("rolls back X identity linking when audit log creation fails", async () => {
+      process.env.X_CLIENT_ID = "mock-client-id";
+      process.env.X_CLIENT_SECRET = "mock-client-secret";
+      process.env.X_REDIRECT_URI = "https://chimphood.com/api/social/x/callback";
+
+      const mockFetch = vi.fn();
+      global.fetch = mockFetch;
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: "mock-access-token" }),
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            id: "x-rollback-123",
+            username: "rollback_fan",
+            name: "Rollback User",
+            profile_image_url: "https://x.com/rollback.png",
+          },
+        }),
+      });
+
+      let storedIdentity: any = null;
+      const txMock = {
+        xIdentity: {
+          upsert: vi.fn(async ({ create }: any) => {
+            storedIdentity = { id: "ident-1", ...create };
+            return storedIdentity;
+          }),
+        },
+        auditLog: {
+          create: vi.fn().mockRejectedValue(new Error("Audit log database failure")),
+        },
+      };
+
+      const mockPrisma = {
+        xIdentity: {
+          findUnique: vi.fn().mockResolvedValue(null),
+        },
+        $transaction: vi.fn(async (cb: (tx: any) => any) => {
+          try {
+            return await cb(txMock);
+          } catch (err) {
+            storedIdentity = null;
+            throw err;
+          }
+        }),
+      } as unknown as PrismaClient;
+
+      await expect(
+        linkXAccountWithCode(mockPrisma, {
+          userId: "user-rollback",
+          code: "test-auth-code",
+          codeVerifier: "test-verifier",
+        }),
+      ).rejects.toThrow("Audit log database failure");
+
+      expect(storedIdentity).toBeNull();
+    });
+
     it("rejects linking if X account is already linked to another profile (409)", async () => {
       process.env.X_CLIENT_ID = "mock-client-id";
       process.env.X_CLIENT_SECRET = "mock-client-secret";
@@ -252,6 +469,52 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
         code: "X_ACCOUNT_ALREADY_LINKED",
         status: 409,
       });
+    });
+
+    it("Task 5-C: returns generic message and does not expose raw upstream error body when token exchange fails", async () => {
+      process.env.X_CLIENT_ID = "mock-client-id";
+      process.env.X_CLIENT_SECRET = "mock-client-secret";
+      process.env.X_REDIRECT_URI = "https://chimphood.com/api/social/x/callback";
+
+      const mockFetch = vi.fn();
+      global.fetch = mockFetch;
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: async () =>
+          JSON.stringify({
+            error: "invalid_grant",
+            error_description: "Raw provider detail",
+          }),
+      });
+
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const mockPrisma = {} as unknown as PrismaClient;
+
+      try {
+        await expect(
+          linkXAccountWithCode(mockPrisma, {
+            userId: "user-1",
+            code: "bad-code",
+            codeVerifier: "test-verifier",
+          }),
+        ).rejects.toMatchObject({
+          code: "X_TOKEN_EXCHANGE_FAILED",
+          message: "Failed to exchange authorization code with X.",
+          status: 400,
+        });
+
+        // Ensure raw provider error detail was logged server-side
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          expect.stringContaining("X OAuth token exchange failed"),
+          400,
+          expect.stringContaining("Raw provider detail"),
+        );
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
     });
   });
 });

@@ -10,10 +10,32 @@ import {
   type XOAuthStatePayload,
 } from "@/server/social/x";
 
-const { mockAuthenticateRequest, mockLinkXAccountWithCode } = vi.hoisted(() => ({
+const {
+  mockAuthenticateRequest,
+  mockLinkXAccountWithCode,
+  mockRouteRedisStore,
+  mockRouteRedisSet,
+} = vi.hoisted(() => ({
   mockAuthenticateRequest: vi.fn(),
   mockLinkXAccountWithCode: vi.fn(),
+  mockRouteRedisStore: new Map<string, string>(),
+  mockRouteRedisSet: vi.fn(),
 }));
+
+vi.mock("@upstash/redis", () => {
+  class MockRedis {
+    set = mockRouteRedisSet;
+    async get(key: string) {
+      return mockRouteRedisStore.get(key) ?? null;
+    }
+    async del(key: string) {
+      return mockRouteRedisStore.delete(key) ? 1 : 0;
+    }
+  }
+  return {
+    Redis: MockRedis,
+  };
+});
 
 vi.mock("@/server/auth/session", () => ({
   authenticateRequest: mockAuthenticateRequest,
@@ -40,6 +62,19 @@ describe("X OAuth 2.0 API Routes", () => {
     process.env.X_CLIENT_ID = "mock-client-id";
     process.env.X_CLIENT_SECRET = "mock-client-secret";
     process.env.X_REDIRECT_URI = "https://chimphood.com/api/social/x/callback";
+    process.env.UPSTASH_REDIS_REST_URL = "https://mock-redis.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "mock-redis-token";
+    mockRouteRedisStore.clear();
+    mockRouteRedisSet.mockReset();
+    mockRouteRedisSet.mockImplementation(
+      async (key: string, value: string, opts?: { ex?: number; nx?: boolean }) => {
+        if (opts?.nx && mockRouteRedisStore.has(key)) {
+          return null;
+        }
+        mockRouteRedisStore.set(key, value);
+        return "OK";
+      },
+    );
     vi.clearAllMocks();
     __clearConsumedOAuthStates();
   });
@@ -227,6 +262,37 @@ describe("X OAuth 2.0 API Routes", () => {
       const data2 = await res2.json();
       expect(data2.error).toBe("OAUTH_STATE_REPLAYED");
       expect(res2.headers.get("Set-Cookie")).toContain("Max-Age=0");
+    });
+
+    it("returns 500 and clears cookie when Upstash Redis credentials are not configured", async () => {
+      delete process.env.UPSTASH_REDIS_REST_URL;
+      __clearConsumedOAuthStates();
+
+      const { payload, cookieHeader } = await createValidCookieHeader();
+      const req = new Request(
+        `http://localhost:3000/api/social/x/callback?code=abc&state=${payload.state}`,
+        { headers: { Cookie: cookieHeader } },
+      );
+      const res = await callbackGET(req);
+      expect(res.status).toBe(500);
+      const data = await res.json();
+      expect(data.error).toBe("OAUTH_STORAGE_NOT_CONFIGURED");
+      expect(res.headers.get("Set-Cookie")).toContain("Max-Age=0");
+    });
+
+    it("returns 500 and clears cookie when Redis operation throws an error", async () => {
+      mockRouteRedisSet.mockRejectedValueOnce(new Error("Redis connection dropped"));
+
+      const { payload, cookieHeader } = await createValidCookieHeader();
+      const req = new Request(
+        `http://localhost:3000/api/social/x/callback?code=abc&state=${payload.state}`,
+        { headers: { Cookie: cookieHeader } },
+      );
+      const res = await callbackGET(req);
+      expect(res.status).toBe(500);
+      const data = await res.json();
+      expect(data.error).toBe("OAUTH_STORAGE_ERROR");
+      expect(res.headers.get("Set-Cookie")).toContain("Max-Age=0");
     });
 
     it("rejects unauthenticated requests (401) and clears cookie", async () => {
