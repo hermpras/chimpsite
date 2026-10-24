@@ -90,6 +90,8 @@ Copy `.env.example` to `.env.local`:
 cp .env.example .env.local
 ```
 
+For detailed specifications of each environment variable, generation of secrets, and deployment checklists, see [Environment Variables Reference (docs/environment-variables.md)](./docs/environment-variables.md).
+
 ### 4. Validate & Generate Prisma Client
 
 ```bash
@@ -125,5 +127,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🔗 Further Documentation
 
+- [Environment Variables Reference (docs/environment-variables.md)](./docs/environment-variables.md)
 - [Technical Handoff Notes (docs/handoff.md)](./docs/handoff.md)
 - [Pending Decisions Registry (docs/pending-decisions.md)](./docs/pending-decisions.md)
