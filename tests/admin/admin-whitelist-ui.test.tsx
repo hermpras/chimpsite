@@ -8,6 +8,9 @@ import * as wlClient from "@/lib/whitelist/client";
 vi.mock("@/lib/admin/client", () => ({
   adminReconcileQueue: vi.fn(),
   adminRevokeSlot: vi.fn(),
+  adminListSlots: vi
+    .fn()
+    .mockResolvedValue({ slots: [], total: 0, limit: 10, offset: 0 }),
 }));
 
 vi.mock("@/lib/whitelist/client", () => ({
@@ -17,6 +20,7 @@ vi.mock("@/lib/whitelist/client", () => ({
 describe("Admin Whitelist UI - Queue Reconciliation Notification", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.scrollTo = vi.fn();
   });
 
   it("renders headers and tools correctly", () => {
@@ -95,6 +99,82 @@ describe("Admin Whitelist UI - Queue Reconciliation Notification", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Program not found or inactive")).toBeInTheDocument();
+    });
+  });
+
+  describe("Allocated Whitelist Slots Registry", () => {
+    it("renders Allocated Whitelist Slots table and displays slot records with wallet and status", async () => {
+      vi.mocked(adminClient.adminListSlots).mockResolvedValueOnce({
+        slots: [
+          {
+            id: "slot-rec-1",
+            slotNumber: 7,
+            programId: "wl-genesis",
+            programName: "Genesis Whitelist Program",
+            programSlug: "genesis",
+            userId: "user-cuid-42",
+            walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
+            status: "ALLOCATED",
+            allocatedAt: "2026-10-24T10:00:00.000Z",
+            confirmedAt: null,
+            allocatedBy: "QUEUE_WORKER",
+            notes: null,
+          },
+        ],
+        total: 1,
+        limit: 10,
+        offset: 0,
+      });
+
+      render(<AdminWhitelist />);
+
+      expect(screen.getByText("Allocated Whitelist Slots")).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByText("#7")).toBeInTheDocument();
+        expect(screen.getByText("Genesis Whitelist Program")).toBeInTheDocument();
+        expect(screen.getByText("user-cuid-42")).toBeInTheDocument();
+        expect(screen.getAllByText("ALLOCATED").length).toBeGreaterThan(0);
+      });
+
+      // Clicking "Revoke" on an allocated slot auto-populates the Revocation form fields
+      const revokeBtn = screen.getByRole("button", { name: "Revoke" });
+      fireEvent.click(revokeBtn);
+
+      expect(screen.getByLabelText(/Slot ID \(preferred\)/i)).toHaveValue("slot-rec-1");
+      expect(screen.getByLabelText(/Program ID \(alt\)/i)).toHaveValue("wl-genesis");
+      expect(screen.getByLabelText(/User ID \(alt\)/i)).toHaveValue("user-cuid-42");
+    });
+
+    it("filters allocated whitelist slots by program and search query", async () => {
+      vi.mocked(adminClient.adminListSlots).mockResolvedValueOnce({
+        slots: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+      });
+
+      render(<AdminWhitelist />);
+
+      const searchInput = screen.getByPlaceholderText(
+        /Search by wallet \(0x\.\.\.\), User ID, or Slot ID\.\.\./i,
+      );
+      fireEvent.change(searchInput, { target: { value: "0x1234" } });
+
+      const programInput = screen.getByPlaceholderText(/Program ID\.\.\./i);
+      fireEvent.change(programInput, { target: { value: "wl-prog-1" } });
+
+      fireEvent.submit(searchInput.closest("form")!);
+
+      await waitFor(() => {
+        expect(adminClient.adminListSlots).toHaveBeenCalledWith({
+          search: "0x1234",
+          programId: "wl-prog-1",
+          status: undefined,
+          limit: 10,
+          offset: 0,
+        });
+      });
     });
   });
 });

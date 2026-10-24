@@ -264,3 +264,127 @@ export async function adminListCampaignTasks(
   }
   return data;
 }
+
+export interface AdminUserRecord {
+  id: string;
+  role: string;
+  isBanned: boolean;
+  createdAt: string;
+  updatedAt: string;
+  wallet: {
+    address: string;
+    chainId: number;
+    verifiedAt: string;
+  } | null;
+  xIdentity: {
+    username: string;
+    name: string | null;
+  } | null;
+  activeBan?: {
+    id: string;
+    banType: string;
+    scope: string;
+    reason: string;
+    issuedAt: string;
+    expiresAt: string | null;
+  } | null;
+}
+
+export interface AdminListUsersInput {
+  search?: string;
+  address?: string;
+  userId?: string;
+  role?: string;
+  isBanned?: boolean | string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AdminListUsersResponse {
+  users: AdminUserRecord[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function adminListUsers(
+  input?: AdminListUsersInput,
+): Promise<AdminListUsersResponse> {
+  const params = new URLSearchParams();
+  if (input?.search) params.set("search", input.search);
+  if (input?.address) params.set("address", input.address);
+  if (input?.userId) params.set("userId", input.userId);
+  if (input?.role) params.set("role", input.role);
+  if (input?.isBanned !== undefined) params.set("isBanned", String(input.isBanned));
+  if (input?.limit !== undefined) params.set("limit", String(input.limit));
+  if (input?.offset !== undefined) params.set("offset", String(input.offset));
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`/api/admin/users${query}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to list users.");
+  }
+  return data;
+}
+
+export interface AdminSlotRecord {
+  id: string;
+  slotNumber: number;
+  programId: string;
+  programName?: string;
+  programSlug?: string;
+  userId: string;
+  walletAddress: string | null;
+  status: string;
+  allocatedAt: string;
+  confirmedAt: string | null;
+  allocatedBy: string | null;
+  notes: string | null;
+}
+
+export interface AdminListSlotsInput {
+  programId?: string;
+  status?: string;
+  search?: string;
+  userId?: string;
+  address?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AdminListSlotsResponse {
+  slots: AdminSlotRecord[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function adminListSlots(
+  input?: AdminListSlotsInput,
+): Promise<AdminListSlotsResponse> {
+  const params = new URLSearchParams();
+  if (input?.programId) params.set("programId", input.programId);
+  if (input?.status) params.set("status", input.status);
+  if (input?.search) params.set("search", input.search);
+  if (input?.userId) params.set("userId", input.userId);
+  if (input?.address) params.set("address", input.address);
+  if (input?.limit !== undefined) params.set("limit", String(input.limit));
+  if (input?.offset !== undefined) params.set("offset", String(input.offset));
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`/api/admin/whitelist/slots${query}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to list whitelist slots.");
+  }
+  return data;
+}

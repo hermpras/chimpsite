@@ -7,11 +7,15 @@ import * as adminClient from "@/lib/admin/client";
 vi.mock("@/lib/admin/client", () => ({
   adminBanUser: vi.fn(),
   adminRevokeBan: vi.fn(),
+  adminListUsers: vi
+    .fn()
+    .mockResolvedValue({ users: [], total: 0, limit: 10, offset: 0 }),
 }));
 
 describe("Local Testing - Admin Dashboard Users & Bans UI", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.scrollTo = vi.fn();
   });
 
   // =========================================================================
@@ -26,15 +30,97 @@ describe("Local Testing - Admin Dashboard Users & Bans UI", () => {
       expect(screen.getByText("Revoke Ban")).toBeInTheDocument();
     });
 
-    it("displays PlaceholderNotice explaining that global user directory and search endpoints are upcoming", () => {
+    it("renders User Directory & Search and allows searching and auto-filling ban/revoke forms", async () => {
+      vi.mocked(adminClient.adminListUsers).mockResolvedValueOnce({
+        users: [
+          {
+            id: "user-cuid-123",
+            role: "USER",
+            isBanned: false,
+            createdAt: "2026-10-24T00:00:00.000Z",
+            updatedAt: "2026-10-24T00:00:00.000Z",
+            wallet: {
+              address: "0x1234567890123456789012345678901234567890",
+              chainId: 1,
+              verifiedAt: "2026-10-24T00:00:00.000Z",
+            },
+            xIdentity: { username: "chimp_trader", name: "Chimp Trader" },
+            activeBan: null,
+          },
+          {
+            id: "user-banned-456",
+            role: "USER",
+            isBanned: true,
+            createdAt: "2026-10-24T00:00:00.000Z",
+            updatedAt: "2026-10-24T00:00:00.000Z",
+            wallet: {
+              address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+              chainId: 1,
+              verifiedAt: "2026-10-24T00:00:00.000Z",
+            },
+            xIdentity: null,
+            activeBan: {
+              id: "ban-rec-789",
+              banType: "PERMANENT",
+              scope: "FULL_SYSTEM",
+              reason: "Sybil activity",
+              issuedAt: "2026-10-24T00:00:00.000Z",
+              expiresAt: null,
+            },
+          },
+        ],
+        total: 2,
+        limit: 10,
+        offset: 0,
+      });
+
       render(<AdminUsersBans />);
-      expect(screen.getByText("User Directory & Ban Audit Listing")).toBeInTheDocument();
-      expect(
-        screen.getByText(
-          /Global user search and audit table endpoints are not yet available in current backend/i,
-        ),
-      ).toBeInTheDocument();
-      expect(screen.getByText("Upcoming Feature")).toBeInTheDocument();
+
+      expect(screen.getByText("User Directory & Search")).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByText("user-cuid-123")).toBeInTheDocument();
+        expect(screen.getByText("@chimp_trader")).toBeInTheDocument();
+        expect(screen.getByText("user-banned-456")).toBeInTheDocument();
+        expect(screen.getByText("BANNED")).toBeInTheDocument();
+      });
+
+      // Clicking "Ban" next to user-cuid-123 auto-populates the Target User ID field
+      const banButtons = screen.getAllByRole("button", { name: "Ban" });
+      fireEvent.click(banButtons[0]);
+
+      expect(screen.getByLabelText(/Target User ID/i)).toHaveValue("user-cuid-123");
+
+      // Clicking "Revoke" next to banned user auto-populates the Ban Record ID field
+      const revokeButton = screen.getByRole("button", { name: "Revoke" });
+      fireEvent.click(revokeButton);
+
+      expect(screen.getByLabelText(/Ban Record ID/i)).toHaveValue("ban-rec-789");
+    });
+
+    it("triggers search query submission and updates directory listing", async () => {
+      vi.mocked(adminClient.adminListUsers).mockResolvedValueOnce({
+        users: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+      });
+
+      render(<AdminUsersBans />);
+
+      const searchInput = screen.getByPlaceholderText(
+        /Search by wallet address \(0x\.\.\.\), User CUID, or X username/i,
+      );
+      fireEvent.change(searchInput, { target: { value: "0x1234" } });
+      fireEvent.submit(searchInput.closest("form")!);
+
+      await waitFor(() => {
+        expect(adminClient.adminListUsers).toHaveBeenCalledWith({
+          search: "0x1234",
+          limit: 10,
+          offset: 0,
+        });
+      });
     });
 
     it("shows loading state when ban execution is in progress", async () => {

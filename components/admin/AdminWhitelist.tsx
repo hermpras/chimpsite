@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Shield,
   RefreshCw,
@@ -8,7 +8,9 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
-  Sliders,
+  ChevronLeft,
+  ChevronRight,
+  ListOrdered,
 } from "lucide-react";
 import {
   Card,
@@ -19,17 +21,19 @@ import {
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { PlaceholderNotice } from "@/components/ui/PlaceholderNotice";
 import {
   adminReconcileQueue,
   adminRevokeSlot,
+  adminListSlots,
   type AdminRevokeSlotInput,
   type AdminReconcileQueueResponse,
+  type AdminSlotRecord,
 } from "@/lib/admin/client";
 import {
   fetchWhitelistStatus,
   type WhitelistStatusResponse,
 } from "@/lib/whitelist/client";
+import { shortenAddress } from "@/lib/auth/address";
 
 export function AdminWhitelist() {
   // Reconcile state
@@ -54,6 +58,54 @@ export function AdminWhitelist() {
   const [lookupResult, setLookupResult] = useState<WhitelistStatusResponse | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
 
+  // Allocated Slots Registry State
+  const [slots, setSlots] = useState<AdminSlotRecord[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(true);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
+  const [slotsPage, setSlotsPage] = useState(1);
+  const [slotsTotal, setSlotsTotal] = useState(0);
+  const [slotSearchQuery, setSlotSearchQuery] = useState("");
+  const [slotProgramFilter, setSlotProgramFilter] = useState("");
+  const [slotStatusFilter, setSlotStatusFilter] = useState("");
+  const [reloadSlotsKey, setReloadSlotsKey] = useState(0);
+  const slotsLimit = 10;
+
+  useEffect(() => {
+    let isMounted = true;
+    adminListSlots({
+      search: slotSearchQuery.trim() || undefined,
+      programId: slotProgramFilter.trim() || undefined,
+      status: slotStatusFilter.trim() || undefined,
+      limit: slotsLimit,
+      offset: (slotsPage - 1) * slotsLimit,
+    })
+      .then((res) => {
+        if (isMounted) {
+          setSlots(res.slots);
+          setSlotsTotal(res.total);
+          setSlotsError(null);
+          setLoadingSlots(false);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setSlotsError((err as Error).message || "Failed to load whitelist slots.");
+          setLoadingSlots(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [slotsPage, reloadSlotsKey, slotSearchQuery, slotProgramFilter, slotStatusFilter]);
+
+  const handleSlotsFilterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoadingSlots(true);
+    setSlotsPage(1);
+    setReloadSlotsKey((k) => k + 1);
+  };
+
   const handleReconcile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reconcileProgramId.trim()) return;
@@ -63,6 +115,8 @@ export function AdminWhitelist() {
     try {
       const res = await adminReconcileQueue({ programId: reconcileProgramId.trim() });
       setReconcileResult(res);
+      // Refresh slots table after reconciliation
+      setReloadSlotsKey((k) => k + 1);
     } catch (err: unknown) {
       setReconcileError((err as Error).message || "Queue reconciliation failed.");
     } finally {
@@ -90,6 +144,8 @@ export function AdminWhitelist() {
       setRevokeResult(res);
       setRevokeSlotId("");
       setRevokeReason("");
+      // Refresh slots table after revocation
+      setReloadSlotsKey((k) => k + 1);
     } catch (err: unknown) {
       setRevokeError((err as Error).message || "Slot revocation failed.");
     } finally {
@@ -113,6 +169,8 @@ export function AdminWhitelist() {
     }
   };
 
+  const totalSlotPages = Math.max(1, Math.ceil(slotsTotal / slotsLimit));
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -124,8 +182,8 @@ export function AdminWhitelist() {
           <Badge variant="default">Stage 3 WL Engine</Badge>
         </div>
         <p className="mt-1 text-sm text-gray-400">
-          Execute FIFO queue reconciliation, enforce manual slot revocations, and inspect
-          user qualification tiers.
+          Execute FIFO queue reconciliation, inspect allocated whitelist slots, enforce
+          manual slot revocations, and check user qualification tiers.
         </p>
       </div>
 
@@ -224,7 +282,7 @@ export function AdminWhitelist() {
                 <input
                   id="rev-slot-id"
                   type="text"
-                  placeholder="e.g. clabc123456789"
+                  placeholder="e.g. clabc123456789 (or select from Allocated Slots table below)"
                   value={revokeSlotId}
                   onChange={(e) => setRevokeSlotId(e.target.value)}
                   className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
@@ -248,6 +306,7 @@ export function AdminWhitelist() {
                     className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
+
                 <div>
                   <label
                     htmlFor="rev-user-id"
@@ -416,12 +475,224 @@ export function AdminWhitelist() {
         </CardContent>
       </Card>
 
-      {/* Backend Notice */}
-      <PlaceholderNotice
-        title="Full Slot Registry & CSV Bulk Export"
-        description="Comprehensive slot registry query and CSV batch export APIs are not yet available in current backend. Targeted Slot Revocation, Queue Reconciliation, and Individual Address Lookup tools above operate on live database records."
-        phase="Upcoming Feature"
-      />
+      {/* Tool 4: Allocated Whitelist Slots Registry */}
+      <Card className="border-gray-800 bg-[#0c0e17]/90">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ListOrdered className="h-5 w-5 text-emerald-400" />
+              <CardTitle className="text-base text-white">
+                Allocated Whitelist Slots
+              </CardTitle>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setLoadingSlots(true);
+                setReloadSlotsKey((k) => k + 1);
+              }}
+              disabled={loadingSlots}
+              className="gap-1.5 text-xs"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${loadingSlots ? "animate-spin" : ""}`}
+              />
+              <span>Refresh</span>
+            </Button>
+          </div>
+          <CardDescription className="text-xs text-gray-400">
+            Browse allocated whitelist slots across programs with live statuses, wallet
+            addresses, and allocation timestamps. Click &quot;Revoke&quot; to populate the
+            revocation form above.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Filters Form */}
+          <form
+            onSubmit={handleSlotsFilterSubmit}
+            className="grid grid-cols-1 gap-2 sm:grid-cols-4"
+          >
+            <div className="sm:col-span-2">
+              <input
+                type="text"
+                placeholder="Search by wallet (0x...), User ID, or Slot ID..."
+                value={slotSearchQuery}
+                onChange={(e) => setSlotSearchQuery(e.target.value)}
+                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <input
+                type="text"
+                placeholder="Program ID..."
+                value={slotProgramFilter}
+                onChange={(e) => setSlotProgramFilter(e.target.value)}
+                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex gap-2">
+              <select
+                value={slotStatusFilter}
+                onChange={(e) => setSlotStatusFilter(e.target.value)}
+                className="flex-1 rounded-md border border-gray-700 bg-gray-900/60 px-2 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="ALLOCATED">ALLOCATED</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="REVOKED_MANUAL_ADMIN">REVOKED</option>
+              </select>
+              <Button
+                type="submit"
+                variant="primary"
+                size="sm"
+                disabled={loadingSlots}
+                className="text-xs"
+              >
+                Filter
+              </Button>
+            </div>
+          </form>
+
+          {slotsError && (
+            <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>{slotsError}</span>
+            </div>
+          )}
+
+          {/* Slots Table */}
+          <div className="overflow-x-auto rounded-lg border border-gray-800">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-gray-800 bg-gray-900/60 text-gray-400">
+                <tr>
+                  <th className="px-3 py-2.5 font-medium">Slot #</th>
+                  <th className="px-3 py-2.5 font-medium">Program</th>
+                  <th className="px-3 py-2.5 font-medium">Wallet Address</th>
+                  <th className="px-3 py-2.5 font-medium">User ID</th>
+                  <th className="px-3 py-2.5 font-medium">Allocated At</th>
+                  <th className="px-3 py-2.5 font-medium">Status</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/60 bg-[#0c0e17]/40 text-gray-300">
+                {loadingSlots && slots.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-gray-500">
+                      Loading allocated slots...
+                    </td>
+                  </tr>
+                ) : slots.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-gray-500">
+                      No whitelist slots found.
+                    </td>
+                  </tr>
+                ) : (
+                  slots.map((s) => (
+                    <tr key={s.id} className="transition-colors hover:bg-gray-800/30">
+                      <td className="px-3 py-2.5 font-semibold text-white">
+                        #{s.slotNumber}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="text-gray-300">
+                          {s.programName ?? s.programSlug ?? s.programId}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-emerald-400">
+                        {s.walletAddress ? (
+                          <span title={s.walletAddress}>
+                            {shortenAddress(s.walletAddress)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-gray-400">
+                        <span title={s.userId}>{s.userId}</span>
+                      </td>
+                      <td className="px-3 py-2.5 text-gray-400">
+                        {new Date(s.allocatedAt).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <Badge
+                          variant={
+                            s.status === "CONFIRMED"
+                              ? "success"
+                              : s.status === "ALLOCATED"
+                                ? "default"
+                                : "warning"
+                          }
+                          className="text-[10px]"
+                        >
+                          {s.status}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        {s.status !== "REVOKED_MANUAL_ADMIN" && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-[11px] hover:text-rose-300"
+                            onClick={() => {
+                              setRevokeSlotId(s.id);
+                              setRevokeProgramId(s.programId);
+                              setRevokeUserId(s.userId);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                          >
+                            Revoke
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between pt-1 text-xs text-gray-400">
+            <span>
+              Showing {slots.length > 0 ? (slotsPage - 1) * slotsLimit + 1 : 0} to{" "}
+              {Math.min(slotsPage * slotsLimit, slotsTotal)} of {slotsTotal} slots
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label="Previous slots page"
+                disabled={slotsPage <= 1 || loadingSlots}
+                onClick={() => {
+                  setLoadingSlots(true);
+                  setSlotsPage((p) => p - 1);
+                }}
+                className="h-7 px-2"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Button>
+              <span className="px-2 text-gray-300">
+                Page {slotsPage} of {totalSlotPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label="Next slots page"
+                disabled={slotsPage >= totalSlotPages || loadingSlots}
+                onClick={() => {
+                  setLoadingSlots(true);
+                  setSlotsPage((p) => p + 1);
+                }}
+                className="h-7 px-2"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
