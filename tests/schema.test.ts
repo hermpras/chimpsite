@@ -178,5 +178,41 @@ describe("Stage 1 Data Model & Database Foundation", () => {
       );
       expect(sqlContent).toContain('CREATE UNIQUE INDEX "WLSlot_programId_userId_key"');
     });
+
+    it("verifies stock CHECK constraints migration exists and enforces non-negative stock invariants", () => {
+      const checkMigrationPath = path.resolve(
+        __dirname,
+        "../prisma/migrations/20261013000001_add_stock_check_constraints/migration.sql",
+      );
+      expect(fs.existsSync(checkMigrationPath)).toBe(true);
+      const sqlContent = fs.readFileSync(checkMigrationPath, "utf-8");
+
+      expect(sqlContent).toContain('ALTER TABLE "DropPoolItem"');
+      expect(sqlContent).toContain(
+        'ADD CONSTRAINT "DropPoolItem_remainingStock_non_negative"',
+      );
+      expect(sqlContent).toContain('CHECK ("remainingStock" >= 0)');
+      expect(sqlContent).toContain(
+        'ADD CONSTRAINT "DropPoolItem_allocatedStock_non_negative"',
+      );
+      expect(sqlContent).toContain('CHECK ("allocatedStock" >= 0)');
+      expect(sqlContent).toContain(
+        'ADD CONSTRAINT "DropPoolItem_claimedStock_non_negative"',
+      );
+      expect(sqlContent).toContain('CHECK ("claimedStock" >= 0)');
+    });
+
+    it("verifies user avatar render migration exists and adds avatar columns", () => {
+      const avatarMigrationPath = path.resolve(
+        __dirname,
+        "../prisma/migrations/20261013000002_add_user_avatar_fields/migration.sql",
+      );
+      expect(fs.existsSync(avatarMigrationPath)).toBe(true);
+      const sqlContent = fs.readFileSync(avatarMigrationPath, "utf-8");
+
+      expect(sqlContent).toContain('ALTER TABLE "User"');
+      expect(sqlContent).toContain('"avatarPng" BYTEA');
+      expect(sqlContent).toContain('"avatarUpdatedAt" TIMESTAMP(3)');
+    });
   });
 });
