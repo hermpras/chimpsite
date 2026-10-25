@@ -148,7 +148,7 @@ export type PrismaTransactionClient = Parameters<
 /**
  * Computes the lowest unoccupied slot number 1..totalSlots, or null if capacity full.
  */
-async function findLowestAvailableSlotNumber(
+export async function findLowestAvailableSlotNumber(
   tx: PrismaTransactionClient,
   programId: string,
   totalSlots: number,

@@ -240,21 +240,8 @@ export async function acceptGift(prisma: PrismaClient, input: ResolveGiftInput) 
       );
     }
 
-    // Expiry check
-    if (now > gift.expiresAt) {
-      const expireUpdate = await tx.gift.updateMany({
-        where: { id: gift.id, status: "PENDING" },
-        data: { status: "EXPIRED", decidedAt: now },
-      });
-      if (expireUpdate.count === 0) {
-        throw new GiftError("GIFT_NOT_PENDING", "Gift is no longer pending.", 409);
-      }
-      await tx.inventoryItem.update({
-        where: { id: gift.inventoryItemId },
-        data: { isLocked: false, lockReason: null },
-      });
-      return { outcome: "EXPIRED" as const };
-    }
+    // Note (Task O-6): Pending gifts do not expire automatically.
+    // They remain valid until accepted, rejected, or cancelled.
 
     // Re-verify recipient does not already own the trait
     const recipientOwnedCount = await tx.inventoryItem.count({
@@ -342,10 +329,6 @@ export async function acceptGift(prisma: PrismaClient, input: ResolveGiftInput) 
       item: updatedItem,
     };
   });
-
-  if (result.outcome === "EXPIRED") {
-    throw new GiftError("GIFT_EXPIRED", "This gift has expired after 24 hours.", 410);
-  }
 
   if (result.outcome === "RECIPIENT_ALREADY_OWNS_TRAIT") {
     throw new GiftError(

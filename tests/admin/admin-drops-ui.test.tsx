@@ -22,92 +22,107 @@ vi.mock("@/lib/admin/client", () => ({
 }));
 
 describe("Admin Drops Portal UI - B-1 Drop Configuration Component", () => {
-  const mockCurrentDrop = {
-    active: true,
-    drop: {
-      id: "drop-1",
-      slug: "genesis-drop",
-      title: "ChimpHood Genesis Drop",
-      status: "ACTIVE",
-    },
-    period: {
-      id: "period-1",
-      periodIndex: 1,
-      startsAt: "2026-10-25T00:00:00.000Z",
-      endsAt: "2026-10-25T02:00:00.000Z",
-      status: "ACTIVE",
-      isStockLocked: true,
-    },
-    claimWindow: {
-      isActive: true,
-      startsAt: "2026-10-25T00:00:00.000Z",
-      endsAt: "2026-10-25T00:30:00.000Z",
-      timeRemainingMs: 1800000,
-    },
-    stock: {
-      totalAllocated: 50,
-      totalRemaining: 30,
-      isExhausted: false,
-      poolItems: [
-        {
-          poolItemId: "pi-1",
-          traitId: "t-1",
-          traitName: "Golden Fur",
-          category: "FUR",
-          rarity: "EPIC",
-          remainingStock: 30,
-          weight: 100,
-          probabilityPercent: 100,
-        },
-      ],
-    },
-  };
+  function getMockDropData() {
+    const nowMs = Date.now();
+    // Period 1 is currently active (started 30 min ago, ends in 90 min)
+    const p1StartsAt = new Date(nowMs - 30 * 60 * 1000).toISOString();
+    const p1EndsAt = new Date(nowMs + 90 * 60 * 1000).toISOString();
+    const p1ConfigLockAt = new Date(nowMs - 45 * 60 * 1000).toISOString();
 
-  const mockDropsList = [
-    {
-      id: "drop-1",
-      slug: "genesis-drop",
-      title: "ChimpHood Genesis Drop",
-      description: "Season 1 genesis",
-      status: "ACTIVE" as const,
-      startsAt: "2026-10-25T00:00:00.000Z",
-      endsAt: "2026-10-25T06:00:00.000Z",
-      createdAt: "2026-10-25T00:00:00.000Z",
-      updatedAt: "2026-10-25T00:00:00.000Z",
-      periods: [
-        {
-          id: "period-1",
-          periodIndex: 1,
-          startsAt: "2026-10-25T00:00:00.000Z",
-          endsAt: "2026-10-25T02:00:00.000Z",
-          configLockAt: "2026-10-24T23:45:00.000Z",
-          status: "CONFIGURED" as const,
-          isStockConfigured: true,
-          isStockLocked: false,
-          poolItems: [
-            {
-              id: "pi-1",
-              traitId: "t-1",
-              allocatedStock: 25,
-              remainingStock: 25,
-              weight: 100,
-            },
-          ],
-        },
-        {
-          id: "period-2",
-          periodIndex: 2,
-          startsAt: "2026-10-25T02:00:00.000Z",
-          endsAt: "2026-10-25T04:00:00.000Z",
-          configLockAt: "2026-10-25T01:45:00.000Z",
-          status: "PENDING_CONFIG" as const,
-          isStockConfigured: false,
-          isStockLocked: false,
-          poolItems: [],
-        },
-      ],
-    },
-  ];
+    // Period 2 is unconfigured in the future (starts in 2 hours, config freeze is 15 min prior)
+    const p2StartsAt = new Date(nowMs + 2 * 60 * 60 * 1000).toISOString();
+    const p2EndsAt = new Date(nowMs + 4 * 60 * 60 * 1000).toISOString();
+    const p2ConfigLockAt = new Date(nowMs + 105 * 60 * 1000).toISOString();
+
+    const mockCurrentDrop = {
+      active: true,
+      drop: {
+        id: "drop-1",
+        slug: "genesis-drop",
+        title: "ChimpHood Genesis Drop",
+        status: "ACTIVE",
+      },
+      period: {
+        id: "period-1",
+        periodIndex: 1,
+        startsAt: p1StartsAt,
+        endsAt: p1EndsAt,
+        status: "ACTIVE",
+        isStockLocked: true,
+      },
+      claimWindow: {
+        isActive: true,
+        startsAt: p1StartsAt,
+        endsAt: new Date(nowMs + 30 * 60 * 1000).toISOString(),
+        timeRemainingMs: 1800000,
+      },
+      stock: {
+        totalAllocated: 50,
+        totalRemaining: 30,
+        isExhausted: false,
+        poolItems: [
+          {
+            poolItemId: "pi-1",
+            traitId: "t-1",
+            traitName: "Golden Fur",
+            category: "FUR",
+            rarity: "EPIC",
+            remainingStock: 30,
+            weight: 100,
+            probabilityPercent: 100,
+          },
+        ],
+      },
+    };
+
+    const mockDropsList = [
+      {
+        id: "drop-1",
+        slug: "genesis-drop",
+        title: "ChimpHood Genesis Drop",
+        description: "Season 1 genesis",
+        status: "ACTIVE" as const,
+        startsAt: p1StartsAt,
+        endsAt: p2EndsAt,
+        createdAt: new Date(nowMs - 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: p1StartsAt,
+        periods: [
+          {
+            id: "period-1",
+            periodIndex: 1,
+            startsAt: p1StartsAt,
+            endsAt: p1EndsAt,
+            configLockAt: p1ConfigLockAt,
+            status: "CONFIGURED" as const,
+            isStockConfigured: true,
+            isStockLocked: false,
+            poolItems: [
+              {
+                id: "pi-1",
+                traitId: "t-1",
+                allocatedStock: 25,
+                remainingStock: 25,
+                weight: 100,
+              },
+            ],
+          },
+          {
+            id: "period-2",
+            periodIndex: 2,
+            startsAt: p2StartsAt,
+            endsAt: p2EndsAt,
+            configLockAt: p2ConfigLockAt,
+            status: "PENDING_CONFIG" as const,
+            isStockConfigured: false,
+            isStockLocked: false,
+            poolItems: [],
+          },
+        ],
+      },
+    ];
+
+    return { mockCurrentDrop, mockDropsList };
+  }
 
   const mockTraits = [
     {
@@ -132,6 +147,7 @@ describe("Admin Drops Portal UI - B-1 Drop Configuration Component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    const { mockCurrentDrop, mockDropsList } = getMockDropData();
     vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockCurrentDrop);
     vi.mocked(adminClient.adminListDrops).mockResolvedValue({
       drops: mockDropsList,

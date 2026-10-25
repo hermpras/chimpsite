@@ -451,6 +451,21 @@ export async function updateWLProgram(
       },
     });
 
+    // Task O-6: Event-driven queue reconciliation when capacity increases or status changes to OPEN
+    if (
+      updated.status === "OPEN" &&
+      (updateData.totalSlots !== undefined || updateData.status === "OPEN")
+    ) {
+      try {
+        if ((prisma as any).wLQueueEntry?.findMany) {
+          const { reconcileQueueSlots } = await import("../whitelist/qualification");
+          await reconcileQueueSlots(prisma, updated.id, new Date());
+        }
+      } catch (err) {
+        console.error("Event-driven reconciliation error after WL program update:", err);
+      }
+    }
+
     return {
       program: {
         id: updated.id,

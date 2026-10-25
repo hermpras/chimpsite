@@ -24,6 +24,7 @@ export interface RevokeWlSlotInput {
   now?: Date;
   ipAddress?: string | null;
   userAgent?: string | null;
+  autoPromote?: boolean;
 }
 
 export interface RevokeWlSlotResult {
@@ -37,6 +38,30 @@ export interface RevokeWlSlotResult {
   revokedAt: Date;
   reason: string | null;
   auditLogId: string;
+  promotedUserId?: string;
+  promotedSlotNumber?: number;
+}
+
+async function findLowestAvailableSlotNumber(
+  tx: any,
+  programId: string,
+  totalSlots: number,
+): Promise<number | null> {
+  const existingSlots = await tx.wLSlot.findMany({
+    where: {
+      programId,
+      status: { in: ["ALLOCATED", "CONFIRMED"] },
+    },
+    select: { slotNumber: true },
+  });
+  const occupied = new Set<number>(
+    existingSlots.map((s: { slotNumber: number }) => s.slotNumber),
+  );
+  let slotNumber = 1;
+  while (occupied.has(slotNumber)) {
+    slotNumber++;
+  }
+  return slotNumber <= totalSlots ? slotNumber : null;
 }
 
 export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
@@ -46,6 +71,7 @@ export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
   slotNumber?: number;
   adminUserId: string;
   reason: string | null;
+  autoPromote?: boolean;
 } {
   if (
     !input.adminUserId ||
@@ -95,6 +121,7 @@ export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
     slotNumber,
     adminUserId: input.adminUserId.trim(),
     reason,
+    autoPromote: input.autoPromote,
   };
 }
 
@@ -111,14 +138,52 @@ export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
  * 7. Creation of WLStatusHistory audit trail entry (SLOT_ALLOCATED -> REVOKED).
  * 8. Transaction-scoped AuditLog recording with fail-closed rollback.
  */
+function isWlSlotNumberCollision(err: unknown): boolean {
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "P2002"
+  ) {
+    const pErr = err as { meta?: { target?: unknown; modelName?: string }; message?: string };
+    const target = pErr.meta?.target;
+    const targetStr = Array.isArray(target) ? target.join(",") : typeof target === "string" ? target : "";
+    const message = pErr.message || "";
+    const modelName = pErr.meta?.modelName || "";
+    if (
+      targetStr.includes("slotNumber") ||
+      message.includes("slotNumber") ||
+      (modelName === "WLSlot" && message.includes("slotNumber"))
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isWlWriteConflictOrDeadlock(err: unknown): boolean {
+  if (typeof err === "object" && err !== null && "code" in err) {
+    const code = (err as { code?: unknown }).code;
+    return code === "P2034" || code === "40001" || code === "40P01";
+  }
+  return false;
+}
+
+function isRetryableRevokeConflict(err: unknown): boolean {
+  return isWlSlotNumberCollision(err) || isWlWriteConflictOrDeadlock(err);
+}
+
 export async function revokeWlSlot(
   prisma: PrismaClient,
   rawInput: RevokeWlSlotInput,
+  maxRetries: number = 5,
 ): Promise<RevokeWlSlotResult> {
   const validated = validateRevokeWlSlotInput(rawInput);
   const now = rawInput.now ?? new Date();
 
-  return await prisma.$transaction(async (tx) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await prisma.$transaction(async (tx) => {
     // 1. Fetch target slot
     let slot: any = null;
     if (validated.slotId) {
@@ -266,6 +331,111 @@ export async function revokeWlSlot(
       },
     });
 
+    // 8. Event-driven queue promotion (Task O-6):
+    // Atomically promote the next waiting queue participant into the freed slot.
+    let promotedUserId: string | undefined;
+    let promotedSlotNumber: number | undefined;
+
+    if (validated.autoPromote !== false && (tx as any).wLQueueEntry?.findMany) {
+      const prog = await tx.wLProgram.findUnique({
+        where: { id: slot.programId },
+        select: { id: true, status: true, totalSlots: true, allocatedSlotsCount: true },
+      });
+
+      if (prog && prog.status === "OPEN") {
+        const waitingEntries = await tx.wLQueueEntry.findMany({
+          where: {
+            programId: slot.programId,
+            status: "WAITING",
+          },
+          orderBy: [{ joinedAt: "asc" }, { queueNumber: "asc" }],
+          take: 5,
+        });
+
+        for (const entry of waitingEntries) {
+          const updateEntryResult = await tx.wLQueueEntry.updateMany({
+            where: {
+              id: entry.id,
+              status: "WAITING",
+            },
+            data: {
+              status: "PROCESSED",
+              processedAt: now,
+            },
+          });
+
+          if (updateEntryResult.count === 0) {
+            // Another concurrent transaction already handled this entry; advance to next
+            continue;
+          }
+
+          const nextSlotNumber = await findLowestAvailableSlotNumber(
+            tx,
+            slot.programId,
+            prog.totalSlots,
+          );
+
+          if (nextSlotNumber !== null) {
+            const allocatedSlot = await tx.wLSlot.create({
+              data: {
+                programId: slot.programId,
+                userId: entry.userId,
+                slotNumber: nextSlotNumber,
+                status: "ALLOCATED",
+                allocatedAt: now,
+                allocatedBy: "QUEUE_RECONCILER",
+              },
+            });
+
+            await tx.wLProgram.update({
+              where: { id: slot.programId },
+              data: { allocatedSlotsCount: { increment: 1 } },
+            });
+
+            await tx.wLStatusHistory.create({
+              data: {
+                programId: slot.programId,
+                userId: entry.userId,
+                fromPhase: "IN_QUEUE",
+                toPhase: "SLOT_ALLOCATED",
+                action: "RECONCILED_FROM_QUEUE",
+                metadata: {
+                  slotNumber: nextSlotNumber,
+                  queueNumber: entry.queueNumber,
+                },
+                createdAt: now,
+              },
+            });
+
+            await recordAuditLog(tx, {
+              actorId: entry.userId,
+              action: "WL_SLOT_ALLOCATED_QUEUE",
+              entityType: "WLSlot",
+              entityId: allocatedSlot.id,
+              newValues: {
+                programId: slot.programId,
+                slotNumber: nextSlotNumber,
+                status: "ALLOCATED",
+                allocatedBy: "QUEUE_RECONCILER",
+                queueNumber: entry.queueNumber,
+              },
+            });
+
+            promotedUserId = entry.userId;
+            promotedSlotNumber = nextSlotNumber;
+            break;
+          } else {
+            // Rollback entry status if slot capacity exhausted
+            await tx.wLQueueEntry.update({
+              where: { id: entry.id },
+              data: { status: "WAITING", processedAt: null },
+            });
+            break;
+          }
+        }
+      }
+    }
+
     return {
       success: true,
       slotId: slot.id,
@@ -277,8 +447,23 @@ export async function revokeWlSlot(
       revokedAt: now,
       reason: validated.reason,
       auditLogId: auditRecord.id,
+      promotedUserId,
+      promotedSlotNumber,
     };
   });
+    } catch (err: unknown) {
+      if (isRetryableRevokeConflict(err) && attempt < maxRetries) {
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw new WlSlotRevokeError(
+    "CONCURRENCY_COLLISION_RETRYABLE",
+    "A concurrency collision occurred during slot revocation. Please retry.",
+    409,
+  );
 }
 
 export const revokeSlot = revokeWlSlot;

@@ -84,7 +84,22 @@ export async function validateSessionToken(
   });
   if (!record) return null;
   if (record.revokedAt) return null;
-  if (record.expiresAt <= new Date()) return null;
+  if (record.expiresAt <= new Date()) {
+    // Task O-6: Opportunistic cleanup of expired session at time of usage without scheduler
+    try {
+      if (typeof (prisma.authSession as any)?.deleteMany === "function") {
+        await (prisma.authSession as any).deleteMany({
+          where: {
+            id: record.id,
+            expiresAt: { lte: new Date() },
+          },
+        });
+      }
+    } catch {
+      // Best-effort opportunistic cleanup must never throw or disrupt validation
+    }
+    return null;
+  }
   if (record.user.isBanned) return null;
   return {
     sessionId: record.id,

@@ -96,6 +96,24 @@ describe("validateSessionToken", () => {
     expect(await validateSessionToken(prisma, "a".repeat(64))).toBeNull();
   });
 
+  it("Task O-7 audit: opportunistic cleanup deletes expired sessions with expiration bounds and handles DB delete errors gracefully", async () => {
+    const record = validRecord();
+    record.expiresAt = new Date(Date.now() - 1000);
+    const deleteMany = vi.fn().mockRejectedValue(new Error("Database connection glitch"));
+    const findUnique = vi.fn(async () => record);
+    const prisma = { authSession: { findUnique, deleteMany } } as unknown as PrismaClient;
+
+    // Must return null without throwing even if opportunistic delete throws
+    const result = await validateSessionToken(prisma, "a".repeat(64));
+    expect(result).toBeNull();
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: "sess_1",
+        expiresAt: { lte: expect.any(Date) },
+      },
+    });
+  });
+
   it("rejects revoked sessions", async () => {
     const record = validRecord();
     record.revokedAt = new Date();
@@ -201,6 +219,30 @@ describe("authenticateRequest", () => {
     const record = validRecord();
     record.userId = "user_2";
     expect(await authenticateRequest(fakePrismaFor(record))).toBeNull();
+  });
+
+  it("Task O-7 audit: rejects server-side when client sends valid cookie but database session has expired", async () => {
+    mockGetIronSession.mockReturnValue({
+      userId: "user_1",
+      address: "0xabc",
+      token: RAW,
+    });
+    const record = validRecord();
+    record.expiresAt = new Date(Date.now() - 3600 * 1000); // Expired 1 hour ago
+    const findUnique = vi.fn(async () => record);
+    const deleteMany = vi.fn(async () => ({ count: 1 }));
+    const prisma = { authSession: { findUnique, deleteMany } } as unknown as PrismaClient;
+
+    const result = await authenticateRequest(prisma);
+    expect(result).toBeNull();
+    // Verify opportunistic cleanup was safely invoked with expiration constraint
+    expect(deleteMany).toHaveBeenCalledTimes(1);
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: "sess_1",
+        expiresAt: { lte: expect.any(Date) },
+      },
+    });
   });
 
   it("returns null when there is no session cookie", async () => {

@@ -1460,16 +1460,17 @@ describe("Task 5-A: Integration Tests Suite (End-to-End User & Admin Flows)", ()
     });
     expect(revokeResult.success).toBe(true);
     expect(revokeResult.status).toBe("REVOKED_MANUAL_ADMIN");
-    expect(prog.allocatedSlotsCount).toBe(0);
 
-    // Admin triggers queue reconciliation to allocate the freed slot
-    const reconcileResult = await reconcileQueueSlots(prisma, wlProgramId, now);
-    expect(reconcileResult.slotsFilled).toBe(1);
+    // Event-driven queue reconciliation automatically promotes the waiting user (Task O-6)
     const reconciledSlot = db.store.slots.find(
       (s) => s.userId === queuedUserId && s.status === "ALLOCATED",
     );
     expect(reconciledSlot).toBeDefined();
     expect(prog.allocatedSlotsCount).toBe(1);
+
+    // Any manual/subsequent queue reconciliation safely finds no open slots (idempotent no-op)
+    const reconcileResult = await reconcileQueueSlots(prisma, wlProgramId, now);
+    expect(reconcileResult.slotsFilled).toBe(0);
 
     // -----------------------------------------------------------------------
     // 6. Admin Ban Enforcement & Ban Revocation (Task 1-D)

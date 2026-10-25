@@ -444,7 +444,7 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
     expect(res.item.ownerId).toBe("receiver-1");
   });
 
-  it("rejects acceptance, retains EXPIRED status, and unlocks item if gift has expired (past 24h)", async () => {
+  it("Task O-6: permits acceptance past 24 hours because pending gifts do not expire automatically", async () => {
     const gift = await sendGift(mockPrisma, {
       senderId: "sender-1",
       receiverId: "receiver-1",
@@ -454,31 +454,23 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
 
     const after25Hours = new Date(baseTime.getTime() + 25 * 60 * 60 * 1000);
 
-    let caughtError: any;
-    try {
-      await acceptGift(mockPrisma, {
-        userId: "receiver-1",
-        giftId: gift.id,
-        now: after25Hours,
-      });
-    } catch (err) {
-      caughtError = err;
-    }
+    const result = await acceptGift(mockPrisma, {
+      userId: "receiver-1",
+      giftId: gift.id,
+      now: after25Hours,
+    });
 
-    expect(caughtError).toBeInstanceOf(GiftError);
-    expect(caughtError.code).toBe("GIFT_EXPIRED");
-    expect(caughtError.status).toBe(410);
-    expect(caughtError.message).toBe("This gift has expired after 24 hours.");
+    expect(result.gift.status).toBe("ACCEPTED");
 
-    // Transaction must commit: gift remains EXPIRED and item is unlocked
+    // Transaction must commit: gift becomes ACCEPTED and item is transferred to recipient
     const storedGift = mockPrisma._store.gifts.find((g) => g.id === gift.id);
-    expect(storedGift?.status).toBe("EXPIRED");
+    expect(storedGift?.status).toBe("ACCEPTED");
     expect(storedGift?.decidedAt).toEqual(after25Hours);
 
     const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
     expect(item?.isLocked).toBe(false);
     expect(item?.lockReason).toBeNull();
-    expect(item?.ownerId).toBe("sender-1"); // Remains with sender
+    expect(item?.ownerId).toBe("receiver-1"); // Transferred to recipient
   });
 
   it("rejects acceptance, retains REJECTED status, and unlocks item if recipient already owns the trait", async () => {
@@ -529,6 +521,58 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
     expect(item?.isLocked).toBe(false);
     expect(item?.lockReason).toBeNull();
     expect(item?.ownerId).toBe("sender-1"); // Returned to sender
+  });
+
+  it("Task O-7 audit: rejects acceptance with 409 GIFT_NOT_PENDING if gift is in an invalid state (already ACCEPTED, REJECTED, or CANCELLED)", async () => {
+    const gift = await sendGift(mockPrisma, {
+      senderId: "sender-1",
+      receiverId: "receiver-1",
+      inventoryItemId: "item-hat-2",
+      now: baseTime,
+    });
+
+    // Accept first time
+    await acceptGift(mockPrisma, {
+      userId: "receiver-1",
+      giftId: gift.id,
+      now: new Date("2026-10-16T15:00:00.000Z"),
+    });
+
+    // Attempt second accept on already ACCEPTED gift
+    await expect(
+      acceptGift(mockPrisma, {
+        userId: "receiver-1",
+        giftId: gift.id,
+        now: new Date("2026-10-16T15:05:00.000Z"),
+      }),
+    ).rejects.toMatchObject({
+      name: "GiftError",
+      code: "GIFT_NOT_PENDING",
+      status: 409,
+      message: "Gift is already accepted.",
+    });
+  });
+
+  it("Task O-7 audit: rejects acceptance with 403 UNAUTHORIZED if a non-recipient attempts to accept", async () => {
+    const gift = await sendGift(mockPrisma, {
+      senderId: "sender-1",
+      receiverId: "receiver-1",
+      inventoryItemId: "item-hat-2",
+      now: baseTime,
+    });
+
+    await expect(
+      acceptGift(mockPrisma, {
+        userId: "unauthorized-wallet",
+        giftId: gift.id,
+        now: new Date("2026-10-16T15:00:00.000Z"),
+      }),
+    ).rejects.toMatchObject({
+      name: "GiftError",
+      code: "UNAUTHORIZED",
+      status: 403,
+      message: "Only the intended recipient can accept this gift.",
+    });
   });
 
   it("unlocks item when sender cancels or recipient rejects gift", async () => {
@@ -771,7 +815,7 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
       expect(item?.isLocked).toBe(false);
     });
 
-    it("ensures only one competing resolution succeeds when expired accept races with sender cancel", async () => {
+    it("ensures only one competing resolution succeeds when past-24h accept races with sender cancel", async () => {
       const gift = await sendGift(mockPrisma, {
         senderId: "sender-1",
         receiverId: "receiver-1",
@@ -805,11 +849,11 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
       expect(notPendingErrors).toHaveLength(1);
 
       const finalGift = mockPrisma._store.gifts.find((g) => g.id === gift.id);
-      expect(["EXPIRED", "CANCELLED"]).toContain(finalGift?.status);
+      expect(["ACCEPTED", "CANCELLED"]).toContain(finalGift?.status);
 
       const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
       expect(item?.isLocked).toBe(false);
-      expect(item?.ownerId).toBe("sender-1");
+      expect(["sender-1", "receiver-1"]).toContain(item?.ownerId);
     });
 
     it("ensures only one competing resolution succeeds when recipient-duplicate accept races with sender cancel", async () => {
