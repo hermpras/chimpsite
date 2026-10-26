@@ -16,24 +16,8 @@ const INITIAL_TRAITS = [
     description: "Lush cybernetic jungle canopy bathed in neon bioluminescence.",
     imageUrl: "https://assets.chimphood.io/traits/cyber-jungle.png",
     maxSupply: 1000,
-  },
-  {
-    slug: "golden-fur",
-    name: "Golden Fur",
-    category: "FUR",
-    rarity: "RARE",
-    description: "Gleaming golden cyber-primate fur coated with nanites.",
-    imageUrl: "https://assets.chimphood.io/traits/golden-fur.png",
-    maxSupply: 500,
-  },
-  {
-    slug: "stealth-hoodie",
-    name: "Stealth Hoodie",
-    category: "CLOTHING",
-    rarity: "UNCOMMON",
-    description: "Matte black tactical hoodie with holographic ChimpHood insignias.",
-    imageUrl: "https://assets.chimphood.io/traits/stealth-hoodie.png",
-    maxSupply: 800,
+    defaultStock: 65,
+    defaultWeight: 65,
   },
   {
     slug: "neon-beanie",
@@ -43,6 +27,30 @@ const INITIAL_TRAITS = [
     description: "Ribbed knit beanie with an integrated pulse indicator.",
     imageUrl: "https://assets.chimphood.io/traits/neon-beanie.png",
     maxSupply: 1000,
+    defaultStock: 65,
+    defaultWeight: 65,
+  },
+  {
+    slug: "stealth-hoodie",
+    name: "Stealth Hoodie",
+    category: "CLOTHING",
+    rarity: "UNCOMMON",
+    description: "Matte black tactical hoodie with holographic ChimpHood insignias.",
+    imageUrl: "https://assets.chimphood.io/traits/stealth-hoodie.png",
+    maxSupply: 800,
+    defaultStock: 50,
+    defaultWeight: 50,
+  },
+  {
+    slug: "golden-fur",
+    name: "Golden Fur",
+    category: "FUR",
+    rarity: "RARE",
+    description: "Gleaming golden cyber-primate fur coated with nanites.",
+    imageUrl: "https://assets.chimphood.io/traits/golden-fur.png",
+    maxSupply: 500,
+    defaultStock: 35,
+    defaultWeight: 35,
   },
   {
     slug: "laser-visor",
@@ -52,6 +60,19 @@ const INITIAL_TRAITS = [
     description: "High-spec targeting visor emitting dual crimson lasers.",
     imageUrl: "https://assets.chimphood.io/traits/laser-visor.png",
     maxSupply: 300,
+    defaultStock: 25,
+    defaultWeight: 25,
+  },
+  {
+    slug: "cyber-halo",
+    name: "Cyber Halo",
+    category: "HEADWEAR",
+    rarity: "LEGENDARY",
+    description: "Floating golden cybernetic halo radiating pure decentralized energy.",
+    imageUrl: "https://assets.chimphood.io/traits/cyber-halo.png",
+    maxSupply: 100,
+    defaultStock: 10,
+    defaultWeight: 10,
   },
 ];
 
@@ -147,8 +168,12 @@ async function seed() {
   });
   console.log(`  ✓ DropPeriod #${period.periodIndex} (${period.id}) is ACTIVE`);
 
-  console.log("\nAllocating stock for all 5 traits in DropPoolItems...");
+  console.log("\nAllocating default 250 units stock across 6 traits in DropPoolItems...");
   for (const trait of createdTraits) {
+    const traitDef = INITIAL_TRAITS.find((t) => t.slug === trait.slug);
+    const stock = traitDef?.defaultStock ?? 50;
+    const weight = traitDef?.defaultWeight ?? 50;
+
     const poolItem = await prisma.dropPoolItem.upsert({
       where: {
         periodId_traitId: {
@@ -157,20 +182,20 @@ async function seed() {
         },
       },
       update: {
-        allocatedStock: 100,
-        remainingStock: 100,
-        weight: 100,
+        allocatedStock: stock,
+        remainingStock: stock,
+        weight: weight,
       },
       create: {
         periodId: period.id,
         traitId: trait.id,
-        allocatedStock: 100,
+        allocatedStock: stock,
         claimedStock: 0,
-        remainingStock: 100,
-        weight: 100,
+        remainingStock: stock,
+        weight: weight,
       },
     });
-    console.log(`  ✓ Stock allocated: ${trait.name} -> 100 stock`);
+    console.log(`  ✓ Stock allocated: [${trait.rarity}] ${trait.name} -> ${stock} stock (weight: ${weight})`);
   }
 
   console.log("\nDrop & Stock Seed complete! Ready for live claiming test.");

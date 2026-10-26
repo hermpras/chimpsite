@@ -2,9 +2,9 @@ import { prisma } from "@/server/db";
 import {
   getUtcCycleForTime,
   isWithinClaimWindow,
-  canConfigureStock,
 } from "@/server/drops/schedule";
 import { calculateTransparentProbabilities } from "@/server/drops/claim";
+import { ensureActiveCyclePeriod } from "@/server/drops/auto-replenish";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -42,7 +42,17 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   // Find active period for now
-  const activePeriod = drop.periods.find((p) => now >= p.startsAt && now <= p.endsAt);
+  let activePeriod = drop.periods?.find((p) => now >= p.startsAt && now <= p.endsAt);
+
+  // If no active period exists for this 2-hour cycle, or if existing period has no pool items,
+  // auto-replenish from the default 250-stock template (unless explicitly marked PENDING_CONFIG)
+  if (!activePeriod || (activePeriod.status !== "PENDING_CONFIG" && (!activePeriod.poolItems || activePeriod.poolItems.length === 0))) {
+    try {
+      activePeriod = await ensureActiveCyclePeriod(prisma, drop, now);
+    } catch (err) {
+      console.warn("Auto-replenish notice in GET /api/drops/current:", err);
+    }
+  }
 
   if (!activePeriod) {
     return Response.json({
