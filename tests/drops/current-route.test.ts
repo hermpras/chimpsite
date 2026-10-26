@@ -105,6 +105,7 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
       title: "ChimpHood Genesis Drop",
       description: "Genesis public trait drop",
       status: "ACTIVE",
+      cycleDurationHours: 2,
     });
 
     expect(data.claimWindow).toEqual({

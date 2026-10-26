@@ -86,6 +86,7 @@ export async function GET(request: Request): Promise<Response> {
       title: drop.title,
       description: drop.description,
       status: drop.status,
+      cycleDurationHours: (drop as any).cycleDurationHours ?? 2,
     },
     period: {
       id: activePeriod.id,

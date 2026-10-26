@@ -5,6 +5,11 @@ import {
   ensureActiveCyclePeriod,
   ensureDefaultTraits,
 } from "@/server/drops/auto-replenish";
+import {
+  getUtcCycleForTime,
+  HYPE_CONTROL_CYCLE_DURATION_HOURS,
+  DEFAULT_CYCLE_DURATION_HOURS,
+} from "@/server/drops/schedule";
 import { calculateTransparentProbabilities } from "@/server/drops/claim";
 
 describe("Auto-Replenish Drop Engine", () => {
@@ -170,5 +175,71 @@ describe("Auto-Replenish Drop Engine", () => {
     expect(result.status).toBe("ACTIVE");
     expect(txMock.dropPoolItem.upsert).toHaveBeenCalledTimes(6);
     expect(mockPrisma.$transaction).toHaveBeenCalled();
+  });
+
+  it("getUtcCycleForTime correctly calculates 5-hour Hype Control cycles with 30m claim window", () => {
+    const anchor = new Date("2026-10-26T00:00:00.000Z");
+    const testTime = new Date("2026-10-26T07:15:00.000Z"); // 7h15m after anchor -> Cycle 2 (05:00 - 10:00)
+
+    const cycle = getUtcCycleForTime(testTime, HYPE_CONTROL_CYCLE_DURATION_HOURS, anchor);
+    expect(cycle.startsAt.toISOString()).toBe("2026-10-26T05:00:00.000Z");
+    expect(cycle.endsAt.toISOString()).toBe("2026-10-26T10:00:00.000Z");
+    expect(cycle.claimWindowEndsAt.toISOString()).toBe("2026-10-26T05:30:00.000Z");
+    expect(cycle.cycleDurationHours).toBe(5);
+  });
+
+  it("ensureActiveCyclePeriod creates a 5-hour period when drop is configured for Hype Control", async () => {
+    let capturedUpsertData: any = null;
+    const createdPeriod = {
+      id: "period-hype-5h",
+      periodIndex: 2,
+      status: "ACTIVE",
+      isStockConfigured: true,
+      isStockLocked: true,
+      poolItems: [],
+    };
+
+    const txMock = {
+      dropPeriod: {
+        upsert: vi.fn().mockImplementation(({ create }) => {
+          capturedUpsertData = create;
+          return Promise.resolve(createdPeriod);
+        }),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(createdPeriod),
+      },
+      dropPoolItem: {
+        upsert: vi.fn().mockResolvedValue({}),
+      },
+    };
+
+    const mockPrisma = {
+      dropPeriod: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      trait: {
+        upsert: vi.fn().mockImplementation(({ create }) =>
+          Promise.resolve({ id: `trait-${create.slug}`, ...create }),
+        ),
+      },
+      $transaction: vi.fn().mockImplementation(async (cb) => cb(txMock)),
+    } as any;
+
+    const anchor = new Date("2026-10-26T00:00:00.000Z");
+    const testNow = new Date("2026-10-26T06:00:00.000Z");
+    const drop = {
+      id: "drop-hype",
+      startsAt: anchor,
+      endsAt: new Date("2026-11-26T00:00:00.000Z"),
+      cycleDurationHours: 5,
+    } as any;
+
+    const result = await ensureActiveCyclePeriod(mockPrisma, drop, testNow);
+
+    expect(result.id).toBe("period-hype-5h");
+    expect(capturedUpsertData).toBeDefined();
+    // startsAt is 05:00 UTC, endsAt is 10:00 UTC (5 hours duration)
+    expect(capturedUpsertData.startsAt.toISOString()).toBe("2026-10-26T05:00:00.000Z");
+    expect(capturedUpsertData.endsAt.toISOString()).toBe("2026-10-26T10:00:00.000Z");
   });
 });

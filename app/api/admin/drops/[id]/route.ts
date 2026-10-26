@@ -107,6 +107,7 @@ export async function PATCH(
       title: body.title as string | undefined,
       description: body.description as string | null | undefined,
       status: body.status as any,
+      cycleDurationHours: body.cycleDurationHours as number | undefined,
       adminUserId: adminSession.userId,
       ipAddress: clientIp(request),
       userAgent: request.headers.get("user-agent") ?? null,

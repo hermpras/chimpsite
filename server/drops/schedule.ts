@@ -1,4 +1,7 @@
-export const CYCLE_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours
+export const DEFAULT_CYCLE_DURATION_HOURS = 2;
+export const HYPE_CONTROL_CYCLE_DURATION_HOURS = 5;
+
+export const CYCLE_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours default
 export const CLAIM_WINDOW_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 export const MIN_CONFIG_LOCK_LEAD_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -7,27 +10,45 @@ export interface CycleTimes {
   claimWindowEndsAt: Date;
   endsAt: Date;
   configLockAt: Date;
+  cycleDurationHours: number;
 }
 
 /**
- * Calculates current 2-hour UTC cycle boundaries aligned to midnight UTC:
- * [00:00-02:00, 02:00-04:00, 04:00-06:00, ...]
+ * Calculates current cycle boundaries.
+ * Supports:
+ * - 2-hour Standard Mode: aligned to midnight UTC [00:00, 02:00, 04:00, ...]
+ * - 5-hour Hype Control Mode: aligned to anchor start time or midnight UTC
  */
-export function getUtcCycleForTime(date: Date = new Date()): CycleTimes {
+export function getUtcCycleForTime(
+  date: Date = new Date(),
+  cycleDurationHours: number = DEFAULT_CYCLE_DURATION_HOURS,
+  anchorTime?: Date,
+): CycleTimes {
+  const durationMs = cycleDurationHours * 60 * 60 * 1000;
   const time = date.getTime();
-  const dayStart = new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0),
-  ).getTime();
-  const msIntoDay = time - dayStart;
-  const cycleIndex = Math.floor(msIntoDay / CYCLE_DURATION_MS);
 
-  const cycleStartMs = dayStart + cycleIndex * CYCLE_DURATION_MS;
+  let cycleStartMs: number;
+
+  if (anchorTime) {
+    const anchorMs = anchorTime.getTime();
+    const msSinceAnchor = time - anchorMs;
+    const cycleIndex = Math.floor(msSinceAnchor / durationMs);
+    cycleStartMs = anchorMs + cycleIndex * durationMs;
+  } else {
+    const dayStart = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0),
+    ).getTime();
+    const msIntoDay = time - dayStart;
+    const cycleIndex = Math.floor(msIntoDay / durationMs);
+    cycleStartMs = dayStart + cycleIndex * durationMs;
+  }
+
   const startsAt = new Date(cycleStartMs);
   const claimWindowEndsAt = new Date(cycleStartMs + CLAIM_WINDOW_DURATION_MS);
-  const endsAt = new Date(cycleStartMs + CYCLE_DURATION_MS);
+  const endsAt = new Date(cycleStartMs + durationMs);
   const configLockAt = new Date(cycleStartMs - MIN_CONFIG_LOCK_LEAD_MS);
 
-  return { startsAt, claimWindowEndsAt, endsAt, configLockAt };
+  return { startsAt, claimWindowEndsAt, endsAt, configLockAt, cycleDurationHours };
 }
 
 /**

@@ -138,10 +138,14 @@ export type PeriodWithPool = DropPeriod & {
 };
 
 /**
- * Lazily ensures an active DropPeriod exists for the current 2-hour cycle with
+ * Lazily ensures an active DropPeriod exists for the current cycle with
  * the default 250-stock template.
  *
- * This provides zero-admin maintenance: every 2 hours, as soon as a user visits
+ * Supports both:
+ * - 2-hour Standard Mode
+ * - 5-hour Hype Control Mode (for supply scarcity strategy)
+ *
+ * This provides zero-admin maintenance: every cycle (2h or 5h), as soon as a user visits
  * or claims, the cycle is automatically replenished and active.
  */
 export async function ensureActiveCyclePeriod(
@@ -149,7 +153,9 @@ export async function ensureActiveCyclePeriod(
   drop: Drop,
   now: Date = new Date(),
 ): Promise<PeriodWithPool> {
-  const cycle = getUtcCycleForTime(now);
+  const cycleDurationHours = drop.cycleDurationHours ?? 2;
+  const cycle = getUtcCycleForTime(now, cycleDurationHours, drop.startsAt);
+  const cycleDurationMs = cycleDurationHours * 60 * 60 * 1000;
 
   // 1. Close any expired active/configured periods
   await prisma.dropPeriod.updateMany({
@@ -196,7 +202,7 @@ export async function ensureActiveCyclePeriod(
     });
     const calculatedIndex =
       Math.floor(
-        (cycle.startsAt.getTime() - drop.startsAt.getTime()) / CYCLE_DURATION_MS,
+        (cycle.startsAt.getTime() - drop.startsAt.getTime()) / cycleDurationMs,
       ) + 1;
     periodIndex = Math.max((latestPeriod?.periodIndex ?? 0) + 1, Math.max(1, calculatedIndex));
   }

@@ -401,6 +401,7 @@ export interface AdminDropRecord {
   status: "DRAFT" | "SCHEDULED" | "ACTIVE" | "PAUSED" | "ENDED";
   startsAt: string;
   endsAt: string;
+  cycleDurationHours?: number;
   createdAt: string;
   updatedAt: string;
   periods: Array<{
@@ -482,6 +483,7 @@ export interface AdminUpdateDropInput {
   title?: string;
   description?: string | null;
   status?: string;
+  cycleDurationHours?: number;
 }
 
 export async function adminUpdateDrop(dropId: string, input: AdminUpdateDropInput) {

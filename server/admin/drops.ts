@@ -100,6 +100,7 @@ export interface UpdateDropInput {
   title?: string;
   description?: string | null;
   status?: DropStatus;
+  cycleDurationHours?: number;
   adminUserId: string;
   ipAddress?: string | null;
   userAgent?: string | null;
@@ -400,6 +401,22 @@ export async function updateAdminDrop(
     dataToUpdate.status = input.status;
   }
 
+  if (input.cycleDurationHours !== undefined) {
+    if (
+      typeof input.cycleDurationHours !== "number" ||
+      !Number.isInteger(input.cycleDurationHours) ||
+      input.cycleDurationHours < 1 ||
+      input.cycleDurationHours > 24
+    ) {
+      throw new AdminDropError(
+        "INVALID_INPUT",
+        "cycleDurationHours must be an integer between 1 and 24 (e.g. 2 for Standard, 5 for Hype Control).",
+        400,
+      );
+    }
+    dataToUpdate.cycleDurationHours = input.cycleDurationHours;
+  }
+
   if (Object.keys(dataToUpdate).length === 0) {
     return { drop, auditLogId: null };
   }
@@ -426,6 +443,7 @@ export async function updateAdminDrop(
         title: drop.title,
         description: drop.description,
         status: drop.status,
+        cycleDurationHours: (drop as any).cycleDurationHours ?? 2,
       },
       newValues: dataToUpdate,
     });

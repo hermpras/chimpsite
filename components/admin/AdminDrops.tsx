@@ -94,6 +94,37 @@ export function AdminDrops() {
   const [emergencyError, setEmergencyError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+  // Cycle Mode & Hype Control state
+  const [togglingCycleMode, setTogglingCycleMode] = useState(false);
+  const [cycleModeMessage, setCycleModeMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const handleToggleCycleMode = async (targetHours: number) => {
+    if (!selectedDropDetail) return;
+    setTogglingCycleMode(true);
+    setCycleModeMessage(null);
+    try {
+      await adminUpdateDrop(selectedDropDetail.id, { cycleDurationHours: targetHours });
+      setCycleModeMessage({
+        type: "success",
+        text:
+          targetHours === 5
+            ? "Activated 5-Hour Hype Control Mode! Drops will now cycle every 5 hours with a 30m claim window."
+            : "Reverted to 2-Hour Standard Mode! Drops will now cycle every 2 hours.",
+      });
+      setReloadKey((k) => k + 1);
+    } catch (err: unknown) {
+      setCycleModeMessage({
+        type: "error",
+        text: (err as Error).message || "Failed to update drop cycle mode.",
+      });
+    } finally {
+      setTogglingCycleMode(false);
+    }
+  };
+
   // 1. Fetch current live drop monitor
   useEffect(() => {
     let isMounted = true;
@@ -716,6 +747,80 @@ export function AdminDrops() {
                     {selectedDropDetail.periods?.length ?? 0}
                   </span>
                 </div>
+              </div>
+
+              {/* Hype Control Strategy Card */}
+              <div className="rounded-lg border border-amber-900/40 bg-gradient-to-r from-amber-950/20 via-gray-900/50 to-gray-900/30 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Flame className="h-4 w-4 text-amber-400" />
+                      <span className="text-xs font-semibold text-white">
+                        Drop Cooldown Strategy & Hype Control
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={
+                          selectedDropDetail.cycleDurationHours === 5
+                            ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
+                            : "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
+                        }
+                      >
+                        {selectedDropDetail.cycleDurationHours === 5
+                          ? "🔥 5-Hour Hype Control Active"
+                          : "⚡ 2-Hour Standard Cycle Active"}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-400">
+                      {selectedDropDetail.cycleDurationHours === 5
+                        ? "Drop cooldown is slowed to 5 hours (with 30m claim window) to throttle supply circulation and create FOMO as WL nears capacity."
+                        : "Standard 2-hour cycles active. When Whitelist entries approach supply limit, activate 5-hour mode to control hype and scarcity."}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedDropDetail.cycleDurationHours === 5 ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={togglingCycleMode}
+                        onClick={() => handleToggleCycleMode(2)}
+                        className="border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/30 text-xs"
+                      >
+                        {togglingCycleMode ? (
+                          <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Clock className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Revert to 2-Hour Standard
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={togglingCycleMode}
+                        onClick={() => handleToggleCycleMode(5)}
+                        className="bg-amber-600 hover:bg-amber-500 text-black font-semibold text-xs"
+                      >
+                        {togglingCycleMode ? (
+                          <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Flame className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Activate 5-Hour Hype Control
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {cycleModeMessage && (
+                  <div
+                    className={`mt-3 rounded p-2 text-xs ${
+                      cycleModeMessage.type === "success"
+                        ? "border border-emerald-800 bg-emerald-950/40 text-emerald-300"
+                        : "border border-red-800 bg-red-950/40 text-red-300"
+                    }`}
+                  >
+                    {cycleModeMessage.text}
+                  </div>
+                )}
               </div>
 
               {/* Periods Table */}

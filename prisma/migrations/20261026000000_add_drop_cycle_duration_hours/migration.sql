@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Drop" ADD COLUMN IF NOT EXISTS "cycleDurationHours" INTEGER NOT NULL DEFAULT 2;
