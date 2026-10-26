@@ -61,7 +61,7 @@ export function GiftModal({
     try {
       await sendGiftRequest(trimmed, item.id);
       setSuccessMessage(
-        `Gift sent successfully! Trait "${item.trait.name}" (#${item.edition}) is now pending acceptance. It will expire after 24 hours if unaccepted.`,
+        `Gift sent successfully! Trait "${item.trait.name}" (#${item.edition}) is now pending acceptance. It will remain active until accepted or cancelled.`,
       );
       onGiftSuccess();
     } catch (err: unknown) {
@@ -146,7 +146,7 @@ export function GiftModal({
             <li>You must retain at least 1 copy of the trait.</li>
             <li>Maximum 1 gift sent per wallet per UTC day.</li>
             <li>Recipient must not already own this trait.</li>
-            <li>Pending gifts expire after 24 hours if unaccepted.</li>
+            <li>Pending gifts remain active until accepted or cancelled.</li>
             <li>Wallets with an allocated Whitelist slot cannot receive gifts.</li>
           </ul>
         </div>

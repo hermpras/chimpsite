@@ -14,6 +14,8 @@ import {
   Plus,
   Layers,
   Sparkles,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   Card,
@@ -31,6 +33,7 @@ import {
   adminListWLPrograms,
   adminCreateWLProgram,
   adminUpdateWLProgram,
+  adminExportOpenSeaAllowlist,
   type AdminRevokeSlotInput,
   type AdminReconcileQueueResponse,
   type AdminSlotRecord,
@@ -91,6 +94,33 @@ export function AdminWhitelist() {
     text: string;
     error?: boolean;
   } | null>(null);
+
+  // OpenSea Allowlist Export State
+  const [exportProgramId, setExportProgramId] = useState("");
+  const [exportingStage, setExportingStage] = useState<"gtd" | "fcfs" | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExport = async (stage: "gtd" | "fcfs", programId?: string) => {
+    setExportingStage(stage);
+    setExportError(null);
+    setExportSuccess(null);
+    try {
+      const res = await adminExportOpenSeaAllowlist({
+        stage,
+        programId: programId || exportProgramId || undefined,
+      });
+      setExportSuccess(
+        `Successfully exported ${res.count} ${stage.toUpperCase()} wallet(s) to ${res.filename}`,
+      );
+    } catch (err: unknown) {
+      setExportError(
+        (err as Error).message || `Failed to export OpenSea ${stage.toUpperCase()} allowlist.`,
+      );
+    } finally {
+      setExportingStage(null);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -708,6 +738,30 @@ export function AdminWhitelist() {
                             >
                               Slots
                             </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              data-testid={`export-gtd-row-${p.id}`}
+                              className="h-6 px-2 text-[11px] border-emerald-800/60 text-emerald-400 hover:bg-emerald-950/40"
+                              disabled={exportingStage !== null}
+                              onClick={() => handleExport("gtd", p.id)}
+                              title={`Export GTD Allowlist CSV for ${p.name}`}
+                            >
+                              GTD CSV
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              data-testid={`export-fcfs-row-${p.id}`}
+                              className="h-6 px-2 text-[11px] border-sky-800/60 text-sky-400 hover:bg-sky-950/40"
+                              disabled={exportingStage !== null}
+                              onClick={() => handleExport("fcfs", p.id)}
+                              title={`Export FCFS Allowlist CSV for ${p.name}`}
+                            >
+                              FCFS CSV
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -716,6 +770,122 @@ export function AdminWhitelist() {
                 )}
               </tbody>
             </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* OpenSea SeaDrop Allowlist CSV Export */}
+      <Card className="border-gray-800 bg-[#0c0e17]/90" data-testid="opensea-export-card">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-emerald-400" />
+              <CardTitle className="text-base text-white">
+                OpenSea SeaDrop Allowlist CSV Export
+              </CardTitle>
+              <Badge variant="success" className="text-[10px]">
+                Strict Disjoint Guarantee
+              </Badge>
+            </div>
+            <CardDescription className="text-xs text-gray-400">
+              Export allowlist CSV files formatted specifically for OpenSea SeaDrop stages.
+              Guaranteed (GTD) and First-Come, First-Served (FCFS) recipients are strictly separated without duplicates.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-end">
+            <div className="sm:col-span-1">
+              <label
+                htmlFor="export-prog-select"
+                className="mb-1 block text-xs font-medium text-gray-400"
+              >
+                Target Whitelist Program
+              </label>
+              <select
+                id="export-prog-select"
+                value={exportProgramId}
+                onChange={(e) => setExportProgramId(e.target.value)}
+                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="">Default / Latest Active Program</option>
+                {programs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.slug})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-wrap gap-3 sm:col-span-2">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                data-testid="export-gtd-btn"
+                disabled={exportingStage !== null}
+                onClick={() => handleExport("gtd")}
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500"
+              >
+                <Download
+                  className={`h-4 w-4 ${exportingStage === "gtd" ? "animate-bounce" : ""}`}
+                />
+                <span>
+                  {exportingStage === "gtd"
+                    ? "Exporting GTD..."
+                    : "Download GTD Allowlist (1 NFT)"}
+                </span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                data-testid="export-fcfs-btn"
+                disabled={exportingStage !== null}
+                onClick={() => handleExport("fcfs")}
+                className="flex items-center gap-1.5 border-sky-500/40 text-sky-400 hover:bg-sky-500/10"
+              >
+                <Download
+                  className={`h-4 w-4 ${exportingStage === "fcfs" ? "animate-bounce" : ""}`}
+                />
+                <span>
+                  {exportingStage === "fcfs"
+                    ? "Exporting FCFS..."
+                    : "Download FCFS Allowlist (Queue)"}
+                </span>
+              </Button>
+            </div>
+          </div>
+
+          {exportSuccess && (
+            <div
+              data-testid="export-success-banner"
+              className="flex items-center gap-2 rounded border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs text-emerald-300"
+            >
+              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+              <span>{exportSuccess}</span>
+            </div>
+          )}
+
+          {exportError && (
+            <div
+              data-testid="export-error-banner"
+              className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300"
+            >
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>{exportError}</span>
+            </div>
+          )}
+
+          <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-[11px] text-gray-400">
+            <span className="font-semibold text-gray-300">OpenSea Configuration Rule:</span>{" "}
+            Configure Stage 1 in OpenSea Studio as{" "}
+            <strong className="text-emerald-400">Allowlist Stage</strong> using the GTD CSV
+            (1 mint limit). Configure Stage 2 as a second{" "}
+            <strong className="text-sky-400">Allowlist Stage</strong> using the FCFS CSV.
+            Because OpenSea allowlists are additive, ChimpHood automatically prevents GTD
+            wallets from appearing in the FCFS list.
           </div>
         </CardContent>
       </Card>

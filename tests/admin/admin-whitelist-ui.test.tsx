@@ -14,6 +14,7 @@ vi.mock("@/lib/admin/client", () => ({
   adminListWLPrograms: vi.fn().mockResolvedValue({ programs: [], total: 0 }),
   adminCreateWLProgram: vi.fn(),
   adminUpdateWLProgram: vi.fn(),
+  adminExportOpenSeaAllowlist: vi.fn(),
 }));
 
 vi.mock("@/lib/whitelist/client", () => ({
@@ -176,6 +177,149 @@ describe("Admin Whitelist UI - Queue Reconciliation Notification", () => {
           status: undefined,
           limit: 10,
           offset: 0,
+        });
+      });
+    });
+  });
+
+  describe("OpenSea SeaDrop Allowlist CSV Export UI", () => {
+    it("renders OpenSea SeaDrop Export card and buttons correctly", () => {
+      render(<AdminWhitelist />);
+      expect(
+        screen.getByText("OpenSea SeaDrop Allowlist CSV Export"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Strict Disjoint Guarantee")).toBeInTheDocument();
+      expect(screen.getByTestId("export-gtd-btn")).toBeInTheDocument();
+      expect(screen.getByTestId("export-fcfs-btn")).toBeInTheDocument();
+    });
+
+    it("triggers GTD CSV export on button click with success feedback", async () => {
+      vi.mocked(adminClient.adminExportOpenSeaAllowlist).mockResolvedValueOnce({
+        filename: "chimphood-gtd-allowlist.csv",
+        count: 50,
+      });
+
+      render(<AdminWhitelist />);
+      const gtdBtn = screen.getByTestId("export-gtd-btn");
+      fireEvent.click(gtdBtn);
+
+      await waitFor(() => {
+        expect(adminClient.adminExportOpenSeaAllowlist).toHaveBeenCalledWith({
+          stage: "gtd",
+          programId: undefined,
+        });
+        expect(screen.getByTestId("export-success-banner")).toBeInTheDocument();
+        expect(
+          screen.getByText(/Successfully exported 50 GTD wallet\(s\) to chimphood-gtd-allowlist\.csv/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("triggers FCFS CSV export on button click with program selection", async () => {
+      vi.mocked(adminClient.adminListWLPrograms).mockResolvedValueOnce({
+        programs: [
+          {
+            id: "prog-alpha",
+            slug: "alpha",
+            name: "Alpha WL Program",
+            description: null,
+            totalSlots: 100,
+            allocatedSlotsCount: 80,
+            status: "OPEN",
+            startsAt: "2026-10-01T00:00:00.000Z",
+            endsAt: null,
+            createdAt: "2026-10-01T00:00:00.000Z",
+            updatedAt: "2026-10-01T00:00:00.000Z",
+            campaignsCount: 1,
+            slotsCount: 80,
+            queueEntriesCount: 20,
+          },
+        ],
+        total: 1,
+      });
+
+      vi.mocked(adminClient.adminExportOpenSeaAllowlist).mockResolvedValueOnce({
+        filename: "alpha-fcfs-allowlist.csv",
+        count: 20,
+      });
+
+      render(<AdminWhitelist />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Alpha WL Program")).toBeInTheDocument();
+      });
+
+      const select = screen.getByLabelText(/Target Whitelist Program/i);
+      fireEvent.change(select, { target: { value: "prog-alpha" } });
+
+      const fcfsBtn = screen.getByTestId("export-fcfs-btn");
+      fireEvent.click(fcfsBtn);
+
+      await waitFor(() => {
+        expect(adminClient.adminExportOpenSeaAllowlist).toHaveBeenCalledWith({
+          stage: "fcfs",
+          programId: "prog-alpha",
+        });
+        expect(screen.getByTestId("export-success-banner")).toBeInTheDocument();
+      });
+    });
+
+    it("displays error banner when allowlist export fails", async () => {
+      vi.mocked(adminClient.adminExportOpenSeaAllowlist).mockRejectedValueOnce(
+        new Error("Whitelist program not found"),
+      );
+
+      render(<AdminWhitelist />);
+      const gtdBtn = screen.getByTestId("export-gtd-btn");
+      fireEvent.click(gtdBtn);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("export-error-banner")).toBeInTheDocument();
+        expect(screen.getByText("Whitelist program not found")).toBeInTheDocument();
+      });
+    });
+
+    it("triggers program row specific GTD and FCFS export buttons", async () => {
+      vi.mocked(adminClient.adminListWLPrograms).mockResolvedValueOnce({
+        programs: [
+          {
+            id: "prog-row-1",
+            slug: "row-1",
+            name: "Row Program One",
+            description: null,
+            totalSlots: 50,
+            allocatedSlotsCount: 50,
+            status: "CLOSED",
+            startsAt: "2026-10-01T00:00:00.000Z",
+            endsAt: null,
+            createdAt: "2026-10-01T00:00:00.000Z",
+            updatedAt: "2026-10-01T00:00:00.000Z",
+            campaignsCount: 0,
+            slotsCount: 50,
+            queueEntriesCount: 10,
+          },
+        ],
+        total: 1,
+      });
+
+      vi.mocked(adminClient.adminExportOpenSeaAllowlist).mockResolvedValueOnce({
+        filename: "row-1-gtd-allowlist.csv",
+        count: 50,
+      });
+
+      render(<AdminWhitelist />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("export-gtd-row-prog-row-1")).toBeInTheDocument();
+      });
+
+      const rowGtdBtn = screen.getByTestId("export-gtd-row-prog-row-1");
+      fireEvent.click(rowGtdBtn);
+
+      await waitFor(() => {
+        expect(adminClient.adminExportOpenSeaAllowlist).toHaveBeenCalledWith({
+          stage: "gtd",
+          programId: "prog-row-1",
         });
       });
     });

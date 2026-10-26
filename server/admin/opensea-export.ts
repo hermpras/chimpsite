@@ -99,7 +99,9 @@ export async function getGTDWallets(
     orderBy: { slotNumber: "asc" },
     include: {
       user: {
-        include: {
+        select: {
+          id: true,
+          isBanned: true,
           wallet: true,
           banRecords: {
             where: { isActive: true },
@@ -175,7 +177,9 @@ export async function getFCFSWallets(
     ],
     include: {
       user: {
-        include: {
+        select: {
+          id: true,
+          isBanned: true,
           wallet: true,
           banRecords: {
             where: { isActive: true },

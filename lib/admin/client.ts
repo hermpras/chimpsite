@@ -683,3 +683,65 @@ export async function adminUpdateWLProgram(
   }
   return data;
 }
+
+export interface AdminExportOpenSeaAllowlistParams {
+  stage: "gtd" | "fcfs";
+  programId?: string;
+}
+
+export interface AdminExportOpenSeaAllowlistResult {
+  filename: string;
+  count: number;
+}
+
+export async function adminExportOpenSeaAllowlist(
+  params: AdminExportOpenSeaAllowlistParams,
+): Promise<AdminExportOpenSeaAllowlistResult> {
+  const base = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+  const url = new URL("/api/admin/whitelist/export", base);
+  url.searchParams.set("stage", params.stage);
+  if (params.programId && params.programId.trim()) {
+    url.searchParams.set("programId", params.programId.trim());
+  }
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Accept: "text/csv, application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    throw new Error(
+      errorBody.message || errorBody.error || `Export failed with status ${res.status}`,
+    );
+  }
+
+  const csvText = await res.text();
+  const disposition = res.headers.get("Content-Disposition");
+  let filename = `chimphood-${params.stage}-allowlist.csv`;
+  if (disposition) {
+    const match = disposition.match(/filename="?([^";]+)"?/);
+    if (match && match[1]) {
+      filename = match[1];
+    }
+  }
+
+  const lines = csvText.trim() ? csvText.trim().split("\n").filter(Boolean) : [];
+  const lineCount = lines.length;
+
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+  }
+
+  return { filename, count: lineCount };
+}

@@ -66,18 +66,26 @@ export async function GET(request: Request): Promise<Response> {
       },
     });
   } catch (err: unknown) {
-    if (err instanceof OpenSeaExportError) {
+    if (
+      err instanceof OpenSeaExportError ||
+      (err && typeof err === "object" && (err as any).name === "OpenSeaExportError")
+    ) {
+      const exportErr = err as OpenSeaExportError;
       return Response.json(
-        { error: err.code, message: err.message },
-        { status: err.status },
+        { error: exportErr.code, message: exportErr.message },
+        { status: exportErr.status || 400 },
       );
     }
 
     console.error("GET /api/admin/whitelist/export error:", err);
+    const detail = err instanceof Error ? err.message : String(err);
     return Response.json(
       {
         error: "SERVER_ERROR",
-        message: "An unexpected error occurred while exporting allowlist.",
+        message:
+          process.env.NODE_ENV === "production"
+            ? "An unexpected error occurred while exporting allowlist."
+            : `An unexpected error occurred while exporting allowlist: ${detail}`,
       },
       { status: 500 },
     );

@@ -83,23 +83,6 @@ export function GiftsSection({
     }
   };
 
-  const formatExpiry = (expiresAtStr: string) => {
-    try {
-      const expiresAt = new Date(expiresAtStr);
-      const now = new Date();
-      const diffMs = expiresAt.getTime() - now.getTime();
-      if (diffMs <= 0) return "Expired";
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      if (diffHours > 0) {
-        return `${diffHours}h ${diffMins}m left`;
-      }
-      return `${diffMins}m left`;
-    } catch {
-      return "24h window";
-    }
-  };
-
   return (
     <Card className="md:col-span-2" data-testid="gifts-section">
       <CardHeader>
@@ -254,7 +237,7 @@ export function GiftsSection({
                             <span className="text-gray-600">•</span>
                             <span className="flex items-center gap-1 text-teal-400">
                               <Clock className="h-3 w-3" />
-                              {formatExpiry(gift.expiresAt)}
+                              Pending acceptance
                             </span>
                           </div>
                         </div>
@@ -362,7 +345,7 @@ export function GiftsSection({
                             <span className="text-gray-600">•</span>
                             <span className="flex items-center gap-1 text-sky-400">
                               <Clock className="h-3 w-3" />
-                              {formatExpiry(gift.expiresAt)}
+                              Pending receiver
                             </span>
                           </div>
                         </div>

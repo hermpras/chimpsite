@@ -263,7 +263,7 @@ describe("Gifting UI (I-1) Test Suite", () => {
         screen.getByText(/You must retain at least 1 copy of the trait/i),
       ).toBeInTheDocument();
       expect(
-        screen.getByText(/Pending gifts expire after 24 hours/i),
+        screen.getByText(/Pending gifts remain active until accepted or cancelled/i),
       ).toBeInTheDocument();
       expect(
         screen.getByText(
