@@ -6,6 +6,9 @@ import {
 } from "@/server/drops/schedule";
 import { calculateTransparentProbabilities } from "@/server/drops/claim";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const now = new Date();

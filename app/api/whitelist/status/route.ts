@@ -6,6 +6,9 @@ import {
 } from "@/server/whitelist/qualification";
 import { normalizeAddress } from "@/lib/auth/address";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const addressParam = url.searchParams.get("address");
