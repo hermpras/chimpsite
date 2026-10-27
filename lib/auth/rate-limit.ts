@@ -72,6 +72,34 @@ let redisClient: Redis | null = null;
 let customLimiter: LimiterTarget | null = null;
 const limiters: Record<string, Ratelimit> = Object.create(null);
 
+interface DevBucket {
+  count: number;
+  windowStart: number;
+}
+const devBuckets = new Map<string, DevBucket>();
+
+function checkDevRateLimit(
+  key: string,
+  maxRequests: number,
+  windowMs: number,
+  now: number,
+): RateLimitResult {
+  const bucket = devBuckets.get(key);
+  if (!bucket || now - bucket.windowStart >= windowMs) {
+    devBuckets.set(key, { count: 1, windowStart: now });
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+  if (bucket.count < maxRequests) {
+    bucket.count += 1;
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+  const retryAfterSeconds = Math.max(
+    Math.ceil((bucket.windowStart + windowMs - now) / 1000),
+    1,
+  );
+  return { allowed: false, retryAfterSeconds };
+}
+
 function getRedisClient(): Redis {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
@@ -119,6 +147,17 @@ export async function checkRateLimit(
   windowMs: number = NONCE_RATE_LIMIT_WINDOW_MS,
   now: number = Date.now(),
 ): Promise<RateLimitResult> {
+  // In local development, if Upstash credentials are not configured,
+  // gracefully fall back to in-memory rate limiting to allow seamless local testing.
+  const hasUpstashConfig = Boolean(
+    process.env.UPSTASH_REDIS_REST_URL?.trim() &&
+    process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
+  );
+
+  if (!hasUpstashConfig && process.env.NODE_ENV === "development" && !customLimiter) {
+    return checkDevRateLimit(key, maxRequests, windowMs, now);
+  }
+
   const limiter = getLimiter(maxRequests, windowMs);
 
   try {
@@ -145,6 +184,7 @@ export async function checkRateLimit(
  * Preserves compatibility with existing test suites calling __clearRateLimitBuckets.
  */
 export function __clearRateLimitBuckets(): void {
+  devBuckets.clear();
   for (const k of Object.keys(limiters)) {
     delete limiters[k];
   }
