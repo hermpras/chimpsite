@@ -17,12 +17,11 @@ export interface DefaultTraitTemplate {
 }
 
 /**
- * 250 total stock distributed across 5 categories and 6 traits:
- * - Common BG (Cyber Jungle): 65 stock (26%)
- * - Common HEADWEAR (Neon Beanie): 65 stock (26%)
- * - Uncommon CLOTHING (Stealth Hoodie): 50 stock (20%)
- * - Rare FUR (Golden Fur): 35 stock (14%)
- * - Epic EYEWEAR (Laser Visor): 25 stock (10%)
+ * 250 total stock distributed across 5 core categories (1 trait per category):
+ * - Common BG (Cyber Jungle): 85 stock (34%)
+ * - Uncommon CLOTHING (Stealth Hoodie): 65 stock (26%)
+ * - Rare FUR (Golden Fur): 50 stock (20%)
+ * - Epic EYEWEAR (Laser Visor): 40 stock (16%)
  * - Legendary HEADWEAR (Cyber Halo): 10 stock (4%)
  * Total stock = 250, Total weight = 250 (100%)
  */
@@ -35,19 +34,8 @@ export const DEFAULT_TRAIT_TEMPLATES: readonly DefaultTraitTemplate[] = [
     description: "Lush cybernetic jungle canopy bathed in neon bioluminescence.",
     imageUrl: "https://assets.chimphood.io/traits/cyber-jungle.png",
     maxSupply: 1000,
-    stock: 65,
-    weight: 65,
-  },
-  {
-    slug: "neon-beanie",
-    name: "Neon Beanie",
-    category: "HEADWEAR",
-    rarity: "COMMON",
-    description: "Ribbed knit beanie with an integrated pulse indicator.",
-    imageUrl: "https://assets.chimphood.io/traits/neon-beanie.png",
-    maxSupply: 1000,
-    stock: 65,
-    weight: 65,
+    stock: 85,
+    weight: 85,
   },
   {
     slug: "stealth-hoodie",
@@ -57,8 +45,8 @@ export const DEFAULT_TRAIT_TEMPLATES: readonly DefaultTraitTemplate[] = [
     description: "Matte black tactical hoodie with holographic ChimpHood insignias.",
     imageUrl: "https://assets.chimphood.io/traits/stealth-hoodie.png",
     maxSupply: 800,
-    stock: 50,
-    weight: 50,
+    stock: 65,
+    weight: 65,
   },
   {
     slug: "golden-fur",
@@ -68,8 +56,8 @@ export const DEFAULT_TRAIT_TEMPLATES: readonly DefaultTraitTemplate[] = [
     description: "Gleaming golden cyber-primate fur coated with nanites.",
     imageUrl: "https://assets.chimphood.io/traits/golden-fur.png",
     maxSupply: 500,
-    stock: 35,
-    weight: 35,
+    stock: 50,
+    weight: 50,
   },
   {
     slug: "laser-visor",
@@ -79,8 +67,8 @@ export const DEFAULT_TRAIT_TEMPLATES: readonly DefaultTraitTemplate[] = [
     description: "High-spec targeting visor emitting dual crimson lasers.",
     imageUrl: "https://assets.chimphood.io/traits/laser-visor.png",
     maxSupply: 300,
-    stock: 25,
-    weight: 25,
+    stock: 40,
+    weight: 40,
   },
   {
     slug: "cyber-halo",
@@ -251,6 +239,16 @@ export async function ensureActiveCyclePeriod(
         },
       });
     }
+
+    // Clean up any pool items not in the 5 template traits (if unclaimed)
+    const validTraitIds = traits.map((t) => t.id);
+    await tx.dropPoolItem.deleteMany({
+      where: {
+        periodId: periodRecord.id,
+        traitId: { notIn: validTraitIds },
+        claimedStock: 0,
+      },
+    });
 
     // Provision pool items for each template trait
     for (const template of DEFAULT_TRAIT_TEMPLATES) {

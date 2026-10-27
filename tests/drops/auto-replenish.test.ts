@@ -52,7 +52,7 @@ describe("Auto-Replenish Drop Engine", () => {
     expect(Math.round(totalProb)).toBe(100);
   });
 
-  it("calculates exact transparent probability distribution for all 6 template traits", () => {
+  it("calculates exact transparent probability distribution for all 5 template traits", () => {
     const probs = calculateTransparentProbabilities(
       DEFAULT_TRAIT_TEMPLATES.map((t, idx) => ({
         id: `pool-${idx}`,
@@ -64,16 +64,15 @@ describe("Auto-Replenish Drop Engine", () => {
     );
 
     expect(probs).toEqual([
-      expect.objectContaining({ traitName: "Cyber Jungle", remainingStock: 65, probabilityPercent: 26 }),
-      expect.objectContaining({ traitName: "Neon Beanie", remainingStock: 65, probabilityPercent: 26 }),
-      expect.objectContaining({ traitName: "Stealth Hoodie", remainingStock: 50, probabilityPercent: 20 }),
-      expect.objectContaining({ traitName: "Golden Fur", remainingStock: 35, probabilityPercent: 14 }),
-      expect.objectContaining({ traitName: "Laser Visor", remainingStock: 25, probabilityPercent: 10 }),
+      expect.objectContaining({ traitName: "Cyber Jungle", remainingStock: 85, probabilityPercent: 34 }),
+      expect.objectContaining({ traitName: "Stealth Hoodie", remainingStock: 65, probabilityPercent: 26 }),
+      expect.objectContaining({ traitName: "Golden Fur", remainingStock: 50, probabilityPercent: 20 }),
+      expect.objectContaining({ traitName: "Laser Visor", remainingStock: 40, probabilityPercent: 16 }),
       expect.objectContaining({ traitName: "Cyber Halo", remainingStock: 10, probabilityPercent: 4 }),
     ]);
   });
 
-  it("ensureDefaultTraits upserts all 6 default traits", async () => {
+  it("ensureDefaultTraits upserts all 5 default traits", async () => {
     const upsertMock = vi.fn().mockImplementation(({ create }) => Promise.resolve({ id: `id-${create.slug}`, ...create }));
     const mockPrisma = {
       trait: {
@@ -82,8 +81,8 @@ describe("Auto-Replenish Drop Engine", () => {
     } as any;
 
     const traits = await ensureDefaultTraits(mockPrisma);
-    expect(traits).toHaveLength(6);
-    expect(upsertMock).toHaveBeenCalledTimes(6);
+    expect(traits).toHaveLength(5);
+    expect(upsertMock).toHaveBeenCalledTimes(5);
   });
 
   it("ensureActiveCyclePeriod returns existing period if already active with pool stock", async () => {
@@ -146,6 +145,7 @@ describe("Auto-Replenish Drop Engine", () => {
       },
       dropPoolItem: {
         upsert: vi.fn().mockResolvedValue({}),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
     };
 
@@ -173,7 +173,7 @@ describe("Auto-Replenish Drop Engine", () => {
 
     expect(result.id).toBe("period-new");
     expect(result.status).toBe("ACTIVE");
-    expect(txMock.dropPoolItem.upsert).toHaveBeenCalledTimes(6);
+    expect(txMock.dropPoolItem.upsert).toHaveBeenCalledTimes(5);
     expect(mockPrisma.$transaction).toHaveBeenCalled();
   });
 
@@ -209,6 +209,7 @@ describe("Auto-Replenish Drop Engine", () => {
       },
       dropPoolItem: {
         upsert: vi.fn().mockResolvedValue({}),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
     };
 

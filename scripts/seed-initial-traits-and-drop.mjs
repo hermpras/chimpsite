@@ -16,19 +16,8 @@ const INITIAL_TRAITS = [
     description: "Lush cybernetic jungle canopy bathed in neon bioluminescence.",
     imageUrl: "https://assets.chimphood.io/traits/cyber-jungle.png",
     maxSupply: 1000,
-    defaultStock: 65,
-    defaultWeight: 65,
-  },
-  {
-    slug: "neon-beanie",
-    name: "Neon Beanie",
-    category: "HEADWEAR",
-    rarity: "COMMON",
-    description: "Ribbed knit beanie with an integrated pulse indicator.",
-    imageUrl: "https://assets.chimphood.io/traits/neon-beanie.png",
-    maxSupply: 1000,
-    defaultStock: 65,
-    defaultWeight: 65,
+    defaultStock: 85,
+    defaultWeight: 85,
   },
   {
     slug: "stealth-hoodie",
@@ -38,8 +27,8 @@ const INITIAL_TRAITS = [
     description: "Matte black tactical hoodie with holographic ChimpHood insignias.",
     imageUrl: "https://assets.chimphood.io/traits/stealth-hoodie.png",
     maxSupply: 800,
-    defaultStock: 50,
-    defaultWeight: 50,
+    defaultStock: 65,
+    defaultWeight: 65,
   },
   {
     slug: "golden-fur",
@@ -49,8 +38,8 @@ const INITIAL_TRAITS = [
     description: "Gleaming golden cyber-primate fur coated with nanites.",
     imageUrl: "https://assets.chimphood.io/traits/golden-fur.png",
     maxSupply: 500,
-    defaultStock: 35,
-    defaultWeight: 35,
+    defaultStock: 50,
+    defaultWeight: 50,
   },
   {
     slug: "laser-visor",
@@ -60,8 +49,8 @@ const INITIAL_TRAITS = [
     description: "High-spec targeting visor emitting dual crimson lasers.",
     imageUrl: "https://assets.chimphood.io/traits/laser-visor.png",
     maxSupply: 300,
-    defaultStock: 25,
-    defaultWeight: 25,
+    defaultStock: 40,
+    defaultWeight: 40,
   },
   {
     slug: "cyber-halo",
@@ -168,7 +157,17 @@ async function seed() {
   });
   console.log(`  ✓ DropPeriod #${period.periodIndex} (${period.id}) is ACTIVE`);
 
-  console.log("\nAllocating default 250 units stock across 6 traits in DropPoolItems...");
+  console.log("\nCleaning up any legacy pool items in active period...");
+  const validTraitIds = createdTraits.map((t) => t.id);
+  await prisma.dropPoolItem.deleteMany({
+    where: {
+      periodId: period.id,
+      traitId: { notIn: validTraitIds },
+      claimedStock: 0,
+    },
+  });
+
+  console.log("\nAllocating default 250 units stock across 5 traits in DropPoolItems...");
   for (const trait of createdTraits) {
     const traitDef = INITIAL_TRAITS.find((t) => t.slug === trait.slug);
     const stock = traitDef?.defaultStock ?? 50;
