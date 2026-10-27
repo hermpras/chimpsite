@@ -27,9 +27,8 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   if (!program) {
-    return Response.json({
-      configured: false,
-      message: "No Whitelist program is currently active.",
+    program = await prisma.wLProgram.findFirst({
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -45,27 +44,6 @@ export async function GET(request: Request): Promise<Response> {
       if (wallet) {
         targetUserId = wallet.userId;
         targetAddress = normalized;
-      } else {
-        return Response.json({
-          configured: true,
-          program: { id: program.id, slug: program.slug, name: program.name },
-          status: {
-            qualified: false,
-            phase: "NONE",
-            missingRequirements: [
-              "Wallet has never connected or signed in to ChimpHood.",
-            ],
-            details: {
-              hasVerifiedWallet: false,
-              hasLinkedX: false,
-              heldCategories: [],
-              missingCategories: REQUIRED_TRAIT_CATEGORIES,
-              completedMandatoryTasksCount: 0,
-              totalMandatoryTasksCount: 0,
-              isBanned: false,
-            },
-          },
-        });
       }
     } catch {
       return Response.json({ error: "INVALID_ADDRESS" }, { status: 400 });
@@ -76,6 +54,41 @@ export async function GET(request: Request): Promise<Response> {
       targetUserId = session.userId;
       targetAddress = session.address;
     }
+  }
+
+  if (!program) {
+    let hasLinkedX = false;
+    let xUsername: string | undefined;
+    let xProfileImageUrl: string | null | undefined;
+    if (targetUserId) {
+      const user = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        include: { xIdentity: true },
+      });
+      hasLinkedX = Boolean(user?.xIdentity);
+      xUsername = user?.xIdentity?.username;
+      xProfileImageUrl = user?.xIdentity?.profileImageUrl;
+    }
+    return Response.json({
+      configured: false,
+      message: "No Whitelist program is currently active.",
+      status: {
+        qualified: false,
+        phase: "NONE",
+        missingRequirements: ["No active Whitelist program."],
+        details: {
+          hasVerifiedWallet: Boolean(targetAddress),
+          hasLinkedX,
+          xUsername,
+          xProfileImageUrl,
+          heldCategories: [],
+          missingCategories: REQUIRED_TRAIT_CATEGORIES,
+          completedMandatoryTasksCount: 0,
+          totalMandatoryTasksCount: 0,
+          isBanned: false,
+        },
+      },
+    });
   }
 
   if (!targetUserId) {

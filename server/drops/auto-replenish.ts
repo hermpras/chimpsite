@@ -1,6 +1,7 @@
 import type { PrismaClient, Drop, DropPeriod, DropPoolItem, Trait } from "@prisma/client";
 import {
   CYCLE_DURATION_MS,
+  DEFAULT_CYCLE_DURATION_HOURS,
   getUtcCycleForTime,
 } from "./schedule";
 
@@ -89,22 +90,110 @@ export const DEFAULT_CYCLE_STOCK_TOTAL = DEFAULT_TRAIT_TEMPLATES.reduce(
 ); // Exactly 250
 
 /**
- * Ensures all default trait records exist in the database.
+ * Standard stock & probability distribution budgets summing to 250 units:
+ * - Common: 85 (34%)
+ * - Uncommon: 65 (26%)
+ * - Rare: 50 (20%)
+ * - Epic: 40 (16%)
+ * - Legendary: 10 (4%)
+ */
+export const RARITY_STOCK_BUDGETS: Record<string, number> = {
+  COMMON: 85,
+  UNCOMMON: 65,
+  RARE: 50,
+  EPIC: 40,
+  LEGENDARY: 10,
+};
+
+export interface TraitPoolAllocation {
+  traitId: string;
+  stock: number;
+  weight: number;
+}
+
+/**
+ * Dynamically distributes the 250 cycle stock across all active traits
+ * in the catalog according to their rarity tier.
+ */
+export function calculateDynamicPoolAllocations(traits: Trait[]): TraitPoolAllocation[] {
+  if (traits.length === 0) return [];
+
+  const tiers: Record<string, Trait[]> = {
+    COMMON: [],
+    UNCOMMON: [],
+    RARE: [],
+    EPIC: [],
+    LEGENDARY: [],
+  };
+
+  for (const t of traits) {
+    if (tiers[t.rarity]) {
+      tiers[t.rarity].push(t);
+    } else {
+      tiers.COMMON.push(t);
+    }
+  }
+
+  const allocations: TraitPoolAllocation[] = [];
+
+  for (const [rarity, tierTraits] of Object.entries(tiers)) {
+    if (tierTraits.length === 0) continue;
+    const budget = RARITY_STOCK_BUDGETS[rarity] ?? 50;
+    const baseStock = Math.floor(budget / tierTraits.length);
+    const remainder = budget % tierTraits.length;
+
+    for (let i = 0; i < tierTraits.length; i++) {
+      const trait = tierTraits[i];
+      const stock = baseStock + (i < remainder ? 1 : 0);
+      allocations.push({
+        traitId: trait.id,
+        stock: Math.max(1, stock),
+        weight: Math.max(1, stock),
+      });
+    }
+  }
+
+  // Ensure total stock sums strictly to 250
+  const currentTotal = allocations.reduce((sum, a) => sum + a.stock, 0);
+  const diff = 250 - currentTotal;
+  if (diff !== 0 && allocations.length > 0) {
+    allocations[0].stock += diff;
+    allocations[0].weight += diff;
+  }
+
+  return allocations;
+}
+
+/**
+ * Ensures default traits exist ONLY on a fresh, completely empty database.
+ * If traits already exist in the database, it preserves them and never resurrects deleted/deactivated traits.
  */
 export async function ensureDefaultTraits(prisma: PrismaClient): Promise<Trait[]> {
+  // 1. If database already has traits (configured by admin or seeded), respect database state
+  if (prisma.trait?.findMany) {
+    const existingActive = await prisma.trait.findMany({
+      where: { isActive: true },
+      orderBy: [{ category: "asc" }, { rarity: "asc" }, { name: "asc" }],
+    });
+
+    if (existingActive.length > 0) {
+      return existingActive;
+    }
+
+    if (prisma.trait.count) {
+      const totalCount = await prisma.trait.count();
+      if (totalCount > 0) {
+        return existingActive;
+      }
+    }
+  }
+
+  // 3. Only on a completely empty database, seed initial template traits
   const traits: Trait[] = [];
   for (const t of DEFAULT_TRAIT_TEMPLATES) {
     const record = await prisma.trait.upsert({
       where: { slug: t.slug },
-      update: {
-        name: t.name,
-        category: t.category,
-        rarity: t.rarity,
-        description: t.description,
-        imageUrl: t.imageUrl,
-        maxSupply: t.maxSupply,
-        isActive: true,
-      },
+      update: {},
       create: {
         slug: t.slug,
         name: t.name,
@@ -141,7 +230,10 @@ export async function ensureActiveCyclePeriod(
   drop: Drop,
   now: Date = new Date(),
 ): Promise<PeriodWithPool> {
-  const cycleDurationHours = drop.cycleDurationHours ?? 2;
+  const cycleDurationHours =
+    drop.cycleDurationHours && drop.cycleDurationHours !== 2
+      ? drop.cycleDurationHours
+      : DEFAULT_CYCLE_DURATION_HOURS;
   const cycle = getUtcCycleForTime(now, cycleDurationHours, drop.startsAt);
   const cycleDurationMs = cycleDurationHours * 60 * 60 * 1000;
 
@@ -240,8 +332,18 @@ export async function ensureActiveCyclePeriod(
       });
     }
 
-    // Clean up any pool items not in the 5 template traits (if unclaimed)
-    const validTraitIds = traits.map((t) => t.id);
+    // Clean up any pool items not in active traits (if unclaimed)
+    const activeTraits = tx.trait?.findMany
+      ? await tx.trait.findMany({
+          where: { isActive: true },
+          orderBy: [{ category: "asc" }, { rarity: "asc" }, { name: "asc" }],
+        })
+      : traits;
+
+    const poolTraits = activeTraits.length > 0 ? activeTraits : traits;
+    const allocations = calculateDynamicPoolAllocations(poolTraits);
+    const validTraitIds = poolTraits.map((t) => t.id);
+
     await tx.dropPoolItem.deleteMany({
       where: {
         periodId: periodRecord.id,
@@ -250,30 +352,26 @@ export async function ensureActiveCyclePeriod(
       },
     });
 
-    // Provision pool items for each template trait
-    for (const template of DEFAULT_TRAIT_TEMPLATES) {
-      const trait = traitMap.get(template.slug);
-      if (!trait) continue;
-
+    // Provision pool items for each active trait
+    for (const alloc of allocations) {
       await tx.dropPoolItem.upsert({
         where: {
           periodId_traitId: {
             periodId: periodRecord.id,
-            traitId: trait.id,
+            traitId: alloc.traitId,
           },
         },
         update: {
-          // If already created, preserve claimedStock
-          allocatedStock: template.stock,
-          weight: template.weight,
+          allocatedStock: alloc.stock,
+          weight: alloc.weight,
         },
         create: {
           periodId: periodRecord.id,
-          traitId: trait.id,
-          allocatedStock: template.stock,
-          remainingStock: template.stock,
+          traitId: alloc.traitId,
+          allocatedStock: alloc.stock,
+          remainingStock: alloc.stock,
           claimedStock: 0,
-          weight: template.weight,
+          weight: alloc.weight,
         },
       });
     }

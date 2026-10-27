@@ -223,25 +223,39 @@ function ProfileContent() {
     };
   }, [status]);
 
+  const isXConnected = Boolean(wlData?.status?.details?.hasLinkedX);
+  const currentXUsername = wlData?.status?.details?.xUsername;
+  const currentXProfileImg = wlData?.status?.details?.xProfileImageUrl;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Page Header with Character Avatar */}
+      {/* Page Header with User Profile (Twitter PFP / Fallback) */}
       <div className="mb-8 flex flex-col items-start gap-5 rounded-2xl border border-gray-800 bg-[#0c0e17]/60 p-6 backdrop-blur sm:flex-row sm:items-center">
-        <UserAvatar
-          identifier={address}
-          hasInventory={inventoryItems.length > 0}
-          version={avatarVersion}
-          size="lg"
-          showRefreshButton={status === "authenticated" && inventoryItems.length > 0}
-          onRefresh={handleRefreshAll}
-        />
+        {currentXProfileImg ? (
+          <img
+            src={currentXProfileImg}
+            alt={currentXUsername || "User Profile"}
+            className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl border-2 border-emerald-500/30 object-cover shadow-lg"
+          />
+        ) : (
+          <UserAvatar
+            identifier={address}
+            hasInventory={inventoryItems.length > 0}
+            version={avatarVersion}
+            size="xl"
+            showRefreshButton={status === "authenticated" && inventoryItems.length > 0}
+            onRefresh={handleRefreshAll}
+          />
+        )}
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-white">User Profile</h1>
             <Badge variant="default">Stage 3</Badge>
           </div>
           <p className="text-sm text-gray-400">
-            Integrated identity management for Web3 Wallets and X (Twitter) accounts.
+            {currentXUsername
+              ? `Connected via X (@${currentXUsername}) and Web3 Wallet.`
+              : "Integrated identity management for Web3 Wallets and X (Twitter) accounts."}
           </p>
           {address && (
             <p className="font-mono text-xs text-gray-400">
@@ -308,26 +322,47 @@ function ProfileContent() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border border-dashed border-gray-700 bg-gray-900/40 p-4 text-center">
-              <p className="text-sm font-medium text-gray-400">
-                {wlData?.status?.details.hasLinkedX
-                  ? `Status: Connected (@${wlData.status.details.xUsername})`
-                  : "Status: Not Connected"}
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                {wlData?.status?.details.xUsername
-                  ? `@${wlData.status.details.xUsername}`
-                  : "No X account linked"}
-              </p>
+              {isXConnected && currentXProfileImg ? (
+                <div className="flex items-center justify-center gap-3 py-1">
+                  <img
+                    src={currentXProfileImg}
+                    alt={currentXUsername || "X Profile"}
+                    className="h-10 w-10 rounded-full border border-sky-400/30 object-cover shadow"
+                  />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-white">
+                      Status: Connected (@{currentXUsername})
+                    </p>
+                    <p className="mt-0.5 text-xs text-sky-400">
+                      @{currentXUsername} &bull;{" "}
+                      <span className="font-medium text-emerald-400">Verified</span>
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-gray-400">
+                    {isXConnected
+                      ? `Status: Connected (@${currentXUsername})`
+                      : "Status: Not Connected"}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {currentXUsername
+                      ? `@${currentXUsername}`
+                      : "No X account linked"}
+                  </p>
+                </>
+              )}
             </div>
             <Button
-              variant={wlData?.status?.details.hasLinkedX ? "outline" : "primary"}
+              variant={isXConnected ? "outline" : "primary"}
               className="w-full"
-              disabled={isLinking || Boolean(wlData?.status?.details.hasLinkedX)}
+              disabled={isLinking || isXConnected}
               onClick={handleLinkX}
             >
               {isLinking
                 ? "Connecting..."
-                : wlData?.status?.details.hasLinkedX
+                : isXConnected
                   ? "X Account Connected"
                   : "Link X Account"}
             </Button>
@@ -481,17 +516,65 @@ function ProfileContent() {
                 <TraitGrid items={inventoryItems} onGiftItem={handleOpenGiftModal} />
               </div>
             ) : (
-              <div
-                data-testid="inventory-empty"
-                className="rounded-lg border border-dashed border-gray-800 bg-gray-900/40 p-6 text-center"
-              >
-                <p className="text-sm font-medium text-gray-400">
-                  No items or traits found in your inventory
-                </p>
-                <p className="mt-1 text-xs text-gray-500">
-                  Drops, trait claims, and peer-to-peer gifts will appear in your
-                  collection once active.
-                </p>
+              <div data-testid="inventory-empty" className="space-y-6">
+                {/* 5-Category Trait Collection Overview */}
+                <div
+                  className="rounded-lg border border-gray-800 bg-gray-950/60 p-4"
+                  data-testid="trait-collection-summary"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
+                      Trait Collection (0/5 Categories Owned)
+                    </h4>
+                    <span className="text-xs text-amber-400/80">
+                      Collect all 5 categories to assemble your Chimp
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    {TRAIT_CATEGORIES.map((category) => (
+                      <div
+                        key={category}
+                        data-testid={`collection-category-${category.toLowerCase()}`}
+                        className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/30 p-2.5 text-xs text-gray-500 opacity-60 grayscale transition-colors"
+                      >
+                        <div className="h-4 w-4 shrink-0 rounded-full border border-gray-600 bg-gray-800" />
+                        <span className="font-semibold tracking-wide">{category}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Base Chimp Character Showcase */}
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-800 bg-gray-900/40 p-8 text-center sm:flex-row sm:gap-10 sm:text-left">
+                  <div className="relative mb-6 flex-shrink-0 sm:mb-0">
+                    <div className="h-52 w-52 overflow-hidden rounded-3xl border-2 border-dashed border-gray-700 bg-[#0c0e17] shadow-2xl sm:h-60 sm:w-60">
+                      <img
+                        src="/images/chimp-base-bw.png"
+                        alt="Unrevealed Base Chimp"
+                        className="h-full w-full object-cover [image-rendering:pixelated]"
+                      />
+                    </div>
+                    <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-gray-700 bg-gray-900 px-3 py-1 text-xs font-semibold text-gray-300 uppercase tracking-wider shadow-md">
+                      Base Chimp
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <h3 className="text-base font-semibold text-white">
+                      No items or traits found in your inventory
+                    </h3>
+                    <p className="max-w-md text-xs text-gray-400 leading-relaxed">
+                      This is your Base Chimp canvas. Claim traits during active drops or receive gifts from peers to reveal your colored ChimpHood avatar and qualify for the Whitelist!
+                    </p>
+                    <div className="pt-2">
+                      <a
+                        href="/whitelist"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                      >
+                        Go to Drops & Claim
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>

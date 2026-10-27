@@ -105,7 +105,9 @@ export interface PoolItemProbability {
   traitName: string;
   category: string;
   rarity: string;
+  imageUrl?: string;
   remainingStock: number;
+  allocatedStock?: number;
   weight: number;
   probabilityPercent: number;
 }
@@ -118,8 +120,9 @@ export function calculateTransparentProbabilities(
     id: string;
     traitId: string;
     remainingStock: number;
+    allocatedStock?: number;
     weight: number;
-    trait?: { name: string; category: string; rarity: string };
+    trait?: { name: string; category: string; rarity: string; imageUrl?: string };
   }>,
 ): PoolItemProbability[] {
   const eligible = items.filter((item) => item.remainingStock > 0);
@@ -135,7 +138,11 @@ export function calculateTransparentProbabilities(
     traitName: item.trait?.name ?? "Unknown Trait",
     category: item.trait?.category ?? "UNKNOWN",
     rarity: item.trait?.rarity ?? "COMMON",
+    ...(item.trait?.imageUrl ? { imageUrl: item.trait.imageUrl } : {}),
     remainingStock: item.remainingStock,
+    ...(typeof item.allocatedStock === "number"
+      ? { allocatedStock: item.allocatedStock }
+      : {}),
     weight: item.weight,
     probabilityPercent: Number(((item.weight / totalWeight) * 100).toFixed(2)),
   }));

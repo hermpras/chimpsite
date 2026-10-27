@@ -42,6 +42,89 @@ import {
   type ActiveCampaignItem,
   type ActiveCampaignTask,
 } from "@/lib/tasks/client";
+import {
+  ClaimLootboxModal,
+  type WonTraitData,
+} from "@/components/drops/ClaimLootboxModal";
+
+const RARITY_THEME: Record<
+  string,
+  {
+    border: string;
+    bg: string;
+    text: string;
+    badgeBg: string;
+    badgeBorder: string;
+    badgeText: string;
+    glow: string;
+    prefix: string;
+    barColor: string;
+  }
+> = {
+  LEGENDARY: {
+    border: "border-amber-500/50 hover:border-amber-400",
+    bg: "bg-gradient-to-r from-amber-950/40 via-amber-900/15 to-[#0c0e17]",
+    text: "text-amber-300 font-extrabold",
+    badgeBg: "bg-amber-500/20",
+    badgeBorder: "border-amber-500/50",
+    badgeText: "text-amber-300 font-bold",
+    glow: "shadow-sm shadow-amber-500/20",
+    prefix: "★ ",
+    barColor: "bg-gradient-to-r from-amber-500 to-yellow-300",
+  },
+  EPIC: {
+    border: "border-purple-500/40 hover:border-purple-400/80",
+    bg: "bg-gradient-to-r from-purple-950/35 via-purple-900/15 to-[#0c0e17]",
+    text: "text-purple-300 font-bold",
+    badgeBg: "bg-purple-500/20",
+    badgeBorder: "border-purple-500/40",
+    badgeText: "text-purple-300 font-semibold",
+    glow: "shadow-sm shadow-purple-500/15",
+    prefix: "◆ ",
+    barColor: "bg-gradient-to-r from-purple-500 to-fuchsia-400",
+  },
+  RARE: {
+    border: "border-sky-500/40 hover:border-sky-400/80",
+    bg: "bg-gradient-to-r from-sky-950/30 via-sky-900/10 to-[#0c0e17]",
+    text: "text-sky-300 font-semibold",
+    badgeBg: "bg-sky-500/20",
+    badgeBorder: "border-sky-500/40",
+    badgeText: "text-sky-300 font-semibold",
+    glow: "shadow-sm shadow-sky-500/10",
+    prefix: "▲ ",
+    barColor: "bg-gradient-to-r from-sky-500 to-cyan-300",
+  },
+  UNCOMMON: {
+    border: "border-emerald-500/30 hover:border-emerald-400/70",
+    bg: "bg-gradient-to-r from-emerald-950/25 via-emerald-900/10 to-[#0c0e17]",
+    text: "text-emerald-300 font-medium",
+    badgeBg: "bg-emerald-500/15",
+    badgeBorder: "border-emerald-500/30",
+    badgeText: "text-emerald-400",
+    glow: "",
+    prefix: "● ",
+    barColor: "bg-gradient-to-r from-emerald-500 to-teal-400",
+  },
+  COMMON: {
+    border: "border-gray-800 hover:border-gray-700",
+    bg: "bg-gray-900/50",
+    text: "text-gray-400 font-medium",
+    badgeBg: "bg-gray-800/80",
+    badgeBorder: "border-gray-700",
+    badgeText: "text-gray-400",
+    glow: "",
+    prefix: "",
+    barColor: "bg-gradient-to-r from-gray-500 to-gray-400",
+  },
+};
+
+const RARITY_WEIGHT_ORDER: Record<string, number> = {
+  LEGENDARY: 5,
+  EPIC: 4,
+  RARE: 3,
+  UNCOMMON: 2,
+  COMMON: 1,
+};
 
 export default function WhitelistPage() {
   const { status, sessionAddress, walletAddress } = useSiweAuth();
@@ -61,6 +144,11 @@ export default function WhitelistPage() {
   const [claimLoading, setClaimLoading] = useState(false);
   const [claimMessage, setClaimMessage] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [poolRarityFilter, setPoolRarityFilter] = useState<string>("ALL");
+  const [isLootboxOpen, setIsLootboxOpen] = useState(false);
+  const [claimedLootboxItem, setClaimedLootboxItem] = useState<WonTraitData | null>(null);
+  const [lootboxError, setLootboxError] = useState<string | null>(null);
+  const [claimedPeriodId, setClaimedPeriodId] = useState<string | null>(null);
 
   // Campaigns & Tasks state
   const [campaigns, setCampaigns] = useState<ActiveCampaignItem[]>([]);
@@ -110,6 +198,22 @@ export default function WhitelistPage() {
   );
   const claimRemainingMs = Math.max(0, claimWindowEndsMs - currentTime);
   const nextDropRemainingMs = Math.max(0, periodEndsMs - currentTime);
+
+  // Reset claim feedback & state whenever drop period rolls over
+  useEffect(() => {
+    if (dropData?.period?.id && claimedPeriodId && claimedPeriodId !== dropData.period.id) {
+      setClaimMessage(null);
+      setClaimError(null);
+      setLootboxError(null);
+      setClaimedLootboxItem(null);
+      setClaimedPeriodId(null);
+    }
+  }, [dropData?.period?.id, claimedPeriodId]);
+
+  const isAlreadyClaimed =
+    Boolean(dropData?.userHasClaimed) ||
+    Boolean(claimedPeriodId && claimedPeriodId === dropData?.period?.id) ||
+    Boolean(claimMessage && claimedPeriodId === dropData?.period?.id);
 
   // Auto-refresh when a timer reaches 0
   useEffect(() => {
@@ -300,15 +404,23 @@ export default function WhitelistPage() {
     setClaimLoading(true);
     setClaimMessage(null);
     setClaimError(null);
+    setLootboxError(null);
+    setClaimedLootboxItem(null);
+    setIsLootboxOpen(true);
+
     try {
       const res = await claimDropItem(dropData.drop.id, dropData.period.id);
+      setClaimedPeriodId(dropData.period.id);
+      setClaimedLootboxItem(res.inventoryItem);
       setClaimMessage(
         `Successfully claimed ${res.inventoryItem.trait.name} (Edition #${res.inventoryItem.edition})!`,
       );
       // Refresh drop info
       fetchCurrentDrop().then(setDropData).catch(console.error);
     } catch (err: unknown) {
-      setClaimError((err as Error).message || "Failed to claim drop.");
+      const msg = (err as Error).message || "Failed to claim drop.";
+      setClaimError(msg);
+      setLootboxError(msg);
     } finally {
       setClaimLoading(false);
     }
@@ -926,55 +1038,329 @@ export default function WhitelistPage() {
                 </div>
 
                 {/* Transparent pool probabilities */}
-                {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 && (
-                  <div className="space-y-1.5">
-                    <h5 className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
-                      Pool Transparent Probability Distribution
-                    </h5>
-                    <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                      {dropData.stock.poolItems.map((item) => (
-                        <div
-                          key={item.poolItemId}
-                          className="flex justify-between rounded border border-gray-800 bg-gray-900/60 p-2"
-                        >
-                          <span className="truncate text-gray-300">{item.traitName}</span>
-                          <span className="font-semibold text-emerald-400">
-                            {item.probabilityPercent}%
-                          </span>
+                {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 && (() => {
+                  // Sort by rarity rank (Legendary first) then by probability descending
+                  const sortedPool = [...dropData.stock.poolItems].sort((a, b) => {
+                    const rankA = RARITY_WEIGHT_ORDER[a.rarity?.toUpperCase()] ?? 1;
+                    const rankB = RARITY_WEIGHT_ORDER[b.rarity?.toUpperCase()] ?? 1;
+                    if (rankB !== rankA) return rankB - rankA;
+                    return b.probabilityPercent - a.probabilityPercent;
+                  });
+
+                  const filteredPool =
+                    poolRarityFilter === "ALL"
+                      ? sortedPool
+                      : sortedPool.filter(
+                          (item) => item.rarity?.toUpperCase() === poolRarityFilter
+                        );
+
+                  const legendaryCount = sortedPool.filter(
+                    (p) => p.rarity?.toUpperCase() === "LEGENDARY"
+                  ).length;
+                  const epicCount = sortedPool.filter(
+                    (p) => p.rarity?.toUpperCase() === "EPIC"
+                  ).length;
+                  const rareCount = sortedPool.filter(
+                    (p) => p.rarity?.toUpperCase() === "RARE"
+                  ).length;
+                  const uncommonCount = sortedPool.filter(
+                    (p) => p.rarity?.toUpperCase() === "UNCOMMON"
+                  ).length;
+                  const commonCount = sortedPool.filter(
+                    (p) => p.rarity?.toUpperCase() === "COMMON"
+                  ).length;
+
+                  return (
+                    <div className="space-y-3 pt-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <h5 className="text-xs font-bold tracking-wider text-white uppercase flex items-center gap-1.5">
+                            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                            Drop Pool Probability Distribution ({sortedPool.length} Traits)
+                          </h5>
+                          <p className="text-[11px] text-gray-400">
+                            Transparent RNG weights sorted by rarity tier
+                          </p>
                         </div>
-                      ))}
+                        {dropData.stock && (
+                          <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-[11px] font-mono">
+                            <span className="text-gray-400">Pool Stock:</span>
+                            <span className="font-bold text-emerald-400">
+                              {dropData.stock.totalRemaining} / {dropData.stock.totalAllocated}
+                            </span>
+                            <div className="h-1.5 w-16 rounded-full bg-gray-950 overflow-hidden border border-gray-800 ml-1">
+                              <div
+                                className="h-full bg-emerald-400 transition-all duration-500"
+                                style={{
+                                  width: `${Math.min(
+                                    100,
+                                    Math.round(
+                                      (dropData.stock.totalRemaining /
+                                        Math.max(1, dropData.stock.totalAllocated)) *
+                                        100,
+                                    ),
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setPoolRarityFilter("ALL")}
+                            className={`rounded px-2 py-0.5 text-[10px] font-semibold transition-colors ${
+                              poolRarityFilter === "ALL"
+                                ? "bg-gray-800 text-white border border-gray-700"
+                                : "text-gray-400 hover:text-gray-200"
+                            }`}
+                          >
+                            All ({sortedPool.length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPoolRarityFilter("LEGENDARY")}
+                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                              poolRarityFilter === "LEGENDARY"
+                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/50"
+                                : "text-amber-400/70 hover:text-amber-300"
+                            }`}
+                          >
+                            ★ Legendary ({legendaryCount})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPoolRarityFilter("EPIC")}
+                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                              poolRarityFilter === "EPIC"
+                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/50"
+                                : "text-purple-400/70 hover:text-purple-300"
+                            }`}
+                          >
+                            Epic ({epicCount})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPoolRarityFilter("RARE")}
+                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                              poolRarityFilter === "RARE"
+                                ? "bg-sky-500/20 text-sky-300 border border-sky-500/50"
+                                : "text-sky-400/70 hover:text-sky-300"
+                            }`}
+                          >
+                            Rare ({rareCount})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPoolRarityFilter("UNCOMMON")}
+                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                              poolRarityFilter === "UNCOMMON"
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50"
+                                : "text-emerald-400/70 hover:text-emerald-300"
+                            }`}
+                          >
+                            Uncommon ({uncommonCount})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPoolRarityFilter("COMMON")}
+                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                              poolRarityFilter === "COMMON"
+                                ? "bg-gray-800 text-gray-300 border border-gray-700"
+                                : "text-gray-400 hover:text-gray-200"
+                            }`}
+                          >
+                            Common ({commonCount})
+                          </button>
+                        </div>
+
+                      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                        {filteredPool.map((item) => {
+                          const rarity = item.rarity?.toUpperCase() || "COMMON";
+                          const theme = RARITY_THEME[rarity] || RARITY_THEME.COMMON;
+
+                          return (
+                            <div
+                              key={item.poolItemId}
+                              className={`group relative flex flex-col justify-between rounded-xl border p-2.5 transition-all hover:scale-[1.01] ${theme.border} ${theme.bg} ${theme.glow}`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                {/* Trait Thumbnail Preview */}
+                                <div
+                                  className={`relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border bg-[#0a0d14] flex items-center justify-center ${
+                                    rarity === "LEGENDARY"
+                                      ? "border-amber-500/40"
+                                      : rarity === "EPIC"
+                                        ? "border-purple-500/30"
+                                        : rarity === "RARE"
+                                          ? "border-sky-500/30"
+                                          : rarity === "UNCOMMON"
+                                            ? "border-emerald-500/30"
+                                            : "border-gray-800"
+                                  }`}
+                                >
+                                  {item.imageUrl ? (
+                                    <img
+                                      src={item.imageUrl}
+                                      alt={item.traitName}
+                                      className="h-full w-full object-contain [image-rendering:pixelated] transition-transform group-hover:scale-110"
+                                    />
+                                  ) : (
+                                    <Sparkles className="h-5 w-5 text-gray-600" />
+                                  )}
+                                </div>
+
+                                {/* Trait Info & Badges */}
+                                <div className="flex-1 min-w-0">
+                                  <p
+                                    className="truncate text-xs font-bold text-white tracking-wide"
+                                    title={item.traitName}
+                                  >
+                                    {item.traitName}
+                                  </p>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="rounded bg-gray-900/80 px-1.5 py-0.5 text-[8px] font-mono text-gray-400 uppercase border border-gray-800">
+                                      {item.category}
+                                    </span>
+                                    <span
+                                      className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase border ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText}`}
+                                    >
+                                      {theme.prefix}
+                                      {rarity}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Probability */}
+                                <div className="text-right shrink-0">
+                                  <span className={`font-mono text-xs ${theme.text}`}>
+                                    {item.probabilityPercent}%
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Stock Progress Bar */}
+                              {(() => {
+                                const allocated =
+                                  item.allocatedStock && item.allocatedStock > 0
+                                    ? item.allocatedStock
+                                    : Math.max(10, item.remainingStock);
+                                const stockPercent = Math.max(
+                                  0,
+                                  Math.min(
+                                    100,
+                                    Math.round(
+                                      (item.remainingStock / allocated) * 100,
+                                    ),
+                                  ),
+                                );
+                                const isLowStock =
+                                  item.remainingStock > 0 &&
+                                  (stockPercent <= 20 || item.remainingStock <= 2);
+
+                                return (
+                                  <div className="mt-2.5 pt-1.5 border-t border-gray-800/60">
+                                    <div className="flex items-center justify-between text-[9px] font-mono mb-1">
+                                      <span className="flex items-center gap-1">
+                                        {isLowStock && (
+                                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
+                                        )}
+                                        <span
+                                          className={
+                                            isLowStock
+                                              ? "text-rose-400 font-bold"
+                                              : "text-gray-400"
+                                          }
+                                        >
+                                          {isLowStock ? "Low Stock" : "Stock"}
+                                        </span>
+                                      </span>
+                                      <span className="text-gray-400">
+                                        <span
+                                          className={`font-semibold ${
+                                            isLowStock
+                                              ? "text-rose-300"
+                                              : "text-gray-200"
+                                          }`}
+                                        >
+                                          {item.remainingStock}
+                                        </span>
+                                        <span className="text-gray-500">
+                                          /{allocated} left
+                                        </span>
+                                      </span>
+                                    </div>
+                                    <div className="h-1.5 w-full rounded-full bg-gray-950/80 border border-gray-800/80 overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full transition-all duration-500 ${
+                                          isLowStock
+                                            ? "bg-gradient-to-r from-rose-500 to-amber-500"
+                                            : theme.barColor
+                                        }`}
+                                        style={{ width: `${stockPercent}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {claimMessage && (
-                  <p className="rounded border border-emerald-800/40 bg-emerald-950/30 p-2.5 text-xs text-emerald-400">
-                    {claimMessage}
+                  <p className="flex items-center gap-2 rounded border border-emerald-800/40 bg-emerald-950/30 p-2.5 text-xs text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                    <span>{claimMessage}</span>
                   </p>
                 )}
-                {claimError && (
+                {claimError && !isAlreadyClaimed && (
                   <p className="rounded border border-rose-800/40 bg-rose-950/30 p-2.5 text-xs text-rose-400">
                     {claimError}
                   </p>
                 )}
+                {isAlreadyClaimed && !claimMessage && (
+                  <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/50 p-2.5 text-xs text-gray-400">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                    <span>
+                      You have already claimed your 1 trait allocation for Period #{dropData.period.periodIndex}. Next drop cycle begins in {formatRemaining(nextDropRemainingMs)}.
+                    </span>
+                  </div>
+                )}
 
                 <Button
-                  variant="primary"
-                  className="w-full font-medium sm:w-auto"
+                  variant={isAlreadyClaimed ? "outline" : "primary"}
+                  className={`w-full font-medium sm:w-auto ${
+                    isAlreadyClaimed
+                      ? "border-gray-800 bg-gray-900/60 text-gray-400 opacity-60 cursor-not-allowed hover:bg-gray-900/60"
+                      : ""
+                  }`}
                   onClick={handleClaim}
                   disabled={
                     !isWindowActive ||
                     claimLoading ||
-                    status !== "authenticated"
+                    status !== "authenticated" ||
+                    isAlreadyClaimed
                   }
                 >
-                  {claimLoading
-                    ? "Claiming..."
-                    : status !== "authenticated"
-                      ? "Sign In to Claim"
-                      : isWindowActive
-                        ? `Claim Trait Now (${formatRemaining(claimRemainingMs)})`
-                        : `Next Drop in ${formatRemaining(nextDropRemainingMs)}`}
+                  {claimLoading ? (
+                    "Claiming..."
+                  ) : status !== "authenticated" ? (
+                    "Sign In to Claim"
+                  ) : isAlreadyClaimed ? (
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      Claimed for Period #{dropData.period.periodIndex} (1/1)
+                    </span>
+                  ) : isWindowActive ? (
+                    `Claim Trait Now (${formatRemaining(claimRemainingMs)})`
+                  ) : (
+                    `Next Drop in ${formatRemaining(nextDropRemainingMs)}`
+                  )}
                 </Button>
               </div>
             ) : (
@@ -1012,6 +1398,23 @@ export default function WhitelistPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Claim Mystery Pod / Lootbox Reveal Modal */}
+      <ClaimLootboxModal
+        isOpen={isLootboxOpen}
+        onClose={() => setIsLootboxOpen(false)}
+        poolItems={dropData?.stock?.poolItems?.map((item) => ({
+          poolItemId: item.poolItemId,
+          traitName: item.traitName,
+          category: item.category,
+          rarity: item.rarity,
+          imageUrl: item.imageUrl,
+        }))}
+        claimedItem={claimedLootboxItem}
+        isLoading={claimLoading}
+        error={lootboxError}
+        periodIndex={dropData?.period?.periodIndex}
+      />
     </div>
   );
 }

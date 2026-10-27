@@ -15,7 +15,13 @@ import {
 import { Badge } from "@/components/ui/Badge";
 
 export type AdminTab =
-  "overview" | "evidence" | "campaigns" | "whitelist" | "users-bans" | "drops";
+  | "overview"
+  | "evidence"
+  | "campaigns"
+  | "whitelist"
+  | "users-bans"
+  | "drops"
+  | "traits";
 
 export interface NavItem {
   id: AdminTab;
@@ -54,6 +60,12 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
     id: "drops",
     label: "Drops",
     icon: Flame,
+    requiredPermission: "MANAGE_DROPS",
+  },
+  {
+    id: "traits",
+    label: "Trait Manager",
+    icon: Sparkles,
     requiredPermission: "MANAGE_DROPS",
   },
 ];

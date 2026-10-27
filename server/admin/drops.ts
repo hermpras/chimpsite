@@ -872,9 +872,12 @@ export async function activateDropPeriod(
 /**
  * List active traits available for drop pool configuration.
  */
-export async function listAdminTraits(prisma: PrismaClient) {
+export async function listAdminTraits(
+  prisma: PrismaClient,
+  options?: { includeInactive?: boolean },
+) {
   return await prisma.trait.findMany({
-    where: { isActive: true },
+    where: options?.includeInactive ? undefined : { isActive: true },
     orderBy: [{ category: "asc" }, { name: "asc" }],
     select: {
       id: true,
@@ -883,7 +886,9 @@ export async function listAdminTraits(prisma: PrismaClient) {
       category: true,
       rarity: true,
       imageUrl: true,
+      description: true,
       maxSupply: true,
+      isActive: true,
     },
   });
 }

@@ -8,7 +8,7 @@ export interface UserAvatarProps {
   identifier?: string | null;
   hasInventory?: boolean;
   version?: number | string | null;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
   fallbackIconClassName?: string;
   showRefreshButton?: boolean;
@@ -20,6 +20,7 @@ const SIZE_CONTAINER_CLASSES = {
   md: "h-10 w-10 rounded-xl text-sm",
   lg: "h-20 w-20 sm:h-24 sm:w-24 rounded-2xl text-base",
   xl: "h-28 w-28 sm:h-32 sm:w-32 rounded-3xl text-lg",
+  "2xl": "h-52 w-52 sm:h-60 sm:w-60 rounded-3xl text-xl",
 };
 
 const SIZE_ICON_CLASSES = {
@@ -27,6 +28,7 @@ const SIZE_ICON_CLASSES = {
   md: "h-5 w-5",
   lg: "h-9 w-9",
   xl: "h-12 w-12",
+  "2xl": "h-20 w-20",
 };
 
 export function UserAvatar({
@@ -77,9 +79,17 @@ export function UserAvatar({
       <div
         data-testid={isSm ? "navbar-avatar-fallback" : "avatar-fallback"}
         className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-gray-800 bg-[#0d111c] text-gray-400 shadow-inner ${containerClass} ${className}`}
-        title="No character avatar (no traits in inventory)"
+        title={identifier ? "Base Chimp (no traits in inventory)" : "No character avatar"}
       >
-        <User className={iconClass} />
+        {identifier ? (
+          <img
+            src="/images/chimp-base-bw.png"
+            alt="Base Chimp"
+            className="h-full w-full object-cover [image-rendering:pixelated] opacity-85"
+          />
+        ) : (
+          <User className={iconClass} />
+        )}
       </div>
     );
   }

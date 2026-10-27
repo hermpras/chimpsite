@@ -1,8 +1,9 @@
-export const DEFAULT_CYCLE_DURATION_HOURS = 2;
+export const DEFAULT_CYCLE_DURATION_HOURS = 2.5; // 2.5 hours total (30 min claim + 120 min cooldown)
 export const HYPE_CONTROL_CYCLE_DURATION_HOURS = 5;
 
-export const CYCLE_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours default
 export const CLAIM_WINDOW_DURATION_MS = 30 * 60 * 1000; // 30 minutes
+export const COOLDOWN_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours (120 minutes) cooldown after claim window
+export const CYCLE_DURATION_MS = CLAIM_WINDOW_DURATION_MS + COOLDOWN_DURATION_MS; // 2.5 hours (9,000,000 ms)
 export const MIN_CONFIG_LOCK_LEAD_MS = 15 * 60 * 1000; // 15 minutes
 
 export interface CycleTimes {

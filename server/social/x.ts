@@ -129,6 +129,41 @@ export const X_OAUTH_STATE_KEY_PREFIX = "@chimphood/oauth_state:";
 let xRedisClient: Redis | null = null;
 let customOAuthRedis: XOAuthRedisTarget | null = null;
 
+// In-memory fallback for local development when Upstash Redis is not configured
+const devMemoryOAuthState = new Map<string, { value: string; expiresAt: number }>();
+
+const devMemoryRedisClient: XOAuthRedisTarget = {
+  async set(
+    key: string,
+    value: string,
+    options?: { ex?: number; nx?: boolean },
+  ): Promise<string | null> {
+    const now = Date.now();
+    const existing = devMemoryOAuthState.get(key);
+    if (existing && existing.expiresAt > now) {
+      if (options?.nx) {
+        return null;
+      }
+    }
+    const ttlMs = (options?.ex ?? X_OAUTH_STATE_TTL_SECONDS) * 1000;
+    devMemoryOAuthState.set(key, { value, expiresAt: now + ttlMs });
+    return "OK";
+  },
+  async get(key: string): Promise<string | null> {
+    const now = Date.now();
+    const entry = devMemoryOAuthState.get(key);
+    if (!entry) return null;
+    if (entry.expiresAt <= now) {
+      devMemoryOAuthState.delete(key);
+      return null;
+    }
+    return entry.value;
+  },
+  async del(key: string): Promise<number> {
+    return devMemoryOAuthState.delete(key) ? 1 : 0;
+  },
+};
+
 function getXRedisClient(): XOAuthRedisTarget {
   if (customOAuthRedis) {
     return customOAuthRedis;
@@ -138,6 +173,9 @@ function getXRedisClient(): XOAuthRedisTarget {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
 
   if (!url || !token) {
+    if (process.env.NODE_ENV === "development") {
+      return devMemoryRedisClient;
+    }
     throw new XOAuthError(
       "OAUTH_STORAGE_NOT_CONFIGURED",
       "Missing Upstash Redis credentials for OAuth state storage. UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be configured.",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useConnectors } from "wagmi";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
@@ -30,6 +30,26 @@ export function WalletButton() {
   const connectors = useConnectors();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileImg, setProfileImg] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+    if (status === "authenticated") {
+      fetch("/api/social/x/status")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!ignore && data?.identity?.profileImageUrl) {
+            setProfileImg(data.identity.profileImageUrl);
+          }
+        })
+        .catch(() => {});
+    } else {
+      setProfileImg(null);
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [status]);
 
   if (status === "checking") {
     return (
@@ -48,13 +68,29 @@ export function WalletButton() {
           onClick={() => setMenuOpen((v) => !v)}
           className="flex items-center gap-2"
         >
-          <UserAvatar identifier={sessionAddress} size="sm" />
+          {profileImg ? (
+            <img
+              src={profileImg}
+              alt="Profile"
+              className="h-5 w-5 rounded-full object-cover border border-emerald-500/30"
+            />
+          ) : (
+            <UserAvatar identifier={sessionAddress} size="sm" />
+          )}
           <span className="font-mono">{shortenAddress(sessionAddress)}</span>
         </Button>
         {menuOpen && (
           <div className="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-gray-800 bg-[#0c0e17] p-1.5 shadow-xl">
             <div className="mb-1 flex items-center gap-2 border-b border-gray-800/80 px-2 py-2">
-              <UserAvatar identifier={sessionAddress} size="md" />
+              {profileImg ? (
+                <img
+                  src={profileImg}
+                  alt="Profile"
+                  className="h-9 w-9 rounded-xl object-cover border border-emerald-500/30"
+                />
+              ) : (
+                <UserAvatar identifier={sessionAddress} size="md" />
+              )}
               <div className="overflow-hidden">
                 <p className="truncate font-mono text-xs font-semibold text-white">
                   {shortenAddress(sessionAddress)}

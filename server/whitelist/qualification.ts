@@ -32,6 +32,7 @@ export interface QualificationCheckResult {
     hasVerifiedWallet: boolean;
     hasLinkedX: boolean;
     xUsername?: string;
+    xProfileImageUrl?: string | null;
     heldCategories: TraitCategory[];
     missingCategories: TraitCategory[];
     completedMandatoryTasksCount: number;
@@ -368,6 +369,7 @@ export async function evaluateUserQualification(
               hasVerifiedWallet,
               hasLinkedX,
               xUsername: user.xIdentity?.username,
+              xProfileImageUrl: user.xIdentity?.profileImageUrl,
               heldCategories,
               missingCategories,
               completedMandatoryTasksCount,
@@ -396,6 +398,7 @@ export async function evaluateUserQualification(
                 hasVerifiedWallet,
                 hasLinkedX,
                 xUsername: user.xIdentity?.username,
+              xProfileImageUrl: user.xIdentity?.profileImageUrl,
                 heldCategories,
                 missingCategories,
                 completedMandatoryTasksCount,
@@ -418,6 +421,7 @@ export async function evaluateUserQualification(
                 hasVerifiedWallet,
                 hasLinkedX,
                 xUsername: user.xIdentity?.username,
+              xProfileImageUrl: user.xIdentity?.profileImageUrl,
                 heldCategories,
                 missingCategories,
                 completedMandatoryTasksCount,
@@ -463,6 +467,7 @@ export async function evaluateUserQualification(
                 hasVerifiedWallet,
                 hasLinkedX,
                 xUsername: user.xIdentity?.username,
+              xProfileImageUrl: user.xIdentity?.profileImageUrl,
                 heldCategories,
                 missingCategories,
                 completedMandatoryTasksCount,
@@ -490,6 +495,7 @@ export async function evaluateUserQualification(
               hasVerifiedWallet,
               hasLinkedX,
               xUsername: user.xIdentity?.username,
+              xProfileImageUrl: user.xIdentity?.profileImageUrl,
               heldCategories,
               missingCategories,
               completedMandatoryTasksCount,
@@ -551,6 +557,7 @@ export async function evaluateUserQualification(
               hasVerifiedWallet,
               hasLinkedX,
               xUsername: user.xIdentity?.username,
+              xProfileImageUrl: user.xIdentity?.profileImageUrl,
               heldCategories,
               missingCategories,
               completedMandatoryTasksCount,
@@ -688,6 +695,7 @@ export async function evaluateUserQualification(
                 hasVerifiedWallet,
                 hasLinkedX,
                 xUsername: user.xIdentity?.username,
+              xProfileImageUrl: user.xIdentity?.profileImageUrl,
                 heldCategories,
                 missingCategories,
                 completedMandatoryTasksCount,

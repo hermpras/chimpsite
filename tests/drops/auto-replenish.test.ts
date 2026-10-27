@@ -4,6 +4,7 @@ import {
   DEFAULT_CYCLE_STOCK_TOTAL,
   ensureActiveCyclePeriod,
   ensureDefaultTraits,
+  calculateDynamicPoolAllocations,
 } from "@/server/drops/auto-replenish";
 import {
   getUtcCycleForTime,
@@ -242,5 +243,63 @@ describe("Auto-Replenish Drop Engine", () => {
     // startsAt is 05:00 UTC, endsAt is 10:00 UTC (5 hours duration)
     expect(capturedUpsertData.startsAt.toISOString()).toBe("2026-10-26T05:00:00.000Z");
     expect(capturedUpsertData.endsAt.toISOString()).toBe("2026-10-26T10:00:00.000Z");
+  });
+
+  it("dynamically allocates 250 stock units across 25 traits proportionally by rarity (Opsi 1)", () => {
+    const categories = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
+    const rarities = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"] as const;
+
+    // Generate 25 mock traits (5 categories x 5 rarities)
+    const mockTraits: any[] = [];
+    let id = 1;
+    for (const cat of categories) {
+      for (const rarity of rarities) {
+        mockTraits.push({
+          id: `trait-${id++}`,
+          slug: `trait-${cat.toLowerCase()}-${rarity.toLowerCase()}`,
+          name: `${cat} ${rarity}`,
+          category: cat,
+          rarity,
+          isActive: true,
+        });
+      }
+    }
+
+    expect(mockTraits).toHaveLength(25);
+
+    const allocations = calculateDynamicPoolAllocations(mockTraits);
+    expect(allocations).toHaveLength(25);
+
+    // Total stock must be exactly 250
+    const totalAllocatedStock = allocations.reduce((sum, a) => sum + a.stock, 0);
+    expect(totalAllocatedStock).toBe(250);
+
+    const traitMap = new Map(mockTraits.map((t) => [t.id, t]));
+
+    // Verify stock distribution matches expected rarity tiers:
+    // 5 Common traits get 17 stock each (5 x 17 = 85)
+    const commonTraits = allocations.filter((a) => traitMap.get(a.traitId)?.rarity === "COMMON");
+    expect(commonTraits).toHaveLength(5);
+    expect(commonTraits.reduce((sum, a) => sum + a.stock, 0)).toBe(85);
+
+    // 5 Uncommon traits get 13 stock each (5 x 13 = 65)
+    const uncommonTraits = allocations.filter((a) => traitMap.get(a.traitId)?.rarity === "UNCOMMON");
+    expect(uncommonTraits).toHaveLength(5);
+    expect(uncommonTraits.reduce((sum, a) => sum + a.stock, 0)).toBe(65);
+
+    // 5 Rare traits get 10 stock each (5 x 10 = 50)
+    const rareTraits = allocations.filter((a) => traitMap.get(a.traitId)?.rarity === "RARE");
+    expect(rareTraits).toHaveLength(5);
+    expect(rareTraits.reduce((sum, a) => sum + a.stock, 0)).toBe(50);
+
+    // 5 Epic traits get 8 stock each (5 x 8 = 40)
+    const epicTraits = allocations.filter((a) => traitMap.get(a.traitId)?.rarity === "EPIC");
+    expect(epicTraits).toHaveLength(5);
+    expect(epicTraits.reduce((sum, a) => sum + a.stock, 0)).toBe(40);
+
+    // 5 Legendary traits get 2 stock each (5 x 2 = 10)
+    const legendaryTraits = allocations.filter((a) => traitMap.get(a.traitId)?.rarity === "LEGENDARY");
+    expect(legendaryTraits).toHaveLength(5);
+    expect(legendaryTraits.reduce((sum, a) => sum + a.stock, 0)).toBe(10);
   });
 });

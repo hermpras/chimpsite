@@ -23,6 +23,7 @@ export interface WhitelistStatusResponse {
       hasVerifiedWallet: boolean;
       hasLinkedX: boolean;
       xUsername?: string;
+      xProfileImageUrl?: string | null;
       heldCategories: string[];
       missingCategories: string[];
       completedMandatoryTasksCount: number;

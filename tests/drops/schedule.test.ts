@@ -9,10 +9,20 @@ import {
 } from "@/server/drops/schedule";
 
 describe("Drop Schedule & Claim Window Boundaries", () => {
-  it("aligns to 2-hour cycles starting from midnight UTC", () => {
-    // 2026-10-16 03:15:00 UTC -> should fall into 02:00 to 04:00 UTC cycle
+  it("aligns to 2.5-hour cycles (30m claim + 2h cooldown)", () => {
+    // 2026-10-16 03:15:00 UTC -> should fall into 02:30 to 05:00 UTC cycle
     const date = new Date(Date.UTC(2026, 9, 16, 3, 15, 0));
     const cycle = getUtcCycleForTime(date);
+
+    expect(cycle.startsAt.toISOString()).toBe("2026-10-16T02:30:00.000Z");
+    expect(cycle.endsAt.toISOString()).toBe("2026-10-16T05:00:00.000Z");
+    expect(cycle.claimWindowEndsAt.toISOString()).toBe("2026-10-16T03:00:00.000Z");
+    expect(cycle.configLockAt.toISOString()).toBe("2026-10-16T02:15:00.000Z");
+  });
+
+  it("supports explicit 2-hour cycles when passed", () => {
+    const date = new Date(Date.UTC(2026, 9, 16, 3, 15, 0));
+    const cycle = getUtcCycleForTime(date, 2);
 
     expect(cycle.startsAt.toISOString()).toBe("2026-10-16T02:00:00.000Z");
     expect(cycle.endsAt.toISOString()).toBe("2026-10-16T04:00:00.000Z");

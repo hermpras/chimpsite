@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db";
+import { authenticateRequest } from "@/server/auth/session";
 import {
   getUtcCycleForTime,
   isWithinClaimWindow,
@@ -78,8 +79,26 @@ export async function GET(request: Request): Promise<Response> {
     0,
   );
 
+  let userHasClaimed = false;
+  try {
+    const session = await authenticateRequest(prisma);
+    if (session && activePeriod && prisma.claim?.findFirst) {
+      const existingClaim = await prisma.claim.findFirst({
+        where: {
+          userId: session.userId,
+          periodId: activePeriod.id,
+        },
+        select: { id: true },
+      });
+      userHasClaimed = Boolean(existingClaim);
+    }
+  } catch {
+    // Non-blocking optional check
+  }
+
   return Response.json({
     active: true,
+    userHasClaimed,
     drop: {
       id: drop.id,
       slug: drop.slug,

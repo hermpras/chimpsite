@@ -1,6 +1,7 @@
 export interface CurrentDropResponse {
   active: boolean;
   message?: string;
+  userHasClaimed?: boolean;
   drop?: {
     id: string;
     slug: string;
@@ -37,7 +38,9 @@ export interface CurrentDropResponse {
       traitName: string;
       category: string;
       rarity: string;
+      imageUrl?: string;
       remainingStock: number;
+      allocatedStock?: number;
       weight: number;
       probabilityPercent: number;
     }>;

@@ -9,6 +9,7 @@ import { AdminCampaigns } from "./AdminCampaigns";
 import { AdminWhitelist } from "./AdminWhitelist";
 import { AdminUsersBans } from "./AdminUsersBans";
 import { AdminDrops } from "./AdminDrops";
+import { AdminTraits } from "./AdminTraits";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ShieldAlert, ArrowLeft, ExternalLink } from "lucide-react";
@@ -130,6 +131,7 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
               {activeTab === "whitelist" && <AdminWhitelist />}
               {activeTab === "users-bans" && <AdminUsersBans />}
               {activeTab === "drops" && <AdminDrops />}
+              {activeTab === "traits" && <AdminTraits />}
             </>
           )}
         </div>
