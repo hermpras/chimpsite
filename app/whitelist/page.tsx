@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { useCurrentTime } from "@/lib/hooks/useCurrentTime";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import {
   fetchWhitelistStatus,
@@ -80,6 +81,45 @@ export default function WhitelistPage() {
       .then(setDropData)
       .catch((err) => console.error("Failed to load drop:", err));
   }, []);
+
+  // Live 1-second ticker for real-time countdowns
+  const currentTime = useCurrentTime();
+
+  // Helper to format remaining milliseconds as HH:MM:SS
+  const formatRemaining = (ms: number): string => {
+    if (ms <= 0) return "00:00:00";
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  };
+
+  // Calculate live countdowns
+  const claimWindowEndsMs = dropData?.claimWindow?.endsAt
+    ? new Date(dropData.claimWindow.endsAt).getTime()
+    : 0;
+  const periodEndsMs = dropData?.period?.endsAt
+    ? new Date(dropData.period.endsAt).getTime()
+    : dropData?.nextCycle?.startsAt
+      ? new Date(dropData.nextCycle.startsAt).getTime()
+      : 0;
+
+  const isWindowActive = Boolean(
+    dropData?.claimWindow?.isActive && claimWindowEndsMs > currentTime
+  );
+  const claimRemainingMs = Math.max(0, claimWindowEndsMs - currentTime);
+  const nextDropRemainingMs = Math.max(0, periodEndsMs - currentTime);
+
+  // Auto-refresh when a timer reaches 0
+  useEffect(() => {
+    if (!dropData?.active) return;
+    if (isWindowActive && claimRemainingMs === 0) {
+      fetchCurrentDrop().then(setDropData).catch(console.error);
+    } else if (!isWindowActive && nextDropRemainingMs === 0 && periodEndsMs > 0) {
+      fetchCurrentDrop().then(setDropData).catch(console.error);
+    }
+  }, [claimRemainingMs, nextDropRemainingMs, isWindowActive, dropData?.active, periodEndsMs]);
 
   // Fetch active campaigns and tasks
   const loadTasks = useCallback(async () => {
@@ -818,19 +858,28 @@ export default function WhitelistPage() {
                 <div>
                   <CardTitle>Hourly Drop & Trait Claim Engine</CardTitle>
                   <CardDescription>
-                    Two-hour drop cycles with a 30-minute claim window
+                    {dropData?.drop?.cycleDurationHours === 5
+                      ? "5-hour hype control cycle with a 30-minute claim window"
+                      : "2-hour drop cycles with a 30-minute claim window"}
                   </CardDescription>
                 </div>
               </div>
-              {dropData?.claimWindow?.isActive ? (
+              {isWindowActive ? (
                 <Badge
                   variant="default"
-                  className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300"
+                  className="flex items-center gap-1.5 border-emerald-500/30 bg-emerald-500/20 font-mono text-xs text-emerald-300"
                 >
-                  Claim Window Open
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                  Claim Window Open ({formatRemaining(claimRemainingMs)})
                 </Badge>
               ) : (
-                <Badge variant="outline">Claim Window Closed</Badge>
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1.5 border-amber-500/40 bg-amber-500/10 font-mono text-xs text-amber-300"
+                >
+                  <Clock className="h-3 w-3 text-amber-400" />
+                  Next Drop in {formatRemaining(nextDropRemainingMs)}
+                </Badge>
               )}
             </div>
           </CardHeader>
@@ -852,12 +901,27 @@ export default function WhitelistPage() {
                     </p>
                   </div>
                   <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
-                    <span className="text-xs text-gray-500">Window Status</span>
-                    <p className="font-medium text-gray-200">
-                      {dropData.claimWindow?.isActive
-                        ? `${Math.ceil((dropData.claimWindow.timeRemainingMs || 0) / 60000)}m remaining`
-                        : "Next window starting soon"}
+                    <span className="text-xs text-gray-500">
+                      {isWindowActive ? "Claim Window Status" : "Next Drop Window"}
+                    </span>
+                    <p
+                      className={`mt-0.5 font-mono text-sm font-medium ${
+                        isWindowActive ? "text-emerald-400" : "text-amber-300"
+                      }`}
+                    >
+                      {isWindowActive
+                        ? `${formatRemaining(claimRemainingMs)} remaining`
+                        : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
                     </p>
+                    {!isWindowActive && periodEndsMs > 0 && (
+                      <span className="mt-0.5 block text-[10px] text-gray-500">
+                        Cycle starts at{" "}
+                        {new Date(periodEndsMs).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -896,10 +960,10 @@ export default function WhitelistPage() {
 
                 <Button
                   variant="primary"
-                  className="w-full sm:w-auto"
+                  className="w-full font-medium sm:w-auto"
                   onClick={handleClaim}
                   disabled={
-                    !dropData.claimWindow?.isActive ||
+                    !isWindowActive ||
                     claimLoading ||
                     status !== "authenticated"
                   }
@@ -908,9 +972,9 @@ export default function WhitelistPage() {
                     ? "Claiming..."
                     : status !== "authenticated"
                       ? "Sign In to Claim"
-                      : dropData.claimWindow?.isActive
-                        ? "Claim Trait Now"
-                        : "Window Closed"}
+                      : isWindowActive
+                        ? `Claim Trait Now (${formatRemaining(claimRemainingMs)})`
+                        : `Next Drop in ${formatRemaining(nextDropRemainingMs)}`}
                 </Button>
               </div>
             ) : (

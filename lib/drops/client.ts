@@ -7,6 +7,7 @@ export interface CurrentDropResponse {
     title: string;
     description?: string;
     status: string;
+    cycleDurationHours?: number;
   };
   period?: {
     id: string;
@@ -21,6 +22,10 @@ export interface CurrentDropResponse {
     startsAt: string;
     endsAt: string;
     timeRemainingMs: number;
+  };
+  nextCycle?: {
+    startsAt: string;
+    endsAt: string;
   };
   stock?: {
     totalAllocated: number;

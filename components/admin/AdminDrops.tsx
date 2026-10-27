@@ -26,6 +26,7 @@ import {
   CardContent,
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { useCurrentTime } from "@/lib/hooks/useCurrentTime";
 import { Button } from "@/components/ui/Button";
 import {
   fetchCurrentDrop,
@@ -124,6 +125,42 @@ export function AdminDrops() {
       setTogglingCycleMode(false);
     }
   };
+
+  // Live 1-second ticker for real-time countdowns
+  const currentTime = useCurrentTime();
+
+  const formatRemaining = (ms: number): string => {
+    if (ms <= 0) return "00:00:00";
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  };
+
+  const claimWindowEndsMs = dropData?.claimWindow?.endsAt
+    ? new Date(dropData.claimWindow.endsAt).getTime()
+    : 0;
+  const periodEndsMs = dropData?.period?.endsAt
+    ? new Date(dropData.period.endsAt).getTime()
+    : dropData?.nextCycle?.startsAt
+      ? new Date(dropData.nextCycle.startsAt).getTime()
+      : 0;
+
+  const isClaimWindowActive = Boolean(
+    dropData?.claimWindow?.isActive && claimWindowEndsMs > currentTime
+  );
+  const claimRemainingMs = Math.max(0, claimWindowEndsMs - currentTime);
+  const nextDropRemainingMs = Math.max(0, periodEndsMs - currentTime);
+
+  useEffect(() => {
+    if (!dropData?.active) return;
+    if (isClaimWindowActive && claimRemainingMs === 0) {
+      fetchCurrentDrop().then(setDropData).catch(console.error);
+    } else if (!isClaimWindowActive && nextDropRemainingMs === 0 && periodEndsMs > 0) {
+      fetchCurrentDrop().then(setDropData).catch(console.error);
+    }
+  }, [claimRemainingMs, nextDropRemainingMs, isClaimWindowActive, dropData?.active, periodEndsMs]);
 
   // 1. Fetch current live drop monitor
   useEffect(() => {
@@ -573,22 +610,27 @@ export function AdminDrops() {
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span
                       className={`h-2 w-2 rounded-full ${
-                        dropData.claimWindow?.isActive
+                        isClaimWindowActive
                           ? "animate-pulse bg-emerald-400"
-                          : "bg-gray-500"
+                          : "bg-amber-400"
                       }`}
                     />
                     <span className="text-sm font-semibold text-white">
-                      {dropData.claimWindow?.isActive ? "Active (Open)" : "Closed"}
+                      {isClaimWindowActive ? "Active (Open)" : "Closed (Cooldown)"}
                     </span>
                   </div>
-                  {dropData.claimWindow && (
-                    <span className="block text-[10px] text-gray-400">
-                      {Math.max(
-                        0,
-                        Math.round((dropData.claimWindow.timeRemainingMs ?? 0) / 60000),
-                      )}{" "}
-                      min remaining
+                  <span className="mt-0.5 block font-mono text-[11px] text-gray-400">
+                    {isClaimWindowActive
+                      ? `${formatRemaining(claimRemainingMs)} remaining`
+                      : `Next drop in ${formatRemaining(nextDropRemainingMs)}`}
+                  </span>
+                  {!isClaimWindowActive && periodEndsMs > 0 && (
+                    <span className="block text-[10px] text-gray-500">
+                      Cycle starts at{" "}
+                      {new Date(periodEndsMs).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
                   )}
                 </div>
