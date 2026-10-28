@@ -5,3 +5,9 @@ build/
 coverage/
 package-lock.json
 *.log
+# No prettier parser exists for these generated/schema files;
+# without these entries `prettier --check .` aborts with
+# "No parser could be inferred".
+*.prisma
+*.tsbuildinfo
+prisma/migrations/**

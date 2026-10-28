@@ -19,7 +19,7 @@ export default function DocsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white">
             ChimpHood Documentation
           </h1>
-          <Badge variant="default">Stage 1</Badge>
+          <Badge variant="default">Production Ready</Badge>
         </div>
         <p className="text-gray-400">
           Technical documentation, system architecture, and product decisions registry.
@@ -112,7 +112,7 @@ export default function DocsPage() {
                 1
               </span>
               <h4 className="font-semibold text-emerald-400">
-                Stage 1: Data Model Specification & Database Foundation (Current)
+                Stage 1: Data Model Specification & Database Foundation (Completed)
               </h4>
               <p className="mt-1 text-sm text-gray-400">
                 Designed 26 PostgreSQL models, relational constraints, performance
@@ -120,27 +120,51 @@ export default function DocsPage() {
               </p>
             </li>
             <li className="ml-6">
-              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 bg-gray-800 text-xs text-gray-400">
+              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-xs text-emerald-400">
                 2
               </span>
-              <h4 className="font-semibold text-gray-300">
-                Stage 2: Authentication & Social Identity (Next)
+              <h4 className="font-semibold text-emerald-400">
+                Stage 2: Authentication & Social Identity (Completed)
               </h4>
-              <p className="mt-1 text-sm text-gray-500">
-                Implement SIWE (Sign-In with Ethereum) and X OAuth 2.0 PKCE account
-                linking.
+              <p className="mt-1 text-sm text-gray-400">
+                Implement SIWE (Sign-In with Ethereum) wallet authentication and session
+                management.
               </p>
             </li>
             <li className="ml-6">
-              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 bg-gray-800 text-xs text-gray-400">
+              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-xs text-emerald-400">
                 3
               </span>
-              <h4 className="font-semibold text-gray-300">
-                Stage 3: Whitelist & Claim Engine
+              <h4 className="font-semibold text-emerald-400">
+                Stage 3: Whitelist & Claim Engine (Completed)
               </h4>
-              <p className="mt-1 text-sm text-gray-500">
-                Quota allocation mechanisms, eligibility verification, drop periods, and
-                trait claim execution.
+              <p className="mt-1 text-sm text-gray-400">
+                Quota allocation mechanisms, 5-trait category eligibility, continuous drop
+                cycles, 30-minute claim windows, and duplicate gifting.
+              </p>
+            </li>
+            <li className="ml-6">
+              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-xs text-emerald-400">
+                4
+              </span>
+              <h4 className="font-semibold text-emerald-400">
+                Stage 4: Admin Operations & OpenSea Export (Completed)
+              </h4>
+              <p className="mt-1 text-sm text-gray-400">
+                Drop configuration, whitelist program management, isolated Super Admin CLI
+                bootstrap, and OpenSea SeaDrop allowlist CSV export.
+              </p>
+            </li>
+            <li className="ml-6">
+              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-xs text-emerald-400">
+                5
+              </span>
+              <h4 className="font-semibold text-emerald-400">
+                Stage 5: Security Hardening & Abuse Prevention (Completed)
+              </h4>
+              <p className="mt-1 text-sm text-gray-400">
+                Sybil cluster IP abuse detection, dual-layer rate limiting, permanent ban
+                revocation hardening, and Admin Abuse Flags investigation API & UI.
               </p>
             </li>
           </ol>

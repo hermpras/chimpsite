@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShieldAlert, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { WalletButton } from "@/components/auth/WalletButton";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -54,17 +54,7 @@ export function Navbar() {
 
         {/* Right CTA */}
         <div className="hidden items-center gap-3 md:flex">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              alert(
-                "Connect Wallet feature is not active yet (Stage 1 Placeholder). Awaiting SIWE/Web3 integration in Stage 2.",
-              )
-            }
-          >
-            Connect Wallet
-          </Button>
+          <WalletButton />
         </div>
 
         {/* Mobile menu trigger */}
@@ -100,19 +90,9 @@ export function Navbar() {
             })}
           </nav>
           <div className="mt-4 border-t border-gray-800 pt-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-center"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                alert(
-                  "Connect Wallet feature is not active yet (Stage 1 Placeholder). Awaiting SIWE/Web3 integration in Stage 2.",
-                );
-              }}
-            >
-              Connect Wallet (Placeholder)
-            </Button>
+            <div className="flex w-full justify-center">
+              <WalletButton />
+            </div>
           </div>
         </div>
       )}

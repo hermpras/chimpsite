@@ -35,3 +35,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# load test secrets
+tests/load/*sessions*.json
+tests/load/*.secret.json

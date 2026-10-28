@@ -1,0 +1,250 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [6 0 R 8 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 7 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+7 0 obj
+<< /Length 8889 >>
+stream
+1.00 w 0.040 0.080 0.150 rg 36.00 807.89 523.28 18.00 re f
+BT /F2 7.5 Tf 0.400 0.800 0.600 rg 44.00 813.89 Td (CHIMPHOOD - AUDIT & DESAIN SISTEM TANPA CRON \(OPENSEA ALLOWLIST EDITION\)) Tj ET
+BT /F2 7.5 Tf 0.300 0.900 0.600 rg 489.28 813.89 Td (STATUS: READY) Tj ET
+1.20 w 0.040 0.090 0.160 rg 0.100 0.600 0.400 RG 36.00 747.89 523.28 48.00 re B
+BT /F2 13 Tf 1.000 1.000 1.000 rg 48.00 776.89 Td (ChimpHood - Audit & Desain Sistem Tanpa Cron) Tj ET
+BT /F1 8 Tf 0.600 0.850 0.700 rg 48.00 759.89 Td (Spesifikasi Integrasi OpenSea Allowlist \(GTD -> FCFS\) & Arsitektur Murni Berbasis Event) Tj ET
+0.80 w 0.940 0.980 0.950 rg 0.200 0.650 0.350 RG 36.00 681.89 523.28 56.00 re B
+BT /F2 7.8 Tf 0.050 0.400 0.150 rg 44.00 727.89 Td (STATUS REKOMENDASI ARSITEKTUR: SIAP IMPLEMENTASI \(0 BLOCKER\)) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 718.89 Td (1. Minting NFT dieksekusi langsung di OpenSea SeaDrop; tidak ada endpoint minting internal di ChimpHood.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 709.39 Td (2. ChimpHood hanya mengelola kualifikasi wallet, alokasi GTD, antrean FCFS, dan ekspor file CSV OpenSea.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 699.89 Td (3. Seluruh 3 Cron terjadwal di vercel.json dieliminasi total; platform tidak memerlukan langganan Vercel Pro.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 690.39 Td (4. Seluruh 4 blocker sebelumnya telah diselesaikan secara tuntas melalui bukti kode dan aturan produk.) Tj ET
+0.70 w 0.920 0.950 0.980 rg 0.200 0.500 0.700 RG 36.00 657.89 523.28 17.00 re B
+BT /F2 8.5 Tf 0.080 0.200 0.350 rg 42.00 662.89 Td (1. RINGKASAN EKSEKUTIF & KOREKSI PRODUK) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 36.00 644.39 Td (Berdasarkan arahan produk terkini, platform ChimpHood TIDAK menyediakan antarmuka atau endpoint minting on-chain/off-chain. Seluruh transaksi) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 36.00 634.39 Td (pencetakan NFT dilakukan langsung pada marketplace OpenSea menggunakan kontrak SeaDrop. Tanggung jawab ChimpHood dibatasi pada: \(1\) verifikasi) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 36.00 624.39 Td (kelayakan pendaftar, \(2\) alokasi slot kuota pasti GTD \(Guaranteed\), \(3\) pencatatan antrean berurutan FCFS \(First-Come, First-Served\), dan \(4\)) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 36.00 614.39 Td (ekspor file CSV allowlist berstandar OpenSea.) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 36.00 604.39 Td (Pemberantasan Cron sub-harian berhasil dilakukan dengan pendekatan pemrosesan berbasis event \(event-driven\) dan validasi saat request) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 36.00 594.39 Td (\(request-time\). Ini menghilangkan keharusan membayar Vercel Pro \($20/bulan\) demi Cron 15 menit dan 1 jam.) Tj ET
+0.70 w 0.920 0.950 0.980 rg 0.200 0.500 0.700 RG 36.00 572.89 523.28 17.00 re B
+BT /F2 8.5 Tf 0.080 0.200 0.350 rg 42.00 577.89 Td (2. STATUS KEPUTUSAN: FINAL / PROPOSED / BLOCKERS) Tj ET
+BT /F2 7.8 Tf 0.100 0.350 0.300 rg 36.00 556.89 Td (A. FINAL \(Keputusan Lama yang Tetap Berlaku\)) Tj ET
+0.60 w 0.200 0.600 0.400 RG 36.00 554.89 m 216.00 554.89 l S
+1.00 w 0.100 0.550 0.400 rg 39.00 541.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 541.39 Td (DEC-001 \(Iron Session\): Cookie HttpOnly chimphood_session menyimpan token mentah; DB AuthSession menyimpan hash SHA-256.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 531.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 531.39 Td (DEC-002 \(Wagmi v3\): Konektor dompet EVM standar \(injected, metaMask, coinbaseWallet\) tanpa dependensi eksternal berat.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 521.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 521.39 Td (DEC-003 \(X OAuth 2.0 PKCE\): Fail-closed; dompet EVM wajib terhubung sebelum menautkan akun Twitter/X.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 511.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 511.39 Td (DEC-004 s.d. DEC-008: Model data PostgreSQL, User sebagai root ID, serial InventoryItem, dan drop reguler.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 501.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 501.39 Td (DEC-010 & DEC-011: Role-based access control \(RBAC\) dan AuditLog yang persisten dan terisolasi.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 491.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 491.39 Td (DEC-013 \(Prioritas WL\): Urutan antrean murni berdasarkan waktu kelayakan pertama \(joinedAt\) dengan queueNumber stabil.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 481.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 481.39 Td (5 Syarat Kelayakan WL: Wallet EVM, Akun X terhubung, 5 kategori trait lengkap \(BG, FUR, CLOTHING, HEADWEAR, EYEWEAR\), kampanye wajib selesai,) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 471.39 Td (tidak diban.) Tj ET
+BT /F2 7.8 Tf 0.100 0.350 0.300 rg 36.00 458.89 Td (B. PROPOSED \(Perubahan yang Disetujui\)) Tj ET
+0.60 w 0.200 0.600 0.400 RG 36.00 456.89 m 216.00 456.89 l S
+1.00 w 0.100 0.550 0.400 rg 39.00 443.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 443.39 Td (Model GTD -> FCFS: Slot pasti GTD diberikan hingga batas totalSlots; pendaftar berikutnya masuk antrean FCFS beku.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 433.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 433.39 Td (Ekspor CSV OpenSea: Penyediaan generator CSV terpisah untuk fase GTD dan fase FCFS yang saling eksklusif.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 423.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 423.39 Td (Gift Tanpa Expiry: Menghapus batas waktu 24 jam; gift pending bertahan tanpa batas waktu; pengirim dapat membatalkan kapan saja.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 413.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 413.39 Td (Autentikasi Tanpa Cron: Pengecekan expiry logis saat request; pembersihan fisik oportunistik dalam batch kecil non-blocking.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 403.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 403.39 Td (Antrean Event-Driven: Pencabutan slot GTD atau penambahan kuota langsung mempromosikan antrean teratas tanpa Cron.) Tj ET
+BT /F2 7.8 Tf 0.100 0.350 0.300 rg 36.00 390.89 Td (C. RESOLUSI TUNTAS BLOCKER SEBELUMNYA \(0 BLOCKER\)) Tj ET
+0.60 w 0.200 0.600 0.400 RG 36.00 388.89 m 216.00 388.89 l S
+1.00 w 0.100 0.550 0.400 rg 39.00 375.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 375.39 Td (BLK-01 \(Mekanisme Mint\): RESOLVED: Minting di web ditiadakan; dialihkan sepenuhnya ke OpenSea SeaDrop.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 365.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 365.39 Td (BLK-02 \(Larangan Gift WL\): RESOLVED: Terbukti ada pada UI & unit test; diformalkan ke dalam database server/inventory/gift.ts.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 355.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 355.39 Td (BLK-03 \(Perilaku Ban\): RESOLVED: DB mempertahankan slot hingga dicabut admin; generator CSV otomatis memfilter akun banned.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 345.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 345.39 Td (BLK-04 \(Pemicu Freeze\): RESOLVED: Registrasi tertutup saat now >= endsAt atau status FINALIZED; CSV digenerate dari snapshot ini.) Tj ET
+0.70 w 0.920 0.950 0.980 rg 0.200 0.500 0.700 RG 36.00 323.89 523.28 17.00 re B
+BT /F2 8.5 Tf 0.080 0.200 0.350 rg 42.00 328.89 Td (3. DESAIN GTD -> FCFS BERBASIS OPENSEA CSV) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 36.00 310.39 Td (Alur whitelist ChimpHood menghasilkan dua artefak utama saat pendaftaran program ditutup \(FINALIZED\):) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 300.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 300.39 Td (1. chimphood-gtd-allowlist.csv: Berisi seluruh alamat wallet yang berhasil meraih WLSlot berstatus ALLOCATED / CONFIRMED. Setiap wallet) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 290.39 Td (memiliki kuota minting tepat 1 NFT.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 280.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 280.39 Td (2. chimphood-fcfs-allowlist.csv: Berisi seluruh alamat wallet yang berada di antrean WLQueueEntry berstatus WAITING. Tidak ada jaminan) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 270.39 Td (alokasi; wallet bersaing pada fase kedua di OpenSea.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 260.89 3.00 3.00 re f
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 260.39 Td (Strict Disjoint Guarantee: Generator CSV backend menjamin irisan himpunan dompet GTD dan FCFS adalah kosong \(Wallets_GTD n Wallets_FCFS =) Tj ET
+BT /F1 7.5 Tf 0.150 0.150 0.150 rg 46.00 250.39 Td (empty set\). Dompet GTD dilarang keras masuk ke file FCFS.) Tj ET
+0.50 w 0.700 0.750 0.800 RG 36.00 32.00 m 559.28 32.00 l S
+BT /F3 7 Tf 0.450 0.500 0.550 rg 36.00 22.00 Td (ChimpHood Engineering Architecture Document - Confidential) Tj ET
+BT /F1 7 Tf 0.450 0.500 0.550 rg 484.28 22.00 Td (Halaman 1 of 2) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 9 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+9 0 obj
+<< /Length 12044 >>
+stream
+1.00 w 0.040 0.080 0.150 rg 36.00 807.89 523.28 18.00 re f
+BT /F2 7.5 Tf 0.400 0.800 0.600 rg 44.00 813.89 Td (CHIMPHOOD - AUDIT & DESAIN SISTEM TANPA CRON \(OPENSEA ALLOWLIST EDITION\)) Tj ET
+BT /F2 7.5 Tf 0.300 0.900 0.600 rg 489.28 813.89 Td (STATUS: READY) Tj ET
+0.70 w 0.920 0.950 0.980 rg 0.200 0.500 0.700 RG 36.00 776.89 523.28 17.00 re B
+BT /F2 8.5 Tf 0.080 0.200 0.350 rg 42.00 781.89 Td (4. SPESIFIKASI FORMAT EKSPOR CSV OPENSEA SEADROP) Tj ET
+1.00 w 0.150 0.220 0.320 rg 0.100 0.150 0.200 RG 36.00 758.39 523.28 12.50 re B
+BT /F2 7 Tf 1.000 1.000 1.000 rg 40.00 761.89 Td (Parameter) Tj ET
+BT /F2 7 Tf 1.000 1.000 1.000 rg 140.00 761.89 Td (Aturan Format OpenSea) Tj ET
+BT /F2 7 Tf 1.000 1.000 1.000 rg 330.00 761.89 Td (Implementasi ChimpHood) Tj ET
+0.30 w 1.000 1.000 1.000 rg 0.850 0.880 0.900 RG 36.00 745.89 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 749.39 Td (Baris Header) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 140.00 749.39 Td (TIDAK BOLEH ADA HEADER) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 330.00 749.39 Td (Baris 1 langsung berisi data wallet pertama.) Tj ET
+0.30 w 0.960 0.970 0.980 rg 0.850 0.880 0.900 RG 36.00 733.39 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 736.89 Td (Kolom 1) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 140.00 736.89 Td (EVM Wallet Address) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 330.00 736.89 Td (Format 0x lowercase 40-hex \(address.toLowerCase\(\)\).) Tj ET
+0.30 w 1.000 1.000 1.000 rg 0.850 0.880 0.900 RG 36.00 720.89 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 724.39 Td (Kolom 2) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 140.00 724.39 Td (Max Mint per Wallet) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 330.00 724.39 Td (Ditetapkan angka 1 per wallet.) Tj ET
+0.30 w 0.960 0.970 0.980 rg 0.850 0.880 0.900 RG 36.00 708.39 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 711.89 Td (Deduplikasi) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 140.00 711.89 Td (Zero Duplicates) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 330.00 711.89 Td (Query database menggunakan DISTINCT / Map address.) Tj ET
+0.30 w 1.000 1.000 1.000 rg 0.850 0.880 0.900 RG 36.00 695.89 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 699.39 Td (Sanitasi Ban) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 140.00 699.39 Td (Hanya wallet aktif) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 330.00 699.39 Td (Filter otomatis: user.isBanned = false & no active ban.) Tj ET
+BT /F2 7 Tf 0.200 0.300 0.400 rg 36.00 684.14 Td (Contoh File chimphood-gtd-allowlist.csv:) Tj ET
+BT /F2 7 Tf 0.200 0.300 0.400 rg 36.00 675.14 Td (0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed,1) Tj ET
+BT /F2 7 Tf 0.200 0.300 0.400 rg 36.00 666.14 Td (0x71c89f074d310ec5e427773cb20a44ef69d7a229,1) Tj ET
+BT /F2 7 Tf 0.200 0.300 0.400 rg 36.00 657.14 Td (0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199,1) Tj ET
+0.70 w 0.920 0.950 0.980 rg 0.200 0.500 0.700 RG 36.00 635.89 523.28 17.00 re B
+BT /F2 8.5 Tf 0.080 0.200 0.350 rg 42.00 640.89 Td (5. SIFAT ADDITIVE OPENSEA & MITIGASI RISIKO) Tj ET
+0.80 w 0.990 0.960 0.910 rg 0.850 0.550 0.150 RG 36.00 564.39 523.28 65.50 re B
+BT /F2 7.8 Tf 0.550 0.300 0.050 rg 44.00 619.89 Td (ATURAN KONFIGURASI KRUSIAL PADA OPENSEA STUDIO) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 610.89 Td (1. Tahap 1 \(GTD\): Buat tahap 'Allowlist Stage' dengan file chimphood-gtd-allowlist.csv. Limit per wallet: 1.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 601.39 Td (2. Tahap 2 \(FCFS\): Buat tahap 'Allowlist Stage' KEDUA \(BUKAN PUBLIC\) dengan file chimphood-fcfs-allowlist.csv.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 591.89 Td (3. Karena OpenSea bersifat additive, wallet yang ada di kedua CSV akan mendapat 1+1=2 hak mint.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 582.39 Td (4. Solusi ChimpHood: Generator CSV backend menjamin wallet GTD tidak pernah ada di dalam file FCFS.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 572.89 Td (5. Jangan pernah menyetel Tahap 2 sebagai 'Public Stage', agar kuota FCFS tidak dicuri oleh bot publik liar.) Tj ET
+0.70 w 0.920 0.950 0.980 rg 0.200 0.500 0.700 RG 36.00 540.39 523.28 17.00 re B
+BT /F2 8.5 Tf 0.080 0.200 0.350 rg 42.00 545.39 Td (6. ARSITEKTUR SISTEM TANPA CRON RUTIN) Tj ET
+1.00 w 0.150 0.220 0.320 rg 0.100 0.150 0.200 RG 36.00 521.89 523.28 12.50 re B
+BT /F2 7 Tf 1.000 1.000 1.000 rg 40.00 525.39 Td (Subdomain) Tj ET
+BT /F2 7 Tf 1.000 1.000 1.000 rg 120.00 525.39 Td (Mekanisme Sebelumnya \(Cron\)) Tj ET
+BT /F2 7 Tf 1.000 1.000 1.000 rg 300.00 525.39 Td (Mekanisme Baru \(Event-Driven / Request-Time\)) Tj ET
+0.30 w 1.000 1.000 1.000 rg 0.850 0.880 0.900 RG 36.00 509.39 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 512.89 Td (Gifts Expiry) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 120.00 512.89 Td (Cron hourly /api/cron/sweep-gifts) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 300.00 512.89 Td (No-expiry pending; item terkunci di pengirim; cancel kapan s..) Tj ET
+0.30 w 0.960 0.970 0.980 rg 0.850 0.880 0.900 RG 36.00 496.89 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 500.39 Td (Gifts Resolve) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 120.00 500.39 Td (Pengecekan expiry 24 jam) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 300.00 500.39 Td (Full atomic re-check: ownership, duplicate >=1, ban, WL reci..) Tj ET
+0.30 w 1.000 1.000 1.000 rg 0.850 0.880 0.900 RG 36.00 484.39 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 487.89 Td (Auth Cleanup) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 120.00 487.89 Td (Cron 15m /api/cron/cleanup-auth) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 300.00 487.89 Td (Pengecekan logis saat request \(expiresAt\); lazy bounded purge.) Tj ET
+0.30 w 0.960 0.970 0.980 rg 0.850 0.880 0.900 RG 36.00 471.89 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 475.39 Td (WL Reconcile) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 120.00 475.39 Td (Cron hourly /api/cron/reconcile-queue) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 300.00 475.39 Td (Dipicu event revoke slot admin & event penambahan kapasitas.) Tj ET
+0.30 w 1.000 1.000 1.000 rg 0.850 0.880 0.900 RG 36.00 459.39 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 462.89 Td (Hosting Vercel) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 120.00 462.89 Td (Wajib Vercel Pro \($20/mo\)) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 300.00 462.89 Td (Bisa berjalan pada Vercel Hobby/Free \(0 cron sub-harian\).) Tj ET
+0.70 w 0.920 0.950 0.980 rg 0.200 0.500 0.700 RG 36.00 435.39 523.28 17.00 re B
+BT /F2 8.5 Tf 0.080 0.200 0.350 rg 42.00 440.39 Td (7. MATRIKS SKENARIO KEGAGALAN & HASIL SISTEM) Tj ET
+1.00 w 0.150 0.220 0.320 rg 0.100 0.150 0.200 RG 36.00 416.89 523.28 12.50 re B
+BT /F2 7 Tf 1.000 1.000 1.000 rg 40.00 420.39 Td (Skenario Kegagalan) Tj ET
+BT /F2 7 Tf 1.000 1.000 1.000 rg 165.00 420.39 Td (Perilaku yang Diharapkan) Tj ET
+BT /F2 7 Tf 1.000 1.000 1.000 rg 350.00 420.39 Td (Mekanisme Perlindungan) Tj ET
+0.30 w 1.000 1.000 1.000 rg 0.850 0.880 0.900 RG 36.00 404.39 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 407.89 Td (Berebut Slot GTD Terakhir) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 165.00 407.89 Td (Tepat 1 user dapat slot; lainnya masuk FCFS.) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 350.00 407.89 Td (Unique constraint \(programId, slotNumber\) & retr..) Tj ET
+0.30 w 0.960 0.970 0.980 rg 0.850 0.880 0.900 RG 36.00 391.89 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 395.39 Td (Dua Request Gift Bersamaan) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 165.00 395.39 Td (Tepat 1 berhasil; request lain ditolak 409.) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 350.00 395.39 Td (Conditional atomic update \(status: PENDING\).) Tj ET
+0.30 w 1.000 1.000 1.000 rg 0.850 0.880 0.900 RG 36.00 379.39 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 382.89 Td (Gift Pending Bertahun-tahun) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 165.00 382.89 Td (Trait tetap aman milik pengirim; bisa dica..) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 350.00 382.89 Td (Sender cancel action \(POST /api/gifts/[id] -> CA..) Tj ET
+0.30 w 0.960 0.970 0.980 rg 0.850 0.880 0.900 RG 36.00 366.89 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 370.39 Td (Akun GTD Diban oleh Admin) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 165.00 370.39 Td (Slot tetap di DB tapi dikeluarkan dari CSV..) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 350.00 370.39 Td (Export query otomatis mengecualikan user isBanned.) Tj ET
+0.30 w 1.000 1.000 1.000 rg 0.850 0.880 0.900 RG 36.00 354.39 523.28 12.50 re B
+BT /F1 7 Tf 0.150 0.150 0.150 rg 40.00 357.89 Td (Kegagalan DB di Tengah Tran..) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 165.00 357.89 Td (Rollback menyeluruh; tidak ada data seteng..) Tj ET
+BT /F1 7 Tf 0.150 0.150 0.150 rg 350.00 357.89 Td (Prisma ACID transaction \($transaction\).) Tj ET
+0.70 w 0.920 0.950 0.980 rg 0.200 0.500 0.700 RG 36.00 330.39 523.28 17.00 re B
+BT /F2 8.5 Tf 0.080 0.200 0.350 rg 42.00 335.39 Td (8. RENCANA IMPLEMENTASI MINIMAL, FILE & TEST) Tj ET
+BT /F1 7.2 Tf 0.150 0.150 0.150 rg 36.00 317.26 Td (Daftar perubahan file pada tahap implementasi \(tidak ada modifikasi yang dieksekusi pada tahap audit ini\):) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 307.89 3.00 3.00 re f
+BT /F1 7.2 Tf 0.150 0.150 0.150 rg 46.00 307.76 Td (vercel.json: Hapus seluruh blok array 'crons'.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 298.39 3.00 3.00 re f
+BT /F1 7.2 Tf 0.150 0.150 0.150 rg 46.00 298.26 Td (server/inventory/gift.ts: Hapus GIFT_EXPIRY_MS & sweepExpiredGifts; tambahkan validasi WL & sisa copy.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 288.89 3.00 3.00 re f
+BT /F1 7.2 Tf 0.150 0.150 0.150 rg 46.00 288.76 Td (server/auth/cleanup.ts: Tambahkan fungsi lazy bounded purge yang aman dipanggil secara non-blocking.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 279.39 3.00 3.00 re f
+BT /F1 7.2 Tf 0.150 0.150 0.150 rg 46.00 279.26 Td (server/whitelist/revoke.ts: Sinkronkan alokasi 1 antrean teratas FCFS saat slot GTD dicabut.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 269.89 3.00 3.00 re f
+BT /F1 7.2 Tf 0.150 0.150 0.150 rg 46.00 269.76 Td (server/admin/wl-program.ts: Sinkronkan alokasi N antrean teratas FCFS saat totalSlots bertambah.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 260.39 3.00 3.00 re f
+BT /F1 7.2 Tf 0.150 0.150 0.150 rg 46.00 260.26 Td (server/admin/opensea-export.ts \(Baru\): Service generator CSV OpenSea tanpa header, lowercase, deduplikasi, dan disjoint set.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 250.89 3.00 3.00 re f
+BT /F1 7.2 Tf 0.150 0.150 0.150 rg 46.00 250.76 Td (app/api/admin/whitelist/export/route.ts \(Baru\): Endpoint download CSV admin berautentikasi SUPER_ADMIN.) Tj ET
+1.00 w 0.100 0.550 0.400 rg 39.00 241.39 3.00 3.00 re f
+BT /F1 7.2 Tf 0.150 0.150 0.150 rg 46.00 241.26 Td (components/inventory/GiftModal.tsx & GiftsSection.tsx: Hapus teks 'expires after 24 hours' dan countdown.) Tj ET
+0.70 w 0.920 0.950 0.980 rg 0.200 0.500 0.700 RG 36.00 219.89 523.28 17.00 re B
+BT /F2 8.5 Tf 0.080 0.200 0.350 rg 42.00 224.89 Td (9. KESIMPULAN AKHIR) Tj ET
+0.80 w 0.940 0.980 0.950 rg 0.200 0.650 0.350 RG 36.00 148.39 523.28 65.50 re B
+BT /F2 7.8 Tf 0.050 0.400 0.150 rg 44.00 203.89 Td (KESIMPULAN: SIAP IMPLEMENTASI \(READY FOR IMPLEMENTATION\)) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 194.89 Td (Rancangan arsitektur telah diselaraskan 100% dengan kebutuhan bisnis:) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 185.39 Td (- Bebas Cron sub-harian dan kompatibel penuh dengan hosting gratis/standar tanpa Vercel Pro.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 175.89 Td (- Terintegrasi sempurna dengan alur kerja minting OpenSea SeaDrop.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 166.39 Td (- Menjaga integritas seluruh keputusan arsitektural sebelumnya di Decision Register.) Tj ET
+BT /F1 7 Tf 0.200 0.200 0.200 rg 46.00 156.89 Td (Tahap audit dan desain dinyatakan selesai. Siap dilanjutkan ke tahap implementasi kode.) Tj ET
+0.50 w 0.700 0.750 0.800 RG 36.00 32.00 m 559.28 32.00 l S
+BT /F3 7 Tf 0.450 0.500 0.550 rg 36.00 22.00 Td (ChimpHood Engineering Architecture Document - Confidential) Tj ET
+BT /F1 7 Tf 0.450 0.500 0.550 rg 484.28 22.00 Td (Halaman 2 of 2) Tj ET
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000218 00000 n 
+0000000320 00000 n 
+0000000425 00000 n 
+0000000577 00000 n 
+0000009517 00000 n 
+0000009669 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+21765
+%%EOF
