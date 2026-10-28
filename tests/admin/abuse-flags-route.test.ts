@@ -200,9 +200,7 @@ describe("DEC-012 Stage 4: Admin Abuse Flags API & Authorization", () => {
         new AdminAbuseFlagError("INVALID_FILTER", "Invalid flagType.", 400),
       );
 
-      const req = new Request(
-        "http://localhost/api/admin/abuse-flags?flagType=INVALID",
-      );
+      const req = new Request("http://localhost/api/admin/abuse-flags?flagType=INVALID");
       const res = await LIST_GET(req);
       expect(res.status).toBe(400);
       const json = await res.json();
@@ -386,6 +384,7 @@ describe("DEC-012 Stage 4: Admin Abuse Flags API & Authorization", () => {
           flagType: "SYBIL_WALLET_CLUSTER" as any,
           severity: "HIGH" as any,
           status: "CONFIRMED_ACTION_TAKEN" as any,
+          details: null,
           resolutionNotes: "Sybil cluster verified. Manual ban issued separately.",
           reviewedById: "mod_user_1",
           reviewedAt: new Date(),
@@ -482,7 +481,10 @@ describe("DEC-012 Stage 4: Admin Abuse Flags API & Authorization", () => {
     it("adminUpdateAbuseFlag calls PATCH with body", async () => {
       const mockFetch = vi.fn().mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, flag: { id: "flag-1", status: "DISMISSED" } }),
+        json: async () => ({
+          success: true,
+          flag: { id: "flag-1", status: "DISMISSED" },
+        }),
       });
       globalThis.fetch = mockFetch;
 

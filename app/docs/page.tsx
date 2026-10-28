@@ -19,7 +19,7 @@ export default function DocsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white">
             ChimpHood Documentation
           </h1>
-          <Badge variant="default">Stage 3</Badge>
+          <Badge variant="default">Production Ready</Badge>
         </div>
         <p className="text-gray-400">
           Technical documentation, system architecture, and product decisions registry.
@@ -136,11 +136,35 @@ export default function DocsPage() {
                 3
               </span>
               <h4 className="font-semibold text-emerald-400">
-                Stage 3: Whitelist & Claim Engine (Current)
+                Stage 3: Whitelist & Claim Engine (Completed)
               </h4>
               <p className="mt-1 text-sm text-gray-400">
-                Quota allocation mechanisms, 5-trait category eligibility, 2-hour drop
+                Quota allocation mechanisms, 5-trait category eligibility, continuous drop
                 cycles, 30-minute claim windows, and duplicate gifting.
+              </p>
+            </li>
+            <li className="ml-6">
+              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-xs text-emerald-400">
+                4
+              </span>
+              <h4 className="font-semibold text-emerald-400">
+                Stage 4: Admin Operations & OpenSea Export (Completed)
+              </h4>
+              <p className="mt-1 text-sm text-gray-400">
+                Drop configuration, whitelist program management, isolated Super Admin CLI
+                bootstrap, and OpenSea SeaDrop allowlist CSV export.
+              </p>
+            </li>
+            <li className="ml-6">
+              <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-xs text-emerald-400">
+                5
+              </span>
+              <h4 className="font-semibold text-emerald-400">
+                Stage 5: Security Hardening & Abuse Prevention (Completed)
+              </h4>
+              <p className="mt-1 text-sm text-gray-400">
+                Sybil cluster IP abuse detection, dual-layer rate limiting, permanent ban
+                revocation hardening, and Admin Abuse Flags investigation API & UI.
               </p>
             </li>
           </ol>

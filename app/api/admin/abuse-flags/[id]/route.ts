@@ -19,7 +19,7 @@ function getClientIp(request: Request): string {
 }
 
 type RouteProps = {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 };
 
 /**
@@ -27,11 +27,8 @@ type RouteProps = {
  * Retrieves details of a specific abuse flag.
  * Auth: requireAdminSession("REVIEW_FLAGS")
  */
-export async function GET(
-  _request: Request,
-  props: RouteProps,
-): Promise<Response> {
-  const { id } = await Promise.resolve(props.params);
+export async function GET(_request: Request, props: RouteProps): Promise<Response> {
+  const { id } = await props.params;
 
   try {
     await requireAdminSession(prisma, "REVIEW_FLAGS");
@@ -74,11 +71,8 @@ export async function GET(
  * Auth: requireAdminSession("REVIEW_FLAGS")
  * Body: { status: "OPEN" | "UNDER_REVIEW" | "DISMISSED" | "CONFIRMED_ACTION_TAKEN", resolutionNotes?: string | null }
  */
-export async function PATCH(
-  request: Request,
-  props: RouteProps,
-): Promise<Response> {
-  const { id } = await Promise.resolve(props.params);
+export async function PATCH(request: Request, props: RouteProps): Promise<Response> {
+  const { id } = await props.params;
 
   let adminSession;
   try {

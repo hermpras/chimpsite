@@ -86,6 +86,7 @@ describe("POST /api/drops/claim route", () => {
       inventoryItem: { id: "inv-1", edition: 1 } as any,
       trait: { id: "t1", name: "Jungle Mist" } as any,
       probabilities: [],
+      abuseFlags: [],
     });
 
     const req = new Request("http://localhost:3000/api/drops/claim", {
@@ -195,6 +196,7 @@ describe("POST /api/drops/claim route", () => {
         inventoryItem: { id: "inv-1", edition: 1 } as any,
         trait: { id: "t1", name: "Jungle Mist" } as any,
         probabilities: [],
+        abuseFlags: [],
       });
 
       const req = new Request("http://localhost:3000/api/drops/claim", {
@@ -212,7 +214,11 @@ describe("POST /api/drops/claim route", () => {
       // Verify wallet rate limit check
       expect(checkRateLimit).toHaveBeenCalledWith("drops-claim:0x123", 5, 120_000);
       // Verify IP rate limit check (10 req / 60s per DEC-012)
-      expect(checkRateLimit).toHaveBeenCalledWith("drops-claim-ip:198.51.100.5", 10, 60_000);
+      expect(checkRateLimit).toHaveBeenCalledWith(
+        "drops-claim-ip:198.51.100.5",
+        10,
+        60_000,
+      );
     });
 
     it("prioritizes trusted x-real-ip over client-supplied x-forwarded-for to prevent IP spoofing", async () => {
@@ -232,6 +238,7 @@ describe("POST /api/drops/claim route", () => {
         inventoryItem: { id: "inv-1", edition: 1 } as any,
         trait: { id: "t1", name: "Jungle Mist" } as any,
         probabilities: [],
+        abuseFlags: [],
       });
 
       // Client attempts to spoof IP via x-forwarded-for, but edge proxy provides trusted x-real-ip
@@ -249,7 +256,11 @@ describe("POST /api/drops/claim route", () => {
       expect(res.status).toBe(200);
 
       // Must use trusted x-real-ip (203.0.113.99), NOT the spoofed x-forwarded-for (1.1.1.1)
-      expect(checkRateLimit).toHaveBeenCalledWith("drops-claim-ip:203.0.113.99", 10, 60_000);
+      expect(checkRateLimit).toHaveBeenCalledWith(
+        "drops-claim-ip:203.0.113.99",
+        10,
+        60_000,
+      );
       expect(checkRateLimit).not.toHaveBeenCalledWith(
         expect.stringContaining("1.1.1.1"),
         expect.anything(),
@@ -305,6 +316,7 @@ describe("POST /api/drops/claim route", () => {
         inventoryItem: { id: "inv-1", edition: 1 } as any,
         trait: { id: "t1", name: "Jungle Mist" } as any,
         probabilities: [],
+        abuseFlags: [],
       });
 
       // Request without x-forwarded-for / x-real-ip
@@ -344,6 +356,7 @@ describe("POST /api/drops/claim route", () => {
         inventoryItem: { id: "inv-1", edition: 1 } as any,
         trait: { id: "t1", name: "Jungle Mist" } as any,
         probabilities: [],
+        abuseFlags: [],
       });
 
       const req = new Request("http://localhost:3000/api/drops/claim", {
