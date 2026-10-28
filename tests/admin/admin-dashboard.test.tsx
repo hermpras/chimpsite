@@ -64,6 +64,8 @@ vi.mock("@/lib/admin/client", () => ({
   adminListWLPrograms: vi.fn().mockResolvedValue({ programs: [], total: 0 }),
   adminCreateWLProgram: vi.fn().mockResolvedValue({ success: true }),
   adminUpdateWLProgram: vi.fn().mockResolvedValue({ success: true }),
+  adminListAbuseFlags: vi.fn().mockResolvedValue({ flags: [], total: 0 }),
+  adminUpdateAbuseFlag: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 vi.mock("@/lib/drops/client", () => ({
@@ -222,6 +224,7 @@ describe("Admin Dashboard Route Protection & Access Control", () => {
           "MANAGE_WL",
           "MANAGE_BANS",
           "MANAGE_DROPS",
+          "REVIEW_FLAGS",
         ],
         assignedBy: "super-admin",
       },
@@ -272,6 +275,15 @@ describe("Admin Dashboard Route Protection & Access Control", () => {
       expect(screen.getByText("Revoke Ban")).toBeInTheDocument();
     });
 
+    // Click "Abuse Flags"
+    const flagsButtons = screen.getAllByRole("button", { name: /Abuse Flags/i });
+    fireEvent.click(flagsButtons[0]);
+    await waitFor(() => {
+      expect(
+        screen.getByText("Abuse Flags & Sybil Signals"),
+      ).toBeInTheDocument();
+    });
+
     // Click "Drops"
     const dropsButtons = screen.getAllByRole("button", { name: /Drops/i });
     fireEvent.click(dropsButtons[0]);
@@ -305,7 +317,14 @@ describe("Admin Dashboard Route Protection & Access Control", () => {
     const dropsButtons = screen.getAllByRole("button", { name: /Drops/i });
     fireEvent.click(dropsButtons[0]);
 
-    // Expect Permission Required view
+    // Expect Permission Required view for Drops
     expect(screen.getByText(/Permission Required: MANAGE_DROPS/i)).toBeInTheDocument();
+
+    // Click on Abuse Flags (requires REVIEW_FLAGS)
+    const flagsButtons = screen.getAllByRole("button", { name: /Abuse Flags/i });
+    fireEvent.click(flagsButtons[0]);
+
+    // Expect Permission Required view for Abuse Flags
+    expect(screen.getByText(/Permission Required: REVIEW_FLAGS/i)).toBeInTheDocument();
   });
 });

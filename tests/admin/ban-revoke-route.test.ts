@@ -273,6 +273,28 @@ describe("Admin Ban Revoke Route Suite", () => {
       expect(body.error).toBe("UNAUTHORIZED");
     });
 
+    it("maps AdminBanError INSUFFICIENT_PRIVILEGE (403) cleanly when non-SUPER_ADMIN attempts to revoke permanent ban (DEC-012)", async () => {
+      vi.mocked(revokeBan).mockRejectedValue(
+        new AdminBanError(
+          "INSUFFICIENT_PRIVILEGE",
+          "Only super administrators can revoke permanent bans.",
+          403,
+        ),
+      );
+
+      const req = new Request("http://localhost:3000/api/admin/ban/revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ banId: "ban-perm-1" }),
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error).toBe("INSUFFICIENT_PRIVILEGE");
+      expect(body.message).toBe("Only super administrators can revoke permanent bans.");
+    });
+
     it("maps unexpected server error to 500 SERVER_ERROR without exposing internal traces", async () => {
       vi.mocked(revokeBan).mockRejectedValue(
         new Error("FATAL database corruption: details..."),
@@ -420,6 +442,30 @@ describe("Admin Ban Revoke Route Suite", () => {
       expect(res.status).toBe(404);
       const body = await res.json();
       expect(body.error).toBe("BAN_NOT_FOUND");
+    });
+
+    it("returns 403 INSUFFICIENT_PRIVILEGE when non-SUPER_ADMIN attempts to revoke permanent ban via parameterized route (DEC-012)", async () => {
+      vi.mocked(revokeBan).mockRejectedValue(
+        new AdminBanError(
+          "INSUFFICIENT_PRIVILEGE",
+          "Only super administrators can revoke permanent bans.",
+          403,
+        ),
+      );
+
+      const req = new Request("http://localhost:3000/api/admin/bans/ban-perm-1/revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      const res = await ID_POST(req, {
+        params: Promise.resolve({ id: "ban-perm-1" }),
+      });
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error).toBe("INSUFFICIENT_PRIVILEGE");
+      expect(body.message).toBe("Only super administrators can revoke permanent bans.");
     });
   });
 });

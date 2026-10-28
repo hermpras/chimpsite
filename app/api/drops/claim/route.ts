@@ -7,12 +7,30 @@ import {
   checkRateLimit,
   DROPS_CLAIM_RATE_LIMIT_MAX,
   DROPS_CLAIM_RATE_LIMIT_WINDOW_MS,
+  DROPS_CLAIM_IP_RATE_LIMIT_MAX,
+  DROPS_CLAIM_IP_RATE_LIMIT_WINDOW_MS,
+  isValidClientIp,
 } from "@/lib/auth/rate-limit";
 
 function clientIp(request: Request): string {
+  // In serverless deployments (such as Vercel), x-real-ip is set/overwritten by the
+  // edge reverse proxy from the actual TCP socket and cannot be spoofed by clients.
+  // Prefer x-real-ip when present and valid.
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp && isValidClientIp(realIp)) {
+    return realIp;
+  }
+
+  // Fallback to x-forwarded-for (used in multi-hop proxies and test harnesses)
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim() || "unknown";
-  return request.headers.get("x-real-ip")?.trim() || "unknown";
+  if (forwarded) {
+    const candidate = forwarded.split(",")[0].trim();
+    if (isValidClientIp(candidate)) {
+      return candidate;
+    }
+  }
+
+  return "unknown";
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -24,14 +42,18 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  const ip = clientIp(request);
+
+  // Rate Limiting (Dual-layer: Wallet/Session + IP per DEC-012)
   try {
-    const rateLimitKey = `drops-claim:${session.address || session.userId}`;
-    const limit = await checkRateLimit(
-      rateLimitKey,
+    // 1. Per-wallet / session rate limit
+    const walletKey = `drops-claim:${session.address || session.userId}`;
+    const walletLimit = await checkRateLimit(
+      walletKey,
       DROPS_CLAIM_RATE_LIMIT_MAX,
       DROPS_CLAIM_RATE_LIMIT_WINDOW_MS,
     );
-    if (!limit.allowed) {
+    if (!walletLimit.allowed) {
       return Response.json(
         {
           error: "RATE_LIMITED",
@@ -39,9 +61,31 @@ export async function POST(request: Request): Promise<Response> {
         },
         {
           status: 429,
-          headers: { "Retry-After": String(limit.retryAfterSeconds) },
+          headers: { "Retry-After": String(walletLimit.retryAfterSeconds) },
         },
       );
+    }
+
+    // 2. DEC-012: Per-IP rate limit (strictly applied only when a valid IP is present)
+    if (isValidClientIp(ip)) {
+      const ipKey = `drops-claim-ip:${ip}`;
+      const ipLimit = await checkRateLimit(
+        ipKey,
+        DROPS_CLAIM_IP_RATE_LIMIT_MAX,
+        DROPS_CLAIM_IP_RATE_LIMIT_WINDOW_MS,
+      );
+      if (!ipLimit.allowed) {
+        return Response.json(
+          {
+            error: "RATE_LIMITED",
+            message: "Too many claim attempts. Please try again later.",
+          },
+          {
+            status: 429,
+            headers: { "Retry-After": String(ipLimit.retryAfterSeconds) },
+          },
+        );
+      }
     }
   } catch (err: unknown) {
     console.error("POST /api/drops/claim rate limit failure:", err);

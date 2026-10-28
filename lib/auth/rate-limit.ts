@@ -23,6 +23,10 @@ export const NONCE_RATE_LIMIT_WINDOW_MS = 60_000;
 export const DROPS_CLAIM_RATE_LIMIT_MAX = 5;
 export const DROPS_CLAIM_RATE_LIMIT_WINDOW_MS = 120_000;
 
+/** DEC-012: Drop claim per-IP rate limit budget */
+export const DROPS_CLAIM_IP_RATE_LIMIT_MAX = 10;
+export const DROPS_CLAIM_IP_RATE_LIMIT_WINDOW_MS = 60_000;
+
 export const GIFTS_SEND_RATE_LIMIT_MAX = 10;
 export const GIFTS_SEND_RATE_LIMIT_WINDOW_MS = 60_000;
 
@@ -40,6 +44,39 @@ export const AVATAR_RENDER_RATE_LIMIT_WINDOW_MS = 60_000;
 /** Task 5-C Gift resolution (ACCEPT/REJECT/CANCEL) rate limit budget */
 export const GIFTS_RESOLVE_RATE_LIMIT_MAX = 10;
 export const GIFTS_RESOLVE_RATE_LIMIT_WINDOW_MS = 60_000;
+
+/**
+ * Validates whether a client IP address string is a well-formed IPv4 or IPv6 address.
+ * Rejects empty, whitespace-only, "unknown", or malformed strings.
+ */
+export function isValidClientIp(ip: string | null | undefined): boolean {
+  if (!ip || typeof ip !== "string") return false;
+  const trimmed = ip.trim();
+  if (!trimmed || trimmed.toLowerCase() === "unknown") return false;
+
+  // IPv4 check: 4 octets between 0 and 255
+  const ipv4Parts = trimmed.split(".");
+  if (ipv4Parts.length === 4) {
+    const allValid = ipv4Parts.every((part) => {
+      if (!/^\d{1,3}$/.test(part)) return false;
+      const num = Number(part);
+      return num >= 0 && num <= 255 && String(num) === part;
+    });
+    if (allValid) return true;
+  }
+
+  // IPv6 check: contains colon, 2-8 groups, valid hex characters
+  if (trimmed.includes(":")) {
+    const ipv6Regex = /^[0-9a-fA-F:]+$/;
+    if (ipv6Regex.test(trimmed)) {
+      const parts = trimmed.split(":");
+      if (parts.length >= 3 && parts.length <= 8) return true;
+      if (trimmed.includes("::")) return true;
+    }
+  }
+
+  return false;
+}
 
 export interface RateLimitResult {
   allowed: boolean;

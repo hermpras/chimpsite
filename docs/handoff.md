@@ -497,3 +497,51 @@ DATABASE_URL="postgresql://..." npm run admin:bootstrap -- 0x...
 # Option 3: Via standalone Node runner
 DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
 ```
+
+---
+
+## 11. DEC-012 Completion — Sybil Cluster Detection, Abuse Flags API/UI & Ban Hardening (Oct 28, 2026)
+
+### 11.1 Sybil Cluster IP Detection & Non-Auto-Ban Rule
+- **Threshold**: Detection triggers when ≥ 5 distinct wallets claim a drop from the exact same client IP address within a single drop cycle (`periodId`).
+- **Investigation Signal Only**: Strictly creates `AbuseFlag` records with `flagType: SYBIL_WALLET_CLUSTER`, `severity: HIGH`, and `status: OPEN`.
+- **Zero Automated Banning**: Shared IP alone never triggers automated account bans (`isBanned` remains unchanged).
+- **Audit Logging**: Each flag creation logs `action: "ABUSE_FLAG_CREATED"` to PostgreSQL `AuditLog`.
+- **Implementation**: `server/drops/claim.ts` (`checkAndFlagSybilCluster`).
+
+### 11.2 Dual-Layer Rate Limiting on Drop Claims
+- **Wallet/Session Budget**: 5 requests per 120,000ms (`DROPS_CLAIM_RATE_LIMIT_MAX`).
+- **IP Budget**: 10 requests per 60,000ms (`DROPS_CLAIM_IP_RATE_LIMIT_MAX`).
+- **Security Sanitization**: Client IP extracted safely via `x-real-ip` / `x-forwarded-for` and validated via `isValidClientIp()`. Rejects spoofed, malformed, or missing IP addresses safely without creating a shared global bucket.
+- **Fail-Closed Strategy**: Rate limiter enforces HTTP 429 when budget is exceeded and fail-closed HTTP 500 if Redis connection fails.
+- **Implementation**: `lib/auth/rate-limit.ts`, `app/api/drops/claim/route.ts`.
+
+### 11.3 Permanent Ban Revocation Hardening
+- **Hierarchy Invariant**: Permanent bans (`banType: PERMANENT`) may **only** be revoked by `SUPER_ADMIN`.
+- **Rejection of Lower Roles**: Attempts by regular `ADMIN` or `MODERATOR` to lift a permanent ban are strictly rejected with HTTP 403 `INSUFFICIENT_PRIVILEGE`.
+- **Audit Logging**: Successful revocations log `action: "REVOKE_BAN"` to `AuditLog`.
+- **Implementation**: `server/admin/ban.ts` (`revokeBan`).
+
+### 11.4 Moderator Permissions (Option B) & Admin Abuse Flags API
+- **Schema-Preserving Permissions**: Utilizes existing `AdminRole` model without schema migration; grants `MODERATOR` accounts `permissions: ["REVIEW_EVIDENCE", "REVIEW_FLAGS"]`.
+- **Endpoints**:
+  - `GET /api/admin/abuse-flags`: Lists flags with filtering (`status`, `severity`, `flagType`, `userId`) and pagination (`limit`, `offset`). Requires `requireAdminSession(prisma, "REVIEW_FLAGS")`.
+  - `GET /api/admin/abuse-flags/[id]`: Retrieves flag details with target user account profile and reviewer metadata.
+  - `PATCH /api/admin/abuse-flags/[id]`: Updates investigation status (`OPEN`, `UNDER_REVIEW`, `DISMISSED`, `CONFIRMED_ACTION_TAKEN`) and resolution notes (up to 2048 chars). Logs `action: "ABUSE_FLAG_UPDATED"` to `AuditLog`.
+- **Implementation**: `server/admin/abuse-flags.ts`, `app/api/admin/abuse-flags/**`, `lib/admin/client.ts`.
+
+### 11.5 Admin Abuse Flags UI
+- **Sidebar Integration**: Added `abuse-flags` tab with `ShieldAlert` icon to `ADMIN_NAV_ITEMS` in `components/admin/AdminSidebar.tsx` (gated by `REVIEW_FLAGS`).
+- **Dashboard Client**: Modular tab rendering in `components/admin/AdminDashboardClient.tsx`.
+- **Component Interface**: `components/admin/AdminAbuseFlags.tsx` includes real-time telemetry inspection modal, dynamic status and severity filters, pagination, and status update actions.
+- **Overview Module**: Added quick navigation card in `components/admin/AdminOverview.tsx`.
+
+### 11.6 End-to-End Test Verification
+- Complete verification suite across all 6 stages:
+  - `tests/integration/dec012-integration.test.ts` (6 end-to-end integration tests).
+  - `tests/admin/abuse-flags.test.ts` (15 service tests).
+  - `tests/admin/abuse-flags-route.test.ts` (20 route & auth tests).
+  - `tests/admin/admin-abuse-flags-ui.test.tsx` (8 UI tests).
+  - `tests/auth/stage3-rate-limiting.test.ts` (4 rate limiting budget tests).
+  - Full suite status: 92 files, 1,124 tests passing (100%).
+

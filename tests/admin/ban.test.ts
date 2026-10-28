@@ -1080,6 +1080,19 @@ describe("Admin Ban Service (revokeBan)", () => {
       permissions: ["MANAGE_BANS"],
     });
 
+    // Moderator (Option B per DEC-012: REVIEW_EVIDENCE, REVIEW_FLAGS)
+    mockPrisma._store.users.push({
+      id: "mod-1",
+      role: "MODERATOR",
+      isBanned: false,
+    });
+    mockPrisma._store.adminRoles.push({
+      id: "role-mod-1",
+      userId: "mod-1",
+      roleType: "MODERATOR",
+      permissions: ["REVIEW_EVIDENCE", "REVIEW_FLAGS"],
+    });
+
     // Super admin
     mockPrisma._store.users.push({
       id: "super-admin-1",
@@ -1162,6 +1175,196 @@ describe("Admin Ban Service (revokeBan)", () => {
     });
   });
 
+  describe("Authority Hierarchy & DEC-012 Enforcement (Permanent Ban Revocation)", () => {
+    beforeEach(() => {
+      mockPrisma._store.bans.push({
+        id: "ban-perm-target",
+        userId: "user-target-1",
+        scope: "FULL_SYSTEM",
+        banType: "PERMANENT",
+        isActive: true,
+        expiresAt: null,
+        revokedAt: null,
+        revokedById: null,
+      });
+    });
+
+    it("strictly rejects regular ADMIN with HTTP 403 INSUFFICIENT_PRIVILEGE when attempting to revoke a PERMANENT ban", async () => {
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "ban-perm-target",
+          adminUserId: "admin-1",
+          reason: "Admin trying to revoke permanent ban",
+          now,
+        }),
+      ).rejects.toMatchObject({
+        name: "AdminBanError",
+        code: "INSUFFICIENT_PRIVILEGE",
+        status: 403,
+      });
+
+      // Ban must remain active and untampered
+      const ban = mockPrisma._store.bans.find((b: any) => b.id === "ban-perm-target");
+      expect(ban?.isActive).toBe(true);
+      expect(ban?.revokedAt).toBeNull();
+      expect(ban?.revokedById).toBeNull();
+
+      // Target user remains banned
+      const user = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
+      expect(user?.isBanned).toBe(true);
+
+      // No REVOKE_BAN audit log created
+      const audit = mockPrisma._store.auditLogs.find(
+        (l: any) => l.action === "REVOKE_BAN" && l.entityId === "ban-perm-target",
+      );
+      expect(audit).toBeUndefined();
+    });
+
+    it("strictly rejects MODERATOR with HTTP 403 INSUFFICIENT_PRIVILEGE when attempting to revoke a PERMANENT ban", async () => {
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "ban-perm-target",
+          adminUserId: "mod-1",
+          now,
+        }),
+      ).rejects.toMatchObject({
+        name: "AdminBanError",
+        code: "INSUFFICIENT_PRIVILEGE",
+        status: 403,
+      });
+
+      const ban = mockPrisma._store.bans.find((b: any) => b.id === "ban-perm-target");
+      expect(ban?.isActive).toBe(true);
+    });
+
+    it("strictly rejects non-admin USER with HTTP 403 INSUFFICIENT_PRIVILEGE when attempting to revoke a PERMANENT ban", async () => {
+      await expect(
+        revokeBan(mockPrisma, {
+          banId: "ban-perm-target",
+          adminUserId: "user-target-1",
+          now,
+        }),
+      ).rejects.toMatchObject({
+        name: "AdminBanError",
+        code: "INSUFFICIENT_PRIVILEGE",
+        status: 403,
+      });
+    });
+
+    it("allows SUPER_ADMIN (via User.role=SUPER_ADMIN) to revoke a PERMANENT ban", async () => {
+      const result = await revokeBan(mockPrisma, {
+        banId: "ban-perm-target",
+        adminUserId: "super-admin-1",
+        reason: "Super Admin pardon granted",
+        now,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(false);
+
+      const ban = mockPrisma._store.bans.find((b: any) => b.id === "ban-perm-target");
+      expect(ban?.isActive).toBe(false);
+      expect(ban?.revokedById).toBe("super-admin-1");
+    });
+
+    it("allows SUPER_ADMIN (via AdminRole.roleType=SUPER_ADMIN) to revoke a PERMANENT ban", async () => {
+      mockPrisma._store.users.push({
+        id: "super-admin-via-role",
+        role: "ADMIN", // User.role is ADMIN, but AdminRole is SUPER_ADMIN
+        isBanned: false,
+      });
+      mockPrisma._store.adminRoles.push({
+        id: "role-super-2",
+        userId: "super-admin-via-role",
+        roleType: "SUPER_ADMIN",
+        permissions: ["*"],
+      });
+
+      const result = await revokeBan(mockPrisma, {
+        banId: "ban-perm-target",
+        adminUserId: "super-admin-via-role",
+        reason: "Super Admin role holder revoked ban",
+        now,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(false);
+    });
+
+    it("allows regular ADMIN to revoke a TEMPORARY ban", async () => {
+      mockPrisma._store.bans.push({
+        id: "ban-temp-target",
+        userId: "user-target-1",
+        scope: "FULL_SYSTEM",
+        banType: "TEMPORARY",
+        isActive: true,
+        expiresAt: new Date(now.getTime() + 86400000),
+        revokedAt: null,
+        revokedById: null,
+      });
+
+      const result = await revokeBan(mockPrisma, {
+        banId: "ban-temp-target",
+        adminUserId: "admin-1",
+        reason: "Temporary ban lifted early by admin",
+        now,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(false);
+
+      const ban = mockPrisma._store.bans.find((b: any) => b.id === "ban-temp-target");
+      expect(ban?.isActive).toBe(false);
+      expect(ban?.revokedById).toBe("admin-1");
+    });
+
+    it("allows regular ADMIN to revoke a FEATURE_RESTRICTION ban", async () => {
+      mockPrisma._store.bans.push({
+        id: "ban-feature-target",
+        userId: "user-target-1",
+        scope: "CLAIM_RESTRICTED",
+        banType: "FEATURE_RESTRICTION",
+        isActive: true,
+        expiresAt: null,
+        revokedAt: null,
+        revokedById: null,
+      });
+
+      const result = await revokeBan(mockPrisma, {
+        banId: "ban-feature-target",
+        adminUserId: "admin-1",
+        reason: "Feature restriction lifted by admin",
+        now,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(false);
+    });
+
+    it("allows regular ADMIN to revoke a SHADOWBAN", async () => {
+      mockPrisma._store.bans.push({
+        id: "ban-shadow-target",
+        userId: "user-target-1",
+        scope: "FULL_SYSTEM",
+        banType: "SHADOWBAN",
+        isActive: true,
+        expiresAt: null,
+        revokedAt: null,
+        revokedById: null,
+      });
+
+      const result = await revokeBan(mockPrisma, {
+        banId: "ban-shadow-target",
+        adminUserId: "admin-1",
+        reason: "Shadowban lifted by admin",
+        now,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.isActive).toBe(false);
+    });
+  });
+
   describe("Successful Execution & State Transitions", () => {
     it("revokes a FULL_SYSTEM PERMANENT ban: marks isActive=false, restores isBanned=false, emits AuditLog", async () => {
       mockPrisma._store.bans.push({
@@ -1177,7 +1380,7 @@ describe("Admin Ban Service (revokeBan)", () => {
 
       const result = await revokeBan(mockPrisma, {
         banId: "ban-perm-1",
-        adminUserId: "admin-1",
+        adminUserId: "super-admin-1",
         reason: "Appeal accepted — identity verified.",
         now,
         ipAddress: "10.0.0.1",
@@ -1194,7 +1397,7 @@ describe("Admin Ban Service (revokeBan)", () => {
       const ban = mockPrisma._store.bans.find((b: any) => b.id === "ban-perm-1");
       expect(ban?.isActive).toBe(false);
       expect(ban?.revokedAt).toEqual(now);
-      expect(ban?.revokedById).toBe("admin-1");
+      expect(ban?.revokedById).toBe("super-admin-1");
 
       // User.isBanned restored to false (no remaining FULL_SYSTEM bans)
       const user = mockPrisma._store.users.find((u: any) => u.id === "user-target-1");
@@ -1205,7 +1408,7 @@ describe("Admin Ban Service (revokeBan)", () => {
         (l: any) => l.action === "REVOKE_BAN" && l.entityId === "ban-perm-1",
       );
       expect(audit).toBeDefined();
-      expect(audit.actorId).toBe("admin-1");
+      expect(audit.actorId).toBe("super-admin-1");
       expect(audit.actorIp).toBe("10.0.0.1");
       expect(audit.userAgent).toBe("ChimpAdmin/1.0");
       expect(audit.entityType).toBe("BanRecord");
@@ -1307,7 +1510,7 @@ describe("Admin Ban Service (revokeBan)", () => {
 
       await revokeBan(mockPrisma, {
         banId: "ban-last-full",
-        adminUserId: "admin-1",
+        adminUserId: "super-admin-1",
         now,
       });
 
@@ -1368,7 +1571,7 @@ describe("Admin Ban Service (revokeBan)", () => {
       await expect(
         revokeBan(mockPrisma, {
           banId: "ban-rollback",
-          adminUserId: "admin-1",
+          adminUserId: "super-admin-1",
           now,
         }),
       ).rejects.toThrow("Disk full — audit write failed");

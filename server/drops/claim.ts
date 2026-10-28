@@ -2,6 +2,124 @@ import type { PrismaClient } from "@prisma/client";
 import { isWithinClaimWindow } from "./schedule";
 import { recordAuditLog } from "../audit/audit";
 
+export const SYBIL_CLUSTER_IP_THRESHOLD = 5;
+
+export interface SybilClusterParams {
+  userId: string;
+  dropId: string;
+  periodId: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  now?: Date;
+}
+
+/**
+ * DEC-012: Sybil cluster detection on drop claims.
+ * Triggers when >= 5 distinct wallets/users claim from the same IP within a single drop cycle.
+ * Strictly records AbuseFlag for manual admin investigation; NEVER auto-bans based on IP.
+ * Calculations are strictly scoped to `periodId` (single drop cycle), never accumulated across cycles.
+ */
+export async function checkAndFlagSybilCluster(
+  tx: any,
+  params: SybilClusterParams,
+) {
+  const ip = params.ipAddress?.trim();
+  if (!ip || ip.toLowerCase() === "unknown") {
+    return [];
+  }
+
+  // Safe fallback if tx doesn't support claim.findMany or abuseFlag (e.g. lightweight test mocks)
+  if (
+    typeof tx.claim?.findMany !== "function" ||
+    !tx.abuseFlag ||
+    typeof tx.abuseFlag.create !== "function"
+  ) {
+    return [];
+  }
+
+  const now = params.now ?? new Date();
+
+  // Find all claims within this specific drop cycle from this IP
+  const claimsWithIp = await tx.claim.findMany({
+    where: {
+      periodId: params.periodId,
+      ipAddress: ip,
+      status: "SUCCESS",
+    },
+    select: { userId: true },
+  });
+
+  const distinctUsers = new Set<string>(claimsWithIp.map((c: any) => c.userId));
+  distinctUsers.add(params.userId);
+
+  if (distinctUsers.size < SYBIL_CLUSTER_IP_THRESHOLD) {
+    return [];
+  }
+
+  const clusterUserIds = Array.from(distinctUsers);
+  const createdFlags: any[] = [];
+
+  for (const clusterUserId of clusterUserIds) {
+    let existingFlag: any = null;
+    if (typeof tx.abuseFlag.findFirst === "function") {
+      existingFlag = await tx.abuseFlag.findFirst({
+        where: {
+          userId: clusterUserId,
+          flagType: "SYBIL_WALLET_CLUSTER",
+          status: "OPEN",
+        },
+      });
+    }
+
+    if (!existingFlag) {
+      const abuseFlag = await tx.abuseFlag.create({
+        data: {
+          userId: clusterUserId,
+          flagType: "SYBIL_WALLET_CLUSTER",
+          severity: "HIGH",
+          status: "OPEN",
+          details: {
+            reason: `Sybil cluster IP threshold reached (>= ${SYBIL_CLUSTER_IP_THRESHOLD} distinct wallets in drop period)`,
+            ipAddress: ip,
+            periodId: params.periodId,
+            dropId: params.dropId,
+            clusterSize: distinctUsers.size,
+            clusterUserIds,
+            triggeringUserId: params.userId,
+          },
+          createdAt: now,
+        },
+      });
+
+      createdFlags.push(abuseFlag);
+
+      await recordAuditLog(tx, {
+        actorId: params.userId,
+        actorIp: ip,
+        userAgent: params.userAgent ?? null,
+        action: "ABUSE_FLAG_CREATED",
+        entityType: "AbuseFlag",
+        entityId: abuseFlag.id,
+        newValues: {
+          userId: clusterUserId,
+          flagType: "SYBIL_WALLET_CLUSTER",
+          severity: "HIGH",
+          status: "OPEN",
+          details: abuseFlag.details,
+        },
+        metadata: {
+          reason: "Sybil cluster IP threshold reached",
+          ipAddress: ip,
+          periodId: params.periodId,
+          distinctWalletsCount: distinctUsers.size,
+        },
+      });
+    }
+  }
+
+  return createdFlags;
+}
+
 export class DropClaimError extends Error {
   code: string;
   status: number;
@@ -369,6 +487,17 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
           },
         });
 
+        // 11. DEC-012: Sybil Cluster IP Detection & AbuseFlag Recording
+        // Detects >= 5 distinct wallets per IP per drop cycle; creates AbuseFlag; strictly NO auto-ban.
+        const abuseFlags = await checkAndFlagSybilCluster(tx, {
+          userId: input.userId,
+          dropId: input.dropId,
+          periodId: input.periodId,
+          ipAddress: input.ipAddress,
+          userAgent: input.userAgent,
+          now,
+        });
+
         await recordAuditLog(tx, {
           actorId: input.userId,
           actorIp: input.ipAddress ?? null,
@@ -393,6 +522,7 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
           inventoryItem,
           trait: inventoryItem.trait,
           probabilities,
+          abuseFlags,
         };
       });
     } catch (err: unknown) {

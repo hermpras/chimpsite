@@ -8,6 +8,7 @@ import { AdminEvidenceReview } from "./AdminEvidenceReview";
 import { AdminCampaigns } from "./AdminCampaigns";
 import { AdminWhitelist } from "./AdminWhitelist";
 import { AdminUsersBans } from "./AdminUsersBans";
+import { AdminAbuseFlags } from "./AdminAbuseFlags";
 import { AdminDrops } from "./AdminDrops";
 import { AdminTraits } from "./AdminTraits";
 import { Badge } from "@/components/ui/Badge";
@@ -130,6 +131,7 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
               {activeTab === "campaigns" && <AdminCampaigns />}
               {activeTab === "whitelist" && <AdminWhitelist />}
               {activeTab === "users-bans" && <AdminUsersBans />}
+              {activeTab === "abuse-flags" && <AdminAbuseFlags />}
               {activeTab === "drops" && <AdminDrops />}
               {activeTab === "traits" && <AdminTraits />}
             </>

@@ -423,10 +423,38 @@ export async function revokeBan(
       );
     }
 
+    // DEC-012: Permanent ban can only be revoked by SUPER_ADMIN.
+    // Regular ADMIN or any non-SUPER_ADMIN must be rejected with HTTP 403 INSUFFICIENT_PRIVILEGE.
+    if (ban.banType === "PERMANENT") {
+      const actingUser = await tx.user.findUnique({
+        where: { id: rawInput.adminUserId },
+      });
+      const actingAdminRole = await tx.adminRole.findUnique({
+        where: { userId: rawInput.adminUserId },
+      });
+
+      const isSuperAdmin =
+        actingUser?.role === "SUPER_ADMIN" ||
+        actingAdminRole?.roleType === "SUPER_ADMIN";
+
+      if (!isSuperAdmin) {
+        throw new AdminBanError(
+          "INSUFFICIENT_PRIVILEGE",
+          "Only super administrators can revoke permanent bans.",
+          403,
+        );
+      }
+    }
+
     // Atomically deactivate the ban record
     const updatedBan = await tx.banRecord.update({
       where: { id: ban.id },
-      data: { isActive: false, revokedAt: now, revokedById: rawInput.adminUserId },
+      data: {
+        isActive: false,
+        revokedAt: now,
+        revokedById: rawInput.adminUserId,
+        revocationReason: rawInput.reason ?? null,
+      },
     });
 
     // Restore user.isBanned only when no remaining active FULL_SYSTEM bans exist

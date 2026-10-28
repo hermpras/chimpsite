@@ -367,6 +367,25 @@ export function AdminOverview({
               when required.
             </p>
           </div>
+
+          <div
+            onClick={() => onNavigateTab("abuse-flags")}
+            className="group cursor-pointer rounded-lg border border-gray-800 bg-[#0c0e17] p-5 transition-all hover:border-emerald-500/40 hover:bg-gray-900/30"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ShieldAlert className="h-5 w-5 text-rose-400" />
+                <span className="font-semibold text-white transition-colors group-hover:text-emerald-400">
+                  Abuse Flags
+                </span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-gray-500 transition-colors group-hover:text-emerald-400" />
+            </div>
+            <p className="mt-2 text-xs text-gray-400">
+              Review flagged Sybil clusters, bot activities, and manage abuse investigation
+              statuses.
+            </p>
+          </div>
         </div>
       </div>
 

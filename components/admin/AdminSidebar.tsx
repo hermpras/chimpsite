@@ -20,6 +20,7 @@ export type AdminTab =
   | "campaigns"
   | "whitelist"
   | "users-bans"
+  | "abuse-flags"
   | "drops"
   | "traits";
 
@@ -55,6 +56,12 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
     label: "Users & Bans",
     icon: Users,
     requiredPermission: "MANAGE_BANS",
+  },
+  {
+    id: "abuse-flags",
+    label: "Abuse Flags",
+    icon: ShieldAlert,
+    requiredPermission: "REVIEW_FLAGS",
   },
   {
     id: "drops",

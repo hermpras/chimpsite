@@ -18,6 +18,7 @@ function createMockPrisma() {
     inventoryItems: [] as any[],
     traits: [] as any[],
     auditLogs: [] as any[],
+    abuseFlags: [] as any[],
   };
 
   const hooks = {
@@ -30,6 +31,7 @@ function createMockPrisma() {
     const uncommittedItems: any[] = [];
     const uncommittedClaims: any[] = [];
     const uncommittedAuditLogs: any[] = [];
+    const uncommittedAbuseFlags: any[] = [];
     const stockDeltas: Array<{ id: string; remaining: number; claimed: number }> = [];
 
     const rollback = () => {
@@ -44,6 +46,10 @@ function createMockPrisma() {
       for (const audit of uncommittedAuditLogs) {
         const idx = store.auditLogs.indexOf(audit);
         if (idx !== -1) store.auditLogs.splice(idx, 1);
+      }
+      for (const flag of uncommittedAbuseFlags) {
+        const idx = store.abuseFlags.indexOf(flag);
+        if (idx !== -1) store.abuseFlags.splice(idx, 1);
       }
       for (const delta of stockDeltas) {
         const poolItem = store.poolItems.find((p) => p.id === delta.id);
@@ -98,6 +104,14 @@ function createMockPrisma() {
             ) || null
           );
         }),
+        findMany: vi.fn(async ({ where }: any) => {
+          return store.claims.filter((c) => {
+            if (where.periodId && c.periodId !== where.periodId) return false;
+            if (where.ipAddress && c.ipAddress !== where.ipAddress) return false;
+            if (where.status && c.status !== where.status) return false;
+            return true;
+          });
+        }),
         create: vi.fn(async ({ data }: any) => {
           if (hooks.onClaimCreate) {
             await hooks.onClaimCreate(data);
@@ -122,6 +136,36 @@ function createMockPrisma() {
           const record = { id: `claim-${store.claims.length + 1}`, ...data };
           store.claims.push(record);
           uncommittedClaims.push(record);
+          return record;
+        }),
+      },
+      abuseFlag: {
+        findFirst: vi.fn(async ({ where }: any) => {
+          return (
+            store.abuseFlags.find((f) => {
+              if (where.userId && f.userId !== where.userId) return false;
+              if (where.flagType && f.flagType !== where.flagType) return false;
+              if (where.status && f.status !== where.status) return false;
+              return true;
+            }) || null
+          );
+        }),
+        findMany: vi.fn(async ({ where }: any) => {
+          return store.abuseFlags.filter((f) => {
+            if (where.userId && f.userId !== where.userId) return false;
+            if (where.flagType && f.flagType !== where.flagType) return false;
+            if (where.status && f.status !== where.status) return false;
+            return true;
+          });
+        }),
+        create: vi.fn(async ({ data }: any) => {
+          const record = {
+            id: `abuse-flag-${store.abuseFlags.length + 1}`,
+            createdAt: new Date(),
+            ...data,
+          };
+          store.abuseFlags.push(record);
+          uncommittedAbuseFlags.push(record);
           return record;
         }),
       },
@@ -687,6 +731,242 @@ describe("Drop Claim Engine", () => {
       ).toBeUndefined();
 
       mockPrisma._hooks.onAuditCreate = null;
+    });
+  });
+
+  describe("DEC-012: Sybil Cluster IP Abuse Detection", () => {
+    const testIp = "198.51.100.42";
+
+    it("does not trigger AbuseFlag when distinct wallets from same IP is below threshold (< 5)", async () => {
+      // 4 distinct users claim from the same IP in period-1
+      for (let i = 1; i <= 4; i++) {
+        const result = await claimDrop(mockPrisma, {
+          userId: `sybil-user-${i}`,
+          dropId: "drop-1",
+          periodId: "period-1",
+          ipAddress: testIp,
+          now: baseTime,
+        });
+        expect(result.claim.id).toBeDefined();
+      }
+
+      // Below threshold of 5: No AbuseFlag created
+      expect(mockPrisma._store.abuseFlags).toHaveLength(0);
+      expect(mockPrisma._store.bans).toHaveLength(0);
+    });
+
+    it("triggers AbuseFlag for the sybil cluster when distinct wallets from same IP reaches threshold (>= 5)", async () => {
+      // 5 distinct users claim from the same IP in period-1
+      for (let i = 1; i <= 5; i++) {
+        const result = await claimDrop(mockPrisma, {
+          userId: `sybil-user-${i}`,
+          dropId: "drop-1",
+          periodId: "period-1",
+          ipAddress: testIp,
+          now: baseTime,
+        });
+        expect(result.claim.id).toBeDefined();
+      }
+
+      // Threshold reached (5): AbuseFlag created for each wallet in cluster
+      expect(mockPrisma._store.abuseFlags).toHaveLength(5);
+
+      for (let i = 1; i <= 5; i++) {
+        const flag = mockPrisma._store.abuseFlags.find(
+          (f: any) => f.userId === `sybil-user-${i}`,
+        );
+        expect(flag).toBeDefined();
+        expect(flag.flagType).toBe("SYBIL_WALLET_CLUSTER");
+        expect(flag.severity).toBe("HIGH");
+        expect(flag.status).toBe("OPEN");
+        expect(flag.details.ipAddress).toBe(testIp);
+        expect(flag.details.periodId).toBe("period-1");
+        expect(flag.details.clusterSize).toBe(5);
+        expect(flag.details.clusterUserIds).toEqual(
+          expect.arrayContaining([
+            "sybil-user-1",
+            "sybil-user-2",
+            "sybil-user-3",
+            "sybil-user-4",
+            "sybil-user-5",
+          ]),
+        );
+      }
+
+      // AuditLog recorded for abuse flags
+      const auditLogs = mockPrisma._store.auditLogs.filter(
+        (l: any) => l.action === "ABUSE_FLAG_CREATED",
+      );
+      expect(auditLogs).toHaveLength(5);
+    });
+
+    it("strictly does NOT auto-ban any user based on shared IP alone (DEC-012)", async () => {
+      for (let i = 1; i <= 5; i++) {
+        await claimDrop(mockPrisma, {
+          userId: `sybil-user-${i}`,
+          dropId: "drop-1",
+          periodId: "period-1",
+          ipAddress: testIp,
+          now: baseTime,
+        });
+      }
+
+      // No BanRecords should be created
+      expect(mockPrisma._store.bans).toHaveLength(0);
+
+      // All 5 claims and items are successfully awarded
+      expect(mockPrisma._store.claims).toHaveLength(5);
+      expect(mockPrisma._store.inventoryItems).toHaveLength(5);
+    });
+
+    it("does not count duplicate claims by the same wallet toward threshold", async () => {
+      // 4 distinct users claim
+      for (let i = 1; i <= 4; i++) {
+        await claimDrop(mockPrisma, {
+          userId: `sybil-user-${i}`,
+          dropId: "drop-1",
+          periodId: "period-1",
+          ipAddress: testIp,
+          now: baseTime,
+        });
+      }
+
+      // sybil-user-1 tries to claim again in the same period
+      await expect(
+        claimDrop(mockPrisma, {
+          userId: "sybil-user-1",
+          dropId: "drop-1",
+          periodId: "period-1",
+          ipAddress: testIp,
+          now: baseTime,
+        }),
+      ).rejects.toThrowError(DropClaimError);
+
+      // Distinct wallets remains 4 -> No flags
+      expect(mockPrisma._store.abuseFlags).toHaveLength(0);
+    });
+
+    it("strictly bounds calculation to single drop cycle (periodId) without cross-cycle accumulation", async () => {
+      // Setup a second period in the same drop
+      mockPrisma._store.periods.push({
+        id: "period-2",
+        dropId: "drop-1",
+        periodIndex: 2,
+        startsAt: new Date("2026-10-16T02:00:00.000Z"),
+        endsAt: new Date("2026-10-16T04:00:00.000Z"),
+        configLockAt: new Date("2026-10-16T01:45:00.000Z"),
+        isStockConfigured: true,
+        isStockLocked: true,
+        status: "ACTIVE",
+      });
+      mockPrisma._store.poolItems.push({
+        id: "pool-p2",
+        periodId: "period-2",
+        traitId: "trait-bg",
+        allocatedStock: 10,
+        claimedStock: 0,
+        remainingStock: 10,
+        weight: 100,
+      });
+
+      // 3 distinct users claim in period-1 from testIp
+      for (let i = 1; i <= 3; i++) {
+        await claimDrop(mockPrisma, {
+          userId: `user-p1-${i}`,
+          dropId: "drop-1",
+          periodId: "period-1",
+          ipAddress: testIp,
+          now: baseTime,
+        });
+      }
+
+      // 2 distinct users claim in period-2 from testIp
+      for (let i = 1; i <= 2; i++) {
+        await claimDrop(mockPrisma, {
+          userId: `user-p2-${i}`,
+          dropId: "drop-1",
+          periodId: "period-2",
+          ipAddress: testIp,
+          now: baseTime,
+        });
+      }
+
+      // Total across cycles is 5, but per-cycle is 3 and 2 (< 5 each)
+      // Calculation MUST NOT accumulate across cycles!
+      expect(mockPrisma._store.abuseFlags).toHaveLength(0);
+    });
+
+    it("does not trigger AbuseFlag when 5 claims originate from distinct IPs", async () => {
+      // 5 distinct users, each with a different IP
+      for (let i = 1; i <= 5; i++) {
+        await claimDrop(mockPrisma, {
+          userId: `distinct-ip-user-${i}`,
+          dropId: "drop-1",
+          periodId: "period-1",
+          ipAddress: `198.51.100.${i}`,
+          now: baseTime,
+        });
+      }
+
+      // Each IP has only 1 wallet -> No flags
+      expect(mockPrisma._store.abuseFlags).toHaveLength(0);
+    });
+
+    it("flags an incoming 6th wallet in the same cluster without creating duplicate flags for earlier wallets", async () => {
+      // First 5 users trigger the cluster
+      for (let i = 1; i <= 5; i++) {
+        await claimDrop(mockPrisma, {
+          userId: `sybil-user-${i}`,
+          dropId: "drop-1",
+          periodId: "period-1",
+          ipAddress: testIp,
+          now: baseTime,
+        });
+      }
+      expect(mockPrisma._store.abuseFlags).toHaveLength(5);
+
+      // 6th user claims from the same IP
+      await claimDrop(mockPrisma, {
+        userId: "sybil-user-6",
+        dropId: "drop-1",
+        periodId: "period-1",
+        ipAddress: testIp,
+        now: baseTime,
+      });
+
+      // Total flags should be 6 (no duplicate flag created for sybil-user-1..5)
+      expect(mockPrisma._store.abuseFlags).toHaveLength(6);
+
+      const user6Flag = mockPrisma._store.abuseFlags.find(
+        (f: any) => f.userId === "sybil-user-6",
+      );
+      expect(user6Flag).toBeDefined();
+      expect(user6Flag.details.clusterSize).toBe(6);
+    });
+
+    it("ignores claims with unknown, whitespace-only, or missing IP addresses", async () => {
+      // 5 claims with unknown IP
+      for (let i = 1; i <= 5; i++) {
+        await claimDrop(mockPrisma, {
+          userId: `unknown-ip-user-${i}`,
+          dropId: "drop-1",
+          periodId: "period-1",
+          ipAddress: "unknown",
+          now: baseTime,
+        });
+      }
+
+      // 5 claims with undefined IP
+      for (let i = 1; i <= 5; i++) {
+        await claimDrop(mockPrisma, {
+          userId: `no-ip-user-${i}`,
+          dropId: "drop-1",
+          periodId: "period-1",
+          now: baseTime,
+        });
+      }
+
+      expect(mockPrisma._store.abuseFlags).toHaveLength(0);
     });
   });
 });

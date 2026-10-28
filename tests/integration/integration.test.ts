@@ -1503,11 +1503,30 @@ describe("Task 5-A: Integration Tests Suite (End-to-End User & Admin Flows)", ()
       }),
     );
 
-    // Admin lifts ban
+    // DEC-012: Regular ADMIN cannot revoke permanent ban (strictly rejected with 403 INSUFFICIENT_PRIVILEGE)
+    await expect(
+      revokeBan(prisma, {
+        banId: banResult.banRecord.id,
+        adminUserId,
+        reason: "Admin attempts to lift permanent ban",
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: "INSUFFICIENT_PRIVILEGE",
+      status: 403,
+    });
+
+    // Only SUPER_ADMIN can revoke permanent bans
+    const superAdminRole = db.store.adminRoles.find((a) => a.userId === adminUserId);
+    if (superAdminRole) superAdminRole.roleType = "SUPER_ADMIN" as AdminRoleType;
+    const adminUser = db.store.users.find((u) => u.id === adminUserId);
+    if (adminUser) adminUser.role = "SUPER_ADMIN";
+
+    // Super Admin lifts permanent ban
     const unbanResult = await revokeBan(prisma, {
       banId: banResult.banRecord.id,
       adminUserId,
-      reason: "Appeal accepted with KYC verification.",
+      reason: "Appeal accepted with KYC verification by Super Admin.",
       now,
     });
     expect(unbanResult.isActive).toBe(false);

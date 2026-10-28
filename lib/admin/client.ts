@@ -747,3 +747,68 @@ export async function adminExportOpenSeaAllowlist(
 
   return { filename, count: lineCount };
 }
+
+export interface AdminListAbuseFlagsInput {
+  status?: string;
+  flagType?: string;
+  severity?: string;
+  userId?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export async function adminListAbuseFlags(input?: AdminListAbuseFlagsInput) {
+  const params = new URLSearchParams();
+  if (input?.status) params.set("status", input.status);
+  if (input?.flagType) params.set("flagType", input.flagType);
+  if (input?.severity) params.set("severity", input.severity);
+  if (input?.userId) params.set("userId", input.userId);
+  if (input?.limit !== undefined) params.set("limit", String(input.limit));
+  if (input?.offset !== undefined) params.set("offset", String(input.offset));
+
+  const query = params.toString();
+  const url = query ? `/api/admin/abuse-flags?${query}` : "/api/admin/abuse-flags";
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to list abuse flags.");
+  }
+  return data;
+}
+
+export async function adminGetAbuseFlag(flagId: string) {
+  const res = await fetch(`/api/admin/abuse-flags/${encodeURIComponent(flagId)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch abuse flag.");
+  }
+  return data;
+}
+
+export interface AdminUpdateAbuseFlagInput {
+  flagId: string;
+  status: string;
+  resolutionNotes?: string | null;
+}
+
+export async function adminUpdateAbuseFlag(input: AdminUpdateAbuseFlagInput) {
+  const { flagId, ...body } = input;
+  const res = await fetch(`/api/admin/abuse-flags/${encodeURIComponent(flagId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update abuse flag.");
+  }
+  return data;
+}
+
