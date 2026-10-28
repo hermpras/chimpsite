@@ -14,12 +14,11 @@ export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const now = new Date();
 
-  // Find active drop (or scheduled)
-  const drop = await prisma.drop.findFirst({
+  // Find active drop
+  let drop = await prisma.drop.findFirst({
     where: {
-      status: { in: ["ACTIVE", "SCHEDULED"] },
+      status: "ACTIVE",
       startsAt: { lte: now },
-      endsAt: { gte: now },
     },
     include: {
       periods: {
@@ -33,11 +32,54 @@ export async function GET(request: Request): Promise<Response> {
     },
   });
 
+  // If drop is active and its endsAt has passed, auto-extend to perpetual 2099
+  if (drop && drop.endsAt <= now) {
+    try {
+      drop = await prisma.drop.update({
+        where: { id: drop.id },
+        data: { endsAt: new Date("2099-12-31T23:59:59.999Z") },
+        include: {
+          periods: {
+            orderBy: { periodIndex: "asc" },
+            include: {
+              poolItems: {
+                include: { trait: true },
+              },
+            },
+          },
+        },
+      });
+    } catch {
+      // Non-blocking fallback
+    }
+  }
+
   if (!drop) {
+    // Check if there is a scheduled, paused, or ended drop explicitly set by admin
+    const nonActiveDrop = await prisma.drop.findFirst({
+      where: {
+        status: { in: ["SCHEDULED", "PAUSED", "ENDED"] },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
     const defaultCycle = getUtcCycleForTime(now);
     return Response.json({
       active: false,
-      message: "No drop event is currently active.",
+      message:
+        nonActiveDrop?.status === "PAUSED"
+          ? "Drop event is currently paused by administrator."
+          : nonActiveDrop?.status === "SCHEDULED"
+            ? "Drop event is scheduled."
+            : "No drop event is currently active.",
+      drop: nonActiveDrop
+        ? {
+            id: nonActiveDrop.id,
+            slug: nonActiveDrop.slug,
+            title: nonActiveDrop.title,
+            status: nonActiveDrop.status,
+          }
+        : undefined,
       nextCycle: defaultCycle,
     });
   }

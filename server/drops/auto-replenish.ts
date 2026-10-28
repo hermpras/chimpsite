@@ -210,6 +210,44 @@ export async function ensureDefaultTraits(prisma: PrismaClient): Promise<Trait[]
   return traits;
 }
 
+/**
+ * Ensures an active perpetual Genesis Drop exists if no drop is currently configured or active.
+ */
+export async function ensurePerpetualGenesisDrop(
+  prisma: PrismaClient,
+  now: Date = new Date(),
+): Promise<Drop & { periods: Array<DropPeriod & { poolItems: Array<DropPoolItem & { trait: Trait }> }> }> {
+  const perpetualEndsAt = new Date("2099-12-31T23:59:59.999Z");
+  const startsAt = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  return (await prisma.drop.upsert({
+    where: { slug: "genesis-drop" },
+    update: {
+      status: "ACTIVE",
+      endsAt: perpetualEndsAt,
+    },
+    create: {
+      slug: "genesis-drop",
+      title: "ChimpHood Genesis Trait Drop",
+      description: "Perpetual drop event allocating exclusive traits across 5 core categories.",
+      status: "ACTIVE",
+      startsAt,
+      endsAt: perpetualEndsAt,
+      cycleDurationHours: 2,
+    },
+    include: {
+      periods: {
+        orderBy: { periodIndex: "asc" },
+        include: {
+          poolItems: {
+            include: { trait: true },
+          },
+        },
+      },
+    },
+  })) as any;
+}
+
 export type PeriodWithPool = DropPeriod & {
   poolItems: Array<DropPoolItem & { trait: Trait }>;
 };
@@ -230,6 +268,19 @@ export async function ensureActiveCyclePeriod(
   drop: Drop,
   now: Date = new Date(),
 ): Promise<PeriodWithPool> {
+  // If drop endsAt is in the past or within 24h of expiring, but drop.status is ACTIVE,
+  // extend drop.endsAt to far future (perpetual mode) so it runs indefinitely without closing
+  if (drop.status === "ACTIVE" && drop.endsAt <= now) {
+    try {
+      drop = await prisma.drop.update({
+        where: { id: drop.id },
+        data: { endsAt: new Date("2099-12-31T23:59:59.999Z") },
+      });
+    } catch {
+      // Non-blocking fallback
+    }
+  }
+
   const cycleDurationHours =
     drop.cycleDurationHours && drop.cycleDurationHours !== 2
       ? drop.cycleDurationHours

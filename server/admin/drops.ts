@@ -399,6 +399,10 @@ export async function updateAdminDrop(
       );
     }
     dataToUpdate.status = input.status;
+    // When activating or resuming a drop, ensure endsAt is perpetual (far future) so it runs continuously without manual intervention
+    if (input.status === "ACTIVE" && drop.endsAt < new Date()) {
+      dataToUpdate.endsAt = new Date("2099-12-31T23:59:59.999Z");
+    }
   }
 
   if (input.cycleDurationHours !== undefined) {

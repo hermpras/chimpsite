@@ -203,7 +203,9 @@ export function ClaimLootboxModal({
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [minRollingDone, setMinRollingDone] = useState(false);
   const soundEnabledRef = useRef(soundEnabled);
-  soundEnabledRef.current = soundEnabled;
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   // Reset or initialize when modal opens
   useEffect(() => {

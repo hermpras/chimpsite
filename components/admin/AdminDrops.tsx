@@ -126,6 +126,30 @@ export function AdminDrops() {
     }
   };
 
+  // Perpetual Drop Lifecycle master switch state
+  const [togglingStatus, setTogglingStatus] = useState(false);
+  const handleToggleDropStatus = async (newStatus: "ACTIVE" | "PAUSED" | "ENDED") => {
+    if (!selectedDropDetail) return;
+    setTogglingStatus(true);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      await adminUpdateDrop(selectedDropDetail.id, { status: newStatus });
+      setActionSuccess(
+        newStatus === "ACTIVE"
+          ? "Drop activated in Perpetual Mode! Cycles roll over automatically every 2.5 hours without manual period creation."
+          : newStatus === "PAUSED"
+            ? "Drop paused! Claim windows and auto-replenish are temporarily held."
+            : "Drop event permanently closed.",
+      );
+      setReloadKey((k) => k + 1);
+    } catch (err: unknown) {
+      setActionError((err as Error).message || "Failed to update drop status.");
+    } finally {
+      setTogglingStatus(false);
+    }
+  };
+
   // Live 1-second ticker for real-time countdowns
   const currentTime = useCurrentTime();
 
@@ -763,32 +787,136 @@ export function AdminDrops() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Selected Drop Meta Overview */}
-              <div className="flex flex-col gap-2 rounded-lg border border-gray-800 bg-gray-900/40 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-bold text-white">
-                      {selectedDropDetail.title}
-                    </h2>
-                    <Badge variant="outline" className="text-[10px]">
-                      {selectedDropDetail.status}
-                    </Badge>
+              {/* Selected Drop Meta Overview & Master Control */}
+              <div className="flex flex-col gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-bold text-white">
+                        {selectedDropDetail.title}
+                      </h2>
+                      <Badge
+                        variant={
+                          selectedDropDetail.status === "ACTIVE"
+                            ? "success"
+                            : selectedDropDetail.status === "PAUSED"
+                              ? "warning"
+                              : "outline"
+                        }
+                        className={
+                          selectedDropDetail.status === "ENDED"
+                            ? "border-rose-500/50 text-rose-400 text-[10px]"
+                            : "text-[10px]"
+                        }
+                      >
+                        {selectedDropDetail.status === "ACTIVE"
+                          ? "🟢 ACTIVE (EVERGREEN)"
+                          : selectedDropDetail.status === "PAUSED"
+                            ? "🟡 PAUSED"
+                            : "🔴 ENDED"}
+                      </Badge>
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-400">
+                      Slug:{" "}
+                      <span className="font-mono text-gray-300">
+                        {selectedDropDetail.slug}
+                      </span>{" "}
+                      | Starts: {new Date(selectedDropDetail.startsAt).toUTCString()}{" "}
+                      | Total Periods:{" "}
+                      <span className="font-semibold text-white">
+                        {selectedDropDetail.periods?.length ?? 0}
+                      </span>
+                    </p>
                   </div>
-                  <p className="mt-0.5 text-xs text-gray-400">
-                    Slug:{" "}
-                    <span className="font-mono text-gray-300">
-                      {selectedDropDetail.slug}
-                    </span>{" "}
-                    | Timeline: {new Date(selectedDropDetail.startsAt).toUTCString()}{" "}
-                    &rarr; {new Date(selectedDropDetail.endsAt).toUTCString()}
-                  </p>
+
+                  {/* Master Lifecycle Switches */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedDropDetail.status === "ACTIVE" ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={togglingStatus}
+                          onClick={() => handleToggleDropStatus("PAUSED")}
+                          className="h-8 border-amber-500/40 text-amber-300 hover:bg-amber-950/30 text-xs"
+                        >
+                          {togglingStatus ? (
+                            <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Clock className="mr-1.5 h-3.5 w-3.5" />
+                          )}
+                          Pause Drops
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={togglingStatus}
+                          onClick={() => handleToggleDropStatus("ENDED")}
+                          className="h-8 border-rose-500/40 text-rose-300 hover:bg-rose-950/30 text-xs"
+                        >
+                          Close Drop
+                        </Button>
+                      </>
+                    ) : selectedDropDetail.status === "PAUSED" ? (
+                      <>
+                        <Button
+                          size="sm"
+                          disabled={togglingStatus}
+                          onClick={() => handleToggleDropStatus("ACTIVE")}
+                          className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs"
+                        >
+                          {togglingStatus ? (
+                            <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Flame className="mr-1.5 h-3.5 w-3.5" />
+                          )}
+                          Resume Perpetual Drops
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={togglingStatus}
+                          onClick={() => handleToggleDropStatus("ENDED")}
+                          className="h-8 border-rose-500/40 text-rose-300 hover:bg-rose-950/30 text-xs"
+                        >
+                          Close Drop
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={togglingStatus}
+                        onClick={() => handleToggleDropStatus("ACTIVE")}
+                        className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs"
+                      >
+                        {togglingStatus ? (
+                          <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Restart Perpetual Drops
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400">
-                  Total Periods:{" "}
-                  <span className="font-semibold text-white">
-                    {selectedDropDetail.periods?.length ?? 0}
-                  </span>
-                </div>
+
+                {/* Evergreen Automation Indicator */}
+                {selectedDropDetail.status === "ACTIVE" && (
+                  <div className="flex items-center gap-2 rounded border border-emerald-500/20 bg-emerald-950/20 px-3 py-2 text-xs text-emerald-300">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-400" />
+                    <span>
+                      <strong>Perpetual Drop Active:</strong> Cycles automatically replenish every 2.5 hours with 250 stock. You don&apos;t need to manually create periods or toggle dates.
+                    </span>
+                  </div>
+                )}
+                {selectedDropDetail.status === "PAUSED" && (
+                  <div className="flex items-center gap-2 rounded border border-amber-500/20 bg-amber-950/20 px-3 py-2 text-xs text-amber-300">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0 text-amber-400" />
+                    <span>
+                      <strong>Drop is Paused:</strong> New claims and automatic cycle replenishment are paused until you click &quot;Resume Perpetual Drops&quot;.
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Hype Control Strategy Card */}

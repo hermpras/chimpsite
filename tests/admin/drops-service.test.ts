@@ -69,9 +69,9 @@ describe("Admin Drops Service - B-1 Drop Configuration Engine", () => {
       expect(isAlignedToUtc2HourCycle(new Date("2026-10-25T02:00:00.123Z"))).toBe(false);
     });
 
-    it("generates correct 2-hour cycle periods with 15-minute config lock lead", () => {
+    it("generates correct 2.5-hour cycle periods with 15-minute config lock lead", () => {
       const startsAt = new Date("2026-10-25T00:00:00.000Z");
-      const endsAt = new Date("2026-10-25T06:00:00.000Z"); // 3 cycles (6 hours)
+      const endsAt = new Date("2026-10-25T07:30:00.000Z"); // 3 cycles (7.5 hours = 3 * 2.5h)
 
       const periods = generate2HourCycleBoundaries(startsAt, endsAt);
       expect(periods).toHaveLength(3);
@@ -79,20 +79,20 @@ describe("Admin Drops Service - B-1 Drop Configuration Engine", () => {
       // Period 1
       expect(periods[0].periodIndex).toBe(1);
       expect(periods[0].startsAt.toISOString()).toBe("2026-10-25T00:00:00.000Z");
-      expect(periods[0].endsAt.toISOString()).toBe("2026-10-25T02:00:00.000Z");
+      expect(periods[0].endsAt.toISOString()).toBe("2026-10-25T02:30:00.000Z");
       expect(periods[0].configLockAt.toISOString()).toBe("2026-10-24T23:45:00.000Z"); // 15m lead
 
       // Period 2
       expect(periods[1].periodIndex).toBe(2);
-      expect(periods[1].startsAt.toISOString()).toBe("2026-10-25T02:00:00.000Z");
-      expect(periods[1].endsAt.toISOString()).toBe("2026-10-25T04:00:00.000Z");
-      expect(periods[1].configLockAt.toISOString()).toBe("2026-10-25T01:45:00.000Z");
+      expect(periods[1].startsAt.toISOString()).toBe("2026-10-25T02:30:00.000Z");
+      expect(periods[1].endsAt.toISOString()).toBe("2026-10-25T05:00:00.000Z");
+      expect(periods[1].configLockAt.toISOString()).toBe("2026-10-25T02:15:00.000Z");
 
       // Period 3
       expect(periods[2].periodIndex).toBe(3);
-      expect(periods[2].startsAt.toISOString()).toBe("2026-10-25T04:00:00.000Z");
-      expect(periods[2].endsAt.toISOString()).toBe("2026-10-25T06:00:00.000Z");
-      expect(periods[2].configLockAt.toISOString()).toBe("2026-10-25T03:45:00.000Z");
+      expect(periods[2].startsAt.toISOString()).toBe("2026-10-25T05:00:00.000Z");
+      expect(periods[2].endsAt.toISOString()).toBe("2026-10-25T07:30:00.000Z");
+      expect(periods[2].configLockAt.toISOString()).toBe("2026-10-25T04:45:00.000Z");
     });
   });
 
@@ -113,7 +113,7 @@ describe("Admin Drops Service - B-1 Drop Configuration Engine", () => {
         description: "Official genesis trait drop",
         status: "DRAFT",
         startsAt: new Date("2026-10-25T02:00:00.000Z"),
-        endsAt: new Date("2026-10-25T06:00:00.000Z"),
+        endsAt: new Date("2026-10-25T07:00:00.000Z"),
       });
       mockPrisma.dropPeriod.create.mockResolvedValue({ id: "period-mock" });
 
@@ -122,7 +122,7 @@ describe("Admin Drops Service - B-1 Drop Configuration Engine", () => {
         title: "Genesis Drop",
         description: "Official genesis trait drop",
         startsAt: "2026-10-25T02:00:00.000Z",
-        endsAt: "2026-10-25T06:00:00.000Z",
+        endsAt: "2026-10-25T07:00:00.000Z",
         adminUserId: "admin-1",
       });
 
@@ -133,11 +133,11 @@ describe("Admin Drops Service - B-1 Drop Configuration Engine", () => {
           description: "Official genesis trait drop",
           status: "DRAFT",
           startsAt: new Date("2026-10-25T02:00:00.000Z"),
-          endsAt: new Date("2026-10-25T06:00:00.000Z"),
+          endsAt: new Date("2026-10-25T07:00:00.000Z"),
         },
       });
 
-      // 4 hours span = 2 periods created
+      // 5 hours span = 2 periods of 2.5 hours created
       expect(mockPrisma.dropPeriod.create).toHaveBeenCalledTimes(2);
       expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -242,7 +242,7 @@ describe("Admin Drops Service - B-1 Drop Configuration Engine", () => {
         dropId: "drop-1",
         periodIndex: 3,
         startsAt: new Date("2026-10-25T04:00:00.000Z"),
-        endsAt: new Date("2026-10-25T06:00:00.000Z"),
+        endsAt: new Date("2026-10-25T06:30:00.000Z"),
         configLockAt: new Date("2026-10-25T03:45:00.000Z"),
         status: "PENDING_CONFIG",
       });
@@ -258,7 +258,7 @@ describe("Admin Drops Service - B-1 Drop Configuration Engine", () => {
           dropId: "drop-1",
           periodIndex: 3,
           startsAt: new Date("2026-10-25T04:00:00.000Z"),
-          endsAt: new Date("2026-10-25T06:00:00.000Z"),
+          endsAt: new Date("2026-10-25T06:30:00.000Z"),
           configLockAt: new Date("2026-10-25T03:45:00.000Z"),
           status: "PENDING_CONFIG",
           isStockConfigured: false,
