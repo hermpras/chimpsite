@@ -190,8 +190,13 @@ async function getNextQueueNumber(
  * Checks all qualification requirements and assigns slot or queue entry.
  * Safely handles concurrency collisions on slot and queue number allocations via bounded retries.
  */
-export async function evaluateUserQualification(
-  prisma: PrismaClient,
+/**
+ * Internal logic for qualification evaluation and slot/queue allocation.
+ * Safe to execute on raw PrismaClient for readOnly evaluations (zero mutations, non-locking),
+ * or inside an interactive transaction (tx) when mutations are needed.
+ */
+async function executeQualificationEvaluation(
+  tx: PrismaClient | PrismaTransactionClient,
   input: {
     userId: string;
     programId: string;
@@ -199,16 +204,10 @@ export async function evaluateUserQualification(
     maxRetries?: number;
     readOnly?: boolean;
   },
+  now: Date,
 ): Promise<QualificationCheckResult> {
-  const maxRetries = input.readOnly ? 0 : (input.maxRetries ?? MAX_WL_RETRIES);
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const now = input.now ?? new Date();
-
-    try {
-      return await prisma.$transaction(async (tx) => {
-        // 1. Fetch user with relations
-        const user = await tx.user.findUnique({
+  // 1. Fetch user with relations
+  const user = await tx.user.findUnique({
           where: { id: input.userId },
           include: {
             wallet: true,
@@ -791,6 +790,36 @@ export async function evaluateUserQualification(
             isBanned,
           },
         };
+}
+
+/**
+ * Checks all qualification requirements and assigns slot or queue entry.
+ * Safely handles concurrency collisions on slot and queue number allocations via bounded retries.
+ * For read-only queries (readOnly: true), executes directly on PrismaClient without transactions
+ * to prevent pinning connections in Supabase Transaction Pooler.
+ */
+export async function evaluateUserQualification(
+  prisma: PrismaClient,
+  input: {
+    userId: string;
+    programId: string;
+    now?: Date;
+    maxRetries?: number;
+    readOnly?: boolean;
+  },
+): Promise<QualificationCheckResult> {
+  const maxRetries = input.readOnly ? 0 : (input.maxRetries ?? MAX_WL_RETRIES);
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const now = input.now ?? new Date();
+
+    try {
+      if (input.readOnly && typeof prisma.user?.findUnique === "function") {
+        return await executeQualificationEvaluation(prisma, input, now);
+      }
+
+      return await prisma.$transaction(async (tx) => {
+        return await executeQualificationEvaluation(tx, input, now);
       });
     } catch (err: unknown) {
       if (isRetryableWlConcurrencyConflict(err) && attempt < maxRetries) {
