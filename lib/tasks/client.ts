@@ -63,7 +63,7 @@ export interface ActiveCampaignTask {
     id: string;
     submissionType: "URL" | "IMAGE_URL" | "TEXT_PROOF" | "OAUTH_VERIFICATION" | string;
     payload: string;
-    status: "PENDING" | "APPROVED" | "REJECTED";
+    status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
     reviewerNotes: string | null;
     reviewedAt: string | null;
     createdAt: string;

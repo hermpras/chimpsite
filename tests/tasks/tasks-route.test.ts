@@ -156,7 +156,7 @@ describe("Active Tasks API route (app/api/tasks/route.ts)", () => {
             id: "ev_1",
             submissionType: "URL",
             payload: "https://x.com/post/1",
-            status: "PENDING",
+            status: "PENDING_REVIEW",
             reviewerNotes: null,
             reviewedAt: null,
             createdAt: new Date("2026-10-24T12:00:00Z"),
@@ -171,7 +171,7 @@ describe("Active Tasks API route (app/api/tasks/route.ts)", () => {
     const body = await res.json();
     expect(body.configured).toBe(true);
     expect(body.campaigns[0].tasks[0].progress.status).toBe("SUBMITTED");
-    expect(body.campaigns[0].tasks[0].latestSubmission.status).toBe("PENDING");
+    expect(body.campaigns[0].tasks[0].latestSubmission.status).toBe("PENDING_REVIEW");
     expect(body.campaigns[0].tasks[0].latestSubmission.payload).toBe(
       "https://x.com/post/1",
     );

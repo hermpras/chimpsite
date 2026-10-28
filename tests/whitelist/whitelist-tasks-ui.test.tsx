@@ -181,7 +181,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
               id: "ev-1",
               submissionType: "URL",
               payload: "https://x.com/chimphood/status/123",
-              status: "PENDING",
+              status: "PENDING_REVIEW",
               reviewerNotes: null,
               reviewedAt: null,
               createdAt: "2026-10-24T12:00:00Z",
@@ -306,7 +306,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
       success: true,
       submission: {
         id: "ev-new",
-        status: "PENDING",
+        status: "PENDING_REVIEW",
       },
       taskProgress: {
         status: "SUBMITTED",
@@ -380,7 +380,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
 
     vi.mocked(tasksClient.submitTaskEvidence).mockResolvedValueOnce({
       success: true,
-      submission: { id: "ev-fixed", status: "PENDING" },
+      submission: { id: "ev-fixed", status: "PENDING_REVIEW" },
       taskProgress: { status: "SUBMITTED" },
     } as any);
 
@@ -534,5 +534,49 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     });
 
     expect(screen.getByText("You are in the queue at rank #3.")).toBeInTheDocument();
+  });
+
+  it("renders pending review status directly from latestSubmission status PENDING_REVIEW even when progress is null", async () => {
+    const campaignWithPendingSubmissionOnly: tasksClient.ActiveCampaignItem[] = [
+      {
+        ...mockActiveCampaigns[0],
+        tasks: [
+          {
+            ...mockActiveCampaigns[0].tasks[0],
+            id: "task-pending-no-progress",
+            title: "Task With Direct PENDING_REVIEW",
+            progress: null,
+            latestSubmission: {
+              id: "ev-direct-pending",
+              submissionType: "URL",
+              payload: "https://x.com/chimphood/status/999",
+              status: "PENDING_REVIEW",
+              reviewerNotes: null,
+              reviewedAt: null,
+              createdAt: "2026-10-24T12:00:00Z",
+            },
+          },
+        ],
+      },
+    ];
+
+    vi.mocked(tasksClient.fetchActiveTasks).mockResolvedValueOnce({
+      configured: true,
+      campaigns: campaignWithPendingSubmissionOnly,
+    });
+
+    render(<WhitelistPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Task With Direct PENDING_REVIEW")).toBeInTheDocument();
+    });
+
+    // Directly tests that task.latestSubmission?.status === "PENDING_REVIEW"
+    // correctly triggers the "Pending Review" state without relying on progress?.status === "SUBMITTED"
+    expect(screen.getByText("Pending Review")).toBeInTheDocument();
+    expect(screen.getByText("Pending Moderator Review")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Submitted Proof: https:\/\/x\.com\/chimphood\/status\/999/),
+    ).toBeInTheDocument();
   });
 });

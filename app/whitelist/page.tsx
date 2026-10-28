@@ -444,7 +444,7 @@ export default function WhitelistPage() {
       };
     }
     if (
-      task.latestSubmission?.status === "PENDING" ||
+      task.latestSubmission?.status === "PENDING_REVIEW" ||
       task.progress?.status === "SUBMITTED"
     ) {
       return {
