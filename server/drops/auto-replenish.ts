@@ -384,14 +384,7 @@ export async function ensureActiveCyclePeriod(
     }
 
     // Clean up any pool items not in active traits (if unclaimed)
-    const activeTraits = tx.trait?.findMany
-      ? await tx.trait.findMany({
-          where: { isActive: true },
-          orderBy: [{ category: "asc" }, { rarity: "asc" }, { name: "asc" }],
-        })
-      : traits;
-
-    const poolTraits = activeTraits.length > 0 ? activeTraits : traits;
+    const poolTraits = traits;
     const allocations = calculateDynamicPoolAllocations(poolTraits);
     const validTraitIds = poolTraits.map((t) => t.id);
 
@@ -403,28 +396,45 @@ export async function ensureActiveCyclePeriod(
       },
     });
 
-    // Provision pool items for each active trait
-    for (const alloc of allocations) {
-      await tx.dropPoolItem.upsert({
-        where: {
-          periodId_traitId: {
-            periodId: periodRecord.id,
-            traitId: alloc.traitId,
-          },
-        },
-        update: {
-          allocatedStock: alloc.stock,
-          weight: alloc.weight,
-        },
-        create: {
-          periodId: periodRecord.id,
-          traitId: alloc.traitId,
-          allocatedStock: alloc.stock,
-          remainingStock: alloc.stock,
-          claimedStock: 0,
-          weight: alloc.weight,
-        },
-      });
+    // Fetch existing pool items for this period to verify pool completeness
+    const existingPoolItems = tx.dropPoolItem?.findMany
+      ? await tx.dropPoolItem.findMany({
+          where: { periodId: periodRecord.id },
+        })
+      : [];
+
+    const existingTraitIds = new Set(existingPoolItems.map((item) => item.traitId));
+    const isPoolComplete =
+      validTraitIds.length > 0 &&
+      validTraitIds.every((id) => existingTraitIds.has(id));
+
+    // Provision or complete pool items concurrently if any active trait item is missing.
+    // Preserves existing items' remainingStock and claimedStock without reset.
+    if (!isPoolComplete) {
+      await Promise.all(
+        allocations.map((alloc) =>
+          tx.dropPoolItem.upsert({
+            where: {
+              periodId_traitId: {
+                periodId: periodRecord.id,
+                traitId: alloc.traitId,
+              },
+            },
+            update: {
+              allocatedStock: alloc.stock,
+              weight: alloc.weight,
+            },
+            create: {
+              periodId: periodRecord.id,
+              traitId: alloc.traitId,
+              allocatedStock: alloc.stock,
+              remainingStock: alloc.stock,
+              claimedStock: 0,
+              weight: alloc.weight,
+            },
+          }),
+        ),
+      );
     }
 
     const fullPeriod = await tx.dropPeriod.findUniqueOrThrow({

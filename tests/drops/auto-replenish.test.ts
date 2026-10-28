@@ -302,4 +302,235 @@ describe("Auto-Replenish Drop Engine", () => {
     expect(legendaryTraits).toHaveLength(5);
     expect(legendaryTraits.reduce((sum, a) => sum + a.stock, 0)).toBe(10);
   });
+
+  it("skips re-upserting pool items when transaction finds all active trait items are already complete", async () => {
+    const fullPoolItems = DEFAULT_TRAIT_TEMPLATES.map((t, i) => ({
+      id: `pi-${i}`,
+      periodId: "period-already-complete",
+      traitId: `trait-${t.slug}`,
+      allocatedStock: t.stock,
+      remainingStock: t.stock,
+      claimedStock: 0,
+      weight: t.weight,
+      trait: {
+        id: `trait-${t.slug}`,
+        slug: t.slug,
+        name: t.name,
+        category: t.category,
+        rarity: t.rarity,
+      },
+    }));
+
+    const fullPeriod = {
+      id: "period-already-complete",
+      periodIndex: 1,
+      status: "ACTIVE",
+      isStockConfigured: true,
+      isStockLocked: true,
+      poolItems: fullPoolItems,
+    };
+
+    const txMock = {
+      dropPeriod: {
+        upsert: vi.fn().mockResolvedValue(fullPeriod),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(fullPeriod),
+      },
+      dropPoolItem: {
+        findMany: vi.fn().mockResolvedValue(fullPoolItems),
+        upsert: vi.fn().mockResolvedValue({}),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+    };
+
+    const mockPrisma = {
+      dropPeriod: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      trait: {
+        findMany: vi.fn().mockResolvedValue(
+          DEFAULT_TRAIT_TEMPLATES.map((t) => ({
+            id: `trait-${t.slug}`,
+            slug: t.slug,
+            name: t.name,
+            category: t.category,
+            rarity: t.rarity,
+            isActive: true,
+          })),
+        ),
+      },
+      $transaction: vi.fn().mockImplementation(async (cb) => cb(txMock)),
+    } as any;
+
+    const now = new Date();
+    const drop = {
+      id: "drop-1",
+      startsAt: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+      endsAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+    } as any;
+
+    const result = await ensureActiveCyclePeriod(mockPrisma, drop, now);
+
+    expect(result.id).toBe("period-already-complete");
+    // Crucial: upsert should NOT be called when pool is already complete (saves RTT and prevents lock contention)
+    expect(txMock.dropPoolItem.upsert).not.toHaveBeenCalled();
+  });
+
+  it("provisions missing traits when existing pool is incomplete without corrupting existing items", async () => {
+    // Only 2 of the 5 traits exist in the pool
+    const partialPoolItems = [
+      {
+        id: "pi-0",
+        periodId: "period-partial",
+        traitId: `trait-${DEFAULT_TRAIT_TEMPLATES[0].slug}`,
+        allocatedStock: 85,
+        remainingStock: 70, // Already partially claimed (15 claimed)
+        claimedStock: 15,
+        weight: 85,
+        trait: DEFAULT_TRAIT_TEMPLATES[0],
+      },
+      {
+        id: "pi-1",
+        periodId: "period-partial",
+        traitId: `trait-${DEFAULT_TRAIT_TEMPLATES[1].slug}`,
+        allocatedStock: 65,
+        remainingStock: 65,
+        claimedStock: 0,
+        weight: 65,
+        trait: DEFAULT_TRAIT_TEMPLATES[1],
+      },
+    ];
+
+    const completedPeriod = {
+      id: "period-partial",
+      periodIndex: 1,
+      status: "ACTIVE",
+      isStockConfigured: true,
+      isStockLocked: true,
+      poolItems: [...partialPoolItems],
+    };
+
+    const txMock = {
+      dropPeriod: {
+        upsert: vi.fn().mockResolvedValue(completedPeriod),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(completedPeriod),
+      },
+      dropPoolItem: {
+        findMany: vi.fn().mockResolvedValue(partialPoolItems),
+        upsert: vi.fn().mockResolvedValue({}),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+    };
+
+    const mockPrisma = {
+      dropPeriod: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      trait: {
+        findMany: vi.fn().mockResolvedValue(
+          DEFAULT_TRAIT_TEMPLATES.map((t) => ({
+            id: `trait-${t.slug}`,
+            slug: t.slug,
+            name: t.name,
+            category: t.category,
+            rarity: t.rarity,
+            isActive: true,
+          })),
+        ),
+      },
+      $transaction: vi.fn().mockImplementation(async (cb) => cb(txMock)),
+    } as any;
+
+    const now = new Date();
+    const drop = {
+      id: "drop-1",
+      startsAt: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+      endsAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+    } as any;
+
+    const result = await ensureActiveCyclePeriod(mockPrisma, drop, now);
+
+    expect(result.id).toBe("period-partial");
+    // Pool was incomplete (2 of 5), so all 5 allocations are upserted concurrently to complete the pool
+    expect(txMock.dropPoolItem.upsert).toHaveBeenCalledTimes(5);
+  });
+
+  it("handles concurrent ensureActiveCyclePeriod invocations safely and idempotently", async () => {
+    let transactionCount = 0;
+    const sharedPeriod = {
+      id: "period-concurrent",
+      periodIndex: 1,
+      status: "ACTIVE",
+      isStockConfigured: true,
+      isStockLocked: true,
+      poolItems: DEFAULT_TRAIT_TEMPLATES.map((t, i) => ({
+        id: `pi-${i}`,
+        periodId: "period-concurrent",
+        traitId: `trait-${t.slug}`,
+        allocatedStock: t.stock,
+        remainingStock: t.stock,
+        claimedStock: 0,
+        weight: t.weight,
+        trait: t,
+      })),
+    };
+
+    const txMock = {
+      dropPeriod: {
+        upsert: vi.fn().mockResolvedValue(sharedPeriod),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(sharedPeriod),
+      },
+      dropPoolItem: {
+        findMany: vi.fn().mockImplementation(async () => {
+          // If transaction has already run once, pool items are already complete
+          return transactionCount > 1 ? sharedPeriod.poolItems : [];
+        }),
+        upsert: vi.fn().mockResolvedValue({}),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+    };
+
+    const mockPrisma = {
+      dropPeriod: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      trait: {
+        findMany: vi.fn().mockResolvedValue(
+          DEFAULT_TRAIT_TEMPLATES.map((t) => ({
+            id: `trait-${t.slug}`,
+            slug: t.slug,
+            name: t.name,
+            category: t.category,
+            rarity: t.rarity,
+            isActive: true,
+          })),
+        ),
+      },
+      $transaction: vi.fn().mockImplementation(async (cb) => {
+        transactionCount++;
+        return await cb(txMock);
+      }),
+    } as any;
+
+    const now = new Date();
+    const drop = {
+      id: "drop-1",
+      startsAt: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+      endsAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+    } as any;
+
+    // Simulate 3 concurrent callers arriving simultaneously
+    const [res1, res2, res3] = await Promise.all([
+      ensureActiveCyclePeriod(mockPrisma, drop, now),
+      ensureActiveCyclePeriod(mockPrisma, drop, now),
+      ensureActiveCyclePeriod(mockPrisma, drop, now),
+    ]);
+
+    expect(res1.id).toBe("period-concurrent");
+    expect(res2.id).toBe("period-concurrent");
+    expect(res3.id).toBe("period-concurrent");
+    expect(transactionCount).toBe(3);
+  });
 });
