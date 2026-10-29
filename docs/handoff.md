@@ -88,7 +88,7 @@ Stage 1 focuses on establishing the PostgreSQL database foundation using Prisma 
 - **`UserRole`** & **`AdminRole`**: System privilege hierarchy (`USER`, `MODERATOR`, `ADMIN`, `SUPER_ADMIN`) and `AdminRole` model for granular permissions (`permissions: String[]`).
 - **`BanRecord`**: Enforcement records with type (`PERMANENT`, `TEMPORARY`, `SHADOWBAN`, `FEATURE_RESTRICTION`), scope (`FULL_SYSTEM`, `CLAIM_RESTRICTED`, `GIFT_RESTRICTED`, `WL_DISQUALIFIED`), reason, evidence, issuer, and expiration.
 - **`AbuseFlag`**: Automated or manual flagging for anomalous activities (sybil clusters, botting, duplicate X handles, burst claims) with severity level and investigation status.
-- **`AuditLog`**: Immutable audit trail for all administrative actions and sensitive data mutations (`actorId`, `action`, `entityType`, `entityId`, `oldValues`, `newValues`, metadata, IP, user-agent).
+- **`AuditLog`**: Immutable audit trail for all administrative actions and sensitive data mutations (`actorId`, `action`, `entityType`, `entityId`, `oldValues`, `newValues`, metadata, IP, user-agent). Read-only viewing via `GET /api/admin/audit-logs` strictly restricted to `SUPER_ADMIN`.
 
 ---
 
@@ -545,4 +545,38 @@ DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
   - `tests/admin/admin-abuse-flags-ui.test.tsx` (8 UI tests).
   - `tests/auth/stage3-rate-limiting.test.ts` (4 rate limiting budget tests).
   - Full suite status: 92 files, 1,124 tests passing (100%).
+
+---
+
+## 12. Super Admin Audit Log Dashboard & Query API (Oct 30, 2026) — DONE
+
+### 12.1 Server-Side Access Control & Read-Only Invariant
+- **Role Restriction**: Access strictly limited to `SUPER_ADMIN` via `requireAdminSession(prisma, { requiredRole: "SUPER_ADMIN" })`.
+- **Enforced Rejections**: `ADMIN` and `MODERATOR` requests are rejected with HTTP 403 `FORBIDDEN`. Unauthenticated requests return HTTP 401 `UNAUTHORIZED`.
+- **Read-Only Invariant**: Audit log is strictly read-only; mutation endpoints (`POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`) return HTTP 405 `Method Not Allowed`. No audit records can be edited or deleted.
+- **Unchanged Logging Mechanism**: Existing mutation audit recording (`recordAuditLog` in `server/audit/audit.ts`) remains unmodified.
+
+### 12.2 Query API & Privacy Protection
+- **Endpoint**: `GET /api/admin/audit-logs`.
+- **Filters**: Optional query filtering by `action`, `entityType`, `actorId`, and date range (`from`, `to`).
+- **Date Validation**: Validates date formats; returns HTTP 400 `INVALID_DATE_RANGE` on malformed dates or when `from > to`.
+- **Pagination & Ordering**: Supports `limit` and `offset` pagination, enforced maximum `limit` capped at 100 (default 50). Sorted newest first (`createdAt DESC`) with deterministic tie-breaker (`id DESC`).
+- **Safe Projection (Anti-Leak)**: `actorIp` and `userAgent` are strictly omitted from database queries and response payloads to prevent exposure of sensitive infrastructure and telemetry data. Actor data includes only public display fields (`id`, `role`, `wallet.address`, `xIdentity.username`).
+
+### 12.3 Admin Dashboard UI
+- **Sidebar Integration**: Added `Audit Log` tab to `AdminSidebar.tsx` gated by `superAdminOnly: true`. Tab is rendered exclusively for `SUPER_ADMIN` accounts and hidden for lower roles.
+- **Dashboard Guarding**: `AdminDashboardClient.tsx` verifies `isSuperAdmin` before rendering `<AdminAuditLog />` and displays an explicit access restricted banner if accessed by other roles.
+- **Component Interface (`AdminAuditLog.tsx`)**:
+  - Displays formatted timestamp, actor (with role badge and shortened wallet address), action badge, entity type, and entity ID.
+  - Interactive filter form with inputs for action, entity type, actor ID, date range, page size selector, and Reset capability.
+  - Safe detail modal inspecting `oldValues`, `newValues`, and `metadata` formatted as sanitized JSON.
+  - Complete state handling for loading spinners, empty search results, API error banners with retry triggers, and 403 access denial.
+
+### 12.4 Verification & Implementation Status
+- **Implementation Commit**: `dd4156881d3bd17d25dc2876c87850eb12c54591`.
+- **Test Suite**: 98 test files, 1,232 tests passing (100% pass rate).
+- **TypeScript**: `tsc --noEmit` passed with 0 errors.
+- **ESLint**: `eslint .` passed with 0 errors (17 pre-existing warnings in unrelated legacy components).
+- **Production Build**: `next build --webpack` successfully compiled all pages and the new route `ƒ /api/admin/audit-logs`.
+
 
