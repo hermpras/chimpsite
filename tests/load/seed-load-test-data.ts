@@ -25,6 +25,14 @@ import {
 } from "../../lib/auth/session";
 import fs from "node:fs";
 import path from "node:path";
+import dotenv from "dotenv";
+
+// Retain CLI/caller provided DATABASE_URL while sourcing SESSION_SECRET from .env.local
+const callerDatabaseUrl = process.env.DATABASE_URL;
+dotenv.config({ path: ".env.local" });
+if (callerDatabaseUrl) {
+  process.env.DATABASE_URL = callerDatabaseUrl;
+}
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -152,7 +160,18 @@ async function main() {
     },
   });
 
-  // 4. Create DropPoolItems
+  // 4. Clean up previous test claims and acquired items for this period to ensure invariant consistency
+  await prisma.claim.deleteMany({
+    where: { periodId: period.id },
+  });
+  await prisma.inventoryItem.deleteMany({
+    where: {
+      ownerId: { startsWith: "usr-load-test-" },
+      acquiredVia: "CLAIM",
+    },
+  });
+
+  // 5. Create DropPoolItems
   // Default: 20 stock total for contention testing (or 100 for capacity testing)
   const stockConfig = [
     { traitId: "trait-load-bg", stock: 10, weight: 50 },

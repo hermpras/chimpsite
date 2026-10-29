@@ -12,15 +12,92 @@
  *   node tests/load/autocannon-drops-claim.mjs --connections 25  # Light load
  *   node tests/load/autocannon-drops-claim.mjs --connections 50  # Moderate load
  *   node tests/load/autocannon-drops-claim.mjs --connections 100 # Target 100 concurrent
+ *   node tests/load/autocannon-drops-claim.mjs --connections 100 --simulate-ips # Multi-IP test (RFC 5737)
  */
 
 import http from "node:http";
 import https from "node:https";
 import fs from "node:fs";
 import path from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * RFC 5737 Reserved Documentation Subnets:
+ *   - TEST-NET-1: 192.0.2.0/24
+ *   - TEST-NET-2: 198.51.100.0/24 (primary block for simulation)
+ *   - TEST-NET-3: 203.0.113.0/24 (secondary overflow block)
+ *
+ * Generates deterministic, collision-free synthetic IPs strictly within RFC 5737.
+ */
+export function getDeterministicRfc5737Ip(index) {
+  const safeIndex = Math.abs(Number(index) || 0);
+  const subnet = Math.floor(safeIndex / 250);
+  const host = (safeIndex % 250) + 1; // 1 to 250
+  if (subnet === 0) {
+    return `198.51.100.${host}`;
+  }
+  if (subnet === 1) {
+    return `203.0.113.${host}`;
+  }
+  return `192.0.2.${(safeIndex % 250) + 1}`;
+}
+
+/**
+ * Validates that the target URL is strictly a localhost URL.
+ * Prevents simulated headers or synthetic IP injection against staging, Supabase, or production.
+ */
+export function isLocalhostUrl(urlStr) {
+  try {
+    const parsed = new URL(urlStr);
+    const hostname = parsed.hostname.toLowerCase();
+    return (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1" ||
+      hostname === "[::1]"
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks whether an argument flag is present in CLI argument list.
+ */
+export function hasFlag(argList, name) {
+  return (
+    argList.includes(`--${name}`) || argList.some((arg) => arg.startsWith(`--${name}=`))
+  );
+}
+
+/**
+ * Builds request headers for a given worker/session.
+ * If simulateIps is true, injects an RFC 5737 synthetic IP into X-Forwarded-For.
+ * Never outputs cookies or secrets to logs.
+ */
+export function buildRequestHeaders({
+  workerId,
+  sessionIndex,
+  cookie,
+  payloadLength,
+  simulateIps = false,
+}) {
+  const headers = {
+    "Content-Type": "application/json",
+    "Content-Length": payloadLength,
+    Cookie: cookie,
+    "User-Agent": `ChimpHood-LoadWorker/${workerId}`,
+  };
+
+  if (simulateIps) {
+    headers["X-Forwarded-For"] = getDeterministicRfc5737Ip(sessionIndex);
+  }
+
+  return headers;
+}
 
 // Parse CLI args
 const args = process.argv.slice(2);
@@ -37,6 +114,24 @@ const durationSeconds = parseInt(getArg("duration", "15"), 10);
 const baseUrl = getArg("url", process.env.BASE_URL || "http://localhost:3000");
 const dropId = getArg("dropId", process.env.DROP_ID || "drop-load-test");
 const periodId = getArg("periodId", process.env.PERIOD_ID || "period-load-test");
+const simulateIps =
+  hasFlag(args, "simulate-ips") ||
+  process.env.SIMULATE_IPS === "true" ||
+  process.env.SIMULATE_IPS === "1";
+
+// Safety check: simulate-ips is ONLY permitted against localhost
+if (simulateIps && !isLocalhostUrl(baseUrl)) {
+  console.error("==================================================================");
+  console.error(
+    "FATAL SAFETY ERROR: --simulate-ips is ONLY permitted when targeting localhost.",
+  );
+  console.error(`Target URL was: ${baseUrl}`);
+  console.error(
+    "Aborting immediately to prevent IP header spoofing against remote hosts.",
+  );
+  console.error("==================================================================");
+  process.exit(1);
+}
 
 // Load pre-seeded user sessions if available
 const sessionsPath = path.join(__dirname, "load-test-sessions.json");
@@ -50,24 +145,30 @@ if (fs.existsSync(sessionsPath)) {
 }
 
 if (testSessions.length === 0) {
-  console.log("No load-test-sessions.json found. Using 150 synthetic test user headers.");
   testSessions = Array.from({ length: 150 }, (_, i) => ({
     userId: `load-test-user-${i + 1}`,
     cookie: `chimphood_session=mock-test-session-${i + 1}`,
   }));
 }
 
-console.log("==================================================================");
-console.log(`Task 5-B: Load Test on POST /api/drops/claim`);
-console.log(`Target URL:     ${baseUrl}/api/drops/claim`);
-console.log(`Connections:    ${connections} concurrent clients`);
-console.log(`Duration:       ${durationSeconds} seconds`);
-console.log(`Drop ID:        ${dropId}`);
-console.log(`Period ID:      ${periodId}`);
-console.log(`Sessions count: ${testSessions.length} test users`);
-console.log("==================================================================\n");
-
 async function runNativeLoadTest() {
+  console.log("==================================================================");
+  console.log(`Task 5-B: Load Test on POST /api/drops/claim`);
+  console.log(`Target URL:     ${baseUrl}/api/drops/claim`);
+  console.log(`Connections:    ${connections} concurrent clients`);
+  console.log(`Duration:       ${durationSeconds} seconds`);
+  console.log(`Drop ID:        ${dropId}`);
+  console.log(`Period ID:      ${periodId}`);
+  console.log(`Sessions count: ${testSessions.length} test users`);
+  console.log(
+    `Simulate IPs:   ${
+      simulateIps
+        ? "ENABLED (RFC 5737 TEST-NET-2/3 deterministic IPs)"
+        : "DISABLED (Default single-IP local socket)"
+    }`,
+  );
+  console.log("==================================================================\n");
+
   const urlObj = new URL(`${baseUrl}/api/drops/claim`);
   const isHttps = urlObj.protocol === "https:";
   const clientLib = isHttps ? https : http;
@@ -95,7 +196,16 @@ async function runNativeLoadTest() {
   }, durationSeconds * 1000);
 
   async function worker(workerId) {
-    const session = testSessions[workerId % testSessions.length];
+    const sessionIndex = workerId % testSessions.length;
+    const session = testSessions[sessionIndex];
+
+    const headers = buildRequestHeaders({
+      workerId,
+      sessionIndex,
+      cookie: session.cookie,
+      payloadLength: payloadBuffer.length,
+      simulateIps,
+    });
 
     {
       const reqStart = Date.now();
@@ -105,12 +215,7 @@ async function runNativeLoadTest() {
           {
             method: "POST",
             agent,
-            headers: {
-              "Content-Type": "application/json",
-              "Content-Length": payloadBuffer.length,
-              Cookie: session.cookie,
-              "User-Agent": `ChimpHood-LoadWorker/${workerId}`,
-            },
+            headers,
           },
           (res) => {
             let body = "";
@@ -187,7 +292,15 @@ async function runNativeLoadTest() {
   }
 }
 
-runNativeLoadTest().catch((err) => {
-  console.error("Load test failed:", err);
-  process.exit(1);
-});
+// Automatically invoke only when executed directly via Node.js CLI, not when imported
+const isDirectRun =
+  !process.env.VITEST &&
+  Boolean(process.argv[1]) &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (isDirectRun) {
+  runNativeLoadTest().catch((err) => {
+    console.error("Load test failed:", err);
+    process.exit(1);
+  });
+}
