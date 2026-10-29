@@ -94,19 +94,19 @@ Stage 1 focuses on establishing the PostgreSQL database foundation using Prisma 
 
 ## 3. Constraint Matrix & Enforcing Mechanism
 
-| Invariant / Business Rule                             | Enforcement Mechanism                                                | Notes / Stage                                                              |
-| ----------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Wallet address unique & lowercase                     | Prisma `@unique` + PostgreSQL CHECK regex                            | Normalized in backend prior to storage.                                    |
-| X Snowflake ID unique                                 | Prisma `@unique`                                                     | Prevents multi-profile linking of a single X account.                      |
-| 1 claim per user per drop per period                  | Prisma `@@unique([userId, dropId, periodId])`                        | Enforced directly at PostgreSQL index level.                               |
-| 1 trait copy per edition                              | Prisma `@@unique([traitId, edition])`                                | Trait collection serial number integrity.                                  |
-| 1 inventory item has exactly 1 active owner           | Foreign Key `ownerId` -> `User.id`                                   | Exactly one owner relation foreign key per item.                           |
-| 1 WL slot per slotNumber & per user                   | Prisma `@@unique([programId, slotNumber])` & `([programId, userId])` | Prevents slot duplicate grabbing.                                          |
-| Stable WL queue tie-breaker                           | Prisma `@@unique([programId, queueNumber])`                          | Deterministic, indexed queue ordering.                                     |
-| Stock must not be negative (`>= 0`)                   | PostgreSQL `CHECK (allocated_stock >= 0)`                            | Enforced via SQL constraint and server code validation.                    |
-| Users holding an active WL slot cannot claim drops    | Server Transaction Check                                             | Checked before `tx.claim.create`: ensure no active `WLSlot` record exists. |
-| Stock configuration locked 15 min before period start | Server Transaction Check                                             | Validation `configLockAt <= startsAt - 15m` before period activation.      |
-| Pending gifts expire in 24h & re-evaluate eligibility | Event-Driven Lazy Evaluation + Atomic Row Locking | Evaluated on-demand upon recipient acceptance (rejecting with 410 `GIFT_EXPIRED`) and opportunistic sweep on `GET /api/gifts` without cron. |
+| Invariant / Business Rule                             | Enforcement Mechanism                                                | Notes / Stage                                                                                                                               |
+| ----------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wallet address unique & lowercase                     | Prisma `@unique` + PostgreSQL CHECK regex                            | Normalized in backend prior to storage.                                                                                                     |
+| X Snowflake ID unique                                 | Prisma `@unique`                                                     | Prevents multi-profile linking of a single X account.                                                                                       |
+| 1 claim per user per drop per period                  | Prisma `@@unique([userId, dropId, periodId])`                        | Enforced directly at PostgreSQL index level.                                                                                                |
+| 1 trait copy per edition                              | Prisma `@@unique([traitId, edition])`                                | Trait collection serial number integrity.                                                                                                   |
+| 1 inventory item has exactly 1 active owner           | Foreign Key `ownerId` -> `User.id`                                   | Exactly one owner relation foreign key per item.                                                                                            |
+| 1 WL slot per slotNumber & per user                   | Prisma `@@unique([programId, slotNumber])` & `([programId, userId])` | Prevents slot duplicate grabbing.                                                                                                           |
+| Stable WL queue tie-breaker                           | Prisma `@@unique([programId, queueNumber])`                          | Deterministic, indexed queue ordering.                                                                                                      |
+| Stock must not be negative (`>= 0`)                   | PostgreSQL `CHECK (allocated_stock >= 0)`                            | Enforced via SQL constraint and server code validation.                                                                                     |
+| Users holding an active WL slot cannot claim drops    | Server Transaction Check                                             | Checked before `tx.claim.create`: ensure no active `WLSlot` record exists.                                                                  |
+| Stock configuration locked 15 min before period start | Server Transaction Check                                             | Validation `configLockAt <= startsAt - 15m` before period activation.                                                                       |
+| Pending gifts expire in 24h & re-evaluate eligibility | Event-Driven Lazy Evaluation + Atomic Row Locking                    | Evaluated on-demand upon recipient acceptance (rejecting with 410 `GIFT_EXPIRED`) and opportunistic sweep on `GET /api/gifts` without cron. |
 
 ---
 
@@ -504,6 +504,7 @@ DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
 ## 11. DEC-012 Completion — Sybil Cluster Detection, Abuse Flags API/UI & Ban Hardening (Oct 28, 2026)
 
 ### 11.1 Sybil Cluster IP Detection & Non-Auto-Ban Rule
+
 - **Threshold**: Detection triggers when ≥ 5 distinct wallets claim a drop from the exact same client IP address within a single drop cycle (`periodId`).
 - **Investigation Signal Only**: Strictly creates `AbuseFlag` records with `flagType: SYBIL_WALLET_CLUSTER`, `severity: HIGH`, and `status: OPEN`.
 - **Zero Automated Banning**: Shared IP alone never triggers automated account bans (`isBanned` remains unchanged).
@@ -511,6 +512,7 @@ DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
 - **Implementation**: `server/drops/claim.ts` (`checkAndFlagSybilCluster`).
 
 ### 11.2 Dual-Layer Rate Limiting on Drop Claims
+
 - **Wallet/Session Budget**: 5 requests per 120,000ms (`DROPS_CLAIM_RATE_LIMIT_MAX`).
 - **IP Budget**: 10 requests per 60,000ms (`DROPS_CLAIM_IP_RATE_LIMIT_MAX`).
 - **Security Sanitization**: Client IP extracted safely via `x-real-ip` / `x-forwarded-for` and validated via `isValidClientIp()`. Rejects spoofed, malformed, or missing IP addresses safely without creating a shared global bucket.
@@ -518,12 +520,14 @@ DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
 - **Implementation**: `lib/auth/rate-limit.ts`, `app/api/drops/claim/route.ts`.
 
 ### 11.3 Permanent Ban Revocation Hardening
+
 - **Hierarchy Invariant**: Permanent bans (`banType: PERMANENT`) may **only** be revoked by `SUPER_ADMIN`.
 - **Rejection of Lower Roles**: Attempts by regular `ADMIN` or `MODERATOR` to lift a permanent ban are strictly rejected with HTTP 403 `INSUFFICIENT_PRIVILEGE`.
 - **Audit Logging**: Successful revocations log `action: "REVOKE_BAN"` to `AuditLog`.
 - **Implementation**: `server/admin/ban.ts` (`revokeBan`).
 
 ### 11.4 Moderator Permissions (Option B) & Admin Abuse Flags API
+
 - **Schema-Preserving Permissions**: Utilizes existing `AdminRole` model without schema migration; grants `MODERATOR` accounts `permissions: ["REVIEW_EVIDENCE", "REVIEW_FLAGS"]`.
 - **Endpoints**:
   - `GET /api/admin/abuse-flags`: Lists flags with filtering (`status`, `severity`, `flagType`, `userId`) and pagination (`limit`, `offset`). Requires `requireAdminSession(prisma, "REVIEW_FLAGS")`.
@@ -532,12 +536,14 @@ DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
 - **Implementation**: `server/admin/abuse-flags.ts`, `app/api/admin/abuse-flags/**`, `lib/admin/client.ts`.
 
 ### 11.5 Admin Abuse Flags UI
+
 - **Sidebar Integration**: Added `abuse-flags` tab with `ShieldAlert` icon to `ADMIN_NAV_ITEMS` in `components/admin/AdminSidebar.tsx` (gated by `REVIEW_FLAGS`).
 - **Dashboard Client**: Modular tab rendering in `components/admin/AdminDashboardClient.tsx`.
 - **Component Interface**: `components/admin/AdminAbuseFlags.tsx` includes real-time telemetry inspection modal, dynamic status and severity filters, pagination, and status update actions.
 - **Overview Module**: Added quick navigation card in `components/admin/AdminOverview.tsx`.
 
 ### 11.6 End-to-End Test Verification
+
 - Complete verification suite across all 6 stages:
   - `tests/integration/dec012-integration.test.ts` (6 end-to-end integration tests).
   - `tests/admin/abuse-flags.test.ts` (15 service tests).
@@ -551,12 +557,14 @@ DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
 ## 12. Super Admin Audit Log Dashboard & Query API (Oct 30, 2026) — DONE
 
 ### 12.1 Server-Side Access Control & Read-Only Invariant
+
 - **Role Restriction**: Access strictly limited to `SUPER_ADMIN` via `requireAdminSession(prisma, { requiredRole: "SUPER_ADMIN" })`.
 - **Enforced Rejections**: `ADMIN` and `MODERATOR` requests are rejected with HTTP 403 `FORBIDDEN`. Unauthenticated requests return HTTP 401 `UNAUTHORIZED`.
 - **Read-Only Invariant**: Audit log is strictly read-only; mutation endpoints (`POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`) return HTTP 405 `Method Not Allowed`. No audit records can be edited or deleted.
 - **Unchanged Logging Mechanism**: Existing mutation audit recording (`recordAuditLog` in `server/audit/audit.ts`) remains unmodified.
 
 ### 12.2 Query API & Privacy Protection
+
 - **Endpoint**: `GET /api/admin/audit-logs`.
 - **Filters**: Optional query filtering by `action`, `entityType`, `actorId`, and date range (`from`, `to`).
 - **Date Validation**: Validates date formats; returns HTTP 400 `INVALID_DATE_RANGE` on malformed dates or when `from > to`.
@@ -564,6 +572,7 @@ DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
 - **Safe Projection (Anti-Leak)**: `actorIp` and `userAgent` are strictly omitted from database queries and response payloads to prevent exposure of sensitive infrastructure and telemetry data. Actor data includes only public display fields (`id`, `role`, `wallet.address`, `xIdentity.username`).
 
 ### 12.3 Admin Dashboard UI
+
 - **Sidebar Integration**: Added `Audit Log` tab to `AdminSidebar.tsx` gated by `superAdminOnly: true`. Tab is rendered exclusively for `SUPER_ADMIN` accounts and hidden for lower roles.
 - **Dashboard Guarding**: `AdminDashboardClient.tsx` verifies `isSuperAdmin` before rendering `<AdminAuditLog />` and displays an explicit access restricted banner if accessed by other roles.
 - **Component Interface (`AdminAuditLog.tsx`)**:
@@ -573,10 +582,48 @@ DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
   - Complete state handling for loading spinners, empty search results, API error banners with retry triggers, and 403 access denial.
 
 ### 12.4 Verification & Implementation Status
+
 - **Implementation Commit**: `dd4156881d3bd17d25dc2876c87850eb12c54591`.
 - **Test Suite**: 98 test files, 1,232 tests passing (100% pass rate).
 - **TypeScript**: `tsc --noEmit` passed with 0 errors.
 - **ESLint**: `eslint .` passed with 0 errors (17 pre-existing warnings in unrelated legacy components).
 - **Production Build**: `next build --webpack` successfully compiled all pages and the new route `ƒ /api/admin/audit-logs`.
 
+---
 
+## 13. Task 6 — Integration, Security, and Load Tests Final Verification (Oct 30, 2026)
+
+### 13.1 Test Suite & Verification Results
+
+Comprehensive automated testing executed across all application layers in the isolated local environment:
+
+- **Full Vitest Test Suite**: **98 test files, 1,232/1,232 tests passing (100% pass rate)**.
+- **Integration Test Flows**:
+  - `tests/integration/integration.test.ts` (2 tests passing): User lifecycle (SIWE Login -> Drop Claim -> Trait Gifting -> Campaign Submission & Review -> Whitelist Qualification -> Drop Invariant Block) and Admin lifecycle (Admin Auth -> Campaign Setup -> Task Setup -> Evidence Review -> Emergency Close -> Slot Revocation & Reconcile -> Ban Enforcement).
+  - `tests/integration/dec012-integration.test.ts` (6 tests passing): DEC-012 Sybil cluster IP detection (>= 5 wallets/IP without auto-ban), Moderator `REVIEW_FLAGS` role gating, investigation status updates, dual-layer claim rate limits, and permanent ban revocation hardening (`SUPER_ADMIN` only).
+- **Security Review Checklist (Task 5-C)**:
+  - `tests/security/security-review.test.ts` (9 tests passing): Verified address lowercase normalization (AUTH-07), SHA-256 session token hashing (AUTH-04), RBAC enforcement (AUTH-05), rate limiting budgets for claims, gifts, whitelist, avatar renders, and gift resolution (RATE-02/03/04/06/07), 5-trait category whitelist requirement (CONS-05), relational unique constraints (CONS-01, CONS-04), zero client secrets in `.env.example` (SECR-01), and constant-time auth on cron routes (SECR-04).
+- **In-Process Concurrency Test Suite**:
+  - `tests/drops/claim-concurrency.test.ts` (4 tests passing): 100 concurrent claims under stock contention (20 stock: 17 fulfilled, 83 rejected with `STOCK_RACE_EXHAUSTED`, 0 over-allocation), 100 concurrent claims with 100 items available (100% success with sequential distinct editions), Sybil race from identical user (strictly 1 claim fulfilled, 99 rejected), and emergency cancellation mid-flight (immediate cessation, zero inventory leaks).
+
+### 13.2 HTTP Load Test Results (POST /api/drops/claim)
+
+Executed against running HTTP server with isolated local PostgreSQL (`chimphood_test`) using 100 pre-generated user sessions (`tests/load/load-test-sessions.json`):
+
+- **Target Load**: 100 concurrent requests to `POST /api/drops/claim`.
+- **HTTP Response Breakdown**:
+  - **HTTP 200 (OK)**: 10 requests (successful claims).
+  - **HTTP 429 (Too Many Requests)**: 90 requests rejected by the DEC-012 IP rate limiter (`DROPS_CLAIM_IP_RATE_LIMIT_MAX = 10 req / 60s`) because all 100 requests originated from the local client IP (`127.0.0.1`).
+  - **HTTP 5xx**: **0 server errors** detected under load.
+- **Database & Stock Invariant Audit (`tests/load/verify-stock-invariants.ts`)**:
+  - **Status**: **PASSED**.
+  - **Stock Invariant**: Allocated 20 = Claimed 10 + Remaining 10 (`allocatedStock === claimedStock + remainingStock`).
+  - **Relational Integrity**: Exactly 1 claim per user per drop period; exactly 1 inventory item per edition with 0 duplicate serial numbers.
+  - **Non-Negativity**: `remainingStock >= 0` preserved throughout contention.
+
+### 13.3 Known Gaps & Unaddressed Verification Scope
+
+1. **Multi-IP HTTP Load Testing**:
+   - The 90 HTTP 429 responses were an expected consequence of running 100 concurrent clients from a single IP address against the 10 req/60s IP rate limit. Verifying 100 simultaneous successful claims via live HTTP requires a distributed load testing harness with distinct egress IPs or a staged environment supporting trusted forwarded IP headers.
+2. **Browser E2E Testing with Real Web3 Wallet Extension**:
+   - Automated testing currently validates wallet signatures, SIWE message construction, and session establishment via Node/Ethers/Viem and mock providers. End-to-end browser verification involving physical user interaction with real wallet extensions (e.g. MetaMask extension popup) has not been automated in CI.
