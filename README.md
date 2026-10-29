@@ -65,6 +65,13 @@ ChimpHood Site/
 │   ├── handoff.md            # Multi-stage technical handoff notes & architecture
 │   ├── pending-decisions.md  # Architectural & product decisions registry (DEC-001 - DEC-013)
 │   └── security-review.md    # Security checklist & assessment (AUTH, RATE, CONS, SECR)
+├── e2e/                      # Playwright Browser E2E test suite (12 tests)
+│   ├── helpers/mock-wallet.ts # In-page EIP-1193 & EIP-6963 test provider with real ECDSA signing
+│   ├── 01-navigation.spec.ts # Page render & routing without browser errors
+│   ├── 02-wallet-connection.spec.ts # Wallet connector selection, cancellation & safe rejection
+│   ├── 03-siwe-session.spec.ts # SIWE cryptographic sign-in, tamper rejection, replay & logout
+│   ├── 04-protected-routes.spec.ts # Protected route guarding & server 401/403 authorization
+│   └── 05-profile-flow.spec.ts # Profile card authentication, ID display & inventory flow
 ├── lib/                      # Shared client & server utilities
 │   ├── admin/client.ts       # Browser helpers for admin API interactions
 │   ├── auth/                 # SIWE helpers, address normalization, rate limiting
@@ -168,6 +175,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run typecheck`    | Run TypeScript strict type-checking (`tsc --noEmit`) |
 | `npm run lint`         | Run ESLint to verify code quality                    |
 | `npm run test`         | Run entire unit & integration test suite with Vitest |
+| `npm run test:e2e`     | Run full browser E2E test suite with Playwright      |
 | `npm run build`        | Execute Next.js production build                     |
 | `npm run format:check` | Verify code formatting with Prettier                 |
 
