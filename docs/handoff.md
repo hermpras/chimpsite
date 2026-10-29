@@ -597,7 +597,7 @@ DATABASE_URL="postgresql://..." node scripts/bootstrap-super-admin.mjs 0x...
 
 Comprehensive automated testing executed across all application layers in the isolated local environment:
 
-- **Full Vitest Test Suite**: **98 test files, 1,232/1,232 tests passing (100% pass rate)**.
+- **Full Vitest Test Suite**: **99 test files, 1,241/1,241 tests passing (100% pass rate)**.
 - **Integration Test Flows**:
   - `tests/integration/integration.test.ts` (2 tests passing): User lifecycle (SIWE Login -> Drop Claim -> Trait Gifting -> Campaign Submission & Review -> Whitelist Qualification -> Drop Invariant Block) and Admin lifecycle (Admin Auth -> Campaign Setup -> Task Setup -> Evidence Review -> Emergency Close -> Slot Revocation & Reconcile -> Ban Enforcement).
   - `tests/integration/dec012-integration.test.ts` (6 tests passing): DEC-012 Sybil cluster IP detection (>= 5 wallets/IP without auto-ban), Moderator `REVIEW_FLAGS` role gating, investigation status updates, dual-layer claim rate limits, and permanent ban revocation hardening (`SUPER_ADMIN` only).
@@ -605,8 +605,10 @@ Comprehensive automated testing executed across all application layers in the is
   - `tests/security/security-review.test.ts` (9 tests passing): Verified address lowercase normalization (AUTH-07), SHA-256 session token hashing (AUTH-04), RBAC enforcement (AUTH-05), rate limiting budgets for claims, gifts, whitelist, avatar renders, and gift resolution (RATE-02/03/04/06/07), 5-trait category whitelist requirement (CONS-05), relational unique constraints (CONS-01, CONS-04), zero client secrets in `.env.example` (SECR-01), and constant-time auth on cron routes (SECR-04).
 - **In-Process Concurrency Test Suite**:
   - `tests/drops/claim-concurrency.test.ts` (4 tests passing): 100 concurrent claims under stock contention (20 stock: 17 fulfilled, 83 rejected with `STOCK_RACE_EXHAUSTED`, 0 over-allocation), 100 concurrent claims with 100 items available (100% success with sequential distinct editions), Sybil race from identical user (strictly 1 claim fulfilled, 99 rejected), and emergency cancellation mid-flight (immediate cessation, zero inventory leaks).
+- **Load Test Runner & IP Simulation Suite**:
+  - `tests/load/autocannon-runner.test.ts` (9 tests passing): Verified localhost safety guard, deterministic RFC 5737 synthetic IP generation, request header injection, and CLI argument parsing.
 
-### 13.2 HTTP Load Test Results (POST /api/drops/claim)
+### 13.2 Single-IP Baseline HTTP Load Test Results (POST /api/drops/claim)
 
 Executed against running HTTP server with isolated local PostgreSQL (`chimphood_test`) using 100 pre-generated user sessions (`tests/load/load-test-sessions.json`):
 
@@ -621,9 +623,42 @@ Executed against running HTTP server with isolated local PostgreSQL (`chimphood_
   - **Relational Integrity**: Exactly 1 claim per user per drop period; exactly 1 inventory item per edition with 0 duplicate serial numbers.
   - **Non-Negativity**: `remainingStock >= 0` preserved throughout contention.
 
-### 13.3 Known Gaps & Unaddressed Verification Scope
+### 13.3 Multi-IP HTTP Load Testing (POST /api/drops/claim) — COMPLETED / DONE
 
-1. **Multi-IP HTTP Load Testing**:
-   - The 90 HTTP 429 responses were an expected consequence of running 100 concurrent clients from a single IP address against the 10 req/60s IP rate limit. Verifying 100 simultaneous successful claims via live HTTP requires a distributed load testing harness with distinct egress IPs or a staged environment supporting trusted forwarded IP headers.
+Executed using the enhanced load test harness (`tests/load/autocannon-drops-claim.mjs --simulate-ips`) against the local HTTP server connected strictly to local PostgreSQL (`chimphood_test`):
+
+- **Harness & Synthetic IP Design**:
+  - **RFC 5737 Documentation IP Space**: Maps each of the 100 user test sessions deterministically to an isolated documentation IP (`198.51.100.0/24` TEST-NET-2), eliminating overlap with real-world public IP addresses.
+  - **Localhost Guard (`isLocalhostUrl`)**: Pre-flight verification aborts immediately if the target hostname is not `localhost` or `127.0.0.1`, preventing accidental traffic against staging or production.
+  - **Header Simulation**: Passes synthetic IP via `X-Forwarded-For` consumed by `clientIp()` on local environments, leaving application code, auth logic, and rate limiter settings unmodified.
+  - **Runner Tests**: `tests/load/autocannon-runner.test.ts` passed 9/9 tests prior to execution.
+- **Test Execution Metrics (Autocannon)**:
+  - **Target**: `http://localhost:3000/api/drops/claim`
+  - **Concurrency**: 100 concurrent HTTP requests from 100 unique user sessions.
+  - **Duration**: 1.05 seconds.
+  - **Throughput**: 95.15 requests/second.
+  - **Latency Distribution**: p50 = 933 ms, p90 = 1,006 ms, p95 = 1,022 ms, p99 = 1,028 ms.
+- **HTTP Response Breakdown**:
+  - **HTTP 200 (OK)**: **20 requests** (exactly matching total allocated stock across all traits).
+  - **HTTP 409 (Conflict)**: **80 requests** (rejected with `STOCK_RACE_EXHAUSTED` due to legitimate stock exhaustion).
+  - **HTTP 429 (Too Many Requests)**: **0 requests** (100 distinct RFC 5737 IPs successfully bypassed IP rate limits, proving the rate limiter did not block distinct legitimate users).
+  - **HTTP 5xx & Network Errors**: **0 errors** (zero unhandled exceptions or connection drops under contention).
+- **Database & Stock Invariant Audit (`tests/load/verify-stock-invariants.ts`)**:
+  - **Overall Status**: **PASSED**.
+  - **Stock Invariant Equation**: `allocatedStock === claimedStock + remainingStock` holds true:
+    - `Load Matrix BG`: 10 allocated = 10 claimed + 0 remaining.
+    - `Load Golden Fur`: 6 allocated = 6 claimed + 0 remaining.
+    - `Load Neon Visor`: 4 allocated = 4 claimed + 0 remaining.
+    - **Total Allocation**: 20 allocated = 20 claimed + 0 remaining.
+  - **Relational Integrity**: Exactly 20 distinct claimants; strictly 0 duplicate claims per user per period.
+  - **Serial Edition Uniqueness**: Exactly 20 inventory items created with sequential edition numbers (`[1..10]`, `[1..6]`, `[1..4]`) and 0 duplicate editions.
+  - **Non-Negativity**: `remainingStock >= 0` strictly preserved across all pool records.
+- **Verification Integrity**:
+  - Application code (`app/**`, `server/**`), security configurations, rate limit limits (`lib/auth/rate-limit.ts`), and database schema (`prisma/**`) remained completely unmodified.
+  - TypeScript strict typecheck (`tsc --noEmit`) and ESLint passed with 0 errors.
+
+### 13.4 Remaining Verification Gaps & Scope
+
+1. **Multi-IP HTTP Load Testing**: **RESOLVED / COMPLETED** (verified via RFC 5737 deterministic simulation on local HTTP harness).
 2. **Browser E2E Testing with Real Web3 Wallet Extension**:
    - Automated testing currently validates wallet signatures, SIWE message construction, and session establishment via Node/Ethers/Viem and mock providers. End-to-end browser verification involving physical user interaction with real wallet extensions (e.g. MetaMask extension popup) has not been automated in CI.

@@ -6,7 +6,7 @@ Decentralized web platform for the ChimpHood ecosystem (Whitelist allocation, We
 
 ## 📌 Project Status: Production Ready (Core Modules & Security Hardening Complete)
 
-The core architecture, functional business engines, and administrative security subsystems are **fully implemented and verified** across 98 test files with 1,232 automated tests:
+The core architecture, functional business engines, and administrative security subsystems are **fully implemented and verified** across 99 test files with 1,241 automated tests:
 
 - **Identity & Authentication**: Sign-In with Ethereum (SIWE / EIP-4361) via wagmi v3, encrypted Iron Session, and Twitter/X OAuth 2.0 PKCE.
 - **Whitelist & Queue Engine**: 5-trait category eligibility check, campaign task verification, first-qualified GTD slot allocation, and deterministic FCFS queue management.
@@ -89,7 +89,7 @@ ChimpHood Site/
 │   ├── tasks/                # Campaign & task verification services
 │   ├── whitelist/            # Whitelist qualification & queue promotion engines
 │   └── db.ts                 # Server-isolated Prisma client access
-└── tests/                    # Vitest automated test suite (1,232 tests)
+└── tests/                    # Vitest automated test suite (1,241 tests)
     ├── admin/                # Admin service, route, and UI component tests
     ├── audit/                # AuditLog logging verification tests
     ├── auth/                 # SIWE, rate limit, and session security tests
@@ -97,6 +97,7 @@ ChimpHood Site/
     ├── drops/                # Drop cycles, claim engine, and concurrency tests
     ├── integration/          # End-to-end integration & DEC-012 verification tests
     ├── inventory/            # Gifting invariants and edition uniqueness tests
+    ├── load/                 # Multi-IP load test runner & invariant verification
     ├── security/             # Security checklist assertion tests (AUTH, RATE, CONS, SECR)
     ├── social/               # Twitter/X OAuth flow tests
     ├── whitelist/            # WL qualification, queue order, and status tests
