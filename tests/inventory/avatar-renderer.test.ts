@@ -806,3 +806,242 @@ describe("Task 3-C — Client Helpers", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// 9. fetchLayerBuffer — Local Filesystem & Remote Fetch Resolution
+// ---------------------------------------------------------------------------
+
+describe("Task 3-C — fetchLayerBuffer", () => {
+  const originalEnvAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const originalEnvVercelUrl = process.env.VERCEL_URL;
+
+  beforeEach(() => {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    delete process.env.VERCEL_URL;
+  });
+
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = originalEnvAppUrl;
+    process.env.VERCEL_URL = originalEnvVercelUrl;
+  });
+
+  describe("File lokal berhasil dibaca", () => {
+    it("reads existing local trait layer from public/traits/ and returns valid buffer", async () => {
+      const buffer = await fetchLayerBuffer("/traits/hoodie.png");
+      expect(buffer).toBeInstanceOf(Buffer);
+      expect(buffer.length).toBeGreaterThan(0);
+
+      // Verify that sharp can parse it as a valid image
+      const meta = await sharp(buffer).metadata();
+      expect(meta.format).toBe("png");
+      expect(meta.width).toBe(240);
+      expect(meta.height).toBe(240);
+    });
+
+    it("handles query params and hash by stripping them before reading local file", async () => {
+      const buffer = await fetchLayerBuffer("/traits/hoodie.png?v=123#test");
+      expect(buffer).toBeInstanceOf(Buffer);
+      expect(buffer.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("File lokal tidak ditemukan", () => {
+    it("throws 404 FETCH_LAYER_FAILED when local file does not exist and no base URL is set", async () => {
+      await expect(
+        fetchLayerBuffer("/traits/non-existent-layer-abc.png"),
+      ).rejects.toMatchObject({
+        name: "AvatarRenderError",
+        code: "FETCH_LAYER_FAILED",
+        status: 404,
+      });
+    });
+
+    it("falls back to remote fetch if base URL is configured", async () => {
+      process.env.NEXT_PUBLIC_APP_URL = "https://assets.chimphood.io";
+      const fakePng = await makePng24x24(20, 40, 60);
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        arrayBuffer: async () =>
+          fakePng.buffer.slice(fakePng.byteOffset, fakePng.byteOffset + fakePng.byteLength),
+      });
+
+      const buffer = await fetchLayerBuffer(
+        "/traits/remote-only-layer.png",
+        mockFetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://assets.chimphood.io/traits/remote-only-layer.png",
+      );
+      expect(buffer).toEqual(fakePng);
+    });
+
+    it("handles remote fallback 404 cleanly when base URL is configured", async () => {
+      process.env.VERCEL_URL = "chimphood.vercel.app";
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+      });
+
+      await expect(
+        fetchLayerBuffer("/traits/missing-everywhere.png", mockFetch),
+      ).rejects.toMatchObject({
+        name: "AvatarRenderError",
+        code: "FETCH_LAYER_FAILED",
+        status: 404,
+      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://chimphood.vercel.app/traits/missing-everywhere.png",
+      );
+    });
+  });
+
+  describe("URL absolut tetap menggunakan fetch", () => {
+    it("uses fetchFn for http:// URLs without reading filesystem", async () => {
+      const fakePng = await makePng24x24(10, 20, 30);
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        arrayBuffer: async () =>
+          fakePng.buffer.slice(fakePng.byteOffset, fakePng.byteOffset + fakePng.byteLength),
+      });
+
+      const buffer = await fetchLayerBuffer(
+        "http://assets.example.com/traits/layer1.png",
+        mockFetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://assets.example.com/traits/layer1.png",
+      );
+      expect(buffer).toEqual(fakePng);
+    });
+
+    it("uses fetchFn for https:// URLs without reading filesystem", async () => {
+      const fakePng = await makePng24x24(50, 60, 70);
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        arrayBuffer: async () =>
+          fakePng.buffer.slice(fakePng.byteOffset, fakePng.byteOffset + fakePng.byteLength),
+      });
+
+      const buffer = await fetchLayerBuffer(
+        "https://assets.chimphood.io/traits/cyber-jungle.png",
+        mockFetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://assets.chimphood.io/traits/cyber-jungle.png",
+      );
+      expect(buffer).toEqual(fakePng);
+    });
+
+    it("throws 502 FETCH_LAYER_FAILED on network error", async () => {
+      const mockFetch = vi.fn().mockRejectedValue(new Error("DNS resolution failed"));
+
+      await expect(
+        fetchLayerBuffer("https://assets.chimphood.io/traits/err.png", mockFetch),
+      ).rejects.toMatchObject({
+        name: "AvatarRenderError",
+        code: "FETCH_LAYER_FAILED",
+        status: 502,
+      });
+    });
+
+    it("throws 502 FETCH_LAYER_FAILED on non-200 HTTP response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+      });
+
+      await expect(
+        fetchLayerBuffer("https://assets.chimphood.io/traits/err.png", mockFetch),
+      ).rejects.toMatchObject({
+        name: "AvatarRenderError",
+        code: "FETCH_LAYER_FAILED",
+        status: 502,
+      });
+    });
+  });
+
+  describe("Path tidak valid atau berpotensi traversal ditolak", () => {
+    it("rejects empty or whitespace string", async () => {
+      await expect(fetchLayerBuffer("")).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+      await expect(fetchLayerBuffer("   ")).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+    });
+
+    it("rejects paths outside /traits/ prefix", async () => {
+      await expect(fetchLayerBuffer("/etc/passwd")).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+      await expect(fetchLayerBuffer("/images/logo.png")).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+      await expect(
+        fetchLayerBuffer("ftp://files.example.com/trait.png"),
+      ).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+    });
+
+    it("rejects path traversal attempts with ../", async () => {
+      await expect(
+        fetchLayerBuffer("/traits/../package.json"),
+      ).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+      await expect(
+        fetchLayerBuffer("/traits/../../etc/passwd"),
+      ).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+    });
+
+    it("rejects URL-encoded path traversal attempts (%2e%2e%2f)", async () => {
+      await expect(
+        fetchLayerBuffer("/traits/%2e%2e%2fpackage.json"),
+      ).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+    });
+
+    it("rejects null byte injection", async () => {
+      await expect(
+        fetchLayerBuffer("/traits/hoodie.png%00.jpg"),
+      ).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+    });
+
+    it("rejects root directory /traits/ without file", async () => {
+      await expect(fetchLayerBuffer("/traits/")).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+    });
+
+    it("rejects double leading slash /traits//hoodie.png", async () => {
+      await expect(fetchLayerBuffer("/traits//hoodie.png")).rejects.toMatchObject({
+        code: "INVALID_LAYER_PATH",
+        status: 400,
+      });
+    });
+  });
+});

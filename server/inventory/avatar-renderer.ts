@@ -22,6 +22,8 @@
  *    blocking or failing the primary inventory transaction.
  */
 
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import type { PrismaClient } from "@prisma/client";
 import sharp from "sharp";
 import { normalizeAddress } from "@/lib/auth/address";
@@ -45,6 +47,9 @@ export type TraitCategory = (typeof LAYER_ORDER)[number];
 
 /** Public URL base path for the avatar route handler. */
 export const AVATAR_ROUTE_BASE = "/api/renders/avatar";
+
+/** Base directory on disk for local trait artwork layers. */
+export const TRAITS_BASE_DIR = path.resolve(process.cwd(), "public", "traits");
 
 // ---------------------------------------------------------------------------
 // In-Flight Concurrency Map (Deduping)
@@ -96,35 +101,153 @@ export interface AvatarRecord {
 // Core Rendering Helpers
 // ---------------------------------------------------------------------------
 
+function getBaseUrl(): string | null {
+  const url = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL;
+  if (!url || !url.trim()) return null;
+  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
+}
+
 /**
- * Fetches a remote PNG/image URL and returns its raw bytes as Buffer.
+ * Fetches a remote image URL or reads a local trait asset from `public/traits/`
+ * and returns its raw bytes as Buffer.
  * Exported for testability and dependency injection.
  */
 export async function fetchLayerBuffer(
   imageUrl: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<Buffer> {
-  let response: Response;
+  if (!imageUrl || typeof imageUrl !== "string" || !imageUrl.trim()) {
+    throw new AvatarRenderError(
+      "INVALID_LAYER_PATH",
+      "Trait layer URL or path cannot be empty.",
+      400,
+    );
+  }
+
+  // 1. Remote HTTP/HTTPS URL: preserve existing fetch behavior
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+    let response: Response;
+    try {
+      response = await fetchFn(imageUrl);
+    } catch {
+      throw new AvatarRenderError(
+        "FETCH_LAYER_FAILED",
+        `Failed to fetch trait layer from "${imageUrl}": network error.`,
+        502,
+      );
+    }
+
+    if (!response.ok) {
+      throw new AvatarRenderError(
+        "FETCH_LAYER_FAILED",
+        `Failed to fetch trait layer from "${imageUrl}": HTTP ${response.status}.`,
+        502,
+      );
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
+  // 2. Local relative trait path: must strictly reside in public/traits/
+  const cleanPath = imageUrl.split(/[?#]/)[0];
+
+  let decodedPath: string;
   try {
-    response = await fetchFn(imageUrl);
+    decodedPath = decodeURIComponent(cleanPath);
   } catch {
     throw new AvatarRenderError(
-      "FETCH_LAYER_FAILED",
-      `Failed to fetch trait layer from "${imageUrl}": network error.`,
-      502,
+      "INVALID_LAYER_PATH",
+      `Malformed URI encoding in trait layer path: "${imageUrl}".`,
+      400,
     );
   }
 
-  if (!response.ok) {
+  if (decodedPath.includes("\0")) {
+    throw new AvatarRenderError(
+      "INVALID_LAYER_PATH",
+      `Null byte detected in trait layer path: "${imageUrl}".`,
+      400,
+    );
+  }
+
+  if (!cleanPath.startsWith("/traits/")) {
+    throw new AvatarRenderError(
+      "INVALID_LAYER_PATH",
+      `Invalid trait layer path: "${imageUrl}". Local trait paths must start with "/traits/".`,
+      400,
+    );
+  }
+
+  const relativePath = decodedPath.slice("/traits/".length);
+  if (!relativePath || relativePath.startsWith("/")) {
+    throw new AvatarRenderError(
+      "INVALID_LAYER_PATH",
+      `Invalid trait layer path: "${imageUrl}".`,
+      400,
+    );
+  }
+
+  const resolvedPath = path.resolve(TRAITS_BASE_DIR, relativePath);
+  if (!resolvedPath.startsWith(TRAITS_BASE_DIR + path.sep)) {
+    throw new AvatarRenderError(
+      "INVALID_LAYER_PATH",
+      `Path traversal detected in trait layer path: "${imageUrl}".`,
+      400,
+    );
+  }
+
+  try {
+    return await readFile(resolvedPath);
+  } catch (fsErr: unknown) {
+    const code = (fsErr as { code?: string })?.code;
+    if (code === "ENOENT") {
+      // Fallback for Vercel Serverless environment where public assets might be served via CDN
+      const baseUrl = getBaseUrl();
+      if (baseUrl) {
+        try {
+          const absoluteUrl = new URL(imageUrl, baseUrl).toString();
+          let response: Response;
+          try {
+            response = await fetchFn(absoluteUrl);
+          } catch {
+            throw new AvatarRenderError(
+              "FETCH_LAYER_FAILED",
+              `Failed to fetch trait layer from "${imageUrl}": network error.`,
+              502,
+            );
+          }
+
+          if (!response.ok) {
+            throw new AvatarRenderError(
+              "FETCH_LAYER_FAILED",
+              `Failed to fetch trait layer from "${imageUrl}": HTTP ${response.status}.`,
+              response.status === 404 ? 404 : 502,
+            );
+          }
+
+          const arrayBuffer = await response.arrayBuffer();
+          return Buffer.from(arrayBuffer);
+        } catch (fallbackErr) {
+          if (fallbackErr instanceof AvatarRenderError) {
+            throw fallbackErr;
+          }
+        }
+      }
+
+      throw new AvatarRenderError(
+        "FETCH_LAYER_FAILED",
+        `Trait layer file not found: "${imageUrl}".`,
+        404,
+      );
+    }
+
     throw new AvatarRenderError(
       "FETCH_LAYER_FAILED",
-      `Failed to fetch trait layer from "${imageUrl}": HTTP ${response.status}.`,
-      502,
+      `Failed to read trait layer from "${imageUrl}": ${fsErr instanceof Error ? fsErr.message : "filesystem error"}.`,
+      500,
     );
   }
-
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
 }
 
 /**
