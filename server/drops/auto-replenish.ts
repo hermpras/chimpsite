@@ -339,113 +339,136 @@ export async function ensureActiveCyclePeriod(
   }
 
   // 5. Upsert period and seed default pool items atomically
-  return await prisma.$transaction(async (tx) => {
-    let periodRecord: DropPeriod;
+  return await prisma.$transaction(
+    async (tx) => {
+      let periodRecord: DropPeriod;
 
-    if (existingPeriod) {
-      periodRecord = await tx.dropPeriod.update({
-        where: { id: existingPeriod.id },
-        data: {
-          status: "ACTIVE",
-          isStockConfigured: true,
-          isStockLocked: true,
-          startsAt: cycle.startsAt,
-          endsAt: cycle.endsAt,
-          configLockAt: cycle.configLockAt,
-        },
-      });
-    } else {
-      periodRecord = await tx.dropPeriod.upsert({
-        where: {
-          dropId_periodIndex: {
+      if (existingPeriod) {
+        periodRecord = await tx.dropPeriod.update({
+          where: { id: existingPeriod.id },
+          data: {
+            status: "ACTIVE",
+            isStockConfigured: true,
+            isStockLocked: true,
+            startsAt: cycle.startsAt,
+            endsAt: cycle.endsAt,
+            configLockAt: cycle.configLockAt,
+          },
+        });
+      } else {
+        periodRecord = await tx.dropPeriod.upsert({
+          where: {
+            dropId_periodIndex: {
+              dropId: drop.id,
+              periodIndex,
+            },
+          },
+          update: {
+            status: "ACTIVE",
+            isStockConfigured: true,
+            isStockLocked: true,
+            startsAt: cycle.startsAt,
+            endsAt: cycle.endsAt,
+            configLockAt: cycle.configLockAt,
+          },
+          create: {
             dropId: drop.id,
             periodIndex,
+            status: "ACTIVE",
+            isStockConfigured: true,
+            isStockLocked: true,
+            startsAt: cycle.startsAt,
+            endsAt: cycle.endsAt,
+            configLockAt: cycle.configLockAt,
           },
-        },
-        update: {
-          status: "ACTIVE",
-          isStockConfigured: true,
-          isStockLocked: true,
-          startsAt: cycle.startsAt,
-          endsAt: cycle.endsAt,
-          configLockAt: cycle.configLockAt,
-        },
-        create: {
-          dropId: drop.id,
-          periodIndex,
-          status: "ACTIVE",
-          isStockConfigured: true,
-          isStockLocked: true,
-          startsAt: cycle.startsAt,
-          endsAt: cycle.endsAt,
-          configLockAt: cycle.configLockAt,
-        },
-      });
-    }
+        });
+      }
 
-    // Clean up any pool items not in active traits (if unclaimed)
-    const poolTraits = traits;
-    const allocations = calculateDynamicPoolAllocations(poolTraits);
-    const validTraitIds = poolTraits.map((t) => t.id);
+      // Clean up any pool items not in active traits (only if foreign items actually exist)
+      const poolTraits = traits;
+      const allocations = calculateDynamicPoolAllocations(poolTraits);
+      const validTraitIds = poolTraits.map((t) => t.id);
 
-    await tx.dropPoolItem.deleteMany({
-      where: {
-        periodId: periodRecord.id,
-        traitId: { notIn: validTraitIds },
-        claimedStock: 0,
-      },
-    });
+      const hasForeignItems = existingPeriod?.poolItems?.some(
+        (item) => !validTraitIds.includes(item.traitId),
+      );
+      if (hasForeignItems && tx.dropPoolItem?.deleteMany) {
+        await tx.dropPoolItem.deleteMany({
+          where: {
+            periodId: periodRecord.id,
+            traitId: { notIn: validTraitIds },
+            claimedStock: 0,
+          },
+        });
+      }
 
-    // Fetch existing pool items for this period to verify pool completeness
-    const existingPoolItems = tx.dropPoolItem?.findMany
-      ? await tx.dropPoolItem.findMany({
-          where: { periodId: periodRecord.id },
-        })
-      : [];
+      // Fetch existing pool items for this period to verify pool completeness
+      const existingPoolItems: Array<DropPoolItem & { trait?: Trait }> = tx.dropPoolItem?.findMany
+        ? await tx.dropPoolItem.findMany({
+            where: { periodId: periodRecord.id },
+            include: { trait: true },
+          })
+        : [];
 
-    const existingTraitIds = new Set(existingPoolItems.map((item) => item.traitId));
-    const isPoolComplete =
-      validTraitIds.length > 0 &&
-      validTraitIds.every((id) => existingTraitIds.has(id));
+      const existingTraitIds = new Set(existingPoolItems.map((item) => item.traitId));
+      const isPoolComplete =
+        validTraitIds.length > 0 &&
+        validTraitIds.every((id) => existingTraitIds.has(id));
 
-    // Provision or complete pool items concurrently if any active trait item is missing.
-    // Preserves existing items' remainingStock and claimedStock without reset.
-    if (!isPoolComplete) {
-      await Promise.all(
-        allocations.map((alloc) =>
-          tx.dropPoolItem.upsert({
-            where: {
-              periodId_traitId: {
+      let createdItems: Array<DropPoolItem & { trait?: Trait }> = [];
+
+      // Provision only missing pool items concurrently if any active trait item is missing.
+      // Preserves existing items' remainingStock and claimedStock without reset.
+      if (!isPoolComplete) {
+        const missingAllocations = allocations.filter(
+          (alloc) => !existingTraitIds.has(alloc.traitId),
+        );
+
+        createdItems = await Promise.all(
+          missingAllocations.map((alloc) =>
+            tx.dropPoolItem.upsert({
+              where: {
+                periodId_traitId: {
+                  periodId: periodRecord.id,
+                  traitId: alloc.traitId,
+                },
+              },
+              update: {
+                allocatedStock: alloc.stock,
+                weight: alloc.weight,
+              },
+              create: {
                 periodId: periodRecord.id,
                 traitId: alloc.traitId,
+                allocatedStock: alloc.stock,
+                remainingStock: alloc.stock,
+                claimedStock: 0,
+                weight: alloc.weight,
               },
-            },
-            update: {
-              allocatedStock: alloc.stock,
-              weight: alloc.weight,
-            },
-            create: {
-              periodId: periodRecord.id,
-              traitId: alloc.traitId,
-              allocatedStock: alloc.stock,
-              remainingStock: alloc.stock,
-              claimedStock: 0,
-              weight: alloc.weight,
-            },
-          }),
-        ),
-      );
-    }
+              include: { trait: true },
+            }),
+          ),
+        );
+      }
 
-    const fullPeriod = await tx.dropPeriod.findUniqueOrThrow({
-      where: { id: periodRecord.id },
-      include: {
-        poolItems: {
-          include: { trait: true },
-        },
-      },
-    });
+      const traitById = new Map(traits.map((t) => [t.id, t]));
+      const allPoolItems = (
+        existingPoolItems.length > 0 && isPoolComplete
+          ? existingPoolItems
+          : [...existingPoolItems, ...createdItems]
+      ).map((item) => ({
+        ...item,
+        trait: item.trait ?? traitById.get(item.traitId) ?? traitMap.get((item as any).slug)!,
+      }));
 
-    return fullPeriod as PeriodWithPool;
-  });
+      return {
+        ...periodRecord,
+        poolItems: allPoolItems,
+      } as PeriodWithPool;
+    },
+    {
+      maxWait: 5_000,
+      timeout: 10_000,
+    },
+  );
 }

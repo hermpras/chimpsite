@@ -175,7 +175,12 @@ describe("Auto-Replenish Drop Engine", () => {
     expect(result.id).toBe("period-new");
     expect(result.status).toBe("ACTIVE");
     expect(txMock.dropPoolItem.upsert).toHaveBeenCalledTimes(5);
-    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(mockPrisma.$transaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      { maxWait: 5_000, timeout: 10_000 },
+    );
+    // Verified: findUniqueOrThrow is eliminated from the transaction to save network roundtrip
+    expect(txMock.dropPeriod.findUniqueOrThrow).not.toHaveBeenCalled();
   });
 
   it("getUtcCycleForTime correctly calculates 5-hour Hype Control cycles with 30m claim window", () => {
@@ -452,12 +457,14 @@ describe("Auto-Replenish Drop Engine", () => {
     const result = await ensureActiveCyclePeriod(mockPrisma, drop, now);
 
     expect(result.id).toBe("period-partial");
-    // Pool was incomplete (2 of 5), so all 5 allocations are upserted concurrently to complete the pool
-    expect(txMock.dropPoolItem.upsert).toHaveBeenCalledTimes(5);
+    // Only the 3 missing trait items are upserted, avoiding redundant round trips and lock contention on existing items
+    expect(txMock.dropPoolItem.upsert).toHaveBeenCalledTimes(3);
+    expect(result.poolItems).toHaveLength(5);
   });
 
   it("handles concurrent ensureActiveCyclePeriod invocations safely and idempotently", async () => {
     let transactionCount = 0;
+    let findManyCalls = 0;
     const sharedPeriod = {
       id: "period-concurrent",
       periodIndex: 1,
@@ -483,8 +490,9 @@ describe("Auto-Replenish Drop Engine", () => {
       },
       dropPoolItem: {
         findMany: vi.fn().mockImplementation(async () => {
-          // If transaction has already run once, pool items are already complete
-          return transactionCount > 1 ? sharedPeriod.poolItems : [];
+          findManyCalls++;
+          // First caller finds empty pool and provisions; subsequent concurrent callers find pool complete
+          return findManyCalls > 1 ? sharedPeriod.poolItems : [];
         }),
         upsert: vi.fn().mockResolvedValue({}),
         deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
@@ -532,5 +540,8 @@ describe("Auto-Replenish Drop Engine", () => {
     expect(res2.id).toBe("period-concurrent");
     expect(res3.id).toBe("period-concurrent");
     expect(transactionCount).toBe(3);
+    // Only the first transaction provisioned items; concurrent transactions found pool complete and skipped re-upserting
+    expect(txMock.dropPoolItem.upsert).toHaveBeenCalledTimes(5);
+    expect(txMock.dropPeriod.findUniqueOrThrow).not.toHaveBeenCalled();
   });
 });
