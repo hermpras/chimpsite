@@ -35,6 +35,7 @@ vi.mock("@/lib/inventory/client", async (importOriginal) => {
 const mockFetchUserGifts = vi.fn();
 const mockSendGiftRequest = vi.fn();
 const mockResolveGiftRequest = vi.fn();
+const mockLookupGiftRecipient = vi.fn();
 vi.mock("@/lib/inventory/gift-client", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/inventory/gift-client")>();
   return {
@@ -42,6 +43,7 @@ vi.mock("@/lib/inventory/gift-client", async (importOriginal) => {
     fetchUserGifts: (...args: unknown[]) => mockFetchUserGifts(...args),
     sendGiftRequest: (...args: unknown[]) => mockSendGiftRequest(...args),
     resolveGiftRequest: (...args: unknown[]) => mockResolveGiftRequest(...args),
+    lookupGiftRecipient: (...args: unknown[]) => mockLookupGiftRecipient(...args),
   };
 });
 
@@ -362,6 +364,181 @@ describe("Gifting UI (I-1) Test Suite", () => {
         ).toBeInTheDocument();
       });
     });
+
+    it("searches recipient by X username, renders confirmation preview card, and sends to verified address", async () => {
+      mockLookupGiftRecipient.mockResolvedValueOnce({
+        success: true,
+        recipient: {
+          userId: "user-2",
+          address: validReceiverAddress,
+          xUsername: "chimp_master",
+          xName: "Master Chimp",
+          profileImageUrl: "https://example.com/avatar.png",
+          isSelf: false,
+          isBanned: false,
+          isWlAllocated: false,
+          alreadyOwnsTrait: false,
+          canReceive: true,
+        },
+      });
+
+      mockSendGiftRequest.mockResolvedValueOnce({
+        success: true,
+        gift: { id: "new-gift-x" } as any,
+      });
+
+      const onSuccessSpy = vi.fn();
+      render(
+        <GiftModal
+          isOpen={true}
+          onClose={vi.fn()}
+          item={dupItem1}
+          senderAddress={senderAddress}
+          onGiftSuccess={onSuccessSpy}
+        />,
+      );
+
+      const input = screen.getByTestId("gift-receiver-input");
+      fireEvent.change(input, { target: { value: "@chimp_master" } });
+
+      const searchBtn = screen.getByTestId("search-recipient-btn");
+      fireEvent.click(searchBtn);
+
+      await waitFor(() => {
+        expect(mockLookupGiftRecipient).toHaveBeenCalledWith(
+          "@chimp_master",
+          dupItem1.trait.id,
+        );
+        expect(screen.getByTestId("recipient-confirmation-card")).toBeInTheDocument();
+        expect(screen.getByText("@chimp_master")).toBeInTheDocument();
+        expect(screen.getByText("Master Chimp")).toBeInTheDocument();
+        expect(screen.getByText("Verified")).toBeInTheDocument();
+      });
+
+      const submitButton = screen.getByTestId("send-gift-submit");
+      expect(submitButton).toBeEnabled();
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockSendGiftRequest).toHaveBeenCalledWith(
+          validReceiverAddress,
+          dupItem1.id,
+        );
+        expect(onSuccessSpy).toHaveBeenCalled();
+        expect(screen.getByTestId("gift-send-success")).toBeInTheDocument();
+      });
+    });
+
+    it("blocks sending when X recipient already owns the trait", async () => {
+      mockLookupGiftRecipient.mockResolvedValueOnce({
+        success: true,
+        recipient: {
+          userId: "user-3",
+          address: "0x3333333333333333333333333333333333333333",
+          xUsername: "duplicate_holder",
+          xName: "Duplicate Holder",
+          profileImageUrl: null,
+          isSelf: false,
+          isBanned: false,
+          isWlAllocated: false,
+          alreadyOwnsTrait: true,
+          canReceive: false,
+        },
+      });
+
+      render(
+        <GiftModal
+          isOpen={true}
+          onClose={vi.fn()}
+          item={dupItem1}
+          senderAddress={senderAddress}
+          onGiftSuccess={vi.fn()}
+        />,
+      );
+
+      const input = screen.getByTestId("gift-receiver-input");
+      fireEvent.change(input, { target: { value: "duplicate_holder" } });
+
+      const searchBtn = screen.getByTestId("search-recipient-btn");
+      fireEvent.click(searchBtn);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Recipient already owns this trait/i),
+        ).toBeInTheDocument();
+        expect(screen.getByTestId("send-gift-submit")).toBeDisabled();
+      });
+    });
+
+    it("blocks sending when X recipient has allocated Whitelist slot", async () => {
+      mockLookupGiftRecipient.mockResolvedValueOnce({
+        success: true,
+        recipient: {
+          userId: "user-4",
+          address: "0x4444444444444444444444444444444444444444",
+          xUsername: "wl_holder",
+          xName: "WL Holder",
+          profileImageUrl: null,
+          isSelf: false,
+          isBanned: false,
+          isWlAllocated: true,
+          alreadyOwnsTrait: false,
+          canReceive: false,
+        },
+      });
+
+      render(
+        <GiftModal
+          isOpen={true}
+          onClose={vi.fn()}
+          item={dupItem1}
+          senderAddress={senderAddress}
+          onGiftSuccess={vi.fn()}
+        />,
+      );
+
+      const input = screen.getByTestId("gift-receiver-input");
+      fireEvent.change(input, { target: { value: "wl_holder" } });
+
+      const searchBtn = screen.getByTestId("search-recipient-btn");
+      fireEvent.click(searchBtn);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Wallets with an allocated Whitelist slot cannot receive gifts/i),
+        ).toBeInTheDocument();
+        expect(screen.getByTestId("send-gift-submit")).toBeDisabled();
+      });
+    });
+
+    it("displays error when X recipient account is not found", async () => {
+      mockLookupGiftRecipient.mockRejectedValueOnce(
+        new Error("No ChimpHood account found linked to @ghost_user."),
+      );
+
+      render(
+        <GiftModal
+          isOpen={true}
+          onClose={vi.fn()}
+          item={dupItem1}
+          senderAddress={senderAddress}
+          onGiftSuccess={vi.fn()}
+        />,
+      );
+
+      const input = screen.getByTestId("gift-receiver-input");
+      fireEvent.change(input, { target: { value: "ghost_user" } });
+
+      const searchBtn = screen.getByTestId("search-recipient-btn");
+      fireEvent.click(searchBtn);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("No ChimpHood account found linked to @ghost_user."),
+        ).toBeInTheDocument();
+        expect(screen.getByTestId("send-gift-submit")).toBeDisabled();
+      });
+    });
   });
 
   describe("3. Pending Incoming Gifts & Accept / Reject Actions (GiftsSection)", () => {
@@ -456,6 +633,33 @@ describe("Gifting UI (I-1) Test Suite", () => {
         "title",
         "Wallets with an allocated Whitelist slot cannot receive gifts",
       );
+    });
+
+    it("displays sender X handle alongside wallet address when available", () => {
+      const giftWithX: GiftItemData = {
+        ...samplePendingIncomingGift,
+        sender: {
+          id: "user-sender-x",
+          wallet: { address: "0x3333333333333333333333333333333333333333" },
+          xIdentity: {
+            username: "chimpy_sender",
+            name: "Chimpy",
+            profileImageUrl: null,
+          },
+        },
+      };
+
+      render(
+        <GiftsSection
+          sentGifts={[]}
+          receivedGifts={[giftWithX]}
+          isLoading={false}
+          isWlAllocated={false}
+          onRefresh={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText(/From: @chimpy_sender \(0x3333\.\.\.3333\)/i)).toBeInTheDocument();
     });
   });
 

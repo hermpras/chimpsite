@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { X, Gift, AlertTriangle, CheckCircle2, ShieldAlert } from "lucide-react";
+import React, { useState } from "react";
+import { X, Gift, AlertTriangle, CheckCircle2, ShieldAlert, Search, UserCheck, Loader2 } from "lucide-react";
 import type { InventoryItemData } from "@/lib/inventory/client";
-import { sendGiftRequest } from "@/lib/inventory/client";
+import { sendGiftRequest, lookupGiftRecipient, type GiftRecipientInfo } from "@/lib/inventory/client";
 import { isValidAddress, shortenAddress } from "@/lib/auth/address";
 import { Button } from "@/components/ui/Button";
 
@@ -20,7 +20,10 @@ export function GiftModal({
   senderAddress,
   onGiftSuccess,
 }: GiftModalProps) {
-  const [receiverAddress, setReceiverAddress] = useState("");
+  const [receiverInput, setReceiverInput] = useState("");
+  const [verifiedRecipient, setVerifiedRecipient] = useState<GiftRecipientInfo | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,29 +31,102 @@ export function GiftModal({
   if (!isOpen || !item) return null;
 
   const handleClose = () => {
-    setReceiverAddress("");
+    setReceiverInput("");
+    setVerifiedRecipient(null);
+    setIsSearching(false);
+    setSearchError(null);
     setError(null);
     setSuccessMessage(null);
     setIsSubmitting(false);
     onClose();
   };
 
-  // Validation logic
-  const trimmed = receiverAddress.trim();
+  const trimmed = receiverInput.trim();
+  const isAddressFormat = trimmed.startsWith("0x");
+
+  // Immediate format and self-validation
   let clientValidationError: string | null = null;
   if (!trimmed) {
-    clientValidationError = "Recipient wallet address is required.";
-  } else if (!isValidAddress(trimmed)) {
-    clientValidationError =
-      "Invalid EVM wallet address format (must be 0x followed by 40 hex characters).";
-  } else if (senderAddress && trimmed.toLowerCase() === senderAddress.toLowerCase()) {
-    clientValidationError = "You cannot send a gift to yourself.";
+    clientValidationError = "Recipient X username or wallet address is required.";
+  } else if (isAddressFormat) {
+    if (!isValidAddress(trimmed)) {
+      clientValidationError =
+        "Invalid EVM wallet address format (must be 0x followed by 40 hex characters).";
+    } else if (senderAddress && trimmed.toLowerCase() === senderAddress.toLowerCase()) {
+      clientValidationError = "You cannot send a gift to yourself.";
+    }
   }
+
+  // Recipient search handler for X usernames or addresses
+  const handleSearchRecipient = async () => {
+    if (!trimmed || clientValidationError) {
+      if (clientValidationError) setSearchError(clientValidationError);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+    setError(null);
+
+    try {
+      const res = await lookupGiftRecipient(trimmed, item.trait.id);
+      if (res.success && res.recipient) {
+        setVerifiedRecipient(res.recipient);
+
+        // Pre-flight check feedbacks
+        if (res.recipient.isSelf) {
+          setSearchError("You cannot send a gift to yourself.");
+        } else if (res.recipient.alreadyOwnsTrait) {
+          setSearchError(
+            "Recipient already owns this trait. Gifts cannot duplicate a trait already in recipient inventory.",
+          );
+        } else if (res.recipient.isWlAllocated) {
+          setSearchError("Wallets with an allocated Whitelist slot cannot receive gifts.");
+        } else if (res.recipient.isBanned) {
+          setSearchError("Recipient account is restricted from receiving gifts.");
+        } else if (!res.recipient.address) {
+          setSearchError("Recipient does not have a verified wallet address connected.");
+        }
+      }
+    } catch (err: unknown) {
+      setVerifiedRecipient(null);
+      const msg = err instanceof Error ? err.message : "Failed to find recipient.";
+      setSearchError(msg);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (clientValidationError) {
       setError(clientValidationError);
+      return;
+    }
+
+    // Determine target recipient address: verified recipient wallet address or direct valid address
+    const targetAddress = verifiedRecipient?.address || (isAddressFormat && isValidAddress(trimmed) ? trimmed : null);
+
+    if (!targetAddress) {
+      if (!verifiedRecipient && !isAddressFormat) {
+        setError("Please search and verify the recipient's X account before sending.");
+      } else {
+        setError("Recipient address could not be resolved.");
+      }
+      return;
+    }
+
+    if (verifiedRecipient && !verifiedRecipient.canReceive) {
+      if (verifiedRecipient.isSelf) {
+        setError("You cannot send a gift to yourself.");
+      } else if (verifiedRecipient.alreadyOwnsTrait) {
+        setError("Recipient already owns this trait.");
+      } else if (verifiedRecipient.isWlAllocated) {
+        setError("Wallets with an allocated Whitelist slot cannot receive gifts.");
+      } else if (verifiedRecipient.isBanned) {
+        setError("Recipient is restricted from receiving gifts.");
+      }
       return;
     }
 
@@ -59,7 +135,10 @@ export function GiftModal({
     setSuccessMessage(null);
 
     try {
-      await sendGiftRequest(trimmed, item.id);
+      await sendGiftRequest(targetAddress, item.id);
+      const recipientName = verifiedRecipient?.xUsername
+        ? `@${verifiedRecipient.xUsername}`
+        : shortenAddress(targetAddress);
       setSuccessMessage(
         `Gift sent successfully! Trait "${item.trait.name}" (#${item.edition}) is now pending acceptance. It will remain active until accepted or cancelled.`,
       );
@@ -71,6 +150,14 @@ export function GiftModal({
       setIsSubmitting(false);
     }
   };
+
+  // Determine if submit is ready:
+  // - Address mode: valid address and not self
+  // - X username mode: verified recipient with canReceive = true
+  const isSubmitDisabled =
+    isSubmitting ||
+    Boolean(clientValidationError) ||
+    (!isAddressFormat && (!verifiedRecipient || !verifiedRecipient.canReceive));
 
   return (
     <div
@@ -152,14 +239,14 @@ export function GiftModal({
         </div>
 
         {/* Alerts */}
-        {error && (
+        {(error || searchError) && (
           <div
             role="alert"
             data-testid="gift-send-error"
             className="mb-4 flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300"
           >
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-rose-400" />
-            <div className="flex-1">{error}</div>
+            <div className="flex-1">{error || searchError}</div>
           </div>
         )}
 
@@ -182,21 +269,52 @@ export function GiftModal({
                 htmlFor="receiver-address-input"
                 className="mb-1.5 block text-xs font-medium text-gray-300"
               >
-                Recipient Wallet Address (EVM)
+                Recipient X (Twitter) Username or Wallet Address
               </label>
-              <input
-                id="receiver-address-input"
-                type="text"
-                data-testid="gift-receiver-input"
-                placeholder="0x1234...5678"
-                value={receiverAddress}
-                onChange={(e) => {
-                  setReceiverAddress(e.target.value);
-                  if (error) setError(null);
-                }}
-                disabled={isSubmitting}
-                className="w-full rounded-lg border border-gray-700 bg-gray-900/80 px-3.5 py-2.5 font-mono text-sm text-white placeholder-gray-500 transition-colors focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none disabled:opacity-50"
-              />
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    id="receiver-address-input"
+                    type="text"
+                    data-testid="gift-receiver-input"
+                    placeholder="@username or 0x1234...5678"
+                    value={receiverInput}
+                    onChange={(e) => {
+                      setReceiverInput(e.target.value);
+                      if (error) setError(null);
+                      if (searchError) setSearchError(null);
+                      if (verifiedRecipient) setVerifiedRecipient(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isAddressFormat && !verifiedRecipient) {
+                        e.preventDefault();
+                        handleSearchRecipient();
+                      }
+                    }}
+                    disabled={isSubmitting || isSearching}
+                    className="w-full rounded-lg border border-gray-700 bg-gray-900/80 px-3.5 py-2.5 font-mono text-sm text-white placeholder-gray-500 transition-colors focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none disabled:opacity-50"
+                  />
+                </div>
+                {!isAddressFormat && trimmed && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    data-testid="search-recipient-btn"
+                    onClick={handleSearchRecipient}
+                    disabled={isSearching || !trimmed}
+                    className="h-10 border-teal-500/30 text-teal-300 hover:bg-teal-500/10"
+                  >
+                    {isSearching ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    <span className="ml-1.5 hidden sm:inline">Verify</span>
+                  </Button>
+                )}
+              </div>
+
               {trimmed && clientValidationError && (
                 <p
                   data-testid="gift-validation-message"
@@ -205,6 +323,66 @@ export function GiftModal({
                   {clientValidationError}
                 </p>
               )}
+
+              {/* Verified Recipient Confirmation Card */}
+              {verifiedRecipient && (
+                <div
+                  data-testid="recipient-confirmation-card"
+                  className={`mt-3 flex items-center justify-between rounded-xl border p-3 ${
+                    verifiedRecipient.canReceive
+                      ? "border-emerald-500/40 bg-emerald-950/20 text-emerald-200"
+                      : "border-amber-500/40 bg-amber-950/20 text-amber-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-gray-700 bg-gray-800">
+                      {verifiedRecipient.profileImageUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={verifiedRecipient.profileImageUrl}
+                          alt={verifiedRecipient.xUsername || "Recipient"}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-gray-500">
+                          <UserCheck className="h-5 w-5" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-white text-sm">
+                          {verifiedRecipient.xName || verifiedRecipient.xUsername}
+                        </span>
+                        {verifiedRecipient.xUsername && (
+                          <span className="text-xs text-teal-400">
+                            @{verifiedRecipient.xUsername}
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-mono text-[10px] text-gray-400">
+                        {verifiedRecipient.address
+                          ? shortenAddress(verifiedRecipient.address)
+                          : "No wallet"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    {verifiedRecipient.canReceive ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[10px] font-medium text-rose-400">
+                        Ineligible
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {senderAddress && (
                 <p className="mt-1 text-[11px] text-gray-500">
                   Sending from: {shortenAddress(senderAddress)}
@@ -225,10 +403,10 @@ export function GiftModal({
                 type="submit"
                 variant="primary"
                 data-testid="send-gift-submit"
-                disabled={isSubmitting || Boolean(clientValidationError)}
+                disabled={isSubmitDisabled}
                 className="bg-teal-600 hover:bg-teal-500 active:bg-teal-700"
               >
-                {isSubmitting ? "Sending..." : "Send Gift"}
+                {isSubmitting ? "Sending..." : "Confirm & Send Gift"}
               </Button>
             </div>
           </form>

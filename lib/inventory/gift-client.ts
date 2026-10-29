@@ -18,16 +18,39 @@ export interface GiftItemData {
   };
   sender?: {
     id: string;
-    wallet: {
+    wallet?: {
       address: string;
-    };
+    } | null;
+    xIdentity?: {
+      username: string;
+      name?: string | null;
+      profileImageUrl?: string | null;
+    } | null;
   };
   receiver?: {
     id: string;
-    wallet: {
+    wallet?: {
       address: string;
-    };
+    } | null;
+    xIdentity?: {
+      username: string;
+      name?: string | null;
+      profileImageUrl?: string | null;
+    } | null;
   };
+}
+
+export interface GiftRecipientInfo {
+  userId: string;
+  address: string | null;
+  xUsername?: string | null;
+  xName?: string | null;
+  profileImageUrl?: string | null;
+  isSelf: boolean;
+  isBanned: boolean;
+  isWlAllocated: boolean;
+  alreadyOwnsTrait: boolean;
+  canReceive: boolean;
 }
 
 export interface UserGiftsResponse {
@@ -117,6 +140,26 @@ export async function resolveGiftRequest(
         data.error ||
         `Failed to ${action.toLowerCase()} gift: ${res.statusText}`,
     );
+  }
+  return data;
+}
+
+/**
+ * Client helper to lookup and verify a potential recipient by X handle or wallet address.
+ */
+export async function lookupGiftRecipient(
+  query: string,
+  traitId?: string,
+): Promise<{ success: boolean; recipient: GiftRecipientInfo }> {
+  const params = new URLSearchParams({ query: query.trim() });
+  if (traitId) {
+    params.set("traitId", traitId);
+  }
+  const url = resolveUrl(`/api/gifts/recipient?${params.toString()}`);
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Recipient not found.");
   }
   return data;
 }

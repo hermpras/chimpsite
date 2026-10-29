@@ -114,7 +114,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                 </div>
 
                 {/* Gift Button — strictly only for duplicate copies */}
-                {onGiftItem && isDuplicate && (
+                {onGiftItem && isDuplicate ? (
                   <Button
                     size="sm"
                     variant="outline"
@@ -126,6 +126,14 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                     <Gift className="mr-1.5 h-3.5 w-3.5" />
                     {item.isLocked ? "Locked in Gift" : "Gift Trait"}
                   </Button>
+                ) : (
+                  <div
+                    data-testid={`single-copy-badge-${item.id}`}
+                    className="flex h-8 w-full items-center justify-center rounded-lg border border-gray-800/80 bg-gray-900/40 text-[10px] text-gray-500"
+                    title="You must retain at least 1 copy. Only extra duplicate copies can be gifted."
+                  >
+                    Keep 1 Copy (Duplicate-only)
+                  </div>
                 )}
               </div>
             </div>

@@ -232,7 +232,7 @@ export function GiftsSection({
                           </p>
                           <div className="flex items-center gap-2 text-[11px] text-gray-400">
                             <span title={senderAddr}>
-                              From: {shortenAddress(senderAddr)}
+                              From: {gift.sender?.xIdentity?.username ? `@${gift.sender.xIdentity.username} (${shortenAddress(senderAddr)})` : shortenAddress(senderAddr)}
                             </span>
                             <span className="text-gray-600">•</span>
                             <span className="flex items-center gap-1 text-teal-400">
@@ -340,7 +340,7 @@ export function GiftsSection({
                           </p>
                           <div className="flex items-center gap-2 text-[11px] text-gray-400">
                             <span title={receiverAddr}>
-                              To: {shortenAddress(receiverAddr)}
+                              To: {gift.receiver?.xIdentity?.username ? `@${gift.receiver.xIdentity.username} (${shortenAddress(receiverAddr)})` : shortenAddress(receiverAddr)}
                             </span>
                             <span className="text-gray-600">•</span>
                             <span className="flex items-center gap-1 text-sky-400">
