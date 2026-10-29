@@ -17,7 +17,14 @@ const RARITY_BADGE_STYLES: Record<string, string> = {
 };
 
 export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
-  // Compute counts per traitId to identify duplicate copies
+  // Compute counts per category to determine gift eligibility (must retain >= 1 item in category)
+  const categoryCounts = items.reduce<Record<string, number>>((acc, item) => {
+    const cat = item.trait.category;
+    acc[cat] = (acc[cat] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Compute counts per traitId to identify exact duplicate trait copies
   const traitCounts = items.reduce<Record<string, number>>((acc, item) => {
     acc[item.trait.id] = (acc[item.trait.id] || 0) + 1;
     return acc;
@@ -29,7 +36,9 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
       className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
     >
       {items.map((item) => {
-        const isDuplicate = (traitCounts[item.trait.id] || 0) >= 2;
+        const categoryCount = categoryCounts[item.trait.category] || 0;
+        const isEligible = categoryCount >= 2;
+        const isDuplicateTrait = (traitCounts[item.trait.id] || 0) >= 2;
 
         return (
           <div
@@ -64,13 +73,15 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                 </div>
               )}
 
-              {/* Duplicate Indicator */}
-              {isDuplicate && (
+              {/* Category Extra / Duplicate Indicator */}
+              {isEligible && (
                 <div
                   data-testid={`duplicate-badge-${item.id}`}
                   className="absolute top-2 left-2 rounded-full border border-teal-500/30 bg-teal-950/80 px-2 py-0.5 text-[10px] font-medium text-teal-300 backdrop-blur"
                 >
-                  Duplicate ({traitCounts[item.trait.id]}x)
+                  {isDuplicateTrait
+                    ? `Duplicate (${traitCounts[item.trait.id]}x)`
+                    : `Extra ${item.trait.category} (${categoryCount}x)`}
                 </div>
               )}
 
@@ -113,8 +124,8 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                   )}
                 </div>
 
-                {/* Gift Button — strictly only for duplicate copies */}
-                {onGiftItem && isDuplicate ? (
+                {/* Gift Button — eligible if user has >= 2 items in this trait category */}
+                {onGiftItem && isEligible ? (
                   <Button
                     size="sm"
                     variant="outline"
@@ -130,9 +141,9 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                   <div
                     data-testid={`single-copy-badge-${item.id}`}
                     className="flex h-8 w-full items-center justify-center rounded-lg border border-gray-800/80 bg-gray-900/40 text-[10px] text-gray-500"
-                    title="You must retain at least 1 copy. Only extra duplicate copies can be gifted."
+                    title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
                   >
-                    Keep 1 Copy (Duplicate-only)
+                    Keep 1 in {item.trait.category} (Category minimum)
                   </div>
                 )}
               </div>

@@ -90,7 +90,15 @@ export function GiftModal({
       }
     } catch (err: unknown) {
       setVerifiedRecipient(null);
-      const msg = err instanceof Error ? err.message : "Failed to find recipient.";
+      let msg = err instanceof Error ? err.message : "Failed to find recipient.";
+      if (
+        msg.includes("JSON") ||
+        msg.includes("Unexpected token") ||
+        msg.includes("SyntaxError") ||
+        msg.includes("fetch failed")
+      ) {
+        msg = "Unable to connect to the server. Please try again later.";
+      }
       setSearchError(msg);
     } finally {
       setIsSearching(false);
@@ -144,7 +152,15 @@ export function GiftModal({
       );
       onGiftSuccess();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to send gift.";
+      let msg = err instanceof Error ? err.message : "Failed to send gift.";
+      if (
+        msg.includes("JSON") ||
+        msg.includes("Unexpected token") ||
+        msg.includes("SyntaxError") ||
+        msg.includes("fetch failed")
+      ) {
+        msg = "Unable to connect to the server. Please try again later.";
+      }
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -185,10 +201,10 @@ export function GiftModal({
           </div>
           <div>
             <h2 id="gift-modal-title" className="text-xl font-bold text-white">
-              Gift Duplicate Trait
+              Gift Trait
             </h2>
             <p className="text-xs text-gray-400">
-              Transfer an extra copy of this trait to another ChimpHood holder
+              Transfer an extra item in this category to another ChimpHood holder
             </p>
           </div>
         </div>
@@ -230,7 +246,7 @@ export function GiftModal({
             <span>Gifting Invariants & Rules:</span>
           </div>
           <ul className="list-inside list-disc space-y-0.5 text-[11px] text-gray-300">
-            <li>You must retain at least 1 copy of the trait.</li>
+            <li>You must retain at least 1 item in the {item.trait.category} category.</li>
             <li>Maximum 1 gift sent per wallet per UTC day.</li>
             <li>Recipient must not already own this trait.</li>
             <li>Pending gifts remain active until accepted or cancelled.</li>

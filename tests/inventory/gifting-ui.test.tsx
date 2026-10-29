@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import React from "react";
 import { TraitGrid } from "@/components/inventory/TraitGrid";
 import { GiftModal } from "@/components/inventory/GiftModal";
@@ -241,6 +241,52 @@ describe("Gifting UI (I-1) Test Suite", () => {
       expect(lockedBtn).toBeDisabled();
       expect(lockedBtn).toHaveTextContent("Locked in Gift");
     });
+
+    it("renders Gift button when user owns two different traits in the same category (e.g. BG DUSK and BG SKY)", () => {
+      const bgItem1: InventoryItemData = {
+        id: "item-bg-dusk",
+        edition: 1,
+        acquiredVia: "CLAIM",
+        acquiredAt: "2026-10-15T10:00:00.000Z",
+        isLocked: false,
+        trait: {
+          id: "trait-bg-dusk",
+          name: "DUSK",
+          category: "BG",
+          rarity: "COMMON",
+          imageUrl: "https://assets.chimphood.io/dusk.png",
+        },
+      };
+
+      const bgItem2: InventoryItemData = {
+        id: "item-bg-sky",
+        edition: 1,
+        acquiredVia: "CLAIM",
+        acquiredAt: "2026-10-15T11:00:00.000Z",
+        isLocked: false,
+        trait: {
+          id: "trait-bg-sky",
+          name: "SKY",
+          category: "BG",
+          rarity: "UNCOMMON",
+          imageUrl: "https://assets.chimphood.io/sky.png",
+        },
+      };
+
+      const onGiftSpy = vi.fn();
+      render(<TraitGrid items={[bgItem1, bgItem2]} onGiftItem={onGiftSpy} />);
+
+      // Both items are eligible because BG category has 2 items
+      const btn1 = screen.getByTestId(`gift-button-${bgItem1.id}`);
+      const btn2 = screen.getByTestId(`gift-button-${bgItem2.id}`);
+      expect(btn1).toBeInTheDocument();
+      expect(btn2).toBeInTheDocument();
+      expect(screen.getByTestId(`duplicate-badge-${bgItem1.id}`)).toHaveTextContent("Extra BG (2x)");
+      expect(screen.getByTestId(`duplicate-badge-${bgItem2.id}`)).toHaveTextContent("Extra BG (2x)");
+
+      fireEvent.click(btn1);
+      expect(onGiftSpy).toHaveBeenCalledWith(bgItem1);
+    });
   });
 
   describe("2. Gift Form & Wallet Address Validation (GiftModal)", () => {
@@ -262,7 +308,7 @@ describe("Gifting UI (I-1) Test Suite", () => {
       expect(screen.getByText("Neon Visor")).toBeInTheDocument();
       expect(screen.getByText("#10")).toBeInTheDocument();
       expect(
-        screen.getByText(/You must retain at least 1 copy of the trait/i),
+        screen.getByText(/You must retain at least 1 item in the EYEWEAR category/i),
       ).toBeInTheDocument();
       expect(
         screen.getByText(/Pending gifts remain active until accepted or cancelled/i),
@@ -747,8 +793,9 @@ describe("Gifting UI (I-1) Test Suite", () => {
       const giftTraitButton = screen.getByTestId(`gift-button-${dupItem1.id}`);
       fireEvent.click(giftTraitButton);
 
-      expect(screen.getByTestId("gift-modal")).toBeInTheDocument();
-      expect(screen.getByText("Gift Duplicate Trait")).toBeInTheDocument();
+      const modal = screen.getByTestId("gift-modal");
+      expect(modal).toBeInTheDocument();
+      expect(within(modal).getByText("Gift Trait")).toBeInTheDocument();
 
       // Send gift from modal
       mockSendGiftRequest.mockResolvedValueOnce({

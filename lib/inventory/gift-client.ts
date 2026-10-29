@@ -71,6 +71,26 @@ function resolveUrl(path: string): string {
   return `http://localhost:3000${path}`;
 }
 
+async function safeParseJsonResponse(res: Response): Promise<{ data: any; rawText: string }> {
+  let rawText = "";
+  try {
+    rawText = await res.text();
+  } catch {
+    rawText = "";
+  }
+
+  let data: any = null;
+  if (rawText && rawText.trim().length > 0) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = null;
+    }
+  }
+
+  return { data, rawText };
+}
+
 /**
  * Client helper to fetch current user's sent and received gifts.
  */
@@ -78,13 +98,13 @@ export async function fetchUserGifts(): Promise<UserGiftsResponse> {
   const url = resolveUrl("/api/gifts");
   try {
     const res = await fetch(url);
-    const data = await res.json();
+    const { data } = await safeParseJsonResponse(res);
     if (!res.ok) {
       throw new Error(
-        data.message || data.error || `Failed to fetch gifts: ${res.statusText}`,
+        data?.message || data?.error || `Failed to fetch gifts: ${res.statusText || res.status}`,
       );
     }
-    return data;
+    return data ?? { sentGifts: [], receivedGifts: [] };
   } catch (err: unknown) {
     if (
       err instanceof TypeError &&
@@ -110,10 +130,14 @@ export async function sendGiftRequest(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ receiverAddress, inventoryItemId }),
   });
-  const data = await res.json();
+  const { data } = await safeParseJsonResponse(res);
   if (!res.ok) {
     throw new Error(
-      data.message || data.error || `Failed to send gift: ${res.statusText}`,
+      data?.message ||
+        data?.error ||
+        (res.status >= 500
+          ? "Server error occurred while sending gift. Please try again later."
+          : `Failed to send gift: ${res.statusText || res.status}`),
     );
   }
   return data;
@@ -133,12 +157,14 @@ export async function resolveGiftRequest(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action, reason }),
   });
-  const data = await res.json();
+  const { data } = await safeParseJsonResponse(res);
   if (!res.ok) {
     throw new Error(
-      data.message ||
-        data.error ||
-        `Failed to ${action.toLowerCase()} gift: ${res.statusText}`,
+      data?.message ||
+        data?.error ||
+        (res.status >= 500
+          ? `Server error occurred while trying to ${action.toLowerCase()} gift. Please try again later.`
+          : `Failed to ${action.toLowerCase()} gift: ${res.statusText || res.status}`),
     );
   }
   return data;
@@ -157,9 +183,23 @@ export async function lookupGiftRecipient(
   }
   const url = resolveUrl(`/api/gifts/recipient?${params.toString()}`);
   const res = await fetch(url);
-  const data = await res.json();
+  const { data } = await safeParseJsonResponse(res);
+
   if (!res.ok) {
-    throw new Error(data.message || data.error || "Recipient not found.");
+    const errorMsg =
+      data?.message ||
+      data?.error ||
+      (res.status === 404
+        ? "Recipient not found."
+        : res.status >= 500
+        ? "Server error occurred while searching recipient. Please try again later."
+        : `Request failed with status ${res.status}`);
+    throw new Error(errorMsg);
   }
+
+  if (!data || !data.success) {
+    throw new Error(data?.message || data?.error || "Invalid response received from server.");
+  }
+
   return data;
 }

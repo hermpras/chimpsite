@@ -210,14 +210,14 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
     // 2. Item tunggal menampilkan keterangan bahwa item harus disimpan
     expect(screen.queryByTestId(`gift-button-${singleCopyItem.id}`)).not.toBeInTheDocument();
     expect(screen.getByTestId(`single-copy-badge-${singleCopyItem.id}`)).toHaveTextContent(
-      "Keep 1 Copy (Duplicate-only)",
+      "Keep 1 in HEADWEAR (Category minimum)",
     );
 
     // 3. Modal Gift bisa dibuka, username X dicari, dan penerima dikonfirmasi
     fireEvent.click(screen.getByTestId(`gift-button-${duplicateItem1.id}`));
     const modal = screen.getByTestId("gift-modal");
     expect(modal).toBeInTheDocument();
-    expect(within(modal).getByText("Gift Duplicate Trait")).toBeInTheDocument();
+    expect(within(modal).getByText("Gift Trait")).toBeInTheDocument();
     expect(within(modal).getByText("Neon Visor")).toBeInTheDocument();
     expect(within(modal).getByText("#5")).toBeInTheDocument();
 
@@ -294,5 +294,85 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
         screen.getByText(/Gift accepted! "Laser Eyes" \(#42\) has been added to your inventory/i),
       ).toBeInTheDocument();
     });
+  });
+
+  it("enforces category-based eligibility: two different traits in the same category allow gifting either one while single category item cannot be gifted", async () => {
+    const duskItem: InventoryItemData = {
+      id: "item-bg-dusk",
+      edition: 1,
+      acquiredVia: "CLAIM",
+      acquiredAt: "2026-10-15T10:00:00.000Z",
+      isLocked: false,
+      trait: {
+        id: "trait-bg-dusk",
+        name: "DUSK",
+        category: "BG",
+        rarity: "COMMON",
+        imageUrl: "https://assets.chimphood.io/dusk.png",
+      },
+    };
+
+    const skyItem: InventoryItemData = {
+      id: "item-bg-sky",
+      edition: 1,
+      acquiredVia: "CLAIM",
+      acquiredAt: "2026-10-15T11:00:00.000Z",
+      isLocked: false,
+      trait: {
+        id: "trait-bg-sky",
+        name: "SKY",
+        category: "BG",
+        rarity: "UNCOMMON",
+        imageUrl: "https://assets.chimphood.io/sky.png",
+      },
+    };
+
+    const solitaryFurItem: InventoryItemData = {
+      id: "item-fur-graphite",
+      edition: 1,
+      acquiredVia: "CLAIM",
+      acquiredAt: "2026-10-15T12:00:00.000Z",
+      isLocked: false,
+      trait: {
+        id: "trait-fur-graphite",
+        name: "GRAPHITE",
+        category: "FUR",
+        rarity: "COMMON",
+        imageUrl: "https://assets.chimphood.io/graphite.png",
+      },
+    };
+
+    mockFetchUserInventory.mockResolvedValue({
+      items: [duskItem, skyItem, solitaryFurItem],
+    });
+
+    render(
+      <Providers>
+        <ProfilePage />
+      </Providers>,
+    );
+
+    // BG category has 2 items -> both have "Gift Trait" buttons
+    await waitFor(() => {
+      expect(screen.getByTestId(`gift-button-${duskItem.id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`gift-button-${skyItem.id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`duplicate-badge-${duskItem.id}`)).toHaveTextContent("Extra BG (2x)");
+      expect(screen.getByTestId(`duplicate-badge-${skyItem.id}`)).toHaveTextContent("Extra BG (2x)");
+    });
+
+    // FUR category only has 1 item -> Gift button is NOT present, category minimum badge shown
+    expect(screen.queryByTestId(`gift-button-${solitaryFurItem.id}`)).not.toBeInTheDocument();
+    expect(screen.getByTestId(`single-copy-badge-${solitaryFurItem.id}`)).toHaveTextContent(
+      "Keep 1 in FUR (Category minimum)",
+    );
+
+    // Gifting DUSK opens modal and confirms BG category requirement
+    fireEvent.click(screen.getByTestId(`gift-button-${duskItem.id}`));
+    const modal = screen.getByTestId("gift-modal");
+    expect(modal).toBeInTheDocument();
+    expect(within(modal).getByText("DUSK")).toBeInTheDocument();
+    expect(
+      within(modal).getByText(/You must retain at least 1 item in the BG category/i),
+    ).toBeInTheDocument();
   });
 });

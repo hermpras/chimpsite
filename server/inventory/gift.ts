@@ -118,17 +118,28 @@ export async function sendGift(prisma: PrismaClient, input: SendGiftInput) {
       );
     }
 
-    // 4. Invariant: Sender must own at least 2 copies (only extra duplicate copies may be sent)
-    const ownedCopiesCount = await tx.inventoryItem.count({
+    // 4. Invariant: Sender must retain at least 1 item in the trait category (must own at least 2 items in category)
+    const category = item.trait?.category;
+    const ownedCategoryCount = await tx.inventoryItem.count({
       where: {
         ownerId: input.senderId,
-        traitId: item.traitId,
+        ...(category
+          ? {
+              trait: {
+                category,
+              },
+            }
+          : {
+              traitId: item.traitId,
+            }),
       },
     });
-    if (ownedCopiesCount < 2) {
+    if (ownedCategoryCount < 2) {
       throw new GiftError(
         "DUPLICATE_ONLY_RULE",
-        "Only extra duplicate copies may be gifted; you must retain at least one copy.",
+        category
+          ? `Only extra category items may be gifted; you must retain at least one item in the ${category} category.`
+          : "Only extra duplicate copies may be gifted; you must retain at least one copy.",
         400,
       );
     }

@@ -100,9 +100,15 @@ function createMockPrisma() {
       return { ...item, trait };
     }),
     count: vi.fn(async ({ where }: any) => {
-      return store.inventoryItems.filter(
-        (i) => i.ownerId === where.ownerId && i.traitId === where.traitId,
-      ).length;
+      return store.inventoryItems.filter((i) => {
+        if (where.ownerId && i.ownerId !== where.ownerId) return false;
+        if (where.traitId && i.traitId !== where.traitId) return false;
+        if (where.trait?.category) {
+          const trait = store.traits.find((t) => t.id === i.traitId);
+          if (trait?.category !== where.trait.category) return false;
+        }
+        return true;
+      }).length;
     }),
     update: vi.fn(async ({ where, data }: any) => {
       const item = store.inventoryItems.find((i) => i.id === where.id);
@@ -253,8 +259,8 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
     );
   });
 
-  it("enforces duplicate-only rule: sender must retain at least one copy", async () => {
-    // Attempt to gift Neon Shades (sender owns only 1 copy) -> must fail
+  it("enforces category retention rule: sender must retain at least one item in the category", async () => {
+    // Attempt to gift Neon Shades (sender owns only 1 item in EYEWEAR category) -> must fail
     await expect(
       sendGift(mockPrisma, {
         senderId: "sender-1",
@@ -263,10 +269,10 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
         now: baseTime,
       }),
     ).rejects.toThrow(
-      "Only extra duplicate copies may be gifted; you must retain at least one copy.",
+      "Only extra category items may be gifted; you must retain at least one item in the EYEWEAR category.",
     );
 
-    // Gifting duplicate Pirate Hat (sender owns 2 copies) -> succeeds
+    // Gifting duplicate Pirate Hat (sender owns 2 items in HEADWEAR category) -> succeeds
     const gift = await sendGift(mockPrisma, {
       senderId: "sender-1",
       receiverId: "receiver-1",
@@ -279,6 +285,49 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
     const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
     expect(item?.isLocked).toBe(true);
     expect(item?.lockReason).toBe("PENDING_GIFT");
+  });
+
+  it("allows gifting when sender owns two different traits in the same category (e.g. BG DUSK and BG SKY)", async () => {
+    // Add two distinct traits in BG category
+    mockPrisma._store.traits.push(
+      { id: "trait-bg-dusk", name: "DUSK", category: "BG" },
+      { id: "trait-bg-sky", name: "SKY", category: "BG" },
+    );
+
+    mockPrisma._store.inventoryItems.push(
+      {
+        id: "item-bg-dusk-1",
+        traitId: "trait-bg-dusk",
+        ownerId: "sender-bg-user",
+        edition: 1,
+        isLocked: false,
+      },
+      {
+        id: "item-bg-sky-1",
+        traitId: "trait-bg-sky",
+        ownerId: "sender-bg-user",
+        edition: 1,
+        isLocked: false,
+      },
+    );
+
+    // Sender owns 2 items in BG category (1 DUSK and 1 SKY) -> can gift DUSK
+    const gift = await sendGift(mockPrisma, {
+      senderId: "sender-bg-user",
+      receiverId: "receiver-1",
+      inventoryItemId: "item-bg-dusk-1",
+      now: baseTime,
+    });
+
+    expect(gift.status).toBe("PENDING");
+    expect(gift.inventoryItemId).toBe("item-bg-dusk-1");
+
+    // Sender still retains the second item (SKY) in the BG category
+    const remainingBgItem = mockPrisma._store.inventoryItems.find(
+      (i) => i.id === "item-bg-sky-1" && i.ownerId === "sender-bg-user",
+    );
+    expect(remainingBgItem).toBeDefined();
+    expect(remainingBgItem?.isLocked).toBe(false);
   });
 
   it("rejects gift if recipient already owns that exact trait", async () => {
