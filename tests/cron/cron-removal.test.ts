@@ -3,7 +3,12 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import type { PrismaClient } from "@prisma/client";
 import { validateSessionToken } from "@/server/auth/session";
-import { sendGift, acceptGift, rejectOrCancelGift } from "@/server/inventory/gift";
+import {
+  sendGift,
+  acceptGift,
+  rejectOrCancelGift,
+  expireUserGiftsOpportunistically,
+} from "@/server/inventory/gift";
 import { revokeWlSlot } from "@/server/whitelist/revoke";
 import { updateWLProgram } from "@/server/admin/wl-program";
 import { reconcileQueueSlots } from "@/server/whitelist/qualification";
@@ -92,8 +97,8 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
     });
   });
 
-  // ─── 3. Gift Pending Non-Expiry & Resolution ─────────────────────────────
-  describe("3. Gift Pending Non-Expiry Architecture", () => {
+  // ─── 3. Gift 24-Hour Expiry Without Cron (Lazy & Opportunistic) ─────────
+  describe("3. Gift 24-Hour Expiry Without Cron (Lazy & Opportunistic)", () => {
     function createMockPrismaForGifts() {
       const store = {
         gifts: [] as any[],
@@ -125,6 +130,21 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
         },
         gift: {
           findFirst: vi.fn(async () => null),
+          findMany: vi.fn(async ({ where }: any) => {
+            return store.gifts.filter((g) => {
+              if (where.status && g.status !== where.status) return false;
+              if (where.expiresAt?.lt && !(g.expiresAt < where.expiresAt.lt)) return false;
+              if (where.OR) {
+                const matchOr = where.OR.some(
+                  (cond: any) =>
+                    (cond.senderId && g.senderId === cond.senderId) ||
+                    (cond.receiverId && g.receiverId === cond.receiverId),
+                );
+                if (!matchOr) return false;
+              }
+              return true;
+            });
+          }),
           findUnique: vi.fn(async ({ where }: any) => {
             const g = store.gifts.find((x) => x.id === where.id);
             if (!g) return null;
@@ -175,7 +195,7 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
       mockPrisma = createMockPrismaForGifts();
     });
 
-    it("ensures pending gifts do NOT expire automatically after 24h and can still be accepted", async () => {
+    it("ensures pending gifts WITHIN 24h can still be accepted normally", async () => {
       const now = new Date("2026-10-25T10:00:00.000Z");
       const gift = await sendGift(mockPrisma, {
         senderId: "sender-wallet",
@@ -186,13 +206,13 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
 
       expect(gift.status).toBe("PENDING");
 
-      // Fast forward 48 hours later (well past original 24h threshold)
-      const after48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+      // Fast forward 12 hours later (well within 24h)
+      const after12Hours = new Date(now.getTime() + 12 * 60 * 60 * 1000);
 
       const acceptRes = await acceptGift(mockPrisma, {
         userId: "receiver-wallet",
         giftId: gift.id,
-        now: after48Hours,
+        now: after12Hours,
       });
 
       expect(acceptRes.gift.status).toBe("ACCEPTED");
@@ -201,6 +221,43 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
       );
       expect(storedItem.ownerId).toBe("receiver-wallet");
       expect(storedItem.isLocked).toBe(false);
+    });
+
+    it("ensures pending gifts past 24h expire on-demand during acceptGift without cron, rejecting with GIFT_EXPIRED and unlocking item", async () => {
+      const now = new Date("2026-10-25T10:00:00.000Z");
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-wallet",
+        receiverId: "receiver-wallet",
+        inventoryItemId: "item-trait-2",
+        now,
+      });
+
+      expect(gift.status).toBe("PENDING");
+
+      // Fast forward 48 hours later (past 24h threshold)
+      const after48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+      await expect(
+        acceptGift(mockPrisma, {
+          userId: "receiver-wallet",
+          giftId: gift.id,
+          now: after48Hours,
+        }),
+      ).rejects.toMatchObject({
+        code: "GIFT_EXPIRED",
+        status: 410,
+      });
+
+      const storedGift = mockPrisma._store.gifts.find((x: any) => x.id === gift.id);
+      expect(storedGift.status).toBe("EXPIRED");
+      expect(storedGift.decidedAt).toEqual(after48Hours);
+
+      const storedItem = mockPrisma._store.inventoryItems.find(
+        (i: any) => i.id === "item-trait-2",
+      );
+      expect(storedItem.ownerId).toBe("sender-wallet");
+      expect(storedItem.isLocked).toBe(false);
+      expect(storedItem.lockReason).toBeNull();
     });
 
     it("ensures pending gifts past 24h can still be rejected or cancelled", async () => {
@@ -228,6 +285,36 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
       );
       expect(storedItem.ownerId).toBe("sender-wallet");
       expect(storedItem.isLocked).toBe(false);
+    });
+
+    it("ensures opportunistic expiry cleans up expired gifts on-demand without cron", async () => {
+      const now = new Date("2026-10-25T10:00:00.000Z");
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-wallet",
+        receiverId: "receiver-wallet",
+        inventoryItemId: "item-trait-2",
+        now,
+      });
+
+      const after30Hours = new Date(now.getTime() + 30 * 60 * 60 * 1000);
+
+      const cleanupRes = await expireUserGiftsOpportunistically(
+        mockPrisma,
+        "sender-wallet",
+        after30Hours,
+      );
+
+      expect(cleanupRes.expiredCount).toBe(1);
+      expect(cleanupRes.giftIds).toContain(gift.id);
+
+      const storedGift = mockPrisma._store.gifts.find((x: any) => x.id === gift.id);
+      expect(storedGift.status).toBe("EXPIRED");
+
+      const storedItem = mockPrisma._store.inventoryItems.find(
+        (i: any) => i.id === "item-trait-2",
+      );
+      expect(storedItem.isLocked).toBe(false);
+      expect(storedItem.lockReason).toBeNull();
     });
   });
 

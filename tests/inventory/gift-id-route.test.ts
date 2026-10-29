@@ -185,4 +185,28 @@ describe("POST /api/gifts/[id] route", () => {
     const json = await res.json();
     expect(json.error).toBe("RECEIVER_GIFT_RESTRICTED");
   });
+
+  it("returns 410 GIFT_EXPIRED when attempting to accept an expired gift", async () => {
+    vi.mocked(authenticateRequest).mockResolvedValueOnce({
+      sessionId: "s1",
+      userId: "u1",
+      address: "0x123",
+    });
+
+    vi.mocked(acceptGift).mockRejectedValueOnce(
+      new GiftError("GIFT_EXPIRED", "This gift has expired after 24 hours.", 410),
+    );
+
+    const req = new Request("http://localhost:3000/api/gifts/gift-expired-1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "ACCEPT" }),
+    });
+
+    const res = await POST(req, { params: Promise.resolve({ id: "gift-expired-1" }) });
+    expect(res.status).toBe(410);
+    const json = await res.json();
+    expect(json.error).toBe("GIFT_EXPIRED");
+    expect(json.message).toContain("expired after 24 hours");
+  });
 });

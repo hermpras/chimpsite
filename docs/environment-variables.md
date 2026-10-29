@@ -132,9 +132,9 @@ All secret keys and sensitive credentials are read strictly on the server-side a
 - **Purpose**: Secures background automation routes against unauthorized execution.
 - **Header Format**: Requests must supply `Authorization: Bearer <CRON_SECRET>`.
 - **Routes protected**:
-  - `/api/cron/sweep-gifts` (Task 2-A) — hourly gift expiry sweep, Vercel schedule `0 * * * *`
-  - `/api/cron/cleanup-auth` (Task 2-C) — auth nonce & session cleanup, Vercel schedule `*/15 * * * *`
-  - `/api/cron/reconcile-queue` (Task O-4) — hourly whitelist queue reconciliation, Vercel schedule `0 * * * *`
+  - `/api/cron/sweep-gifts` (Deprecated / Dormant — Task O-6 eliminated scheduled crons; gift expiry is handled event-driven via lazy evaluation and opportunistic cleanup without cron)
+  - `/api/cron/cleanup-auth` (Task 2-C — auth nonce & session cleanup; optional fallback)
+  - `/api/cron/reconcile-queue` (Task O-4 — queue reconciliation; optional fallback)
 - **Fail-Closed Behavior**: If `CRON_SECRET` is unset on the server, cron routes fail immediately with HTTP 500 (`SERVER_MISCONFIGURED`). Requests with invalid or missing bearer tokens are rejected with HTTP 401 (`UNAUTHORIZED`).
 - **Generation**:
   ```bash
@@ -232,7 +232,7 @@ All secret keys and sensitive credentials are read strictly on the server-side a
 - [ ] Set `SIWE_DOMAIN` to production domain without protocol (e.g., `chimphood.xyz`).
 - [ ] Set `SIWE_URI` to production HTTPS URL without trailing slash (e.g., `https://chimphood.xyz`).
 - [ ] Configure `ALLOWED_CHAIN_IDS` matching supported production networks.
-- [ ] Generate and set `CRON_SECRET` for Vercel Cron authorization (`/api/cron/sweep-gifts`, `/api/cron/cleanup-auth`, `/api/cron/reconcile-queue`).
+- [ ] Generate and set `CRON_SECRET` for optional manual background route authorization (note: scheduled crons in `vercel.json` have been removed in favor of event-driven and lazy execution).
 - [ ] Configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for shared distributed rate limiting and OAuth state replay protection.
 - [ ] If X integration is enabled, configure registered OAuth 2.0 credentials and production redirect URI.
 - [ ] Bootstrap initial `SUPER_ADMIN` wallet using the isolated script: `INITIAL_SUPER_ADMIN_ADDRESS="0x..." npm run admin:bootstrap`.

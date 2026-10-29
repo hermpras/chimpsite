@@ -27,6 +27,7 @@ vi.mock("@/lib/auth/rate-limit", async (importOriginal) => {
 
 vi.mock("@/server/inventory/gift", () => ({
   sendGift: vi.fn(),
+  expireUserGiftsOpportunistically: vi.fn().mockResolvedValue({ expiredCount: 0, giftIds: [] }),
   GiftError: class GiftError extends Error {
     code: string;
     status: number;
@@ -41,6 +42,7 @@ vi.mock("@/server/inventory/gift", () => ({
 
 import { authenticateRequest } from "@/server/auth/session";
 import { checkRateLimit } from "@/lib/auth/rate-limit";
+import { expireUserGiftsOpportunistically } from "@/server/inventory/gift";
 
 describe("/api/gifts route", () => {
   beforeEach(() => {
@@ -82,6 +84,7 @@ describe("/api/gifts route", () => {
 
     const res = await GET();
     expect(res.status).toBe(200);
+    expect(expireUserGiftsOpportunistically).toHaveBeenCalledWith(expect.anything(), "u1");
     const data = await res.json();
     expect(data.sentGifts).toHaveLength(1);
     expect(data.receivedGifts).toHaveLength(1);

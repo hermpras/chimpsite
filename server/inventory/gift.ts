@@ -240,8 +240,54 @@ export async function acceptGift(prisma: PrismaClient, input: ResolveGiftInput) 
       );
     }
 
-    // Note (Task O-6): Pending gifts do not expire automatically.
-    // They remain valid until accepted, rejected, or cancelled.
+    // Lazy / on-demand 24-hour expiry check:
+    // If now > gift.expiresAt, atomically expire gift, release locked item to sender, and reject.
+    if (now > gift.expiresAt) {
+      const expireUpdate = await tx.gift.updateMany({
+        where: { id: gift.id, status: "PENDING" },
+        data: { status: "EXPIRED", decidedAt: now },
+      });
+      if (expireUpdate.count === 0) {
+        throw new GiftError("GIFT_NOT_PENDING", "Gift is no longer pending.", 409);
+      }
+
+      // Unlock sender item safely without unlocking items locked for other reasons
+      const itemToUnlock = gift.inventoryItem;
+      const isLockedForOtherReason =
+        itemToUnlock &&
+        itemToUnlock.isLocked &&
+        itemToUnlock.lockReason &&
+        itemToUnlock.lockReason !== "PENDING_GIFT";
+      if (!isLockedForOtherReason) {
+        await tx.inventoryItem.update({
+          where: { id: gift.inventoryItemId },
+          data: { isLocked: false, lockReason: null },
+        });
+      }
+
+      await recordAuditLog(tx, {
+        actorId: input.userId,
+        action: "GIFT_EXPIRED",
+        entityType: "Gift",
+        entityId: gift.id,
+        oldValues: {
+          ownerId: gift.senderId,
+          status: "PENDING",
+          isLocked: true,
+        },
+        newValues: {
+          status: "EXPIRED",
+          isLocked: false,
+        },
+        metadata: {
+          reason: "LAZY_EXPIRY_ON_ACCEPT",
+          expiredAt: gift.expiresAt,
+          attemptedAt: now,
+        },
+      });
+
+      return { outcome: "EXPIRED" as const };
+    }
 
     // Re-verify recipient does not already own the trait
     const recipientOwnedCount = await tx.inventoryItem.count({
@@ -330,6 +376,10 @@ export async function acceptGift(prisma: PrismaClient, input: ResolveGiftInput) 
     };
   });
 
+  if (result.outcome === "EXPIRED") {
+    throw new GiftError("GIFT_EXPIRED", "This gift has expired after 24 hours.", 410);
+  }
+
   if (result.outcome === "RECIPIENT_ALREADY_OWNS_TRAIT") {
     throw new GiftError(
       "RECIPIENT_ALREADY_OWNS_TRAIT",
@@ -402,10 +452,22 @@ export async function rejectOrCancelGift(
     }
 
     // Unlock the item only after winning the conditional transition from PENDING
-    await tx.inventoryItem.update({
-      where: { id: gift.inventoryItemId },
-      data: { isLocked: false, lockReason: null },
-    });
+    const itemToUnlock =
+      typeof tx.inventoryItem.findUnique === "function"
+        ? await tx.inventoryItem.findUnique({ where: { id: gift.inventoryItemId } })
+        : null;
+    const isLockedForOtherReason =
+      itemToUnlock &&
+      itemToUnlock.isLocked &&
+      itemToUnlock.lockReason &&
+      itemToUnlock.lockReason !== "PENDING_GIFT";
+
+    if (!isLockedForOtherReason) {
+      await tx.inventoryItem.update({
+        where: { id: gift.inventoryItemId },
+        data: { isLocked: false, lockReason: null },
+      });
+    }
 
     const updatedGift = await tx.gift.findUnique({
       where: { id: gift.id },
@@ -416,7 +478,98 @@ export async function rejectOrCancelGift(
 }
 
 /**
+ * Opportunistically checks and expires overdue pending gifts for a given user
+ * (either as sender or receiver) without requiring a background cron job.
+ * Unlocks the sender's item atomically if locked with PENDING_GIFT.
+ */
+export async function expireUserGiftsOpportunistically(
+  prisma: PrismaClient,
+  userId: string,
+  now: Date = new Date(),
+): Promise<{ expiredCount: number; giftIds: string[] }> {
+  const expiredGifts = await prisma.gift.findMany({
+    where: {
+      status: "PENDING",
+      expiresAt: { lt: now },
+      OR: [{ senderId: userId }, { receiverId: userId }],
+    },
+    select: {
+      id: true,
+      senderId: true,
+      inventoryItemId: true,
+      expiresAt: true,
+    },
+  });
+
+  if (expiredGifts.length === 0) {
+    return { expiredCount: 0, giftIds: [] };
+  }
+
+  const processedIds: string[] = [];
+
+  for (const gift of expiredGifts) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const updateResult = await tx.gift.updateMany({
+          where: { id: gift.id, status: "PENDING" },
+          data: { status: "EXPIRED", decidedAt: now },
+        });
+        if (updateResult.count > 0) {
+          const itemToUnlock =
+            typeof tx.inventoryItem.findUnique === "function"
+              ? await tx.inventoryItem.findUnique({ where: { id: gift.inventoryItemId } })
+              : null;
+          const isLockedForOtherReason =
+            itemToUnlock &&
+            itemToUnlock.isLocked &&
+            itemToUnlock.lockReason &&
+            itemToUnlock.lockReason !== "PENDING_GIFT";
+
+          if (!isLockedForOtherReason) {
+            await tx.inventoryItem.update({
+              where: { id: gift.inventoryItemId },
+              data: { isLocked: false, lockReason: null },
+            });
+          }
+
+          await recordAuditLog(tx, {
+            actorId: userId,
+            action: "GIFT_EXPIRED",
+            entityType: "Gift",
+            entityId: gift.id,
+            oldValues: {
+              ownerId: gift.senderId,
+              status: "PENDING",
+              isLocked: true,
+            },
+            newValues: {
+              status: "EXPIRED",
+              isLocked: false,
+            },
+            metadata: {
+              reason: "OPPORTUNISTIC_EXPIRY_ON_FETCH",
+              expiredAt: gift.expiresAt,
+              detectedAt: now,
+            },
+          });
+          processedIds.push(gift.id);
+        }
+      });
+    } catch (err) {
+      console.error(`Failed to opportunistically expire gift ${gift.id}:`, err);
+    }
+  }
+
+  return { expiredCount: processedIds.length, giftIds: processedIds };
+}
+
+/**
  * Sweeps expired pending gifts (older than 24h) and unlocks items.
+ *
+ * @deprecated Cron scheduler has been decommissioned due to cost constraints (Task O-6).
+ * 24-hour gift expiry is now handled via lazy/on-demand evaluation in `acceptGift`
+ * and opportunistic cleanup in `GET /api/gifts` (`expireUserGiftsOpportunistically`).
+ * Retained solely for manual administrative maintenance or fallback testing.
  */
 export async function sweepExpiredGifts(prisma: PrismaClient, now: Date = new Date()) {
   const expiredGifts = await prisma.gift.findMany({
@@ -436,10 +589,22 @@ export async function sweepExpiredGifts(prisma: PrismaClient, now: Date = new Da
           data: { status: "EXPIRED", decidedAt: now },
         });
         if (updateResult.count > 0) {
-          await tx.inventoryItem.update({
-            where: { id: gift.inventoryItemId },
-            data: { isLocked: false, lockReason: null },
-          });
+          const itemToUnlock =
+            typeof tx.inventoryItem.findUnique === "function"
+              ? await tx.inventoryItem.findUnique({ where: { id: gift.inventoryItemId } })
+              : null;
+          const isLockedForOtherReason =
+            itemToUnlock &&
+            itemToUnlock.isLocked &&
+            itemToUnlock.lockReason &&
+            itemToUnlock.lockReason !== "PENDING_GIFT";
+
+          if (!isLockedForOtherReason) {
+            await tx.inventoryItem.update({
+              where: { id: gift.inventoryItemId },
+              data: { isLocked: false, lockReason: null },
+            });
+          }
           processed.push(gift.id);
         }
       });

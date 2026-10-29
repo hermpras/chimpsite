@@ -51,7 +51,7 @@ Stage 1 focuses on establishing the PostgreSQL database foundation using Prisma 
   - Links sender (`senderId`), recipient (`receiverId`), and item (`inventoryItemId`).
   - Lifecycle statuses: `PENDING`, `ACCEPTED`, `REJECTED`, `EXPIRED`, `CANCELLED`.
   - Expiration (`expiresAt`) set to 24 hours UTC from creation.
-  - Index `@@index([status, expiresAt])` for automated sweeps of expired pending gifts.
+  - Index `@@index([status, expiresAt])` for querying and opportunistic expiration sweeps of pending gifts without scheduled cron.
   - Cancellation/rejection reason field and decision timestamp (`decidedAt`).
 
 ### 2.5 Campaign & Evidence
@@ -106,7 +106,7 @@ Stage 1 focuses on establishing the PostgreSQL database foundation using Prisma 
 | Stock must not be negative (`>= 0`)                   | PostgreSQL `CHECK (allocated_stock >= 0)`                            | Enforced via SQL constraint and server code validation.                    |
 | Users holding an active WL slot cannot claim drops    | Server Transaction Check                                             | Checked before `tx.claim.create`: ensure no active `WLSlot` record exists. |
 | Stock configuration locked 15 min before period start | Server Transaction Check                                             | Validation `configLockAt <= startsAt - 15m` before period activation.      |
-| Pending gifts expire in 24h & re-evaluate eligibility | Cron / Worker + Row Locking (`SELECT FOR UPDATE`)                    | Re-validated upon recipient acceptance within atomic transaction.          |
+| Pending gifts expire in 24h & re-evaluate eligibility | Event-Driven Lazy Evaluation + Atomic Row Locking | Evaluated on-demand upon recipient acceptance (rejecting with 410 `GIFT_EXPIRED`) and opportunistic sweep on `GET /api/gifts` without cron. |
 
 ---
 
@@ -422,7 +422,7 @@ logout revocation) was confirmed working locally by the operator.
      - Duplicate-only rule: sender must own >= 2 copies of the trait (retaining >= 1 copy).
      - Recipient must not already own the trait (`RECIPIENT_ALREADY_OWNS_TRAIT`).
      - Daily limit: strictly 1 gift sent per wallet per UTC calendar day.
-     - 24-hour expiration (`expiresAt = createdAt + 24h`). Expired gifts unlock sender item and cannot be accepted.
+     - 24-hour expiration (`expiresAt = createdAt + 24h`). Background crons are eliminated due to budget constraints; expiry is strictly enforced event-driven via lazy on-demand evaluation upon `acceptGift()` and opportunistic cleanup on `GET /api/gifts`. Expired gifts unlock sender item and cannot be accepted. Senders can also cancel pending gifts manually anytime.
      - Acceptance transfers item ownership to recipient atomically and unlocks item.
      - Cancellation/rejection unlocks the item for the sender.
    - API: `GET /api/gifts`, `POST /api/gifts`, and `POST /api/gifts/[id]` (`ACCEPT`, `REJECT`, `CANCEL`).

@@ -1,3 +1,9 @@
+/**
+ * @deprecated Cron scheduler has been decommissioned due to cost constraints (Task O-6).
+ * 24-hour gift expiry is now handled event-driven via lazy/on-demand evaluation in `acceptGift`
+ * and opportunistic cleanup in `GET /api/gifts`. This endpoint is no longer scheduled in `vercel.json`
+ * and is retained solely for emergency admin maintenance or manual execution.
+ */
 import { prisma } from "@/server/db";
 import { sweepExpiredGifts } from "@/server/inventory/gift";
 import { timingSafeEqualString } from "@/lib/auth/timing-safe";

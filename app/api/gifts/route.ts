@@ -1,6 +1,10 @@
 import { prisma } from "@/server/db";
 import { authenticateRequest } from "@/server/auth/session";
-import { sendGift, GiftError } from "@/server/inventory/gift";
+import {
+  sendGift,
+  GiftError,
+  expireUserGiftsOpportunistically,
+} from "@/server/inventory/gift";
 import { normalizeAddress } from "@/lib/auth/address";
 import { readLimitedBody } from "@/lib/auth/body-limit";
 import {
@@ -13,6 +17,13 @@ export async function GET(): Promise<Response> {
   const session = await authenticateRequest(prisma);
   if (!session) {
     return Response.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  }
+
+  // Opportunistically expire pending gifts older than 24h for this user without a cron scheduler
+  try {
+    await expireUserGiftsOpportunistically(prisma, session.userId);
+  } catch (err) {
+    console.error("GET /api/gifts opportunistic expiry error:", err);
   }
 
   const [sentGifts, receivedGifts] = await Promise.all([

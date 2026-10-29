@@ -4,6 +4,7 @@ import {
   acceptGift,
   rejectOrCancelGift,
   sweepExpiredGifts,
+  expireUserGiftsOpportunistically,
   GiftError,
   GIFT_EXPIRY_MS,
 } from "@/server/inventory/gift";
@@ -57,6 +58,14 @@ function createMockPrisma() {
       return store.gifts.filter((g) => {
         if (where.status && g.status !== where.status) return false;
         if (where.expiresAt?.lt && g.expiresAt >= where.expiresAt.lt) return false;
+        if (where.OR) {
+          const matchOr = where.OR.some(
+            (cond: any) =>
+              (cond.senderId && g.senderId === cond.senderId) ||
+              (cond.receiverId && g.receiverId === cond.receiverId),
+          );
+          if (!matchOr) return false;
+        }
         return true;
       });
     }),
@@ -444,7 +453,7 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
     expect(res.item.ownerId).toBe("receiver-1");
   });
 
-  it("Task O-6: permits acceptance past 24 hours because pending gifts do not expire automatically", async () => {
+  it("Task O-6 & Gift Expiry: rejects acceptance past 24 hours via lazy on-demand evaluation, marks EXPIRED and unlocks item to sender", async () => {
     const gift = await sendGift(mockPrisma, {
       senderId: "sender-1",
       receiverId: "receiver-1",
@@ -454,23 +463,26 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
 
     const after25Hours = new Date(baseTime.getTime() + 25 * 60 * 60 * 1000);
 
-    const result = await acceptGift(mockPrisma, {
-      userId: "receiver-1",
-      giftId: gift.id,
-      now: after25Hours,
+    await expect(
+      acceptGift(mockPrisma, {
+        userId: "receiver-1",
+        giftId: gift.id,
+        now: after25Hours,
+      }),
+    ).rejects.toMatchObject({
+      code: "GIFT_EXPIRED",
+      status: 410,
     });
 
-    expect(result.gift.status).toBe("ACCEPTED");
-
-    // Transaction must commit: gift becomes ACCEPTED and item is transferred to recipient
+    // Transaction must commit: gift becomes EXPIRED and item is unlocked back to sender
     const storedGift = mockPrisma._store.gifts.find((g) => g.id === gift.id);
-    expect(storedGift?.status).toBe("ACCEPTED");
+    expect(storedGift?.status).toBe("EXPIRED");
     expect(storedGift?.decidedAt).toEqual(after25Hours);
 
     const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
     expect(item?.isLocked).toBe(false);
     expect(item?.lockReason).toBeNull();
-    expect(item?.ownerId).toBe("receiver-1"); // Transferred to recipient
+    expect(item?.ownerId).toBe("sender-1"); // Retained by sender
   });
 
   it("rejects acceptance, retains REJECTED status, and unlocks item if recipient already owns the trait", async () => {
@@ -849,11 +861,11 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
       expect(notPendingErrors).toHaveLength(1);
 
       const finalGift = mockPrisma._store.gifts.find((g) => g.id === gift.id);
-      expect(["ACCEPTED", "CANCELLED"]).toContain(finalGift?.status);
+      expect(["EXPIRED", "CANCELLED"]).toContain(finalGift?.status);
 
       const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
       expect(item?.isLocked).toBe(false);
-      expect(["sender-1", "receiver-1"]).toContain(item?.ownerId);
+      expect(item?.ownerId).toBe("sender-1");
     });
 
     it("ensures only one competing resolution succeeds when recipient-duplicate accept races with sender cancel", async () => {
@@ -963,6 +975,269 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
       expect(itemRecord?.isLocked).toBe(true);
 
       mockPrisma._hooks.onAuditCreate = null;
+    });
+  });
+
+  describe("24-Hour Lazy Expiry & Opportunistic Cleanup Architecture (No Cron)", () => {
+    it("permits acceptance within 24 hours and transfers ownership", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      const within24h = new Date(baseTime.getTime() + 23 * 60 * 60 * 1000); // 23h later
+      const result = await acceptGift(mockPrisma, {
+        userId: "receiver-1",
+        giftId: gift.id,
+        now: within24h,
+      });
+
+      expect(result.gift.status).toBe("ACCEPTED");
+      const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
+      expect(item?.ownerId).toBe("receiver-1");
+      expect(item?.isLocked).toBe(false);
+    });
+
+    it("rejects acceptance after 24 hours with GIFT_EXPIRED (410), marks EXPIRED, and safely unlocks item to sender", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      const after25h = new Date(baseTime.getTime() + 25 * 60 * 60 * 1000);
+      await expect(
+        acceptGift(mockPrisma, {
+          userId: "receiver-1",
+          giftId: gift.id,
+          now: after25h,
+        }),
+      ).rejects.toMatchObject({
+        code: "GIFT_EXPIRED",
+        status: 410,
+      });
+
+      const updatedGift = mockPrisma._store.gifts.find((g) => g.id === gift.id);
+      expect(updatedGift?.status).toBe("EXPIRED");
+      expect(updatedGift?.decidedAt).toEqual(after25h);
+
+      const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
+      expect(item?.ownerId).toBe("sender-1");
+      expect(item?.isLocked).toBe(false);
+      expect(item?.lockReason).toBeNull();
+    });
+
+    it("ensures repeated acceptGift calls on an already expired gift fail with 409 GIFT_NOT_PENDING", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      const after25h = new Date(baseTime.getTime() + 25 * 60 * 60 * 1000);
+
+      // First call expires the gift
+      await expect(
+        acceptGift(mockPrisma, {
+          userId: "receiver-1",
+          giftId: gift.id,
+          now: after25h,
+        }),
+      ).rejects.toMatchObject({
+        code: "GIFT_EXPIRED",
+        status: 410,
+      });
+
+      // Second call finds it already expired
+      await expect(
+        acceptGift(mockPrisma, {
+          userId: "receiver-1",
+          giftId: gift.id,
+          now: after25h,
+        }),
+      ).rejects.toMatchObject({
+        code: "GIFT_NOT_PENDING",
+        status: 409,
+      });
+    });
+
+    it("ensures concurrent acceptGift calls on an expired gift resolve safely with exactly one transition", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      const after25h = new Date(baseTime.getTime() + 25 * 60 * 60 * 1000);
+
+      const [res1, res2] = await Promise.allSettled([
+        acceptGift(mockPrisma, {
+          userId: "receiver-1",
+          giftId: gift.id,
+          now: after25h,
+        }),
+        acceptGift(mockPrisma, {
+          userId: "receiver-1",
+          giftId: gift.id,
+          now: after25h,
+        }),
+      ]);
+
+      const rejectedReasons = [res1, res2]
+        .filter((r) => r.status === "rejected")
+        .map((r) => (r as PromiseRejectedResult).reason as GiftError);
+
+      expect(rejectedReasons).toHaveLength(2);
+      const expiredErr = rejectedReasons.find((e) => e.code === "GIFT_EXPIRED");
+      const notPendingErr = rejectedReasons.find((e) => e.code === "GIFT_NOT_PENDING");
+
+      expect(expiredErr).toBeDefined();
+      expect(expiredErr?.status).toBe(410);
+      expect(notPendingErr).toBeDefined();
+      expect(notPendingErr?.status).toBe(409);
+
+      const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
+      expect(item?.isLocked).toBe(false);
+      expect(item?.ownerId).toBe("sender-1");
+    });
+
+    it("ensures acceptGift does NOT unlock item if it is locked for a different reason", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      // Simulate item locked for an external reason
+      const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
+      item.lockReason = "DROP_CLAIM_LOCK";
+
+      const after25h = new Date(baseTime.getTime() + 25 * 60 * 60 * 1000);
+      await expect(
+        acceptGift(mockPrisma, {
+          userId: "receiver-1",
+          giftId: gift.id,
+          now: after25h,
+        }),
+      ).rejects.toMatchObject({
+        code: "GIFT_EXPIRED",
+        status: 410,
+      });
+
+      expect(item?.isLocked).toBe(true);
+      expect(item?.lockReason).toBe("DROP_CLAIM_LOCK");
+    });
+
+    it("opportunistically expires user's sent gifts when past 24h", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      const after30h = new Date(baseTime.getTime() + 30 * 60 * 60 * 1000);
+
+      const res = await expireUserGiftsOpportunistically(mockPrisma, "sender-1", after30h);
+      expect(res.expiredCount).toBe(1);
+      expect(res.giftIds).toContain(gift.id);
+
+      const updatedGift = mockPrisma._store.gifts.find((g) => g.id === gift.id);
+      expect(updatedGift?.status).toBe("EXPIRED");
+
+      const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
+      expect(item?.isLocked).toBe(false);
+      expect(item?.lockReason).toBeNull();
+    });
+
+    it("opportunistically expires user's received gifts when past 24h", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      const after30h = new Date(baseTime.getTime() + 30 * 60 * 60 * 1000);
+
+      // Caller is receiver-1
+      const res = await expireUserGiftsOpportunistically(mockPrisma, "receiver-1", after30h);
+      expect(res.expiredCount).toBe(1);
+      expect(res.giftIds).toContain(gift.id);
+
+      const updatedGift = mockPrisma._store.gifts.find((g) => g.id === gift.id);
+      expect(updatedGift?.status).toBe("EXPIRED");
+
+      const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
+      expect(item?.isLocked).toBe(false);
+      expect(item?.lockReason).toBeNull();
+    });
+
+    it("opportunistic cleanup leaves unexpired gifts (<24h) untouched", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      const after10h = new Date(baseTime.getTime() + 10 * 60 * 60 * 1000);
+      const res = await expireUserGiftsOpportunistically(mockPrisma, "sender-1", after10h);
+
+      expect(res.expiredCount).toBe(0);
+      expect(res.giftIds).toHaveLength(0);
+
+      const storedGift = mockPrisma._store.gifts.find((g) => g.id === gift.id);
+      expect(storedGift?.status).toBe("PENDING");
+
+      const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
+      expect(item?.isLocked).toBe(true);
+      expect(item?.lockReason).toBe("PENDING_GIFT");
+    });
+
+    it("opportunistic cleanup does NOT touch other users' expired gifts", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      const after30h = new Date(baseTime.getTime() + 30 * 60 * 60 * 1000);
+
+      // Querying as third-party user-999
+      const res = await expireUserGiftsOpportunistically(mockPrisma, "user-999", after30h);
+      expect(res.expiredCount).toBe(0);
+
+      const storedGift = mockPrisma._store.gifts.find((g) => g.id === gift.id);
+      expect(storedGift?.status).toBe("PENDING");
+      const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
+      expect(item?.isLocked).toBe(true);
+    });
+
+    it("opportunistic cleanup does NOT unlock items locked for another reason", async () => {
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-1",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-hat-2",
+        now: baseTime,
+      });
+
+      const item = mockPrisma._store.inventoryItems.find((i) => i.id === "item-hat-2");
+      item.lockReason = "MAINTENANCE_LOCK";
+
+      const after30h = new Date(baseTime.getTime() + 30 * 60 * 60 * 1000);
+      const res = await expireUserGiftsOpportunistically(mockPrisma, "sender-1", after30h);
+      expect(res.expiredCount).toBe(1);
+
+      expect(item?.isLocked).toBe(true);
+      expect(item?.lockReason).toBe("MAINTENANCE_LOCK");
     });
   });
 });
