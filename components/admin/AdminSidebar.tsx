@@ -9,6 +9,7 @@ import {
   Users,
   Sparkles,
   Shield,
+  ScrollText,
   X,
   Menu,
 } from "lucide-react";
@@ -22,13 +23,15 @@ export type AdminTab =
   | "users-bans"
   | "abuse-flags"
   | "drops"
-  | "traits";
+  | "traits"
+  | "audit-log";
 
 export interface NavItem {
   id: AdminTab;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredPermission?: string;
+  superAdminOnly?: boolean;
 }
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
@@ -75,6 +78,12 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
     icon: Sparkles,
     requiredPermission: "MANAGE_DROPS",
   },
+  {
+    id: "audit-log",
+    label: "Audit Log",
+    icon: ScrollText,
+    superAdminOnly: true,
+  },
 ];
 
 interface AdminSidebarProps {
@@ -113,7 +122,7 @@ export function AdminSidebar({
 
   const renderNavLinks = () => (
     <nav className="space-y-1 px-3 py-4">
-      {ADMIN_NAV_ITEMS.map((item) => {
+      {ADMIN_NAV_ITEMS.filter((item) => !item.superAdminOnly || isSuperAdmin).map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
         const allowed = hasPerm(item.requiredPermission);

@@ -812,3 +812,66 @@ export async function adminUpdateAbuseFlag(input: AdminUpdateAbuseFlagInput) {
   return data;
 }
 
+export interface AdminListAuditLogsInput {
+  action?: string;
+  entityType?: string;
+  actorId?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AdminAuditLogActor {
+  id: string;
+  role: string;
+  wallet?: { address: string } | null;
+  xIdentity?: { username: string } | null;
+}
+
+export interface AdminAuditLogRecord {
+  id: string;
+  actorId: string | null;
+  actor?: AdminAuditLogActor | null;
+  action: string;
+  entityType: string;
+  entityId: string;
+  oldValues?: unknown;
+  newValues?: unknown;
+  metadata?: unknown;
+  createdAt: string;
+}
+
+export interface AdminListAuditLogsResponse {
+  logs: AdminAuditLogRecord[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function adminListAuditLogs(
+  input?: AdminListAuditLogsInput,
+): Promise<AdminListAuditLogsResponse> {
+  const params = new URLSearchParams();
+  if (input?.action) params.set("action", input.action);
+  if (input?.entityType) params.set("entityType", input.entityType);
+  if (input?.actorId) params.set("actorId", input.actorId);
+  if (input?.from) params.set("from", input.from);
+  if (input?.to) params.set("to", input.to);
+  if (input?.limit !== undefined) params.set("limit", String(input.limit));
+  if (input?.offset !== undefined) params.set("offset", String(input.offset));
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`/api/admin/audit-logs${query}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch audit logs.");
+  }
+  return data;
+}
+
+

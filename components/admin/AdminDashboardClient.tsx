@@ -11,6 +11,7 @@ import { AdminUsersBans } from "./AdminUsersBans";
 import { AdminAbuseFlags } from "./AdminAbuseFlags";
 import { AdminDrops } from "./AdminDrops";
 import { AdminTraits } from "./AdminTraits";
+import { AdminAuditLog } from "./AdminAuditLog";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ShieldAlert, ArrowLeft, ExternalLink } from "lucide-react";
@@ -49,7 +50,9 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
   }
 
   const currentNav = ADMIN_NAV_ITEMS.find((item) => item.id === activeTab);
-  const isAllowed = hasPerm(currentNav?.requiredPermission);
+  const isAllowed = currentNav?.superAdminOnly
+    ? isSuperAdmin
+    : hasPerm(currentNav?.requiredPermission);
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-[#090a0f] lg:flex-row">
@@ -100,13 +103,14 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
             <div className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-6 text-center">
               <ShieldAlert className="mx-auto h-8 w-8 text-amber-400" />
               <h2 className="text-lg font-bold text-white">
-                Permission Required: {currentNav?.requiredPermission}
+                {currentNav?.superAdminOnly
+                  ? "Access Restricted: SUPER_ADMIN Role Required"
+                  : `Permission Required: ${currentNav?.requiredPermission}`}
               </h2>
               <p className="mx-auto max-w-md text-xs leading-relaxed text-amber-200/90">
-                Your role ({roleType}) does not possess the &quot;
-                {currentNav?.requiredPermission}&quot; permission needed to execute
-                operations in this section. Contact a SUPER_ADMIN to request elevated
-                permissions.
+                {currentNav?.superAdminOnly
+                  ? `Your role (${roleType}) does not have access to this section. Only SUPER_ADMIN accounts are authorized to view Audit Logs.`
+                  : `Your role (${roleType}) does not possess the "${currentNav?.requiredPermission}" permission needed to execute operations in this section. Contact a SUPER_ADMIN to request elevated permissions.`}
               </p>
               <Button
                 variant="outline"
@@ -134,6 +138,7 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
               {activeTab === "abuse-flags" && <AdminAbuseFlags />}
               {activeTab === "drops" && <AdminDrops />}
               {activeTab === "traits" && <AdminTraits />}
+              {activeTab === "audit-log" && <AdminAuditLog />}
             </>
           )}
         </div>
