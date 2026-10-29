@@ -8,6 +8,7 @@ import {
   GiftError,
   GIFT_EXPIRY_MS,
 } from "@/server/inventory/gift";
+import { resolveEquippedItemIdsFromList } from "@/server/inventory/avatar-renderer";
 import type { PrismaClient } from "@prisma/client";
 
 function createMockPrisma() {
@@ -99,9 +100,35 @@ function createMockPrisma() {
       const trait = store.traits.find((t) => t.id === item.traitId);
       return { ...item, trait };
     }),
+    findMany: vi.fn(async ({ where, orderBy }: any) => {
+      let matching = store.inventoryItems.filter((i) => {
+        if (where?.ownerId && i.ownerId !== where.ownerId) return false;
+        if (where?.isLocked !== undefined && i.isLocked !== where.isLocked) return false;
+        if (where?.traitId && i.traitId !== where.traitId) return false;
+        if (where?.trait?.category) {
+          const trait = store.traits.find((t) => t.id === i.traitId);
+          if (trait?.category !== where.trait.category) return false;
+        }
+        return true;
+      });
+      if (orderBy) {
+        matching = [...matching].sort((a, b) => {
+          if (a.edition !== b.edition) return a.edition - b.edition;
+          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (aTime !== bTime) return aTime - bTime;
+          return a.id.localeCompare(b.id);
+        });
+      }
+      return matching.map((item) => {
+        const trait = store.traits.find((t) => t.id === item.traitId);
+        return { ...item, trait };
+      });
+    }),
     count: vi.fn(async ({ where }: any) => {
       return store.inventoryItems.filter((i) => {
         if (where.ownerId && i.ownerId !== where.ownerId) return false;
+        if (where.isLocked !== undefined && i.isLocked !== where.isLocked) return false;
         if (where.traitId && i.traitId !== where.traitId) return false;
         if (where.trait?.category) {
           const trait = store.traits.find((t) => t.id === i.traitId);
@@ -173,6 +200,7 @@ function createMockPrisma() {
         },
         inventoryItem: {
           findUnique: vi.fn(async (args: any) => prisma.inventoryItem.findUnique(args)),
+          findMany: vi.fn(async (args: any) => prisma.inventoryItem.findMany(args)),
           count: vi.fn(async (args: any) => prisma.inventoryItem.count(args)),
           update: vi.fn(async ({ where, data }: any) => {
             const item = store.inventoryItems.find((i) => i.id === where.id);
@@ -306,25 +334,35 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
         id: "item-bg-sky-1",
         traitId: "trait-bg-sky",
         ownerId: "sender-bg-user",
-        edition: 1,
+        edition: 2,
         isLocked: false,
       },
     );
 
-    // Sender owns 2 items in BG category (1 DUSK and 1 SKY) -> can gift DUSK
+    // DUSK is edition 1 (equipped on Profile) -> attempting to gift DUSK must be rejected
+    await expect(
+      sendGift(mockPrisma, {
+        senderId: "sender-bg-user",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-bg-dusk-1",
+        now: baseTime,
+      }),
+    ).rejects.toThrow("This trait is currently equipped on your Profile.");
+
+    // SKY is edition 2 (extra available in BG) -> gifting SKY succeeds
     const gift = await sendGift(mockPrisma, {
       senderId: "sender-bg-user",
       receiverId: "receiver-1",
-      inventoryItemId: "item-bg-dusk-1",
+      inventoryItemId: "item-bg-sky-1",
       now: baseTime,
     });
 
     expect(gift.status).toBe("PENDING");
-    expect(gift.inventoryItemId).toBe("item-bg-dusk-1");
+    expect(gift.inventoryItemId).toBe("item-bg-sky-1");
 
-    // Sender still retains the second item (SKY) in the BG category
+    // Sender still retains the equipped item (DUSK) in the BG category
     const remainingBgItem = mockPrisma._store.inventoryItems.find(
-      (i) => i.id === "item-bg-sky-1" && i.ownerId === "sender-bg-user",
+      (i) => i.id === "item-bg-dusk-1" && i.ownerId === "sender-bg-user",
     );
     expect(remainingBgItem).toBeDefined();
     expect(remainingBgItem?.isLocked).toBe(false);
@@ -968,7 +1006,7 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
       const createdGift = await sendGift(mockPrisma, {
         senderId: "sender-1",
         receiverId: "receiver-1",
-        inventoryItemId: "item-hat-1",
+        inventoryItemId: "item-hat-2",
         now: baseTime,
       });
 
@@ -997,7 +1035,7 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
       const createdGift = await sendGift(mockPrisma, {
         senderId: "sender-1",
         receiverId: "receiver-1",
-        inventoryItemId: "item-hat-1",
+        inventoryItemId: "item-hat-2",
         now: baseTime,
       });
 
@@ -1018,7 +1056,7 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
       const giftRecord = mockPrisma._store.gifts.find((g) => g.id === createdGift.id);
       expect(giftRecord?.status).toBe("PENDING");
       const itemRecord = mockPrisma._store.inventoryItems.find(
-        (i) => i.id === "item-hat-1",
+        (i) => i.id === "item-hat-2",
       );
       expect(itemRecord?.ownerId).toBe("sender-1");
       expect(itemRecord?.isLocked).toBe(true);
@@ -1287,6 +1325,285 @@ describe("Gift Engine (Separate Inventory Workflow)", () => {
 
       expect(item?.isLocked).toBe(true);
       expect(item?.lockReason).toBe("MAINTENANCE_LOCK");
+    });
+  });
+
+  describe("Equipped Trait Protection & Category Availability Rules", () => {
+    it("rejects gifting equipped trait when sender owns multiple items in category", async () => {
+      // sender-eq owns 2 items in BG: DUSK (ed 1, equipped) and SKY (ed 2, extra)
+      mockPrisma._store.traits.push(
+        { id: "trait-bg-1", name: "DUSK", category: "BG" },
+        { id: "trait-bg-2", name: "SKY", category: "BG" },
+      );
+      mockPrisma._store.inventoryItems.push(
+        {
+          id: "item-bg-eq-1",
+          traitId: "trait-bg-1",
+          ownerId: "sender-eq",
+          edition: 1,
+          isLocked: false,
+        },
+        {
+          id: "item-bg-extra-2",
+          traitId: "trait-bg-2",
+          ownerId: "sender-eq",
+          edition: 2,
+          isLocked: false,
+        },
+      );
+
+      // Attempting to gift the equipped trait (DUSK ed 1) must be rejected
+      await expect(
+        sendGift(mockPrisma, {
+          senderId: "sender-eq",
+          receiverId: "receiver-1",
+          inventoryItemId: "item-bg-eq-1",
+          now: baseTime,
+        }),
+      ).rejects.toThrow("This trait is currently equipped on your Profile.");
+
+      // Gifting the unequipped extra trait (SKY ed 2) succeeds
+      const gift = await sendGift(mockPrisma, {
+        senderId: "sender-eq",
+        receiverId: "receiver-1",
+        inventoryItemId: "item-bg-extra-2",
+        now: baseTime,
+      });
+      expect(gift.status).toBe("PENDING");
+      expect(gift.inventoryItemId).toBe("item-bg-extra-2");
+    });
+
+    it("does not count traits in PENDING_GIFT status as available items", async () => {
+      // Production bug scenario: DUSK is unlocked & equipped, SKY is locked in PENDING_GIFT
+      mockPrisma._store.traits.push(
+        { id: "trait-bg-dusk-prod", name: "DUSK", category: "BG" },
+        { id: "trait-bg-sky-prod", name: "SKY", category: "BG" },
+      );
+      mockPrisma._store.inventoryItems.push(
+        {
+          id: "item-dusk-prod",
+          traitId: "trait-bg-dusk-prod",
+          ownerId: "sender-prod-user",
+          edition: 1,
+          isLocked: false,
+        },
+        {
+          id: "item-sky-prod",
+          traitId: "trait-bg-sky-prod",
+          ownerId: "sender-prod-user",
+          edition: 2,
+          isLocked: true,
+          lockReason: "PENDING_GIFT",
+        },
+      );
+
+      // Attempting to gift DUSK must be rejected: DUSK is equipped and only 1 available item remains
+      await expect(
+        sendGift(mockPrisma, {
+          senderId: "sender-prod-user",
+          receiverId: "receiver-1",
+          inventoryItemId: "item-dusk-prod",
+          now: baseTime,
+        }),
+      ).rejects.toThrow();
+
+      // Attempting to gift SKY must also be rejected because it is locked
+      await expect(
+        sendGift(mockPrisma, {
+          senderId: "sender-prod-user",
+          receiverId: "receiver-1",
+          inventoryItemId: "item-sky-prod",
+          now: baseTime,
+        }),
+      ).rejects.toThrow("This item is currently locked in another pending operation.");
+    });
+
+    it("rejects gifting the last available trait in a category", async () => {
+      mockPrisma._store.traits.push({ id: "trait-last-cloth", name: "Only Shirt", category: "CLOTHING" });
+      mockPrisma._store.inventoryItems.push({
+        id: "item-last-cloth",
+        traitId: "trait-last-cloth",
+        ownerId: "sender-last-user",
+        edition: 1,
+        isLocked: false,
+      });
+
+      await expect(
+        sendGift(mockPrisma, {
+          senderId: "sender-last-user",
+          receiverId: "receiver-1",
+          inventoryItemId: "item-last-cloth",
+          now: baseTime,
+        }),
+      ).rejects.toThrow("you must retain at least one item in the CLOTHING category.");
+    });
+
+    it("enforces equipped and category availability rules across all 5 categories (BG, FUR, CLOTHING, HEADWEAR, EYEWEAR)", async () => {
+      const categories = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
+
+      for (const cat of categories) {
+        const traitEquipped = { id: `trait-test-${cat}-1`, name: `${cat} 1`, category: cat };
+        const traitExtra = { id: `trait-test-${cat}-2`, name: `${cat} 2`, category: cat };
+        mockPrisma._store.traits.push(traitEquipped, traitExtra);
+
+        const senderId = `user-5cat-${cat}`;
+        const itemEquipped = {
+          id: `item-${cat}-eq`,
+          traitId: traitEquipped.id,
+          ownerId: senderId,
+          edition: 1,
+          isLocked: false,
+        };
+        const itemExtra = {
+          id: `item-${cat}-extra`,
+          traitId: traitExtra.id,
+          ownerId: senderId,
+          edition: 2,
+          isLocked: false,
+        };
+        mockPrisma._store.inventoryItems.push(itemEquipped, itemExtra);
+
+        // 1. Equipped item cannot be gifted
+        await expect(
+          sendGift(mockPrisma, {
+            senderId,
+            receiverId: "receiver-1",
+            inventoryItemId: itemEquipped.id,
+            now: baseTime,
+          }),
+        ).rejects.toThrow("This trait is currently equipped on your Profile.");
+
+        // 2. Extra item can be gifted
+        const gift = await sendGift(mockPrisma, {
+          senderId,
+          receiverId: "receiver-1",
+          inventoryItemId: itemExtra.id,
+          now: baseTime,
+        });
+        expect(gift.status).toBe("PENDING");
+        expect(itemExtra.isLocked).toBe(true);
+
+        // 3. Now only 1 available item remains (itemEquipped). Attempting to gift it must fail
+        await expect(
+          sendGift(mockPrisma, {
+            senderId,
+            receiverId: "receiver-1",
+            inventoryItemId: itemEquipped.id,
+            now: new Date(baseTime.getTime() + 24 * 60 * 60 * 1000 + 1000), // Next UTC day
+          }),
+        ).rejects.toThrow(`you must retain at least one item in the ${cat} category.`);
+      }
+    });
+
+    it("prevents direct API calls from bypassing equipped trait restrictions", async () => {
+      mockPrisma._store.traits.push(
+        { id: "trait-direct-1", name: "Direct 1", category: "FUR" },
+        { id: "trait-direct-2", name: "Direct 2", category: "FUR" },
+      );
+      mockPrisma._store.inventoryItems.push(
+        {
+          id: "item-fur-direct-1",
+          traitId: "trait-direct-1",
+          ownerId: "user-direct",
+          edition: 1,
+          isLocked: false,
+        },
+        {
+          id: "item-fur-direct-2",
+          traitId: "trait-direct-2",
+          ownerId: "user-direct",
+          edition: 2,
+          isLocked: false,
+        },
+      );
+
+      // Attempt direct backend call bypassing frontend UI
+      let thrownError: any = null;
+      try {
+        await sendGift(mockPrisma, {
+          senderId: "user-direct",
+          receiverId: "receiver-1",
+          inventoryItemId: "item-fur-direct-1",
+          now: baseTime,
+        });
+      } catch (err: any) {
+        thrownError = err;
+      }
+
+      expect(thrownError).toBeInstanceOf(GiftError);
+      expect(thrownError.code).toBe("CANNOT_GIFT_EQUIPPED_TRAIT");
+      expect(thrownError.status).toBe(400);
+    });
+
+    it("verifies equipped trait matches Profile avatar layer and is protected while extra is giftable", async () => {
+      const senderId = "user-profile-avatar-match";
+      // Create 3 traits in BG:
+      // 1. Inactive trait with edition 1 (must be skipped by avatar renderer)
+      // 2. Active trait with edition 2 (MUST be equipped on avatar Profile)
+      // 3. Active trait with edition 3 (Extra copy, CAN be gifted)
+      const traitInactive = { id: "trait-bg-old", name: "Old BG", category: "BG", isActive: false, imageUrl: "https://cdn/bg-old.png" };
+      const traitEquipped = { id: "trait-bg-active-1", name: "Equipped BG", category: "BG", isActive: true, imageUrl: "https://cdn/bg-active.png" };
+      const traitExtra = { id: "trait-bg-active-2", name: "Extra BG", category: "BG", isActive: true, imageUrl: "https://cdn/bg-extra.png" };
+      mockPrisma._store.traits.push(traitInactive, traitEquipped, traitExtra);
+
+      const itemInactive = {
+        id: "item-bg-inactive-ed1",
+        traitId: traitInactive.id,
+        ownerId: senderId,
+        edition: 1,
+        isLocked: false,
+      };
+      const itemEquipped = {
+        id: "item-bg-equipped-ed2",
+        traitId: traitEquipped.id,
+        ownerId: senderId,
+        edition: 2,
+        isLocked: false,
+      };
+      const itemExtra = {
+        id: "item-bg-extra-ed3",
+        traitId: traitExtra.id,
+        ownerId: senderId,
+        edition: 3,
+        isLocked: false,
+      };
+      mockPrisma._store.inventoryItems.push(itemInactive, itemEquipped, itemExtra);
+
+      // Verify that resolveEquippedItemIdsFromList correctly identifies itemEquipped (ed 2)
+      const equippedIds = resolveEquippedItemIdsFromList([
+        { ...itemInactive, trait: traitInactive },
+        { ...itemEquipped, trait: traitEquipped },
+        { ...itemExtra, trait: traitExtra },
+      ]);
+      expect(equippedIds.has(itemEquipped.id)).toBe(true);
+      expect(equippedIds.has(itemInactive.id)).toBe(false);
+      expect(equippedIds.has(itemExtra.id)).toBe(false);
+
+      // Attempting to gift the equipped trait MUST be rejected
+      await expect(
+        sendGift(mockPrisma, {
+          senderId,
+          receiverId: "receiver-1",
+          inventoryItemId: itemEquipped.id,
+          now: baseTime,
+        }),
+      ).rejects.toMatchObject({
+        code: "CANNOT_GIFT_EQUIPPED_TRAIT",
+        status: 400,
+      });
+
+      // Attempting to gift the extra trait MUST succeed
+      const giftRes = await sendGift(mockPrisma, {
+        senderId,
+        receiverId: "receiver-1",
+        inventoryItemId: itemExtra.id,
+        now: baseTime,
+      });
+      expect(giftRes.status).toBe("PENDING");
+      expect(giftRes.inventoryItemId).toBe(itemExtra.id);
+
+      // itemExtra is now locked in gift
+      expect(mockPrisma._store.inventoryItems.find((i) => i.id === itemExtra.id)?.isLocked).toBe(true);
     });
   });
 });

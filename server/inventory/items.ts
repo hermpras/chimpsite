@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { normalizeAddress } from "@/lib/auth/address";
+import { resolveEquippedItemIdsFromList } from "./avatar-renderer";
 
 export class InventoryError extends Error {
   code: string;
@@ -29,6 +30,7 @@ export interface InventoryItemOutput {
   acquiredAt: string;
   isLocked: boolean;
   lockReason?: string | null;
+  isEquipped?: boolean;
 }
 
 export interface UserInventoryResult {
@@ -76,6 +78,9 @@ export async function getUserInventory(
     orderBy: [{ createdAt: "desc" }, { edition: "asc" }],
   });
 
+  // Determine equipped item for each category (matching avatar-renderer resolution)
+  const equippedIds = resolveEquippedItemIdsFromList(items);
+
   return {
     items: items.map((item) => ({
       id: item.id,
@@ -95,6 +100,7 @@ export async function getUserInventory(
           : new Date(item.createdAt).toISOString(),
       isLocked: item.isLocked,
       lockReason: item.lockReason ?? null,
+      isEquipped: equippedIds.has(item.id),
     })),
   };
 }

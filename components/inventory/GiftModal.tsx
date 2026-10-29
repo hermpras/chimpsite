@@ -44,9 +44,11 @@ export function GiftModal({
   const trimmed = receiverInput.trim();
   const isAddressFormat = trimmed.startsWith("0x");
 
-  // Immediate format and self-validation
+  // Immediate format, equipped, and self-validation
   let clientValidationError: string | null = null;
-  if (!trimmed) {
+  if (item.isEquipped) {
+    clientValidationError = "This trait is currently equipped on your Profile and cannot be gifted.";
+  } else if (!trimmed) {
     clientValidationError = "Recipient X username or wallet address is required.";
   } else if (isAddressFormat) {
     if (!isValidAddress(trimmed)) {

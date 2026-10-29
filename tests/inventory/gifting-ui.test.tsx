@@ -206,7 +206,7 @@ describe("Gifting UI (I-1) Test Suite", () => {
   });
 
   describe("1. Duplicate Trait Gifting Enforcement (TraitGrid)", () => {
-    it("renders Gift button ONLY for duplicate traits, and NOT for unique single-copy traits", () => {
+    it("renders Gift button ONLY for extra unequipped traits, and protects equipped traits", () => {
       const onGiftSpy = vi.fn();
       render(
         <TraitGrid items={[singleItem, dupItem1, dupItem2]} onGiftItem={onGiftSpy} />,
@@ -216,33 +216,45 @@ describe("Gifting UI (I-1) Test Suite", () => {
       expect(
         screen.queryByTestId(`gift-button-${singleItem.id}`),
       ).not.toBeInTheDocument();
+      expect(screen.getByTestId(`single-copy-badge-${singleItem.id}`)).toHaveTextContent(
+        "Keep 1 in HEADWEAR (Category minimum)",
+      );
 
-      // Duplicate copies: Neon Visor (2 copies in inventory)
-      const giftButton1 = screen.getByTestId(`gift-button-${dupItem1.id}`);
+      // dupItem1 is edition 10 (equipped on Profile) -> protected, cannot be gifted
+      expect(screen.getByTestId(`equipped-badge-${dupItem1.id}`)).toHaveTextContent("Equipped");
+      expect(screen.getByTestId(`equipped-action-${dupItem1.id}`)).toHaveTextContent("In Use on Profile");
+      expect(screen.queryByTestId(`gift-button-${dupItem1.id}`)).not.toBeInTheDocument();
+
+      // dupItem2 is edition 11 (extra copy in EYEWEAR) -> eligible for gifting
       const giftButton2 = screen.getByTestId(`gift-button-${dupItem2.id}`);
-      expect(giftButton1).toBeInTheDocument();
       expect(giftButton2).toBeInTheDocument();
-
-      // Duplicate badges are visible
-      expect(screen.getByTestId(`duplicate-badge-${dupItem1.id}`)).toHaveTextContent(
+      expect(giftButton2).toHaveTextContent("Gift Trait");
+      expect(screen.getByTestId(`duplicate-badge-${dupItem2.id}`)).toHaveTextContent(
         "Duplicate (2x)",
       );
 
       // Clicking opens gift handler
-      fireEvent.click(giftButton1);
-      expect(onGiftSpy).toHaveBeenCalledWith(dupItem1);
+      fireEvent.click(giftButton2);
+      expect(onGiftSpy).toHaveBeenCalledWith(dupItem2);
     });
 
     it("disables Gift button if the duplicate item is already locked in a pending gift", () => {
       const onGiftSpy = vi.fn();
       render(<TraitGrid items={[dupItem1, lockedDupItem]} onGiftItem={onGiftSpy} />);
 
+      // lockedDupItem is locked in pending gift
       const lockedBtn = screen.getByTestId(`gift-button-${lockedDupItem.id}`);
       expect(lockedBtn).toBeDisabled();
       expect(lockedBtn).toHaveTextContent("Locked in Gift");
+
+      // dupItem1 is the only available copy remaining -> cannot be gifted, shows category minimum
+      expect(screen.queryByTestId(`gift-button-${dupItem1.id}`)).not.toBeInTheDocument();
+      expect(screen.getByTestId(`single-copy-badge-${dupItem1.id}`)).toHaveTextContent(
+        "Keep 1 in EYEWEAR (Category minimum)",
+      );
     });
 
-    it("renders Gift button when user owns two different traits in the same category (e.g. BG DUSK and BG SKY)", () => {
+    it("protects equipped trait and enables Gift button on unequipped extra in same category (e.g. BG DUSK and BG SKY)", () => {
       const bgItem1: InventoryItemData = {
         id: "item-bg-dusk",
         edition: 1,
@@ -260,7 +272,7 @@ describe("Gifting UI (I-1) Test Suite", () => {
 
       const bgItem2: InventoryItemData = {
         id: "item-bg-sky",
-        edition: 1,
+        edition: 2,
         acquiredVia: "CLAIM",
         acquiredAt: "2026-10-15T11:00:00.000Z",
         isLocked: false,
@@ -276,16 +288,67 @@ describe("Gifting UI (I-1) Test Suite", () => {
       const onGiftSpy = vi.fn();
       render(<TraitGrid items={[bgItem1, bgItem2]} onGiftItem={onGiftSpy} />);
 
-      // Both items are eligible because BG category has 2 items
-      const btn1 = screen.getByTestId(`gift-button-${bgItem1.id}`);
-      const btn2 = screen.getByTestId(`gift-button-${bgItem2.id}`);
-      expect(btn1).toBeInTheDocument();
-      expect(btn2).toBeInTheDocument();
-      expect(screen.getByTestId(`duplicate-badge-${bgItem1.id}`)).toHaveTextContent("Extra BG (2x)");
-      expect(screen.getByTestId(`duplicate-badge-${bgItem2.id}`)).toHaveTextContent("Extra BG (2x)");
+      // bgItem1 (DUSK ed 1) is equipped on Profile -> cannot be gifted
+      expect(screen.getByTestId(`equipped-badge-${bgItem1.id}`)).toHaveTextContent("Equipped");
+      expect(screen.getByTestId(`equipped-action-${bgItem1.id}`)).toHaveTextContent("In Use on Profile");
+      expect(screen.queryByTestId(`gift-button-${bgItem1.id}`)).not.toBeInTheDocument();
 
-      fireEvent.click(btn1);
-      expect(onGiftSpy).toHaveBeenCalledWith(bgItem1);
+      // bgItem2 (SKY ed 2) is the extra available BG -> can be gifted
+      const btn2 = screen.getByTestId(`gift-button-${bgItem2.id}`);
+      expect(btn2).toBeInTheDocument();
+      expect(btn2).toHaveTextContent("Gift Trait");
+      expect(screen.getByTestId(`duplicate-badge-${bgItem2.id}`)).toHaveTextContent("Extra BG (2 avail)");
+
+      fireEvent.click(btn2);
+      expect(onGiftSpy).toHaveBeenCalledWith(bgItem2);
+    });
+
+    it("verifies production bug: protects DUSK when SKY is in PENDING_GIFT status", () => {
+      const duskItem: InventoryItemData = {
+        id: "item-prod-dusk",
+        edition: 1,
+        acquiredVia: "CLAIM",
+        acquiredAt: "2026-10-15T10:00:00.000Z",
+        isLocked: false,
+        trait: {
+          id: "trait-dusk",
+          name: "DUSK",
+          category: "BG",
+          rarity: "COMMON",
+          imageUrl: "https://assets.chimphood.io/dusk.png",
+        },
+      };
+
+      const skyLockedItem: InventoryItemData = {
+        id: "item-prod-sky",
+        edition: 2,
+        acquiredVia: "CLAIM",
+        acquiredAt: "2026-10-15T11:00:00.000Z",
+        isLocked: true,
+        lockReason: "PENDING_GIFT",
+        trait: {
+          id: "trait-sky",
+          name: "SKY",
+          category: "BG",
+          rarity: "UNCOMMON",
+          imageUrl: "https://assets.chimphood.io/sky.png",
+        },
+      };
+
+      const onGiftSpy = vi.fn();
+      render(<TraitGrid items={[duskItem, skyLockedItem]} onGiftItem={onGiftSpy} />);
+
+      // DUSK must NOT have Gift button: it is equipped and the last available BG
+      expect(screen.queryByTestId(`gift-button-${duskItem.id}`)).not.toBeInTheDocument();
+      expect(screen.getByTestId(`equipped-badge-${duskItem.id}`)).toHaveTextContent("Equipped");
+      expect(screen.getByTestId(`single-copy-badge-${duskItem.id}`)).toHaveTextContent(
+        "Keep 1 in BG (Category minimum)",
+      );
+
+      // SKY is locked in gift
+      const lockedBtn = screen.getByTestId(`gift-button-${skyLockedItem.id}`);
+      expect(lockedBtn).toBeDisabled();
+      expect(lockedBtn).toHaveTextContent("Locked in Gift");
     });
   });
 
@@ -781,7 +844,7 @@ describe("Gifting UI (I-1) Test Suite", () => {
       // TraitGrid rendered with duplicate item
       await waitFor(() => {
         expect(screen.getAllByText("Neon Visor").length).toBeGreaterThanOrEqual(2);
-        expect(screen.getByTestId(`gift-button-${dupItem1.id}`)).toBeInTheDocument();
+        expect(screen.getByTestId(`gift-button-${dupItem2.id}`)).toBeInTheDocument();
       });
 
       // Gifts section rendered with incoming and outgoing queues
@@ -790,7 +853,7 @@ describe("Gifting UI (I-1) Test Suite", () => {
       expect(screen.getByText("Pending Outgoing Gifts (1)")).toBeInTheDocument();
 
       // Open Gift modal from duplicate item
-      const giftTraitButton = screen.getByTestId(`gift-button-${dupItem1.id}`);
+      const giftTraitButton = screen.getByTestId(`gift-button-${dupItem2.id}`);
       fireEvent.click(giftTraitButton);
 
       const modal = screen.getByTestId("gift-modal");
@@ -812,7 +875,7 @@ describe("Gifting UI (I-1) Test Suite", () => {
       await waitFor(() => {
         expect(mockSendGiftRequest).toHaveBeenCalledWith(
           validReceiverAddress,
-          dupItem1.id,
+          dupItem2.id,
         );
         // Refresh was triggered for both inventory and gifts
         expect(mockFetchUserInventory).toHaveBeenCalled();

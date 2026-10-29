@@ -200,11 +200,17 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
       </Providers>,
     );
 
-    // 1. Tombol Gift Trait terlihat pada item duplikat yang memenuhi syarat
+    // 1. Tombol Gift Trait terlihat pada item duplikat ekstra (duplicateItem2), sementara item equipped (duplicateItem1) dilindungi
     await waitFor(() => {
-      expect(screen.getByTestId(`gift-button-${duplicateItem1.id}`)).toBeInTheDocument();
-      expect(screen.getByTestId(`gift-button-${duplicateItem1.id}`)).toHaveTextContent("Gift Trait");
-      expect(screen.getByTestId(`duplicate-badge-${duplicateItem1.id}`)).toHaveTextContent("Duplicate (2x)");
+      // duplicateItem1 (ed 5) is equipped on Profile
+      expect(screen.getByTestId(`equipped-badge-${duplicateItem1.id}`)).toHaveTextContent("Equipped");
+      expect(screen.getByTestId(`equipped-action-${duplicateItem1.id}`)).toHaveTextContent("In Use on Profile");
+      expect(screen.queryByTestId(`gift-button-${duplicateItem1.id}`)).not.toBeInTheDocument();
+
+      // duplicateItem2 (ed 6) is the extra duplicate eligible for gifting
+      expect(screen.getByTestId(`gift-button-${duplicateItem2.id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`gift-button-${duplicateItem2.id}`)).toHaveTextContent("Gift Trait");
+      expect(screen.getByTestId(`duplicate-badge-${duplicateItem2.id}`)).toHaveTextContent("Duplicate (2x)");
     });
 
     // 2. Item tunggal menampilkan keterangan bahwa item harus disimpan
@@ -213,13 +219,13 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
       "Keep 1 in HEADWEAR (Category minimum)",
     );
 
-    // 3. Modal Gift bisa dibuka, username X dicari, dan penerima dikonfirmasi
-    fireEvent.click(screen.getByTestId(`gift-button-${duplicateItem1.id}`));
+    // 3. Modal Gift bisa dibuka dari item ekstra, username X dicari, dan penerima dikonfirmasi
+    fireEvent.click(screen.getByTestId(`gift-button-${duplicateItem2.id}`));
     const modal = screen.getByTestId("gift-modal");
     expect(modal).toBeInTheDocument();
     expect(within(modal).getByText("Gift Trait")).toBeInTheDocument();
     expect(within(modal).getByText("Neon Visor")).toBeInTheDocument();
-    expect(within(modal).getByText("#5")).toBeInTheDocument();
+    expect(within(modal).getByText("#6")).toBeInTheDocument();
 
     mockLookupGiftRecipient.mockResolvedValueOnce({
       success: true,
@@ -244,7 +250,7 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
     fireEvent.click(searchBtn);
 
     await waitFor(() => {
-      expect(mockLookupGiftRecipient).toHaveBeenCalledWith("@target_chimp", duplicateItem1.trait.id);
+      expect(mockLookupGiftRecipient).toHaveBeenCalledWith("@target_chimp", duplicateItem2.trait.id);
       expect(screen.getByTestId("recipient-confirmation-card")).toBeInTheDocument();
       expect(screen.getByText("@target_chimp")).toBeInTheDocument();
       expect(screen.getByText("Target Chimp User")).toBeInTheDocument();
@@ -263,7 +269,7 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(mockSendGiftRequest).toHaveBeenCalledWith(recipientAddress, duplicateItem1.id);
+      expect(mockSendGiftRequest).toHaveBeenCalledWith(recipientAddress, duplicateItem2.id);
       expect(screen.getByTestId("gift-send-success")).toBeInTheDocument();
     });
 
@@ -352,12 +358,14 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
       </Providers>,
     );
 
-    // BG category has 2 items -> both have "Gift Trait" buttons
+    // BG category has 2 items: duskItem is equipped (protected), skyItem is extra available (giftable)
     await waitFor(() => {
-      expect(screen.getByTestId(`gift-button-${duskItem.id}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`equipped-badge-${duskItem.id}`)).toHaveTextContent("Equipped");
+      expect(screen.getByTestId(`equipped-action-${duskItem.id}`)).toHaveTextContent("In Use on Profile");
+      expect(screen.queryByTestId(`gift-button-${duskItem.id}`)).not.toBeInTheDocument();
+
       expect(screen.getByTestId(`gift-button-${skyItem.id}`)).toBeInTheDocument();
-      expect(screen.getByTestId(`duplicate-badge-${duskItem.id}`)).toHaveTextContent("Extra BG (2x)");
-      expect(screen.getByTestId(`duplicate-badge-${skyItem.id}`)).toHaveTextContent("Extra BG (2x)");
+      expect(screen.getByTestId(`duplicate-badge-${skyItem.id}`)).toHaveTextContent("Extra BG (2 avail)");
     });
 
     // FUR category only has 1 item -> Gift button is NOT present, category minimum badge shown
@@ -366,11 +374,11 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
       "Keep 1 in FUR (Category minimum)",
     );
 
-    // Gifting DUSK opens modal and confirms BG category requirement
-    fireEvent.click(screen.getByTestId(`gift-button-${duskItem.id}`));
+    // Gifting unequipped extra SKY opens modal and confirms BG category requirement
+    fireEvent.click(screen.getByTestId(`gift-button-${skyItem.id}`));
     const modal = screen.getByTestId("gift-modal");
     expect(modal).toBeInTheDocument();
-    expect(within(modal).getByText("DUSK")).toBeInTheDocument();
+    expect(within(modal).getByText("SKY")).toBeInTheDocument();
     expect(
       within(modal).getByText(/You must retain at least 1 item in the BG category/i),
     ).toBeInTheDocument();

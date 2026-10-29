@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { recordAuditLog } from "../audit/audit";
+import { resolveEquippedItemIdsFromList } from "./avatar-renderer";
 
 export class GiftError extends Error {
   code: string;
@@ -118,11 +119,12 @@ export async function sendGift(prisma: PrismaClient, input: SendGiftInput) {
       );
     }
 
-    // 4. Invariant: Sender must retain at least 1 item in the trait category (must own at least 2 items in category)
+    // 4. Invariant: Equipped traits on Profile cannot be gifted & Sender must retain at least 1 available item in the trait category
     const category = item.trait?.category;
-    const ownedCategoryCount = await tx.inventoryItem.count({
+    const availableCategoryItems = await tx.inventoryItem.findMany({
       where: {
         ownerId: input.senderId,
+        isLocked: false,
         ...(category
           ? {
               trait: {
@@ -133,13 +135,38 @@ export async function sendGift(prisma: PrismaClient, input: SendGiftInput) {
               traitId: item.traitId,
             }),
       },
+      select: {
+        id: true,
+        edition: true,
+        createdAt: true,
+        isLocked: true,
+        trait: {
+          select: {
+            category: true,
+            isActive: true,
+          },
+        },
+      },
+      orderBy: [{ edition: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     });
-    if (ownedCategoryCount < 2) {
+
+    // Check available category retention rule (Rule 2 & 3: Must retain at least 1 available item; PENDING_GIFT items are not available)
+    if (availableCategoryItems.length < 2) {
       throw new GiftError(
         "DUPLICATE_ONLY_RULE",
         category
           ? `Only extra category items may be gifted; you must retain at least one item in the ${category} category.`
           : "Only extra duplicate copies may be gifted; you must retain at least one copy.",
+        400,
+      );
+    }
+
+    // Check equipped trait rule (Rule 1 & 4: Equipped traits on Profile cannot be gifted)
+    const equippedIds = resolveEquippedItemIdsFromList(availableCategoryItems);
+    if (equippedIds.has(item.id)) {
+      throw new GiftError(
+        "CANNOT_GIFT_EQUIPPED_TRAIT",
+        `This trait is currently equipped on your Profile. Equipped traits cannot be gifted; you must keep at least one trait equipped in the ${category || "trait"} category.`,
         400,
       );
     }

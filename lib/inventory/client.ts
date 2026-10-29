@@ -15,6 +15,7 @@ export interface InventoryItemData {
   acquiredAt: string;
   isLocked: boolean;
   lockReason?: string | null;
+  isEquipped?: boolean;
 }
 
 export interface UserInventoryResponse {

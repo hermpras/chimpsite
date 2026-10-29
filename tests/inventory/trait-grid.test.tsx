@@ -121,8 +121,12 @@ describe("TraitGrid Component & Profile Inventory States", () => {
         <TraitGrid items={[...sampleItems, duplicateCopy]} onGiftItem={onGiftSpy} />,
       );
 
-      // t-1 has 2 copies (item-1 and item-1-dup) -> both have Gift button
-      expect(screen.getByTestId("gift-button-item-1")).toBeInTheDocument();
+      // t-1 has 2 copies (item-1 and item-1-dup):
+      // item-1 is equipped on profile -> protected from gifting
+      expect(screen.getByTestId("equipped-action-item-1")).toBeInTheDocument();
+      expect(screen.queryByTestId("gift-button-item-1")).not.toBeInTheDocument();
+
+      // item-1-dup is the extra copy -> has Gift button
       expect(screen.getByTestId("gift-button-item-1-dup")).toBeInTheDocument();
 
       // t-2 has only 1 copy (item-2) -> does NOT have Gift button

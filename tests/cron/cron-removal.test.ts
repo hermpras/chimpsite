@@ -107,17 +107,23 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
             id: "item-trait-1",
             ownerId: "sender-wallet",
             traitId: "trait-gold",
+            edition: 1,
+            createdAt: new Date("2026-10-20T00:00:00Z"),
             isLocked: false,
             lockReason: null as string | null,
             acquiredVia: "DROP",
+            trait: { id: "trait-gold", category: "FUR" },
           },
           {
             id: "item-trait-2",
             ownerId: "sender-wallet",
             traitId: "trait-gold",
+            edition: 2,
+            createdAt: new Date("2026-10-21T00:00:00Z"),
             isLocked: false,
             lockReason: null as string | null,
             acquiredVia: "DROP",
+            trait: { id: "trait-gold", category: "FUR" },
           },
         ],
         bans: [] as any[],
@@ -168,6 +174,15 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
           }),
         },
         inventoryItem: {
+          findMany: vi.fn(async ({ where }: any) => {
+            return store.inventoryItems.filter((i) => {
+              if (where.ownerId && i.ownerId !== where.ownerId) return false;
+              if (where.isLocked !== undefined && i.isLocked !== where.isLocked) return false;
+              if (where.trait?.category && i.trait?.category !== where.trait.category) return false;
+              if (where.traitId && i.traitId !== where.traitId) return false;
+              return true;
+            });
+          }),
           findUnique: vi.fn(async ({ where }: any) => {
             return store.inventoryItems.find((i) => i.id === where.id) || null;
           }),

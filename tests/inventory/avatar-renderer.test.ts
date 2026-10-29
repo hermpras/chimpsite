@@ -18,6 +18,8 @@ import sharp from "sharp";
 import {
   compositeLayerBuffers,
   resolveUserLayers,
+  resolveUserEquippedTraits,
+  resolveEquippedItemIdsFromList,
   renderUserAvatar,
   getAvatarRecord,
   fetchLayerBuffer,
@@ -313,6 +315,105 @@ describe("Task 3-C — resolveUserLayers", () => {
     const layers = await resolveUserLayers(mockPrisma, "user-dups");
     expect(layers).toHaveLength(1);
     expect(layers[0].imageUrl).toBe("https://cdn/fur-ed1.png");
+  });
+
+  it("ensures resolveUserEquippedTraits matches resolveUserLayers exactly", async () => {
+    mockInventoryFindMany.mockResolvedValueOnce([
+      {
+        id: "item-bg-1",
+        edition: 1,
+        isLocked: false,
+        trait: { id: "t-bg-1", category: "BG", imageUrl: "https://cdn/bg1.png", isActive: true },
+      },
+      {
+        id: "item-bg-2",
+        edition: 2,
+        isLocked: false,
+        trait: { id: "t-bg-2", category: "BG", imageUrl: "https://cdn/bg2.png", isActive: true },
+      },
+      {
+        id: "item-fur-1",
+        edition: 3,
+        isLocked: false,
+        trait: { id: "t-fur-1", category: "FUR", imageUrl: "https://cdn/fur1.png", isActive: true },
+      },
+    ]);
+
+    const equippedMap = await resolveUserEquippedTraits(mockPrisma, "user-exact");
+    expect(equippedMap.get("BG")?.itemId).toBe("item-bg-1");
+    expect(equippedMap.get("BG")?.imageUrl).toBe("https://cdn/bg1.png");
+    expect(equippedMap.get("FUR")?.itemId).toBe("item-fur-1");
+
+    // Re-mock for resolveUserLayers
+    mockInventoryFindMany.mockResolvedValueOnce([
+      {
+        id: "item-bg-1",
+        edition: 1,
+        isLocked: false,
+        trait: { id: "t-bg-1", category: "BG", imageUrl: "https://cdn/bg1.png", isActive: true },
+      },
+      {
+        id: "item-bg-2",
+        edition: 2,
+        isLocked: false,
+        trait: { id: "t-bg-2", category: "BG", imageUrl: "https://cdn/bg2.png", isActive: true },
+      },
+      {
+        id: "item-fur-1",
+        edition: 3,
+        isLocked: false,
+        trait: { id: "t-fur-1", category: "FUR", imageUrl: "https://cdn/fur1.png", isActive: true },
+      },
+    ]);
+
+    const layers = await resolveUserLayers(mockPrisma, "user-exact");
+    expect(layers).toEqual([
+      { category: "BG", imageUrl: "https://cdn/bg1.png" },
+      { category: "FUR", imageUrl: "https://cdn/fur1.png" },
+    ]);
+  });
+
+  it("in-memory resolveEquippedItemIdsFromList correctly resolves equipped IDs and skips locked/inactive", () => {
+    const items = [
+      {
+        id: "item-cloth-inactive",
+        edition: 1,
+        isLocked: false,
+        trait: { category: "CLOTHING", isActive: false },
+      },
+      {
+        id: "item-cloth-active-lowest",
+        edition: 2,
+        isLocked: false,
+        trait: { category: "CLOTHING", isActive: true },
+      },
+      {
+        id: "item-cloth-extra",
+        edition: 5,
+        isLocked: false,
+        trait: { category: "CLOTHING", isActive: true },
+      },
+      {
+        id: "item-head-locked",
+        edition: 1,
+        isLocked: true,
+        trait: { category: "HEADWEAR", isActive: true },
+      },
+      {
+        id: "item-head-unlocked",
+        edition: 3,
+        isLocked: false,
+        trait: { category: "HEADWEAR", isActive: true },
+      },
+    ];
+
+    const equippedIds = resolveEquippedItemIdsFromList(items);
+    expect(equippedIds.has("item-cloth-active-lowest")).toBe(true);
+    expect(equippedIds.has("item-cloth-inactive")).toBe(false);
+    expect(equippedIds.has("item-cloth-extra")).toBe(false);
+
+    expect(equippedIds.has("item-head-unlocked")).toBe(true);
+    expect(equippedIds.has("item-head-locked")).toBe(false);
   });
 });
 

@@ -283,6 +283,110 @@ export async function compositeLayerBuffers(layerBuffers: Buffer[]): Promise<Buf
     .toBuffer();
 }
 
+export interface UserEquippedTrait {
+  itemId: string;
+  traitId: string;
+  category: TraitCategory;
+  edition: number;
+  imageUrl: string;
+}
+
+/**
+ * Resolves the user's active equipped traits per category (lowest edition wins, skipping locked & inactive traits).
+ * Trait layers are ordered strictly back-to-front: BG → FUR → CLOTHING → HEADWEAR → EYEWEAR.
+ */
+export async function resolveUserEquippedTraits(
+  prisma: PrismaClient | any,
+  userId: string,
+): Promise<Map<TraitCategory, UserEquippedTrait>> {
+  const items = await prisma.inventoryItem.findMany({
+    where: { ownerId: userId, isLocked: false },
+    select: {
+      id: true,
+      edition: true,
+      isLocked: true,
+      createdAt: true,
+      traitId: true,
+      trait: {
+        select: {
+          id: true,
+          category: true,
+          imageUrl: true,
+          isActive: true,
+        },
+      },
+    },
+    orderBy: [{ edition: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+  });
+
+  const equippedMap = new Map<TraitCategory, UserEquippedTrait>();
+  for (const item of items) {
+    if (item.isLocked) continue;
+    if (!item.trait || item.trait.isActive === false) continue;
+    const cat = item.trait.category as TraitCategory;
+    if (!equippedMap.has(cat)) {
+      equippedMap.set(cat, {
+        itemId: item.id || "",
+        traitId: item.traitId || item.trait?.id || "",
+        category: cat,
+        edition: item.edition,
+        imageUrl: item.trait.imageUrl,
+      });
+    }
+  }
+
+  return equippedMap;
+}
+
+/**
+ * In-memory helper to determine equipped item IDs from a list of inventory items.
+ * Matches resolveUserEquippedTraits logic:
+ * - Must not be locked (isLocked === false).
+ * - Must not be inactive (trait.isActive !== false).
+ * - Lowest edition (edition ASC).
+ * - Earliest acquisition (createdAt ASC).
+ * - Deterministic ID (id ASC).
+ */
+export function resolveEquippedItemIdsFromList<
+  T extends {
+    id: string;
+    edition: number;
+    isLocked?: boolean;
+    createdAt?: Date | string;
+    trait?: {
+      category?: string;
+      isActive?: boolean;
+    };
+  },
+>(items: T[]): Set<string> {
+  const sorted = [...items].sort((a, b) => {
+    if (a.edition !== b.edition) {
+      return a.edition - b.edition;
+    }
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    if (timeA !== timeB) {
+      return timeA - timeB;
+    }
+    return (a.id || "").localeCompare(b.id || "");
+  });
+
+  const equippedIds = new Set<string>();
+  const seenCategories = new Set<string>();
+
+  for (const item of sorted) {
+    if (item.isLocked) continue;
+    if (item.trait && item.trait.isActive === false) continue;
+    const cat = item.trait?.category || "DEFAULT";
+    if (!seenCategories.has(cat)) {
+      seenCategories.add(cat);
+      if (item.id) equippedIds.add(item.id);
+    }
+  }
+
+  return equippedIds;
+}
+
 /**
  * Resolves the user's best trait layer per category (lowest edition wins).
  * Trait layers are ordered strictly back-to-front: BG → FUR → CLOTHING → HEADWEAR → EYEWEAR.
@@ -291,33 +395,11 @@ export async function resolveUserLayers(
   prisma: PrismaClient,
   userId: string,
 ): Promise<TraitLayer[]> {
-  const items = await prisma.inventoryItem.findMany({
-    where: { ownerId: userId },
-    select: {
-      edition: true,
-      trait: {
-        select: {
-          category: true,
-          imageUrl: true,
-          isActive: true,
-        },
-      },
-    },
-    orderBy: { edition: "asc" },
-  });
+  const equippedMap = await resolveUserEquippedTraits(prisma, userId);
 
-  const layerMap = new Map<TraitCategory, string>();
-  for (const item of items) {
-    const cat = item.trait.category as TraitCategory;
-    if (!item.trait.isActive) continue;
-    if (!layerMap.has(cat)) {
-      layerMap.set(cat, item.trait.imageUrl);
-    }
-  }
-
-  return LAYER_ORDER.filter((cat) => layerMap.has(cat)).map((cat) => ({
+  return LAYER_ORDER.filter((cat) => equippedMap.has(cat)).map((cat) => ({
     category: cat,
-    imageUrl: layerMap.get(cat)!,
+    imageUrl: equippedMap.get(cat)!.imageUrl,
   }));
 }
 

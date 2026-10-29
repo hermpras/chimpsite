@@ -146,6 +146,7 @@ describe("Task 3-A: Inventory Service & API (server/inventory/items.ts & route.t
         acquiredAt: "2026-10-15T10:00:00.000Z",
         isLocked: false,
         lockReason: null,
+        isEquipped: true,
         trait: {
           id: "trait-hoodie",
           name: "Chimp Hoodie",
@@ -157,6 +158,7 @@ describe("Task 3-A: Inventory Service & API (server/inventory/items.ts & route.t
       });
       expect(result.items[1].isLocked).toBe(true);
       expect(result.items[1].lockReason).toBe("PENDING_GIFT");
+      expect(result.items[1].isEquipped).toBe(false);
     });
   });
 
