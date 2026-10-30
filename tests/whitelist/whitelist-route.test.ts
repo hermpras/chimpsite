@@ -52,6 +52,9 @@ vi.mock("@/server/db", () => ({
     walletIdentity: {
       findUnique: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
@@ -213,6 +216,140 @@ describe("Whitelist API routes", () => {
       body: JSON.stringify({}),
     });
     const res = await POST(req);
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe("SERVER_ERROR");
+  });
+
+  // Regression: program FINALIZED must not cause HTTP 500
+  // Previously evaluateUserQualification threw WhitelistError("PROGRAM_NOT_ACTIVE", ..., 400)
+  // which was unhandled in the route and propagated as HTTP 500.
+  it("GET /api/whitelist/status returns 200 with program info when program is FINALIZED (regression O-3)", async () => {
+    vi.mocked(prisma.wLProgram.findUnique).mockResolvedValueOnce({
+      id: "p-final",
+      slug: "chimphood-wl-main",
+      name: "Main WL",
+      totalSlots: 500,
+      allocatedSlotsCount: 500,
+      status: "FINALIZED",
+    } as any);
+    // findFirst fallbacks are not reached because findUnique returns a result
+    vi.mocked(authenticateRequest).mockResolvedValue({
+      sessionId: "s1",
+      userId: "u1",
+      address: "0xabc",
+    });
+
+    const { WhitelistError } = await import("@/server/whitelist/qualification");
+    vi.mocked(evaluateUserQualification).mockRejectedValueOnce(
+      new WhitelistError(
+        "PROGRAM_NOT_ACTIVE",
+        "Whitelist program is not open (current status: FINALIZED).",
+        400,
+      ),
+    );
+
+    const req = new Request("http://localhost:3000/api/whitelist/status");
+    const res = await GET(req);
+
+    // Must be 200, not 400 or 500
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.configured).toBe(true);
+    expect(body.program.status).toBe("FINALIZED");
+    expect(body.status.qualified).toBe(false);
+    expect(body.status.phase).toBe("NONE");
+    expect(body.status.missingRequirements[0]).toMatch(/FINALIZED/);
+    // Ensure no error key leaks out
+    expect(body.error).toBeUndefined();
+  });
+
+  it("GET /api/whitelist/status returns 200 with program info when program is UPCOMING (non-OPEN regression)", async () => {
+    vi.mocked(prisma.wLProgram.findUnique).mockResolvedValueOnce({
+      id: "p-upcoming",
+      slug: "chimphood-wl-main",
+      name: "Main WL",
+      totalSlots: 500,
+      allocatedSlotsCount: 0,
+      status: "UPCOMING",
+    } as any);
+    vi.mocked(authenticateRequest).mockResolvedValue({
+      sessionId: "s2",
+      userId: "u2",
+      address: "0xdef",
+    });
+
+    const { WhitelistError } = await import("@/server/whitelist/qualification");
+    vi.mocked(evaluateUserQualification).mockRejectedValueOnce(
+      new WhitelistError(
+        "PROGRAM_NOT_ACTIVE",
+        "Whitelist program is not open (current status: UPCOMING).",
+        400,
+      ),
+    );
+
+    const req = new Request("http://localhost:3000/api/whitelist/status");
+    const res = await GET(req);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.configured).toBe(true);
+    expect(body.program.status).toBe("UPCOMING");
+    expect(body.status.qualified).toBe(false);
+    expect(body.status.missingRequirements[0]).toMatch(/UPCOMING/);
+    expect(body.error).toBeUndefined();
+  });
+
+  it("GET /api/whitelist/status returns the WhitelistError status for other WhitelistError codes", async () => {
+    vi.mocked(prisma.wLProgram.findUnique).mockResolvedValueOnce({
+      id: "p1",
+      slug: "chimphood-wl-main",
+      name: "Main WL",
+      totalSlots: 10,
+      allocatedSlotsCount: 2,
+      status: "OPEN",
+    } as any);
+    vi.mocked(authenticateRequest).mockResolvedValue({
+      sessionId: "s3",
+      userId: "u-missing",
+      address: "0x999",
+    });
+
+    const { WhitelistError } = await import("@/server/whitelist/qualification");
+    vi.mocked(evaluateUserQualification).mockRejectedValueOnce(
+      new WhitelistError("USER_NOT_FOUND", "User not found.", 404),
+    );
+
+    const req = new Request("http://localhost:3000/api/whitelist/status");
+    const res = await GET(req);
+
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error).toBe("USER_NOT_FOUND");
+  });
+
+  it("GET /api/whitelist/status returns 500 for truly unexpected errors", async () => {
+    vi.mocked(prisma.wLProgram.findUnique).mockResolvedValueOnce({
+      id: "p1",
+      slug: "chimphood-wl-main",
+      name: "Main WL",
+      totalSlots: 10,
+      allocatedSlotsCount: 2,
+      status: "OPEN",
+    } as any);
+    vi.mocked(authenticateRequest).mockResolvedValue({
+      sessionId: "s4",
+      userId: "u1",
+      address: "0x123",
+    });
+
+    vi.mocked(evaluateUserQualification).mockRejectedValueOnce(
+      new Error("Database connection lost"),
+    );
+
+    const req = new Request("http://localhost:3000/api/whitelist/status");
+    const res = await GET(req);
+
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("SERVER_ERROR");

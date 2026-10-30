@@ -2,6 +2,7 @@ import { prisma } from "@/server/db";
 import { authenticateRequest } from "@/server/auth/session";
 import {
   evaluateUserQualification,
+  WhitelistError,
   REQUIRED_TRAIT_CATEGORIES,
 } from "@/server/whitelist/qualification";
 import { normalizeAddress } from "@/lib/auth/address";
@@ -107,11 +108,66 @@ export async function GET(request: Request): Promise<Response> {
     });
   }
 
-  const result = await evaluateUserQualification(prisma, {
-    userId: targetUserId,
-    programId: program.id,
-    readOnly: true,
-  });
+  let result;
+  try {
+    result = await evaluateUserQualification(prisma, {
+      userId: targetUserId,
+      programId: program.id,
+      readOnly: true,
+    });
+  } catch (err) {
+    // A non-OPEN program (e.g. FINALIZED, UPCOMING, CLOSED) causes
+    // executeQualificationEvaluation to throw WhitelistError("PROGRAM_NOT_ACTIVE", ..., 400).
+    // This is an expected, non-fatal condition for the status endpoint — the program
+    // exists and should be shown to the caller; we simply cannot evaluate live eligibility.
+    // Return the program information with a static ineligible status instead of propagating
+    // a 400/500 to the client.
+    if (err instanceof WhitelistError && err.code === "PROGRAM_NOT_ACTIVE") {
+      return Response.json({
+        configured: true,
+        program: {
+          id: program.id,
+          slug: program.slug,
+          name: program.name,
+          totalSlots: program.totalSlots,
+          allocatedSlotsCount: program.allocatedSlotsCount,
+          status: program.status,
+        },
+        address: targetAddress,
+        status: {
+          qualified: false,
+          phase: "NONE" as const,
+          missingRequirements: [
+            `Whitelist program is not accepting new qualifications (status: ${program.status}).`,
+          ],
+          details: {
+            hasVerifiedWallet: Boolean(targetAddress),
+            hasLinkedX: false,
+            heldCategories: [] as string[],
+            missingCategories: REQUIRED_TRAIT_CATEGORIES,
+            completedMandatoryTasksCount: 0,
+            totalMandatoryTasksCount: 0,
+            isBanned: false,
+          },
+        },
+      });
+    }
+
+    // All other WhitelistErrors (USER_NOT_FOUND, PROGRAM_NOT_FOUND, etc.) and
+    // unexpected errors propagate normally with their correct status codes.
+    if (err instanceof WhitelistError) {
+      return Response.json(
+        { error: err.code, message: err.message },
+        { status: err.status },
+      );
+    }
+
+    console.error("GET /api/whitelist/status unexpected error:", err);
+    return Response.json(
+      { error: "SERVER_ERROR", message: "An unexpected error occurred." },
+      { status: 500 },
+    );
+  }
 
   return Response.json({
     configured: true,
