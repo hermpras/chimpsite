@@ -432,12 +432,12 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
     });
   });
 
-  // ─── 4. X (Twitter) Profile Avatar Fallback ──────────────────────────────
-  describe("4. X Profile Avatar Fallback on ProfilePage", () => {
+  // ─── 4. Separation of Chimp Character & X Profile Avatar ────────────────
+  describe("4. Separation of Chimp Profile and X Profile Avatar on ProfilePage", () => {
     const xProfileImageUrl =
       "https://pbs.twimg.com/profile_images/999/avatar_400x400.jpg";
 
-    it("renders X profile image when xProfileImageUrl is present and loads successfully", async () => {
+    it("keeps Chimp character avatar in header independent from X profile image", async () => {
       mockUseSiweAuth.mockReturnValue({
         status: "authenticated",
         sessionAddress: testAddress,
@@ -446,7 +446,8 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
         logout: vi.fn(),
         dismissError: vi.fn(),
       });
-      mockFetchUserInventory.mockResolvedValue({ items: [] });
+      // User owns items, so header should render Chimp avatar image
+      mockFetchUserInventory.mockResolvedValue({ items: sampleInventoryItems });
       mockFetchWhitelistStatus.mockResolvedValue({
         configured: true,
         authenticated: true,
@@ -457,7 +458,7 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
             hasLinkedX: true,
             xUsername: "kukurapikaku",
             xProfileImageUrl,
-            heldCategories: [],
+            heldCategories: ["FUR", "HEADWEAR"],
             totalMandatoryTasksCount: 3,
             completedMandatoryTasksCount: 0,
           },
@@ -470,16 +471,79 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
         </Providers>,
       );
 
-      // X profile <img> should appear with the correct src
+      // 1. Chimp avatar is in header (from UserAvatar, pointing to renders/avatar)
       await waitFor(() => {
-        const imgs = screen
-          .getAllByRole("img")
-          .filter((el) => el.getAttribute("src") === xProfileImageUrl);
-        expect(imgs.length).toBeGreaterThan(0);
+        const chimpImg = screen.getByTestId("avatar-image");
+        expect(chimpImg).toBeInTheDocument();
+        expect(chimpImg).toHaveAttribute(
+          "src",
+          expect.stringContaining(`/api/renders/avatar/${testAddress}`),
+        );
       });
+
+      // 2. X profile avatar is in the X Identity card
+      const xImg = screen.getByTestId("x-profile-avatar");
+      expect(xImg).toBeInTheDocument();
+      expect(xImg).toHaveAttribute("src", xProfileImageUrl);
     });
 
-    it("falls back to UserAvatar (chimp icon) when X profile image fails to load", async () => {
+    it("displays dedicated x-avatar-fallback in X Identity card when X image fails, without affecting Chimp profile", async () => {
+      mockUseSiweAuth.mockReturnValue({
+        status: "authenticated",
+        sessionAddress: testAddress,
+        walletAddress: testAddress,
+        login: vi.fn(),
+        logout: vi.fn(),
+        dismissError: vi.fn(),
+      });
+      mockFetchUserInventory.mockResolvedValue({ items: sampleInventoryItems });
+      mockFetchWhitelistStatus.mockResolvedValue({
+        configured: true,
+        authenticated: true,
+        status: {
+          phase: "IN_QUEUE",
+          queueNumber: 1,
+          details: {
+            hasLinkedX: true,
+            xUsername: "kukurapikaku",
+            xProfileImageUrl,
+            heldCategories: ["FUR", "HEADWEAR"],
+            totalMandatoryTasksCount: 3,
+            completedMandatoryTasksCount: 0,
+          },
+        },
+      });
+
+      render(
+        <Providers>
+          <ProfilePage />
+        </Providers>,
+      );
+
+      // Verify X image exists initially
+      await waitFor(() => {
+        expect(screen.getByTestId("x-profile-avatar")).toBeInTheDocument();
+      });
+
+      // Trigger error on X avatar
+      const xImg = screen.getByTestId("x-profile-avatar");
+      fireEvent.error(xImg);
+
+      // Dedicated X fallback appears in the card
+      await waitFor(() => {
+        expect(screen.getByTestId("x-avatar-fallback")).toBeInTheDocument();
+      });
+
+      // Crucial: Chimp character avatar in header is STILL present and intact!
+      const chimpImg = screen.getByTestId("avatar-image");
+      expect(chimpImg).toBeInTheDocument();
+      expect(chimpImg).toHaveAttribute(
+        "src",
+        expect.stringContaining(`/api/renders/avatar/${testAddress}`),
+      );
+    });
+
+    it("displays x-avatar-fallback when X is connected but xProfileImageUrl is null", async () => {
       mockUseSiweAuth.mockReturnValue({
         status: "authenticated",
         sessionAddress: testAddress,
@@ -498,7 +562,7 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
           details: {
             hasLinkedX: true,
             xUsername: "kukurapikaku",
-            xProfileImageUrl,
+            xProfileImageUrl: null,
             heldCategories: [],
             totalMandatoryTasksCount: 3,
             completedMandatoryTasksCount: 0,
@@ -512,29 +576,15 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
         </Providers>,
       );
 
-      // Wait for X profile images to appear, then fire error on all of them
       await waitFor(() => {
-        const imgs = screen
-          .getAllByRole("img")
-          .filter((el) => el.getAttribute("src") === xProfileImageUrl);
-        expect(imgs.length).toBeGreaterThan(0);
-      });
-
-      const xImgs = screen
-        .getAllByRole("img")
-        .filter((el) => el.getAttribute("src") === xProfileImageUrl);
-
-      // Simulate load failure for all X avatar images
-      xImgs.forEach((img) => fireEvent.error(img));
-
-      // After failure, the UserAvatar fallback (chimp icon or User icon) should appear
-      await waitFor(() => {
-        // avatar-fallback is the data-testid used by UserAvatar in fallback state
+        expect(screen.getByTestId("x-avatar-fallback")).toBeInTheDocument();
+        expect(screen.queryByTestId("x-profile-avatar")).not.toBeInTheDocument();
+        // Chimp base avatar remains in header
         expect(screen.getByTestId("avatar-fallback")).toBeInTheDocument();
       });
     });
 
-    it("re-shows X profile image after re-linking with a new URL (error state resets)", async () => {
+    it("resets X avatar error when a new xProfileImageUrl is received", async () => {
       const newUrl =
         "https://pbs.twimg.com/profile_images/111/new_avatar_400x400.jpg";
 
@@ -548,8 +598,8 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
       });
       mockFetchUserInventory.mockResolvedValue({ items: [] });
 
-      // First render: original URL that fails
-      mockFetchWhitelistStatus.mockResolvedValueOnce({
+      // First response: initial URL
+      mockFetchWhitelistStatus.mockResolvedValue({
         configured: true,
         authenticated: true,
         status: {
@@ -566,8 +616,25 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
         },
       });
 
-      // Second fetch (after re-link): new URL
-      mockFetchWhitelistStatus.mockResolvedValueOnce({
+      const { unmount } = render(
+        <Providers>
+          <ProfilePage />
+        </Providers>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("x-profile-avatar")).toBeInTheDocument();
+      });
+
+      // Trigger error on initial image
+      fireEvent.error(screen.getByTestId("x-profile-avatar"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("x-avatar-fallback")).toBeInTheDocument();
+      });
+
+      // Update WL data with new URL (simulating re-link returning new profile image)
+      mockFetchWhitelistStatus.mockResolvedValue({
         configured: true,
         authenticated: true,
         status: {
@@ -584,40 +651,18 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
         },
       });
 
+      unmount();
       render(
         <Providers>
           <ProfilePage />
         </Providers>,
       );
 
-      // Wait for original X images
+      // The new URL does not match failedXAvatarUrl (or on new mount), so x-profile-avatar renders again
       await waitFor(() => {
-        const imgs = screen
-          .getAllByRole("img")
-          .filter((el) => el.getAttribute("src") === xProfileImageUrl);
-        expect(imgs.length).toBeGreaterThan(0);
-      });
-
-      // Trigger error on original URL
-      screen
-        .getAllByRole("img")
-        .filter((el) => el.getAttribute("src") === xProfileImageUrl)
-        .forEach((img) => fireEvent.error(img));
-
-      // Error state recorded for original URL
-      await waitFor(() => {
-        expect(screen.getByTestId("avatar-fallback")).toBeInTheDocument();
-      });
-
-      // Simulate re-fetch returning new URL (component would refetch after x_linked redirect)
-      // The failedXAvatarUrl !== newUrl so error clears automatically
-      await waitFor(() => {
-        const newImgs = screen
-          .getAllByRole("img")
-          .filter((el) => el.getAttribute("src") === newUrl);
-        // newUrl renders once wlData updates; if not yet updated, test still
-        // confirms the mechanism exists via absence of broken state
-        expect(newImgs.length >= 0).toBe(true);
+        const img = screen.getByTestId("x-profile-avatar");
+        expect(img).toBeInTheDocument();
+        expect(img).toHaveAttribute("src", newUrl);
       });
     });
   });

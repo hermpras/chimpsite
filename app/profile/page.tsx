@@ -233,25 +233,16 @@ function ProfileContent() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Page Header with User Profile (Twitter PFP / Fallback) */}
+      {/* Page Header with Character Avatar */}
       <div className="mb-8 flex flex-col items-start gap-5 rounded-2xl border border-gray-800 bg-[#0c0e17]/60 p-6 backdrop-blur sm:flex-row sm:items-center">
-        {currentXProfileImg && !xAvatarError ? (
-          <img
-            src={currentXProfileImg}
-            alt={currentXUsername || "User Profile"}
-            className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl border-2 border-emerald-500/30 object-cover shadow-lg"
-            onError={() => setFailedXAvatarUrl(currentXProfileImg ?? null)}
-          />
-        ) : (
-          <UserAvatar
-            identifier={address}
-            hasInventory={inventoryItems.length > 0}
-            version={avatarVersion}
-            size="xl"
-            showRefreshButton={status === "authenticated" && inventoryItems.length > 0}
-            onRefresh={handleRefreshAll}
-          />
-        )}
+        <UserAvatar
+          identifier={address}
+          hasInventory={inventoryItems.length > 0}
+          version={avatarVersion}
+          size="xl"
+          showRefreshButton={status === "authenticated" && inventoryItems.length > 0}
+          onRefresh={handleRefreshAll}
+        />
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-white">User Profile</h1>
@@ -327,30 +318,38 @@ function ProfileContent() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border border-dashed border-gray-700 bg-gray-900/40 p-4 text-center">
-              {isXConnected && currentXProfileImg && !xAvatarError ? (
+              {isXConnected ? (
                 <div className="flex items-center justify-center gap-3 py-1">
-                  <img
-                    src={currentXProfileImg}
-                    alt={currentXUsername || "X Profile"}
-                    className="h-10 w-10 rounded-full border border-sky-400/30 object-cover shadow"
-                    onError={() => setFailedXAvatarUrl(currentXProfileImg ?? null)}
-                  />
+                  {currentXProfileImg && !xAvatarError ? (
+                    <img
+                      src={currentXProfileImg}
+                      alt={currentXUsername || "X Profile"}
+                      data-testid="x-profile-avatar"
+                      className="h-10 w-10 rounded-full border border-sky-400/30 object-cover shadow"
+                      onError={() => setFailedXAvatarUrl(currentXProfileImg ?? null)}
+                    />
+                  ) : (
+                    <div
+                      data-testid="x-avatar-fallback"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-400/30 bg-sky-500/10 text-sky-400 shadow"
+                      title={currentXUsername ? `@${currentXUsername} (avatar unavailable)` : "X avatar unavailable"}
+                    >
+                      <XLogo className="h-5 w-5" />
+                    </div>
+                  )}
                   <div className="text-left">
                     <p className="text-sm font-semibold text-white">
                       Status: Connected (@{currentXUsername})
                     </p>
                     <p className="mt-0.5 text-xs text-sky-400">
-                      @{currentXUsername} &bull;{" "}
-                      <span className="font-medium text-emerald-400">Verified</span>
+                      @{currentXUsername}
                     </p>
                   </div>
                 </div>
               ) : (
                 <>
                   <p className="text-sm font-medium text-gray-400">
-                    {isXConnected
-                      ? `Status: Connected (@${currentXUsername})`
-                      : "Status: Not Connected"}
+                    Status: Not Connected
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
                     {currentXUsername
