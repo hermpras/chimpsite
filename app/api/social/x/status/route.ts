@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db";
 import { authenticateRequest } from "@/server/auth/session";
 import { isXConfigured } from "@/server/social/x";
+import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
 
 export async function GET(): Promise<Response> {
   const configured = isXConfigured();
@@ -21,10 +22,17 @@ export async function GET(): Promise<Response> {
     },
   });
 
+  const normalizedIdentity = identity
+    ? {
+        ...identity,
+        profileImageUrl: normalizeXAvatarUrl(identity.profileImageUrl),
+      }
+    : null;
+
   return Response.json({
     configured,
     authenticated: true,
-    connected: Boolean(identity),
-    identity,
+    connected: Boolean(normalizedIdentity),
+    identity: normalizedIdentity,
   });
 }

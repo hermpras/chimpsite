@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db";
 import { authenticateRequest } from "@/server/auth/session";
 import { normalizeAddress } from "@/lib/auth/address";
+import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
 
 export async function GET(request: Request): Promise<Response> {
   try {
@@ -133,7 +134,7 @@ export async function GET(request: Request): Promise<Response> {
         address: targetUser.wallet?.address || null,
         xUsername: targetUser.xIdentity?.username || null,
         xName: targetUser.xIdentity?.name || null,
-        profileImageUrl: targetUser.xIdentity?.profileImageUrl || null,
+        profileImageUrl: normalizeXAvatarUrl(targetUser.xIdentity?.profileImageUrl) || null,
         isSelf,
         isBanned,
         isWlAllocated,

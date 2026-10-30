@@ -665,5 +665,89 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
         expect(img).toHaveAttribute("src", newUrl);
       });
     });
+
+    it("renders X profile avatar with referrerPolicy='no-referrer' to bypass CDN hotlink protection", async () => {
+      mockUseSiweAuth.mockReturnValue({
+        status: "authenticated",
+        sessionAddress: testAddress,
+        walletAddress: testAddress,
+        login: vi.fn(),
+        logout: vi.fn(),
+        dismissError: vi.fn(),
+      });
+      mockFetchUserInventory.mockResolvedValue({ items: [] });
+      mockFetchWhitelistStatus.mockResolvedValue({
+        configured: true,
+        authenticated: true,
+        status: {
+          phase: "IN_QUEUE",
+          queueNumber: 1,
+          details: {
+            hasLinkedX: true,
+            xUsername: "kukurapikaku",
+            xProfileImageUrl: "https://pbs.twimg.com/profile_images/1692663567970164738/-ccDzxHg_400x400.jpg",
+            heldCategories: [],
+            totalMandatoryTasksCount: 3,
+            completedMandatoryTasksCount: 0,
+          },
+        },
+      });
+
+      render(
+        <Providers>
+          <ProfilePage />
+        </Providers>,
+      );
+
+      await waitFor(() => {
+        const img = screen.getByTestId("x-profile-avatar");
+        expect(img).toBeInTheDocument();
+        expect(img).toHaveAttribute("referrerpolicy", "no-referrer");
+      });
+    });
+
+    it("normalizes legacy _normal URL to _400x400 on ProfilePage", async () => {
+      mockUseSiweAuth.mockReturnValue({
+        status: "authenticated",
+        sessionAddress: testAddress,
+        walletAddress: testAddress,
+        login: vi.fn(),
+        logout: vi.fn(),
+        dismissError: vi.fn(),
+      });
+      mockFetchUserInventory.mockResolvedValue({ items: [] });
+      mockFetchWhitelistStatus.mockResolvedValue({
+        configured: true,
+        authenticated: true,
+        status: {
+          phase: "IN_QUEUE",
+          queueNumber: 1,
+          details: {
+            hasLinkedX: true,
+            xUsername: "kukurapikaku",
+            xProfileImageUrl: "https://pbs.twimg.com/profile_images/1692663567970164738/-ccDzxHg_normal.jpg",
+            heldCategories: [],
+            totalMandatoryTasksCount: 3,
+            completedMandatoryTasksCount: 0,
+          },
+        },
+      });
+
+      render(
+        <Providers>
+          <ProfilePage />
+        </Providers>,
+      );
+
+      await waitFor(() => {
+        const img = screen.getByTestId("x-profile-avatar");
+        expect(img).toBeInTheDocument();
+        // Suffix _normal.jpg should be normalized to _400x400.jpg
+        expect(img).toHaveAttribute(
+          "src",
+          "https://pbs.twimg.com/profile_images/1692663567970164738/-ccDzxHg_400x400.jpg",
+        );
+      });
+    });
   });
 });

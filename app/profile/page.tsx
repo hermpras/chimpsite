@@ -35,6 +35,7 @@ import { GiftsSection } from "@/components/inventory/GiftsSection";
 import { GiftModal } from "@/components/inventory/GiftModal";
 import { UserAvatar } from "@/components/inventory/UserAvatar";
 import { shortenAddress } from "@/lib/auth/address";
+import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
 
 const TRAIT_CATEGORIES = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
 
@@ -61,6 +62,14 @@ function ProfileContent() {
   const { status, sessionAddress, walletAddress } = useSiweAuth();
   const address = sessionAddress || walletAddress;
   const [wlData, setWlData] = useState<WhitelistStatusResponse | null>(null);
+  const [xStatusData, setXStatusData] = useState<{
+    connected?: boolean;
+    identity?: {
+      xId?: string;
+      username?: string;
+      profileImageUrl?: string | null;
+    } | null;
+  } | null>(null);
   const [loadedAddress, setLoadedAddress] = useState<string | null>(null);
   const [inventoryItems, setInventoryItems] = useState<InventoryItemData[]>([]);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
@@ -177,6 +186,26 @@ function ProfileContent() {
 
   useEffect(() => {
     let ignore = false;
+    if (status !== "authenticated") {
+      return;
+    }
+
+    fetch("/api/social/x/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!ignore && data) {
+          setXStatusData(data);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      ignore = true;
+    };
+  }, [status, xLinked]);
+
+  useEffect(() => {
+    let ignore = false;
     if (address) {
       inventoryClient
         .fetchUserInventory(address)
@@ -223,9 +252,18 @@ function ProfileContent() {
     };
   }, [status]);
 
-  const isXConnected = Boolean(wlData?.status?.details?.hasLinkedX);
-  const currentXUsername = wlData?.status?.details?.xUsername;
-  const currentXProfileImg = wlData?.status?.details?.xProfileImageUrl;
+  const isXConnected =
+    status === "authenticated" &&
+    (Boolean(wlData?.status?.details?.hasLinkedX) || Boolean(xStatusData?.connected));
+  const currentXUsername =
+    status === "authenticated"
+      ? wlData?.status?.details?.xUsername || xStatusData?.identity?.username
+      : undefined;
+  const rawXProfileImg =
+    status === "authenticated"
+      ? wlData?.status?.details?.xProfileImageUrl || xStatusData?.identity?.profileImageUrl
+      : undefined;
+  const currentXProfileImg = normalizeXAvatarUrl(rawXProfileImg);
 
   // Track which specific URL failed so the error flag auto-resets when the URL changes
   const [failedXAvatarUrl, setFailedXAvatarUrl] = React.useState<string | null>(null);
@@ -321,10 +359,12 @@ function ProfileContent() {
               {isXConnected ? (
                 <div className="flex items-center justify-center gap-3 py-1">
                   {currentXProfileImg && !xAvatarError ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={currentXProfileImg}
                       alt={currentXUsername || "X Profile"}
                       data-testid="x-profile-avatar"
+                      referrerPolicy="no-referrer"
                       className="h-10 w-10 rounded-full border border-sky-400/30 object-cover shadow"
                       onError={() => setFailedXAvatarUrl(currentXProfileImg ?? null)}
                     />

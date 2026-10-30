@@ -6,6 +6,7 @@ import {
   REQUIRED_TRAIT_CATEGORIES,
 } from "@/server/whitelist/qualification";
 import { normalizeAddress } from "@/lib/auth/address";
+import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -68,7 +69,7 @@ export async function GET(request: Request): Promise<Response> {
       });
       hasLinkedX = Boolean(user?.xIdentity);
       xUsername = user?.xIdentity?.username;
-      xProfileImageUrl = user?.xIdentity?.profileImageUrl;
+      xProfileImageUrl = normalizeXAvatarUrl(user?.xIdentity?.profileImageUrl);
     }
     return Response.json({
       configured: false,
@@ -123,6 +124,19 @@ export async function GET(request: Request): Promise<Response> {
     // Return the program information with a static ineligible status instead of propagating
     // a 400/500 to the client.
     if (err instanceof WhitelistError && err.code === "PROGRAM_NOT_ACTIVE") {
+      let hasLinkedX = false;
+      let xUsername: string | undefined;
+      let xProfileImageUrl: string | null | undefined;
+      if (targetUserId) {
+        const user = await prisma.user.findUnique({
+          where: { id: targetUserId },
+          include: { xIdentity: true },
+        });
+        hasLinkedX = Boolean(user?.xIdentity);
+        xUsername = user?.xIdentity?.username;
+        xProfileImageUrl = normalizeXAvatarUrl(user?.xIdentity?.profileImageUrl);
+      }
+
       return Response.json({
         configured: true,
         program: {
@@ -142,7 +156,9 @@ export async function GET(request: Request): Promise<Response> {
           ],
           details: {
             hasVerifiedWallet: Boolean(targetAddress),
-            hasLinkedX: false,
+            hasLinkedX,
+            xUsername,
+            xProfileImageUrl,
             heldCategories: [] as string[],
             missingCategories: REQUIRED_TRAIT_CATEGORIES,
             completedMandatoryTasksCount: 0,

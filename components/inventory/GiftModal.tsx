@@ -359,6 +359,7 @@ export function GiftModal({
                         <img
                           src={verifiedRecipient.profileImageUrl}
                           alt={verifiedRecipient.xUsername || "Recipient"}
+                          referrerPolicy="no-referrer"
                           className="h-full w-full object-cover"
                         />
                       ) : (

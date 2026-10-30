@@ -8,25 +8,9 @@ import { timingSafeEqualString } from "@/lib/auth/timing-safe";
 
 export { timingSafeEqualString };
 
-/**
- * Upgrades a Twitter/X profile image URL from the small `_normal` variant
- * (48×48 px) to `_400x400` (400×400 px) so avatars are sharp on all devices.
- *
- * X API v2 always returns `_normal`; just replacing the suffix is officially
- * supported: https://developer.x.com/en/docs/twitter-api/v1/accounts-and-users/
- *   user-profile-images-and-banners
- *
- * If the URL is null/undefined or does not contain a recognisable X CDN
- * pattern, it is returned unchanged so nothing breaks.
- */
-export function normalizeXAvatarUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  // Only upgrade URLs served from X's media CDN to avoid mangling arbitrary URLs.
-  // Replaces _normal, _bigger, _mini suffixes (before the file extension) with
-  // _400x400 so avatars are sharp on all devices.
-  if (!url.startsWith("https://pbs.twimg.com/")) return url;
-  return url.replace(/_(normal|bigger|mini)\.(jpg|jpeg|png|gif|webp)$/i, "_400x400.$2");
-}
+import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
+
+export { normalizeXAvatarUrl };
 
 export const X_OAUTH_COOKIE_NAME = "chimphood_x_oauth";
 export const X_OAUTH_COOKIE_TTL_MS = 10 * 60 * 1000; // 10 minutes
