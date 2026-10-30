@@ -227,15 +227,20 @@ function ProfileContent() {
   const currentXUsername = wlData?.status?.details?.xUsername;
   const currentXProfileImg = wlData?.status?.details?.xProfileImageUrl;
 
+  // Track which specific URL failed so the error flag auto-resets when the URL changes
+  const [failedXAvatarUrl, setFailedXAvatarUrl] = React.useState<string | null>(null);
+  const xAvatarError = failedXAvatarUrl !== null && failedXAvatarUrl === currentXProfileImg;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Page Header with User Profile (Twitter PFP / Fallback) */}
       <div className="mb-8 flex flex-col items-start gap-5 rounded-2xl border border-gray-800 bg-[#0c0e17]/60 p-6 backdrop-blur sm:flex-row sm:items-center">
-        {currentXProfileImg ? (
+        {currentXProfileImg && !xAvatarError ? (
           <img
             src={currentXProfileImg}
             alt={currentXUsername || "User Profile"}
             className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl border-2 border-emerald-500/30 object-cover shadow-lg"
+            onError={() => setFailedXAvatarUrl(currentXProfileImg ?? null)}
           />
         ) : (
           <UserAvatar
@@ -322,12 +327,13 @@ function ProfileContent() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border border-dashed border-gray-700 bg-gray-900/40 p-4 text-center">
-              {isXConnected && currentXProfileImg ? (
+              {isXConnected && currentXProfileImg && !xAvatarError ? (
                 <div className="flex items-center justify-center gap-3 py-1">
                   <img
                     src={currentXProfileImg}
                     alt={currentXUsername || "X Profile"}
                     className="h-10 w-10 rounded-full border border-sky-400/30 object-cover shadow"
+                    onError={() => setFailedXAvatarUrl(currentXProfileImg ?? null)}
                   />
                   <div className="text-left">
                     <p className="text-sm font-semibold text-white">

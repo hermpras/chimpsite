@@ -18,6 +18,7 @@ import {
   X_OAUTH_COOKIE_NAME,
   X_OAUTH_STATE_KEY_PREFIX,
   X_OAUTH_STATE_TTL_SECONDS,
+  normalizeXAvatarUrl,
   type XOAuthStatePayload,
 } from "@/server/social/x";
 import type { PrismaClient } from "@prisma/client";
@@ -316,23 +317,24 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
             id: "x-123456",
             username: "chimphood_fan",
             name: "Chimp Fan",
-            profile_image_url: "https://x.com/avatar.png",
+            profile_image_url: "https://pbs.twimg.com/profile_images/999/avatar_normal.jpg",
           },
         }),
       });
 
       const mockAuditCreate = vi.fn().mockResolvedValue({ id: "audit-1" });
+      const mockUpsert = vi.fn().mockResolvedValue({
+        id: "x-ident-1",
+        userId: "user-1",
+        xId: "x-123456",
+        username: "chimphood_fan",
+        name: "Chimp Fan",
+        profileImageUrl: "https://pbs.twimg.com/profile_images/999/avatar_400x400.jpg",
+      });
       const mockPrisma = {
         xIdentity: {
           findUnique: vi.fn().mockResolvedValue(null),
-          upsert: vi.fn().mockResolvedValue({
-            id: "x-ident-1",
-            userId: "user-1",
-            xId: "x-123456",
-            username: "chimphood_fan",
-            name: "Chimp Fan",
-            profileImageUrl: "https://x.com/avatar.png",
-          }),
+          upsert: mockUpsert,
         },
         auditLog: {
           create: mockAuditCreate,
@@ -348,6 +350,19 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
       expect(result.xId).toBe("x-123456");
       expect(result.username).toBe("chimphood_fan");
       expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      // Verify the upsert received the _400x400 URL (normalisation applied)
+      expect(mockUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({
+            profileImageUrl: "https://pbs.twimg.com/profile_images/999/avatar_400x400.jpg",
+          }),
+          update: expect.objectContaining({
+            profileImageUrl: "https://pbs.twimg.com/profile_images/999/avatar_400x400.jpg",
+          }),
+        }),
+      );
+
       expect(mockAuditCreate).toHaveBeenCalledWith({
         data: expect.objectContaining({
           actorId: "user-1",
@@ -515,6 +530,84 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
       } finally {
         consoleErrorSpy.mockRestore();
       }
+    });
+  });
+
+  // ─── normalizeXAvatarUrl — avatar URL normalisation (bug-fix coverage) ────
+  describe("normalizeXAvatarUrl — X CDN profile image URL normalisation", () => {
+    it("upgrades _normal.jpg to _400x400.jpg for pbs.twimg.com URLs", () => {
+      expect(
+        normalizeXAvatarUrl(
+          "https://pbs.twimg.com/profile_images/123456789/abc_normal.jpg",
+        ),
+      ).toBe("https://pbs.twimg.com/profile_images/123456789/abc_400x400.jpg");
+    });
+
+    it("upgrades _normal.png to _400x400.png", () => {
+      expect(
+        normalizeXAvatarUrl(
+          "https://pbs.twimg.com/profile_images/123456789/abc_normal.png",
+        ),
+      ).toBe("https://pbs.twimg.com/profile_images/123456789/abc_400x400.png");
+    });
+
+    it("upgrades _normal.jpeg to _400x400.jpeg", () => {
+      expect(
+        normalizeXAvatarUrl(
+          "https://pbs.twimg.com/profile_images/123456789/abc_normal.jpeg",
+        ),
+      ).toBe("https://pbs.twimg.com/profile_images/123456789/abc_400x400.jpeg");
+    });
+
+    it("upgrades _bigger variant to _400x400", () => {
+      expect(
+        normalizeXAvatarUrl(
+          "https://pbs.twimg.com/profile_images/123456789/abc_bigger.jpg",
+        ),
+      ).toBe("https://pbs.twimg.com/profile_images/123456789/abc_400x400.jpg");
+    });
+
+    it("upgrades _mini variant to _400x400", () => {
+      expect(
+        normalizeXAvatarUrl(
+          "https://pbs.twimg.com/profile_images/123456789/abc_mini.jpg",
+        ),
+      ).toBe("https://pbs.twimg.com/profile_images/123456789/abc_400x400.jpg");
+    });
+
+    it("is idempotent — does not double-mangle an already-upgraded URL", () => {
+      const already =
+        "https://pbs.twimg.com/profile_images/123456789/abc_400x400.jpg";
+      expect(normalizeXAvatarUrl(already)).toBe(already);
+    });
+
+    it("passes through pbs.twimg.com URLs with no size suffix unchanged", () => {
+      const noSuffix =
+        "https://pbs.twimg.com/profile_images/123456789/abc.jpg";
+      expect(normalizeXAvatarUrl(noSuffix)).toBe(noSuffix);
+    });
+
+    it("does NOT mutate non-pbs.twimg.com URLs that happen to end with _normal", () => {
+      const externalUrl = "https://example.com/user/avatar_normal.jpg";
+      expect(normalizeXAvatarUrl(externalUrl)).toBe(externalUrl);
+    });
+
+    it("does NOT mutate plain http:// pbs.twimg.com URLs (only https)", () => {
+      const httpUrl =
+        "http://pbs.twimg.com/profile_images/123456789/abc_normal.jpg";
+      expect(normalizeXAvatarUrl(httpUrl)).toBe(httpUrl);
+    });
+
+    it("returns null for null input", () => {
+      expect(normalizeXAvatarUrl(null)).toBeNull();
+    });
+
+    it("returns null for undefined input", () => {
+      expect(normalizeXAvatarUrl(undefined)).toBeNull();
+    });
+
+    it("returns null for empty string input", () => {
+      expect(normalizeXAvatarUrl("")).toBeNull();
     });
   });
 });
