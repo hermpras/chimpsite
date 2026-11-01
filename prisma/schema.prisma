@@ -141,6 +141,14 @@ enum WLSlotStatus {
   ALLOCATED
   CONFIRMED
   REVOKED_MANUAL_ADMIN
+  REVOKED_SYSTEM
+}
+
+enum WLSlotReviewStatus {
+  NOT_REVIEWED
+  UNDER_REVIEW
+  VALID
+  FLAGGED
 }
 
 enum WLPhase {
@@ -646,23 +654,28 @@ model WLQueueEntry {
 }
 
 model WLSlot {
-  id          String       @id @default(cuid())
-  programId   String
-  program     WLProgram    @relation(fields: [programId], references: [id], onDelete: Restrict)
-  slotNumber  Int          // Sequential 1 .. totalSlots
-  userId      String       // User holding this slot
-  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
-  status      WLSlotStatus @default(ALLOCATED)
-  allocatedAt DateTime     @default(now())
-  confirmedAt DateTime?
-  allocatedBy String?      // e.g. "QUEUE_WORKER", "ADMIN_MANUAL"
-  notes       String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id           String              @id @default(cuid())
+  programId    String
+  program      WLProgram           @relation(fields: [programId], references: [id], onDelete: Restrict)
+  slotNumber   Int                 // Sequential 1 .. totalSlots
+  userId       String              // User holding this slot
+  user         User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status       WLSlotStatus        @default(ALLOCATED)
+  reviewStatus WLSlotReviewStatus  @default(NOT_REVIEWED)
+  reviewedAt   DateTime?
+  reviewedBy   String?             // Admin/Moderator User ID
+  reviewNotes  String?             // Max 2048 characters
+  allocatedAt  DateTime            @default(now())
+  confirmedAt  DateTime?
+  allocatedBy  String?             // e.g. "QUEUE_WORKER", "ADMIN_MANUAL"
+  notes        String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   @@unique([programId, slotNumber]) // Slot index within program is strictly unique
   @@unique([programId, userId])     // A user cannot receive two slots in the same program
   @@index([programId, status])
+  @@index([programId, reviewStatus])
   @@index([userId])
 }
 

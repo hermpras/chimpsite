@@ -17,6 +17,7 @@ import {
   WLQualificationStatus,
   WLQueueStatus,
   WLSlotStatus,
+  WLSlotReviewStatus,
   WLPhase,
   BanType,
   BanScope,
@@ -88,6 +89,7 @@ describe("Stage 1 Data Model & Database Foundation", () => {
       expect(WLSlotStatus.ALLOCATED).toBe("ALLOCATED");
       expect(WLSlotStatus.CONFIRMED).toBe("CONFIRMED");
       expect(WLSlotStatus.REVOKED_MANUAL_ADMIN).toBe("REVOKED_MANUAL_ADMIN");
+      expect(WLSlotStatus.REVOKED_SYSTEM).toBe("REVOKED_SYSTEM");
 
       expect(WLQueueStatus.WAITING).toBe("WAITING");
       expect(WLQueueStatus.PROCESSED).toBe("PROCESSED");
@@ -98,6 +100,11 @@ describe("Stage 1 Data Model & Database Foundation", () => {
       expect(WLPhase.QUALIFIED).toBe("QUALIFIED");
       expect(WLPhase.IN_QUEUE).toBe("IN_QUEUE");
       expect(WLPhase.SLOT_ALLOCATED).toBe("SLOT_ALLOCATED");
+
+      expect(WLSlotReviewStatus.NOT_REVIEWED).toBe("NOT_REVIEWED");
+      expect(WLSlotReviewStatus.UNDER_REVIEW).toBe("UNDER_REVIEW");
+      expect(WLSlotReviewStatus.VALID).toBe("VALID");
+      expect(WLSlotReviewStatus.FLAGGED).toBe("FLAGGED");
     });
 
     it("exports gift status transitions and campaign compatibility modes", () => {
@@ -140,6 +147,15 @@ describe("Stage 1 Data Model & Database Foundation", () => {
     it("verifies WLSlot enforces one slot per user and slotNumber uniqueness per program", () => {
       expect(schemaContent).toContain("@@unique([programId, slotNumber])");
       expect(schemaContent).toContain("@@unique([programId, userId])");
+    });
+
+    it("verifies WLSlot contains GTD post-allocation review fields and index", () => {
+      expect(schemaContent).toContain("enum WLSlotReviewStatus");
+      expect(schemaContent).toMatch(/reviewStatus\s+WLSlotReviewStatus\s+@default\(NOT_REVIEWED\)/);
+      expect(schemaContent).toMatch(/reviewedAt\s+DateTime\?/);
+      expect(schemaContent).toMatch(/reviewedBy\s+String\?/);
+      expect(schemaContent).toMatch(/reviewNotes\s+String\?/);
+      expect(schemaContent).toContain("@@index([programId, reviewStatus])");
     });
 
     it("verifies WLQueueEntry enforces unique queueNumber tie-breaker per program", () => {
@@ -213,6 +229,25 @@ describe("Stage 1 Data Model & Database Foundation", () => {
       expect(sqlContent).toContain('ALTER TABLE "User"');
       expect(sqlContent).toContain('"avatarPng" BYTEA');
       expect(sqlContent).toContain('"avatarUpdatedAt" TIMESTAMP(3)');
+    });
+
+    it("verifies WLSlot review status migration exists and adds review columns and index", () => {
+      const reviewMigrationPath = path.resolve(
+        __dirname,
+        "../prisma/migrations/20261101000000_add_wl_slot_review_status/migration.sql",
+      );
+      expect(fs.existsSync(reviewMigrationPath)).toBe(true);
+      const sqlContent = fs.readFileSync(reviewMigrationPath, "utf-8");
+
+      expect(sqlContent).toContain('CREATE TYPE "WLSlotReviewStatus" AS ENUM (\'NOT_REVIEWED\', \'UNDER_REVIEW\', \'VALID\', \'FLAGGED\')');
+      expect(sqlContent).toContain('ALTER TABLE "WLSlot"');
+      expect(sqlContent).toContain('"reviewStatus" "WLSlotReviewStatus" NOT NULL DEFAULT \'NOT_REVIEWED\'');
+      expect(sqlContent).toContain('"reviewNotes" TEXT');
+      expect(sqlContent).toContain('"reviewedAt" TIMESTAMP(3)');
+      expect(sqlContent).toContain('"reviewedBy" TEXT');
+      expect(sqlContent).toContain(
+        'CREATE INDEX "WLSlot_programId_reviewStatus_idx" ON "WLSlot"("programId", "reviewStatus")',
+      );
     });
   });
 });

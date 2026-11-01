@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "WLSlotStatus" ADD VALUE 'REVOKED_SYSTEM';
