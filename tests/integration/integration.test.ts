@@ -472,6 +472,16 @@ function createIntegrationDatabase() {
         }),
       },
       promoCampaign: {
+        findFirst: vi.fn(async ({ where }: any) => {
+          return (
+            store.campaigns.find((item) => {
+              if (where?.id && item.id !== where.id) return false;
+              if (where?.slug && item.slug !== where.slug) return false;
+              if (where?.wlProgramId && item.wlProgramId !== where.wlProgramId) return false;
+              return true;
+            }) ?? null
+          );
+        }),
         findUnique: vi.fn(async ({ where }: any) => {
           const c = store.campaigns.find(
             (item) => item.id === where.id || item.slug === where.slug,
@@ -1461,14 +1471,14 @@ describe("Task 5-A: Integration Tests Suite (End-to-End User & Admin Flows)", ()
     expect(revokeResult.success).toBe(true);
     expect(revokeResult.status).toBe("REVOKED_MANUAL_ADMIN");
 
-    // Event-driven queue reconciliation automatically promotes the waiting user (Task O-6)
-    const reconciledSlot = db.store.slots.find(
+    // DEC-016 & DEC-018: Slot is left vacant upon revocation with zero auto-promotion
+    const promotedSlot = db.store.slots.find(
       (s) => s.userId === queuedUserId && s.status === "ALLOCATED",
     );
-    expect(reconciledSlot).toBeDefined();
-    expect(prog.allocatedSlotsCount).toBe(1);
+    expect(promotedSlot).toBeUndefined();
+    expect(prog.allocatedSlotsCount).toBe(0);
 
-    // Any manual/subsequent queue reconciliation safely finds no open slots (idempotent no-op)
+    // Queue reconciliation is deprecated and returns 0 slots filled per DEC-018
     const reconcileResult = await reconcileQueueSlots(prisma, wlProgramId, now);
     expect(reconcileResult.slotsFilled).toBe(0);
 

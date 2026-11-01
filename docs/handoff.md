@@ -1,7 +1,7 @@
-# Technical Handoff Document: Stage 1
+# Technical Handoff Document: Stage 6
 
-**Date**: October 13, 2026  
-**Status**: Stage 1 Complete (Data Model & Database Foundation)  
+**Date**: October 30, 2026  
+**Status**: Stage 6 Complete — Production Ready (Core Modules & Security Hardening Complete)  
 **Workspace**: `/Users/hermawanprastiyanto/Desktop/ChimpHood Site`
 
 ---
@@ -123,7 +123,7 @@ Under Prisma 7 conventions, schema datasource migration and configuration reside
   npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script --output prisma/migrations/20261013000000_init_chimphood_stage1/migration.sql
   ```
 - Migration file location: `prisma/migrations/20261013000000_init_chimphood_stage1/migration.sql` (876 lines of PostgreSQL DDL covering CREATE TYPE, CREATE TABLE, CREATE INDEX, and ADD CONSTRAINT).
-- **WARNING**: This migration has **NOT YET BEEN APPLIED** to any live database. Production Supabase and remote databases were not connected or altered, per Stage 1 constraints.
+- **Historical Stage 1 Note**: In Stage 1, this initial migration was intentionally generated offline without remote database connectivity. As of October 30, 2026 (Task O-4), this migration and all subsequent migrations have been fully applied and verified against the live production Supabase PostgreSQL database in Seoul (`Database schema is up to date!`). See [Section 15](#15-task-o-4--remote-database-migration--production-database-setup-oct-30-2026--completed) for full verification details.
 
 ### 4.3 Prerequisites & Local Database Application Steps (Upon Approval)
 
@@ -709,5 +709,109 @@ Comprehensive browser end-to-end automation suite implemented with `@playwright/
 
 1. **Multi-IP HTTP Load Testing**: **RESOLVED / COMPLETED** (verified via RFC 5737 deterministic simulation on local HTTP harness).
 2. **Browser E2E Testing**: **RESOLVED / COMPLETED** (12/12 automated Playwright tests passing across navigation, wallet connect, SIWE auth, session persistence, protected routes, and profile).
-3. **Physical MetaMask Browser Extension Popup (Manual Verification Boundary)**:
-   - Automated E2E verification covers the complete browser interaction lifecycle via controlled EIP-1193/EIP-6963 provider with real cryptographic ECDSA signatures. Physical popup window interactions rendered by third-party browser extensions (e.g., clicking inside the actual Chrome extension popup iframe) remain outside automated headless CI scope and are verified manually out-of-band.
+3. **Physical MetaMask Browser Extension Popup (Manual Verification Boundary — Task O-3)**: **RESOLVED / COMPLETED** (manually verified in real browser with physical MetaMask extension on Oct 30, 2026).
+4. **Remote Database Migration & Production Setup (Task O-4)**: **RESOLVED / COMPLETED** (verified against live Supabase PostgreSQL production instance in Seoul on Oct 30, 2026; all 4 migrations applied, schema up-to-date, zero pending migrations).
+
+---
+
+## 14. Task O-3 — Physical MetaMask Browser Extension Manual Verification (Oct 30, 2026) — COMPLETED
+
+### 14.1 Scope & Verification Boundary
+
+Automated Playwright E2E testing validated the end-to-end cryptographic and HTTP flows via controlled in-page EIP-1193 / EIP-6963 provider simulation. Task O-3 performed the final out-of-band manual verification using a real browser with the physical MetaMask extension installed to exercise physical extension popups, user approvals, and complete session lifecycles.
+
+### 14.2 Actual Test Execution Results
+
+All manual verification scenarios executed successfully against the local Next.js development server:
+
+1. **Provider Discovery & Detection**:
+   - Physical MetaMask extension was immediately and correctly detected via wagmi's custom `metaMaskConnector` (EIP-6963 announcement with `rdns: "io.metamask"`).
+   - "Connect Wallet" button displayed MetaMask in the connector options.
+2. **Wallet Connection**:
+   - Selecting MetaMask successfully triggered the native physical MetaMask extension popup window.
+   - Account selection and connection approval completed without RPC errors.
+3. **SIWE Authentication**:
+   - Initiating "Sign In" requested an address-bound nonce via `POST /api/auth/nonce`.
+   - Physical MetaMask signature popup prompt appeared with the canonical EIP-4361 SIWE challenge statement (`Sign in to ChimpHood`).
+   - Signing the challenge produced an authentic ECDSA signature verified by `POST /api/auth/verify`.
+   - Server authenticated the user, persisted session records, and issued the encrypted `chimphood_session` HttpOnly cookie.
+4. **Session Persistence**:
+   - Full browser page reload (hard refresh) preserved the active authenticated session.
+   - Navbar and Profile view seamlessly re-authenticated via `GET /api/auth/session` without re-prompting the wallet.
+5. **Logout & Session Termination**:
+   - Initiating "Sign out" triggered `POST /api/auth/logout`, destroying the server session token in the database.
+   - Logout HTTP response explicitly cleared the session cookie (`Set-Cookie: chimphood_session=...; Max-Age=0`).
+   - Subsequent `GET /api/auth/session` calls returned `{"authenticated": false}`.
+   - Client UI cleanly reset to unauthenticated state, returning to display the "Connect Wallet" button.
+
+---
+
+## 15. Task O-4 — Remote Database Migration & Production Database Setup (Oct 30, 2026) — COMPLETED
+
+### 15.1 Scope & Target Architecture
+
+Task O-4 validates and finalizes the remote PostgreSQL production database configuration, ensuring complete structural parity between the Prisma schema, migration history, and the live production database deployed on Supabase:
+
+- **Target Database**: Supabase PostgreSQL deployed in AWS Seoul (`aws-0-ap-northeast-2.pooler.supabase.com:5432`).
+- **Application Server Co-location**: Vercel Serverless Functions configured in the `icn1` region (Incheon / Seoul, South Korea via `vercel.json`) to minimize round-trip database query latency.
+- **Connection Architecture**: Prisma Client initialized with `@prisma/adapter-pg` and pooled via `pg.Pool` (`DATABASE_POOL_MAX: 2`, `idleTimeoutMillis: 10000`, `connectionTimeoutMillis: 5000`) in `lib/prisma.ts` to prevent connection exhaustion on the Supabase Transaction Pooler.
+- **Local Database Role Clarification**: Local PostgreSQL (`chimphood_test`) serves strictly as an isolated, non-authoritative test harness for local multi-IP load tests (`tests/load/verify-stock-invariants.ts`). Local database state is intentionally decoupled from production; no local data is migrated or replicated to production.
+
+### 15.2 Migration History & Physical Schema Verification
+
+A comprehensive read-only audit confirmed that all 26 entity models, 22 enums, constraints, and performance indexes required by the application are physically present and active in the production database:
+
+1. **Applied Migrations in `_prisma_migrations`**:
+   - `20261013000000_init_chimphood_stage1` (Applied 2026-10-15T19:24:17Z): Initial foundational DDL covering 26 entity models and 22 enums.
+   - `20261013000001_add_stock_check_constraints` (Applied 2026-10-23T12:59:27Z): Non-negative stock CHECK constraints on `DropPoolItem`.
+   - `20261013000002_add_user_avatar_fields` (Applied 2026-10-24T10:07:34Z): User avatar storage columns (`avatarPng BYTEA`, `avatarUpdatedAt TIMESTAMP(3)`).
+   - `20261026000000_add_drop_cycle_duration_hours` (Resolved 2026-10-30T09:58:06Z): Configurable drop cycle duration (`cycleDurationHours INTEGER NOT NULL DEFAULT 2`).
+
+2. **Metadata Synchronization (`prisma migrate resolve`)**:
+   - Physical audit confirmed that `Drop.cycleDurationHours` was already physically created in the production database with exact specifications (`INTEGER`, `NOT NULL`, `DEFAULT 2`), but had not been recorded in `_prisma_migrations`.
+   - Executed safe metadata-only reconciliation:
+     ```bash
+     npx prisma migrate resolve --applied 20261026000000_add_drop_cycle_duration_hours
+     ```
+   - No destructive DDL, schema push, or table resets were performed.
+
+### 15.3 Verification Results
+
+```bash
+npx prisma migrate status
+```
+
+**Verification Output**:
+
+- **Migrations Checked**: 4 migrations found in `prisma/migrations`.
+- **Pending Migrations**: **0 (None)**.
+- **Schema Status**: **Database schema is up to date!**
+- **Operational Data Invariants**: Production database contains live operational data across core tables (`User`, `WalletIdentity`, `Drop`, `DropPoolItem`, `DropPeriod`, `AuditLog`) with all foreign keys and constraints intact.
+
+---
+
+## 16. Whitelist Program Canonical Capacity & Safeguards Directive (Nov 1, 2026 — DEC-021)
+
+### 16.1 Decision Correction
+- **Canonical Initial Capacity**: The initial capacity of the ChimpHood Whitelist (`WLProgram.totalSlots`) is formally corrected to **1,000 slots** (superseding any previous reference to 2,000 slots).
+- **Target Configuration**: Future creation of the canonical `WLProgram` will configure `totalSlots = 1000`.
+
+### 16.2 Current Operational Boundaries & Guardrails
+1. **No Early WLProgram Creation**: Creation of the production/development canonical `WLProgram` record is deferred until backend safeguards and integration testing are fully completed.
+2. **No SQL Writes or Database Seeding**: Zero SQL inserts, updates, or data seeds are to be executed against remote or production databases during this stage.
+3. **Preservation of Existing Architecture**: All other architectural decisions (DEC-001 through DEC-020) remain final and unchanged.
+4. **Active Backend Safeguards**:
+   - **Safeguard 1 — Shared Pessimistic Capacity Guard** (`server/whitelist/capacity-guard.ts`): Acquires `SELECT ... FOR UPDATE` row lock on `WLProgram` inside interactive transactions, ensuring serialization across instant qualification allocation and admin manual grant, guaranteeing $0 \le \text{allocatedSlotsCount} \le \text{totalSlots}$ ($1,000$).
+   - **Safeguard 2 — Conditional Atomic Revocation & Vacant Record Reuse** (`server/whitelist/revoke.ts`, `server/admin/manual-grant.ts`): Strict lower-bound enforcement preventing `allocatedSlotsCount` underflow below 0 on revoke, alongside conditional `updateMany` (`count === 1`) for safe reuse of revoked slot records without unique constraint collisions.
+
+---
+
+## 17. GTD Revocation Full Whitelist Disqualification Policy (Nov 1, 2026 — DEC-022)
+
+### 17.1 Core Policy Rules
+1. **Full Whitelist Program Disqualification**: Revocation of an active GTD slot (`REVOKED_MANUAL_ADMIN` or `REVOKED_SYSTEM`) immediately and automatically disqualifies the user from the entire Whitelist program, including OpenSea FCFS.
+2. **FCFS Export Exclusion**: While the user's `WLQueueEntry` record is retained immutably for sequential audit trail integrity, revoked participants are strictly excluded from OpenSea FCFS CSV exports (`chimphood-fcfs-allowlist.csv`) and categorized under `bannedOrDisqualifiedCount` in pre-export audit summaries.
+3. **API Status Priority**: `GET /api/whitelist/status` strictly prioritizes `phase: "REVOKED"` over `phase: "FCFS_REGISTERED"` for any user with a revoked slot or qualification history who does not hold an active GTD slot.
+4. **Prevention of Auto-Restoration & Auto-Promotion**: The qualification evaluation engine (`evaluateUserQualification`) strictly blocks auto-restoration or auto-qualification for revoked participants; write evaluations return `phase: "REVOKED"` with `qualified: false`.
+5. **Recovery Governance**: Restoration may only occur through an explicit, authorized administrative action recorded in the immutable `AuditLog`. Auto-restoration and auto-promotion are strictly prohibited.
+
