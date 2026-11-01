@@ -283,10 +283,26 @@ export function __setTestOAuthRedis(client: XOAuthRedisTarget | null): void {
   customOAuthRedis = client;
 }
 
+export const DEFAULT_X_API_BASE_URL = "https://api.twitter.com";
+
+/**
+ * Returns the base URL for Twitter / X REST API outbound requests.
+ * Defaults to "https://api.twitter.com" for production and standard development.
+ * Allows overriding via X_API_BASE_URL (e.g. for local mock server during E2E testing).
+ */
+export function getXApiBaseUrl(): string {
+  const envUrl = process.env.X_API_BASE_URL?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, "");
+  }
+  return DEFAULT_X_API_BASE_URL;
+}
+
 export interface XConfig {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
+  apiBaseUrl: string;
 }
 
 export function getXConfig(): XConfig | null {
@@ -298,7 +314,12 @@ export function getXConfig(): XConfig | null {
     return null;
   }
 
-  return { clientId, clientSecret, redirectUri };
+  return {
+    clientId,
+    clientSecret,
+    redirectUri,
+    apiBaseUrl: getXApiBaseUrl(),
+  };
 }
 
 export function isXConfigured(): boolean {
@@ -365,7 +386,9 @@ export async function linkXAccountWithCode(
     "base64",
   );
 
-  const tokenRes = await fetch("https://api.twitter.com/2/oauth2/token", {
+  const apiBase = config.apiBaseUrl || getXApiBaseUrl();
+
+  const tokenRes = await fetch(`${apiBase}/2/oauth2/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -392,7 +415,7 @@ export async function linkXAccountWithCode(
 
   // Fetch authenticated user profile
   const meRes = await fetch(
-    "https://api.twitter.com/2/users/me?user.fields=profile_image_url",
+    `${apiBase}/2/users/me?user.fields=profile_image_url`,
     {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
