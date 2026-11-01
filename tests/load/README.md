@@ -111,3 +111,58 @@ Runs 4 rigorous concurrency scenarios:
 2. **100 Concurrent claims with 100 stock available**: Confirms 100% successful claim allocation with sequential, distinct editions.
 3. **Sybil Race (100 concurrent claims from the SAME user)**: Confirms strictly 1 claim succeeds and 99 are rejected with 409 `ALREADY_CLAIMED_IN_PERIOD` or `STOCK_RACE_EXHAUSTED`.
 4. **Emergency Cancellation mid-flight**: Confirms immediate cessation of claims and zero inventory leaks.
+
+---
+
+## 5. Whitelist Qualification Load Tests (`/api/whitelist/qualify`)
+
+Repeatable load testing scripts and tools for verifying concurrency invariants on `POST /api/whitelist/qualify` under up to **100 concurrent requests**.
+
+### Whitelist Scripts Overview
+
+| File                                               | Purpose                                                                                                                                                                          |
+| :------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/load/autocannon-whitelist-qualify.mjs`     | **Native Concurrency Runner**: Configurable multi-user, duplicate-request, and last-slot contention scenarios with latency percentiles and phase breakdowns.                    |
+| `tests/load/k6-whitelist-qualify.js`              | **k6 Load Test Script**: Multi-stage VU scenarios (smoke, ramp, target_50, target_100) verifying qualification phases and HTTP statuses.                                     |
+| `tests/load/seed-whitelist-test-data.ts`          | **Whitelist Data Seeder**: Generates test WLProgram, mandatory trait inventory, 150 test users, and sealed iron-session cookies.                                                 |
+| `tests/load/verify-whitelist-invariants.ts`       | **Post-Test Invariant Auditor**: Verifies `allocatedSlotsCount <= totalSlots`, counter non-negative, active slot count matches counter, 100% unique user GTDs, and unique slot #s. |
+| `tests/load/whitelist-concurrency.test.ts`        | **Vitest In-Process Test Suite**: Unit and invariant validation tests for the whitelist load testing runner and verification logic.                                             |
+
+### Step-by-Step Whitelist Load Test Execution
+
+#### Step 1: Seed Test Data in Isolated PostgreSQL
+```bash
+DATABASE_URL="postgresql://localhost:5432/chimphood_test" \
+npx tsx tests/load/seed-whitelist-test-data.ts --slots=20 --users=150
+```
+
+#### Step 2: Start Application Server with Test DB
+```bash
+DATABASE_URL="postgresql://localhost:5432/chimphood_test" PORT=3000 npx next dev
+```
+
+#### Step 3: Run Load Test Scenarios
+```bash
+# Baseline smoke test (5 concurrent clients)
+node tests/load/autocannon-whitelist-qualify.mjs --connections 5 --scenario multi-user
+
+# 50 Concurrent clients (Multi-user qualification)
+node tests/load/autocannon-whitelist-qualify.mjs --connections 50 --scenario multi-user
+
+# 100 Concurrent clients (Target load)
+node tests/load/autocannon-whitelist-qualify.mjs --connections 100 --scenario multi-user
+
+# Duplicate request scenario (1 user spamming 50 concurrent requests)
+node tests/load/autocannon-whitelist-qualify.mjs --connections 50 --scenario duplicate
+
+# Last-slot contention scenario (e.g. 50 users competing for 10 slots)
+# Reset program with 10 slots:
+DATABASE_URL="postgresql://localhost:5432/chimphood_test" npx tsx tests/load/seed-whitelist-test-data.ts --reset --slots=10
+node tests/load/autocannon-whitelist-qualify.mjs --connections 50 --scenario multi-user
+```
+
+#### Step 4: Verify Database Invariants Post-Test
+```bash
+DATABASE_URL="postgresql://localhost:5432/chimphood_test" \
+npx tsx tests/load/verify-whitelist-invariants.ts --programId program-load-test
+```
