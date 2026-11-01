@@ -556,37 +556,30 @@ describe("updateCampaignTask", () => {
     expect(capturedAudit.newValues.title).toBe("Brand New Title");
   });
 
-  it("updates taskCode when no collision exists", async () => {
-    const result = await updateCampaignTask(prisma, {
-      campaignId: "camp_1",
-      versionIdentifier: "1",
-      taskId,
-      adminUserId: "admin_1",
-      taskCode: "NEW_CODE_HERE",
-    });
-
-    expect(result.task.taskCode).toBe("NEW_CODE_HERE");
-  });
-
-  it("throws 409 when updated taskCode collides with another task in the same version", async () => {
-    // create second task
-    await createCampaignTask(prisma, {
-      campaignId: "camp_1",
-      versionIdentifier: "1",
-      adminUserId: "admin_1",
-      taskCode: "SECOND_CODE",
-      title: "Second Task",
-    });
-
+  it("rejects taskCode mutation with 422 IMMUTABLE_TASK_CODE", async () => {
     await expect(
       updateCampaignTask(prisma, {
         campaignId: "camp_1",
         versionIdentifier: "1",
         taskId,
         adminUserId: "admin_1",
-        taskCode: "SECOND_CODE",
+        taskCode: "NEW_CODE_HERE",
       }),
-    ).rejects.toMatchObject({ code: "TASK_CODE_CONFLICT", status: 409 });
+    ).rejects.toMatchObject({ code: "IMMUTABLE_TASK_CODE", status: 422 });
+  });
+
+  it("allows passing the identical taskCode without error", async () => {
+    const result = await updateCampaignTask(prisma, {
+      campaignId: "camp_1",
+      versionIdentifier: "1",
+      taskId,
+      adminUserId: "admin_1",
+      taskCode: "INITIAL_CODE",
+      title: "Updated Title",
+    });
+
+    expect(result.task.taskCode).toBe("INITIAL_CODE");
+    expect(result.task.title).toBe("Updated Title");
   });
 
   it("throws 404 when taskId is not found", async () => {

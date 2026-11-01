@@ -76,6 +76,90 @@ export async function GET(request: Request): Promise<Response> {
       for (const p of progresses) {
         taskProgressMap.set(p.taskId, p);
       }
+
+      // Check carry-over for tasks in LEGACY_CARRIED versions that lack direct progress
+      for (const c of campaigns) {
+        const version = c.versions[0] ?? null;
+        if (!version || version.compatibilityMode !== "LEGACY_CARRIED" || !version.compatibleFromVersionId) {
+          continue;
+        }
+
+        for (const task of version.tasks) {
+          if (taskProgressMap.has(task.id)) continue;
+
+          let ancestorVersionId: string | null = version.compatibleFromVersionId;
+          const visited = new Set<string>([version.id]);
+
+          while (ancestorVersionId) {
+            if (visited.has(ancestorVersionId)) break;
+            visited.add(ancestorVersionId);
+
+            const ancestorVersion: {
+              id: string;
+              campaignId: string;
+              compatibilityMode: string;
+              compatibleFromVersionId: string | null;
+            } | null = await prisma.campaignVersion.findUnique({
+              where: { id: ancestorVersionId },
+              select: {
+                id: true,
+                campaignId: true,
+                compatibilityMode: true,
+                compatibleFromVersionId: true,
+              },
+            });
+
+            if (!ancestorVersion || ancestorVersion.campaignId !== c.id) break;
+
+            const ancestorTask = await prisma.campaignTask.findUnique({
+              where: {
+                versionId_taskCode: {
+                  versionId: ancestorVersion.id,
+                  taskCode: task.taskCode,
+                },
+              },
+              select: { id: true },
+            });
+
+            if (ancestorTask) {
+              const ancestorProgress = await prisma.taskProgress.findUnique({
+                where: {
+                  userId_versionId_taskId: {
+                    userId: session.userId,
+                    versionId: ancestorVersion.id,
+                    taskId: ancestorTask.id,
+                  },
+                },
+                include: {
+                  evidenceSubmissions: {
+                    where: { status: "APPROVED" },
+                    orderBy: { createdAt: "desc" },
+                  },
+                },
+              });
+
+              if (
+                ancestorProgress &&
+                (ancestorProgress.status === "VERIFIED" ||
+                  (ancestorProgress.evidenceSubmissions &&
+                    ancestorProgress.evidenceSubmissions.length > 0))
+              ) {
+                taskProgressMap.set(task.id, ancestorProgress);
+                break;
+              }
+            }
+
+            if (
+              ancestorVersion.compatibilityMode === "LEGACY_CARRIED" &&
+              ancestorVersion.compatibleFromVersionId
+            ) {
+              ancestorVersionId = ancestorVersion.compatibleFromVersionId;
+            } else {
+              break;
+            }
+          }
+        }
+      }
     }
 
     const formattedCampaigns = campaigns.map((c) => {

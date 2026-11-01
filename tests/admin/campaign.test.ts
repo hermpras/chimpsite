@@ -68,6 +68,16 @@ function createMockPrisma() {
         }),
       },
       promoCampaign: {
+        findFirst: vi.fn(async ({ where }: any) => {
+          return (
+            store.campaigns.find(
+              (x) =>
+                (!where?.id || x.id === where.id) &&
+                (!where?.slug || x.slug === where.slug) &&
+                (!where?.wlProgramId || x.wlProgramId === where.wlProgramId),
+            ) ?? null
+          );
+        }),
         findUnique: vi.fn(async ({ where, include }: any) => {
           const c = store.campaigns.find(
             (x) =>
@@ -199,12 +209,21 @@ function createMockPrisma() {
     return { tx, rollback };
   };
 
+  let lockQueue: Promise<void> = Promise.resolve();
+
   const mockPrisma: any = {
     __store: store,
     __hooks: hooks,
 
-    // Outer $transaction simulates commit/rollback behavior
+    // Outer $transaction simulates commit/rollback behavior and transaction serialization
     $transaction: vi.fn(async (fn: (tx: any) => Promise<any>) => {
+      const prevLock = lockQueue;
+      let releaseLock!: () => void;
+      lockQueue = new Promise<void>((resolve) => {
+        releaseLock = resolve;
+      });
+      await prevLock;
+
       const { tx, rollback } = createTxClient();
       try {
         const result = await fn(tx);
@@ -212,11 +231,23 @@ function createMockPrisma() {
       } catch (err) {
         rollback();
         throw err;
+      } finally {
+        releaseLock();
       }
     }),
 
     // Top-level read methods (used by getCampaign / listCampaigns which don't use tx)
     promoCampaign: {
+      findFirst: vi.fn(async ({ where }: any) => {
+        return (
+          store.campaigns.find(
+            (x) =>
+              (!where?.id || x.id === where.id) &&
+              (!where?.slug || x.slug === where.slug) &&
+              (!where?.wlProgramId || x.wlProgramId === where.wlProgramId),
+          ) ?? null
+        );
+      }),
       findUnique: vi.fn(async ({ where, include }: any) => {
         const c = store.campaigns.find(
           (x) => (where.id && x.id === where.id) || (where.slug && x.slug === where.slug),
@@ -356,14 +387,60 @@ describe("createCampaign", () => {
   });
 
   it("throws 409 when slug is already taken", async () => {
+    seedProgram(prisma, "prog_2");
     await createCampaign(prisma, makeCampaignInput());
 
     await expect(
-      createCampaign(prisma, makeCampaignInput({ slug: "test-campaign" })),
+      createCampaign(prisma, makeCampaignInput({ slug: "test-campaign", wlProgramId: "prog_2" })),
     ).rejects.toMatchObject({
       code: "SLUG_CONFLICT",
       status: 409,
     });
+  });
+
+  it("throws 409 CAMPAIGN_ALREADY_EXISTS when WL Program already has a campaign", async () => {
+    await createCampaign(prisma, makeCampaignInput());
+
+    await expect(
+      createCampaign(prisma, makeCampaignInput({ slug: "second-campaign" })),
+    ).rejects.toMatchObject({
+      code: "CAMPAIGN_ALREADY_EXISTS",
+      status: 409,
+    });
+  });
+
+  it("allows creating a campaign for a different WL Program", async () => {
+    seedProgram(prisma, "prog_2");
+    await createCampaign(prisma, makeCampaignInput({ slug: "campaign-prog-1" }));
+
+    const second = await createCampaign(
+      prisma,
+      makeCampaignInput({ slug: "campaign-prog-2", wlProgramId: "prog_2" }),
+    );
+    expect(second.success).toBe(true);
+    expect(second.campaign.wlProgramId).toBe("prog_2");
+  });
+
+  it("rejects two parallel createCampaign calls for the same WL Program, allowing only one to succeed", async () => {
+    const results = await Promise.allSettled([
+      createCampaign(prisma, makeCampaignInput({ slug: "parallel-campaign-1" })),
+      createCampaign(prisma, makeCampaignInput({ slug: "parallel-campaign-2" })),
+    ]);
+
+    const fulfilled = results.filter((r) => r.status === "fulfilled");
+    const rejected = results.filter((r) => r.status === "rejected");
+
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    if (rejected[0].status === "rejected") {
+      expect(rejected[0].reason).toMatchObject({
+        code: "CAMPAIGN_ALREADY_EXISTS",
+        status: 409,
+      });
+    }
+
+    const campaignsInDb = prisma.__store.campaigns.filter((c: any) => c.wlProgramId === "prog_1");
+    expect(campaignsInDb).toHaveLength(1);
   });
 
   it("throws 422 for invalid slug format (uppercase)", async () => {
@@ -665,6 +742,7 @@ describe("listCampaigns", () => {
     prisma = createMockPrisma();
     seedProgram(prisma);
     seedProgram(prisma, "prog_2");
+    seedProgram(prisma, "prog_3");
 
     await createCampaign(
       prisma,
@@ -672,11 +750,11 @@ describe("listCampaigns", () => {
     );
     await createCampaign(
       prisma,
-      makeCampaignInput({ slug: "campaign-b", wlProgramId: "prog_1" }),
+      makeCampaignInput({ slug: "campaign-b", wlProgramId: "prog_2" }),
     );
     await createCampaign(
       prisma,
-      makeCampaignInput({ slug: "campaign-c", wlProgramId: "prog_2" }),
+      makeCampaignInput({ slug: "campaign-c", wlProgramId: "prog_3" }),
     );
   });
 
@@ -690,7 +768,7 @@ describe("listCampaigns", () => {
   it("filters by wlProgramId", async () => {
     const result = await listCampaigns(prisma, { wlProgramId: "prog_1" });
 
-    expect(result.total).toBe(2);
+    expect(result.total).toBe(1);
     expect(result.campaigns.every((c) => c.wlProgramId === "prog_1")).toBe(true);
   });
 

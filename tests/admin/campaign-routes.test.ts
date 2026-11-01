@@ -4,6 +4,10 @@ import {
   GET as DETAIL_GET,
   PUT as UPDATE_PUT,
 } from "@/app/api/admin/campaigns/[id]/route";
+import {
+  GET as VERSIONS_GET,
+  POST as VERSIONS_POST,
+} from "@/app/api/admin/campaigns/[id]/versions/route";
 import * as campaignService from "@/server/admin/campaign";
 import { AdminCampaignError } from "@/server/admin/campaign";
 
@@ -130,6 +134,32 @@ describe("Campaign API Routes Testing", () => {
       expect(data.success).toBe(true);
       expect(data.campaign.title).toBe("New Campaign");
     });
+
+    it("returns 409 when campaign already exists for WL program", async () => {
+      vi.spyOn(campaignService, "createCampaign").mockRejectedValueOnce(
+        new AdminCampaignError(
+          "CAMPAIGN_ALREADY_EXISTS",
+          "A promo campaign already exists for this WL program. Only one main campaign is allowed.",
+          409,
+        ),
+      );
+
+      const req = new Request("http://localhost:3000/api/admin/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: "second-slug",
+          title: "Second Campaign",
+          wlProgramId: "wl-1",
+        }),
+      });
+
+      const res = await CREATE_POST(req);
+      expect(res.status).toBe(409);
+      const data = await res.json();
+      expect(data.error).toBe("CAMPAIGN_ALREADY_EXISTS");
+      expect(data.message).toContain("Only one main campaign is allowed");
+    });
   });
 
   // 3. PUT /api/admin/campaigns/[id] (Perubahan Status)
@@ -243,6 +273,115 @@ describe("Campaign API Routes Testing", () => {
       expect(data.message).toContain(
         "status must be one of: DRAFT, ACTIVE, PAUSED, ARCHIVED.",
       );
+    });
+  });
+
+  // 4. GET /api/admin/campaigns/[id]/versions
+  describe("GET /api/admin/campaigns/[id]/versions (Daftar Versi)", () => {
+    it("returns list of versions successfully", async () => {
+      vi.spyOn(campaignService, "listCampaignVersions").mockResolvedValueOnce({
+        versions: [
+          {
+            id: "ver-2",
+            campaignId: "camp-1",
+            versionNumber: 2,
+            isCurrent: true,
+            compatibilityMode: "LEGACY_CARRIED",
+            compatibleFromVersionId: "ver-1",
+            startsAt: new Date().toISOString(),
+            endsAt: null,
+            changeNotes: "v2 launch",
+            createdAt: new Date().toISOString(),
+            taskCount: 3,
+            tasks: [],
+          },
+        ],
+        total: 1,
+      });
+
+      const req = new Request("http://localhost:3000/api/admin/campaigns/camp-1/versions", {
+        method: "GET",
+      });
+
+      const res = await VERSIONS_GET(req, { params: Promise.resolve({ id: "camp-1" }) });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.total).toBe(1);
+      expect(data.versions[0].versionNumber).toBe(2);
+      expect(data.versions[0].compatibilityMode).toBe("LEGACY_CARRIED");
+    });
+
+    it("returns 404 when campaign is not found", async () => {
+      vi.spyOn(campaignService, "listCampaignVersions").mockRejectedValueOnce(
+        new AdminCampaignError("CAMPAIGN_NOT_FOUND", "Campaign not found", 404),
+      );
+
+      const req = new Request("http://localhost:3000/api/admin/campaigns/non-existent/versions", {
+        method: "GET",
+      });
+
+      const res = await VERSIONS_GET(req, { params: Promise.resolve({ id: "non-existent" }) });
+      expect(res.status).toBe(404);
+      const data = await res.json();
+      expect(data.error).toBe("CAMPAIGN_NOT_FOUND");
+    });
+  });
+
+  // 5. POST /api/admin/campaigns/[id]/versions
+  describe("POST /api/admin/campaigns/[id]/versions (Buat Versi Baru)", () => {
+    it("creates and publishes a new campaign version", async () => {
+      vi.spyOn(campaignService, "createCampaignVersion").mockResolvedValueOnce({
+        success: true,
+        version: {
+          id: "ver-2",
+          campaignId: "camp-1",
+          versionNumber: 2,
+          isCurrent: true,
+          compatibilityMode: "LEGACY_CARRIED",
+          compatibleFromVersionId: "ver-1",
+          startsAt: new Date().toISOString(),
+          endsAt: null,
+          changeNotes: "Updated tweet url",
+          createdAt: new Date().toISOString(),
+          taskCount: 2,
+          tasks: [],
+        },
+        auditLogId: "audit-version-2",
+      });
+
+      const req = new Request("http://localhost:3000/api/admin/campaigns/camp-1/versions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          changeNotes: "Updated tweet url",
+          taskUpdates: [
+            {
+              taskCode: "REPOST_ANNOUNCEMENT",
+              requirementMetadata: { tweetUrl: "https://x.com/ChimpHood/status/999" },
+            },
+          ],
+        }),
+      });
+
+      const res = await VERSIONS_POST(req, { params: Promise.resolve({ id: "camp-1" }) });
+      expect(res.status).toBe(201);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.version.versionNumber).toBe(2);
+      expect(data.version.compatibilityMode).toBe("LEGACY_CARRIED");
+    });
+
+    it("rejects invalid input body with 400 MALFORMED_JSON", async () => {
+      const req = new Request("http://localhost:3000/api/admin/campaigns/camp-1/versions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{not-valid-json",
+      });
+
+      const res = await VERSIONS_POST(req, { params: Promise.resolve({ id: "camp-1" }) });
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toBe("MALFORMED_JSON");
     });
   });
 });

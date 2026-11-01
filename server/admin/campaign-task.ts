@@ -534,25 +534,16 @@ export async function updateCampaignTask(
       );
     }
 
-    // 3. If taskCode changed, check collision
-    if (updateData.taskCode && updateData.taskCode !== task.taskCode) {
-      const existing = await tx.campaignTask.findUnique({
-        where: {
-          versionId_taskCode: {
-            versionId: version.id,
-            taskCode: updateData.taskCode,
-          },
-        },
-        select: { id: true },
-      });
-      if (existing) {
-        throw new AdminCampaignTaskError(
-          "TASK_CODE_CONFLICT",
-          `A task with taskCode '${updateData.taskCode}' already exists in version ${version.versionNumber}.`,
-          409,
-        );
-      }
+    // 3. Immutability guard: taskCode is permanent and cannot be changed
+    if (updateData.taskCode !== undefined && updateData.taskCode !== task.taskCode) {
+      throw new AdminCampaignTaskError(
+        "IMMUTABLE_TASK_CODE",
+        `taskCode is permanent and cannot be changed once created (attempted to change '${task.taskCode}' to '${updateData.taskCode}').`,
+        422,
+      );
     }
+    // Remove taskCode from updateData so it is never mutated in database
+    delete updateData.taskCode;
 
     const oldValues = {
       taskCode: task.taskCode,

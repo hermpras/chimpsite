@@ -2,8 +2,18 @@ import type {
   PrismaClient,
   CampaignStatus,
   CampaignCompatibilityMode,
+  TaskType,
 } from "@prisma/client";
 import { recordAuditLog } from "../audit/audit";
+import {
+  validateTaskCode,
+  validateTitle,
+  validateTaskType,
+  validatePoints,
+  validateSortOrder,
+  formatCampaignTaskOutput,
+  type CampaignTaskOutput,
+} from "./campaign-task";
 
 // ---------------------------------------------------------------------------
 // Error class
@@ -255,10 +265,21 @@ export async function createCampaign(
   }
 
   return await prisma.$transaction(async (tx) => {
+    // Acquire row-level lock on WLProgram to serialize concurrent campaign creation for the program
+    if (typeof (tx as any).$queryRaw === "function") {
+      try {
+        await (tx as any).$queryRaw`
+          SELECT id FROM "WLProgram" WHERE id = ${input.wlProgramId} FOR UPDATE
+        `;
+      } catch {
+        // Fallback for mocks / SQLite
+      }
+    }
+
     // 1. Verify WLProgram exists
     const program = await tx.wLProgram.findUnique({
       where: { id: input.wlProgramId },
-      select: { id: true },
+      select: { id: true, name: true },
     });
     if (!program) {
       throw new AdminCampaignError(
@@ -268,7 +289,27 @@ export async function createCampaign(
       );
     }
 
-    // 2. Check slug uniqueness
+    // 2. Guard: Only one main PromoCampaign is allowed per Whitelist Program
+    const existingForProgram =
+      typeof tx.promoCampaign.findFirst === "function"
+        ? await tx.promoCampaign.findFirst({
+            where: { wlProgramId: input.wlProgramId },
+            select: { id: true, title: true, slug: true },
+          })
+        : (await tx.promoCampaign.findMany({
+            where: { wlProgramId: input.wlProgramId },
+            take: 1,
+            select: { id: true, title: true, slug: true },
+          }))[0] ?? null;
+    if (existingForProgram) {
+      throw new AdminCampaignError(
+        "CAMPAIGN_ALREADY_EXISTS",
+        `A campaign already exists for Whitelist Program '${input.wlProgramId}' (campaign: "${existingForProgram.title}"). Only one main campaign is allowed per program.`,
+        409,
+      );
+    }
+
+    // 3. Check slug uniqueness
     const existing = await tx.promoCampaign.findUnique({
       where: { slug: input.slug },
       select: { id: true },
@@ -550,5 +591,440 @@ export async function listCampaigns(
   return {
     campaigns: campaigns.map(formatCampaignOutput),
     total: campaigns.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// createCampaignVersion & listCampaignVersions
+// ---------------------------------------------------------------------------
+
+export interface CampaignVersionDetailOutput extends CampaignVersionOutput {
+  campaignId: string;
+  compatibleFromVersionId: string | null;
+  taskCount: number;
+  tasks: CampaignTaskOutput[];
+}
+
+export interface CreateCampaignVersionResult {
+  success: true;
+  version: CampaignVersionDetailOutput;
+  auditLogId: string;
+}
+
+export interface ListCampaignVersionsResult {
+  versions: CampaignVersionDetailOutput[];
+  total: number;
+}
+
+export interface TaskOverrideInput {
+  taskId?: string;
+  taskCode: string;
+  title?: string;
+  description?: string | null;
+  taskType?: TaskType | string;
+  points?: number;
+  isRequired?: boolean;
+  sortOrder?: number;
+  requirementMetadata?: Record<string, unknown> | null;
+}
+
+export interface CreateCampaignVersionInput {
+  campaignId: string;
+  adminUserId: string;
+  changeNotes?: string | null;
+  startsAt?: string | Date;
+  endsAt?: string | Date | null;
+  compatibilityMode?: CampaignCompatibilityMode | string;
+  taskUpdates?: TaskOverrideInput[];
+  taskAdditions?: TaskOverrideInput[];
+  taskRemovals?: string[];
+  tasks?: TaskOverrideInput[];
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}
+
+/**
+ * Creates and publishes a new CampaignVersion.
+ * Atomically deactivates the current version, creates the new incremented version,
+ * clones and updates tasks, and records a CAMPAIGN_VERSION_CREATED audit log.
+ * Concurrency is guarded via row-level locking on PostgreSQL.
+ */
+export async function createCampaignVersion(
+  prisma: PrismaClient,
+  input: CreateCampaignVersionInput,
+): Promise<CreateCampaignVersionResult> {
+  if (!input.campaignId || typeof input.campaignId !== "string" || !input.campaignId.trim()) {
+    throw new AdminCampaignError("MISSING_CAMPAIGN_ID", "campaignId is required.", 422);
+  }
+  if (!input.adminUserId || typeof input.adminUserId !== "string" || !input.adminUserId.trim()) {
+    throw new AdminCampaignError("MISSING_ACTOR", "adminUserId is required.", 422);
+  }
+
+  const campaignId = input.campaignId.trim();
+  const startsAt = input.startsAt ? new Date(input.startsAt) : new Date();
+  if (isNaN(startsAt.getTime())) {
+    throw new AdminCampaignError("INVALID_STARTS_AT", "startsAt must be a valid date.", 422);
+  }
+
+  let endsAt: Date | null = null;
+  if (input.endsAt !== undefined && input.endsAt !== null) {
+    endsAt = new Date(input.endsAt);
+    if (isNaN(endsAt.getTime())) {
+      throw new AdminCampaignError("INVALID_ENDS_AT", "endsAt must be a valid date.", 422);
+    }
+    if (endsAt <= startsAt) {
+      throw new AdminCampaignError("INVALID_DATE_RANGE", "endsAt must be after startsAt.", 422);
+    }
+  }
+
+  const compatibilityMode: CampaignCompatibilityMode =
+    (input.compatibilityMode as CampaignCompatibilityMode) ?? "LEGACY_CARRIED";
+  if (!VALID_COMPATIBILITY_MODES.includes(compatibilityMode)) {
+    throw new AdminCampaignError(
+      "INVALID_COMPATIBILITY_MODE",
+      `compatibilityMode must be one of: ${VALID_COMPATIBILITY_MODES.join(", ")}.`,
+      422,
+    );
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    // 1. Acquire row lock on PromoCampaign to prevent concurrent version creation races
+    if (typeof (tx as any).$queryRaw === "function") {
+      try {
+        await (tx as any).$queryRaw`
+          SELECT id FROM "PromoCampaign" WHERE id = ${campaignId} FOR UPDATE
+        `;
+      } catch {
+        // Fallback for mocks/SQLite
+      }
+    }
+
+    // 2. Verify campaign exists and is not ARCHIVED
+    const campaign = await tx.promoCampaign.findUnique({
+      where: { id: campaignId },
+      select: { id: true, status: true, title: true },
+    });
+
+    if (!campaign) {
+      throw new AdminCampaignError("CAMPAIGN_NOT_FOUND", `Campaign '${campaignId}' was not found.`, 404);
+    }
+
+    if (campaign.status === "ARCHIVED") {
+      throw new AdminCampaignError("CAMPAIGN_ARCHIVED", "Cannot create a new version for an archived campaign.", 422);
+    }
+
+    // 3. Find active current version to branch from
+    const currentVersion = await tx.campaignVersion.findFirst({
+      where: { campaignId: campaign.id, isCurrent: true },
+      include: {
+        tasks: {
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        },
+      },
+    });
+
+    if (!currentVersion) {
+      throw new AdminCampaignError(
+        "NO_CURRENT_VERSION",
+        "Campaign does not have an active current version to branch from.",
+        404,
+      );
+    }
+
+    // 4. Calculate next version number securely
+    const allVersions = await tx.campaignVersion.findMany({
+      where: { campaignId: campaign.id },
+      select: { versionNumber: true },
+    });
+    const maxVer = allVersions.reduce((max, v) => (v.versionNumber > max ? v.versionNumber : max), 0);
+    const nextVersionNumber = maxVer + 1;
+
+    // 5. Build task list for new version
+    const existingTasksList =
+      Array.isArray(currentVersion.tasks)
+        ? currentVersion.tasks
+        : await tx.campaignTask.findMany({
+            where: { versionId: currentVersion.id },
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+          });
+
+    const existingTasksById = new Map<string, (typeof existingTasksList)[0]>();
+    const existingTasksByCode = new Map<string, (typeof existingTasksList)[0]>();
+    for (const et of existingTasksList) {
+      existingTasksById.set(et.id, et);
+      existingTasksByCode.set(et.taskCode, et);
+    }
+
+    let targetTasks: Array<{
+      taskCode: string;
+      title: string;
+      description: string | null;
+      taskType: TaskType;
+      points: number;
+      isRequired: boolean;
+      sortOrder: number;
+      requirementMetadata: Record<string, unknown> | null;
+    }> = [];
+
+    if (input.tasks && Array.isArray(input.tasks)) {
+      // Explicit full task replacement
+      for (const t of input.tasks) {
+        validateTaskCode(t.taskCode);
+        validateTitle(t.title ?? "");
+        const taskType = validateTaskType(t.taskType ?? "CUSTOM");
+        const points = validatePoints(t.points ?? 10);
+        const sortOrder = validateSortOrder(t.sortOrder ?? 0);
+
+        // STABLE TASK CODE ENFORCEMENT:
+        // If taskId is provided, verify it does not mutate taskCode of an existing task
+        if (t.taskId) {
+          const existing = existingTasksById.get(t.taskId.trim());
+          if (existing && t.taskCode.trim() !== existing.taskCode) {
+            throw new AdminCampaignError(
+              "IMMUTABLE_TASK_CODE",
+              `taskCode is permanent and cannot be changed for existing task '${existing.taskCode}' (attempted '${t.taskCode.trim()}').`,
+              422,
+            );
+          }
+        }
+
+        targetTasks.push({
+          taskCode: t.taskCode.trim(),
+          title: (t.title ?? "").trim(),
+          description: t.description?.trim() ?? null,
+          taskType,
+          points,
+          isRequired: t.isRequired !== undefined ? Boolean(t.isRequired) : true,
+          sortOrder,
+          requirementMetadata: t.requirementMetadata ?? null,
+        });
+      }
+    } else {
+      // Clone from current version and apply diffs
+      const removals = new Set(input.taskRemovals?.map((r) => r.trim()) ?? []);
+      const updatesMap = new Map<string, TaskOverrideInput>();
+      if (input.taskUpdates && Array.isArray(input.taskUpdates)) {
+        for (const u of input.taskUpdates) {
+          const trimmedCode = u.taskCode.trim();
+          if (!existingTasksByCode.has(trimmedCode)) {
+            throw new AdminCampaignError(
+              "TASK_NOT_FOUND",
+              `Task with taskCode '${trimmedCode}' was not found in current version.`,
+              404,
+            );
+          }
+          updatesMap.set(trimmedCode, u);
+        }
+      }
+
+      for (const existingTask of existingTasksList) {
+        if (removals.has(existingTask.taskCode)) {
+          continue; // Task removed in this version
+        }
+
+        const update = updatesMap.get(existingTask.taskCode);
+        if (update) {
+          const title = update.title !== undefined ? update.title.trim() : existingTask.title;
+          validateTitle(title);
+          const taskType = update.taskType !== undefined ? validateTaskType(update.taskType) : existingTask.taskType;
+          const points = update.points !== undefined ? validatePoints(update.points) : existingTask.points;
+          const sortOrder = update.sortOrder !== undefined ? validateSortOrder(update.sortOrder) : existingTask.sortOrder;
+          const isRequired = update.isRequired !== undefined ? Boolean(update.isRequired) : existingTask.isRequired;
+          const description = update.description !== undefined ? update.description?.trim() ?? null : existingTask.description;
+          const requirementMetadata = update.requirementMetadata !== undefined ? update.requirementMetadata : (existingTask.requirementMetadata as Record<string, unknown> | null);
+
+          targetTasks.push({
+            taskCode: existingTask.taskCode,
+            title,
+            description,
+            taskType,
+            points,
+            isRequired,
+            sortOrder,
+            requirementMetadata,
+          });
+        } else {
+          // Carry forward exactly as is
+          targetTasks.push({
+            taskCode: existingTask.taskCode,
+            title: existingTask.title,
+            description: existingTask.description,
+            taskType: existingTask.taskType,
+            points: existingTask.points,
+            isRequired: existingTask.isRequired,
+            sortOrder: existingTask.sortOrder,
+            requirementMetadata: existingTask.requirementMetadata as Record<string, unknown> | null,
+          });
+        }
+      }
+
+      // Additions
+      if (input.taskAdditions && Array.isArray(input.taskAdditions)) {
+        for (const add of input.taskAdditions) {
+          validateTaskCode(add.taskCode);
+          validateTitle(add.title ?? "");
+          const taskType = validateTaskType(add.taskType ?? "CUSTOM");
+          const points = validatePoints(add.points ?? 10);
+          const sortOrder = validateSortOrder(add.sortOrder ?? 0);
+          targetTasks.push({
+            taskCode: add.taskCode.trim(),
+            title: (add.title ?? "").trim(),
+            description: add.description?.trim() ?? null,
+            taskType,
+            points,
+            isRequired: add.isRequired !== undefined ? Boolean(add.isRequired) : true,
+            sortOrder,
+            requirementMetadata: add.requirementMetadata ?? null,
+          });
+        }
+      }
+    }
+
+    // Verify taskCode uniqueness in targetTasks
+    const seenCodes = new Set<string>();
+    for (const t of targetTasks) {
+      if (seenCodes.has(t.taskCode)) {
+        throw new AdminCampaignError(
+          "DUPLICATE_TASK_CODE",
+          `Task code '${t.taskCode}' appears multiple times in the new version task list.`,
+          422,
+        );
+      }
+      seenCodes.add(t.taskCode);
+    }
+
+    // 6. Deactivate existing current version
+    await tx.campaignVersion.updateMany({
+      where: { campaignId: campaign.id, isCurrent: true },
+      data: { isCurrent: false, endsAt: startsAt },
+    });
+
+    // 7. Create new version
+    const newVersion = await tx.campaignVersion.create({
+      data: {
+        campaignId: campaign.id,
+        versionNumber: nextVersionNumber,
+        isCurrent: true,
+        compatibilityMode,
+        compatibleFromVersionId: currentVersion.id,
+        startsAt,
+        endsAt,
+        changeNotes: input.changeNotes?.trim() ?? null,
+      },
+    });
+
+    // 8. Create tasks for the new version
+    const createdTasks = [];
+    for (const t of targetTasks) {
+      const created = await tx.campaignTask.create({
+        data: {
+          versionId: newVersion.id,
+          taskCode: t.taskCode,
+          title: t.title,
+          description: t.description,
+          taskType: t.taskType,
+          points: t.points,
+          isRequired: t.isRequired,
+          sortOrder: t.sortOrder,
+          requirementMetadata: (t.requirementMetadata as any) ?? undefined,
+        },
+      });
+      createdTasks.push(created);
+    }
+
+    // 9. Record Audit Log
+    const audit = await recordAuditLog(tx, {
+      actorId: input.adminUserId,
+      actorIp: input.ipAddress ?? null,
+      userAgent: input.userAgent ?? null,
+      action: "CAMPAIGN_VERSION_CREATED",
+      entityType: "CampaignVersion",
+      entityId: newVersion.id,
+      oldValues: {
+        previousVersionId: currentVersion.id,
+        previousVersionNumber: currentVersion.versionNumber,
+      },
+      newValues: {
+        campaignId: campaign.id,
+        versionNumber: newVersion.versionNumber,
+        compatibilityMode: newVersion.compatibilityMode,
+        compatibleFromVersionId: newVersion.compatibleFromVersionId,
+        changeNotes: newVersion.changeNotes,
+        taskCount: createdTasks.length,
+      },
+    });
+
+    const formattedTasks = createdTasks.map(formatCampaignTaskOutput);
+
+    return {
+      success: true as const,
+      version: {
+        id: newVersion.id,
+        campaignId: newVersion.campaignId,
+        versionNumber: newVersion.versionNumber,
+        isCurrent: newVersion.isCurrent,
+        compatibilityMode: newVersion.compatibilityMode,
+        compatibleFromVersionId: newVersion.compatibleFromVersionId,
+        startsAt: newVersion.startsAt.toISOString(),
+        endsAt: newVersion.endsAt ? newVersion.endsAt.toISOString() : null,
+        changeNotes: newVersion.changeNotes,
+        createdAt: newVersion.createdAt.toISOString(),
+        taskCount: formattedTasks.length,
+        tasks: formattedTasks,
+      },
+      auditLogId: audit.id,
+    };
+  });
+}
+
+/**
+ * Lists all versions of a specific campaign, ordered newest first (versionNumber DESC).
+ */
+export async function listCampaignVersions(
+  prisma: PrismaClient,
+  campaignId: string,
+): Promise<ListCampaignVersionsResult> {
+  if (!campaignId || typeof campaignId !== "string" || !campaignId.trim()) {
+    throw new AdminCampaignError("MISSING_CAMPAIGN_ID", "campaignId is required.", 422);
+  }
+
+  const campaign = await prisma.promoCampaign.findUnique({
+    where: { id: campaignId.trim() },
+    select: { id: true },
+  });
+
+  if (!campaign) {
+    throw new AdminCampaignError("CAMPAIGN_NOT_FOUND", `Campaign '${campaignId}' was not found.`, 404);
+  }
+
+  const versions = await prisma.campaignVersion.findMany({
+    where: { campaignId: campaign.id },
+    orderBy: { versionNumber: "desc" },
+    include: {
+      tasks: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      },
+    },
+  });
+
+  return {
+    versions: versions.map((v) => {
+      const formattedTasks = v.tasks.map(formatCampaignTaskOutput);
+      return {
+        id: v.id,
+        campaignId: v.campaignId,
+        versionNumber: v.versionNumber,
+        isCurrent: v.isCurrent,
+        compatibilityMode: v.compatibilityMode,
+        compatibleFromVersionId: v.compatibleFromVersionId,
+        startsAt: v.startsAt.toISOString(),
+        endsAt: v.endsAt ? v.endsAt.toISOString() : null,
+        changeNotes: v.changeNotes,
+        createdAt: v.createdAt.toISOString(),
+        taskCount: formattedTasks.length,
+        tasks: formattedTasks,
+      };
+    }),
+    total: versions.length,
   };
 }
