@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { User, Shield, AlertTriangle, Sparkles, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import {
+  User,
+  Shield,
+  AlertTriangle,
+  Sparkles,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  AlertCircle,
+  Info,
+} from "lucide-react";
 import * as navigation from "next/navigation";
 
 function XLogo(props: React.SVGProps<SVGSVGElement>) {
@@ -25,6 +36,7 @@ import { useSiweAuth } from "@/hooks/useSiweAuth";
 import {
   fetchWhitelistStatus,
   type WhitelistStatusResponse,
+  type WLSlotReviewStatus,
 } from "@/lib/whitelist/client";
 import * as inventoryClient from "@/lib/inventory/client";
 import type { InventoryItemData } from "@/lib/inventory/client";
@@ -38,6 +50,116 @@ import { shortenAddress } from "@/lib/auth/address";
 import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
 
 const TRAIT_CATEGORIES = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
+
+function getGtdReviewDetails(reviewStatus?: WLSlotReviewStatus) {
+  switch (reviewStatus) {
+    case "VALID":
+      return {
+        label: "Verified",
+        subtext: "Verified — All criteria confirmed by team.",
+        badgeVariant: "default" as const,
+        colorClass: "border-emerald-500/30 bg-emerald-500/20 text-emerald-300",
+        icon: CheckCircle2,
+      };
+    case "UNDER_REVIEW":
+      return {
+        label: "Under Verification",
+        subtext: "Under Verification — Account details being audited.",
+        badgeVariant: "warning" as const,
+        colorClass: "border-amber-500/30 bg-amber-500/20 text-amber-300",
+        icon: Clock,
+      };
+    case "FLAGGED":
+      return {
+        label: "Notice / Action Required",
+        subtext:
+          "Notice — Please review your linked accounts and task requirements. Slot remains active.",
+        badgeVariant: "warning" as const,
+        colorClass: "border-rose-500/30 bg-rose-500/20 text-rose-300",
+        icon: AlertCircle,
+      };
+    case "NOT_REVIEWED":
+    default:
+      return {
+        label: "Pending Routine Review",
+        subtext: "Slot Confirmed — Routine verification in progress.",
+        badgeVariant: "outline" as const,
+        colorClass: "border-blue-500/30 bg-blue-500/10 text-blue-300",
+        icon: Info,
+      };
+  }
+}
+
+function formatRegistrationDate(dateString?: string): string {
+  if (!dateString) return "";
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return dateString;
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return dateString;
+  }
+}
+
+function getWhitelistSummaryBadge(
+  status?: WhitelistStatusResponse["status"] | null,
+  isAuthenticated?: boolean,
+) {
+  if (!isAuthenticated) {
+    return (
+      <Badge variant="outline" className="text-gray-400">
+        Wallet Not Connected
+      </Badge>
+    );
+  }
+  if (!status) {
+    return (
+      <Badge variant="outline" className="text-gray-400">
+        WL Status: Loading...
+      </Badge>
+    );
+  }
+  switch (status.phase) {
+    case "SLOT_ALLOCATED":
+      return (
+        <Badge
+          variant="default"
+          className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
+        >
+          WL Status: Guaranteed Slot #{status.slotNumber}
+        </Badge>
+      );
+    case "FCFS_REGISTERED":
+      return (
+        <Badge
+          variant="default"
+          className="border-blue-500/30 bg-blue-500/20 text-blue-300 font-semibold"
+        >
+          WL Status: FCFS Directory #{status.queueNumber}
+        </Badge>
+      );
+    case "REVOKED":
+      return (
+        <Badge
+          variant="outline"
+          className="border-rose-500/40 bg-rose-500/20 text-rose-300 font-semibold"
+        >
+          WL Status: REVOKED
+        </Badge>
+      );
+    case "NONE":
+    default:
+      return (
+        <Badge variant="outline" className="text-gray-400">
+          WL Status: Not Registered
+        </Badge>
+      );
+  }
+}
 
 function getNavigationSearchParams(): URLSearchParams | null {
   try {
@@ -269,9 +391,23 @@ function ProfileContent() {
   const [failedXAvatarUrl, setFailedXAvatarUrl] = React.useState<string | null>(null);
   const xAvatarError = failedXAvatarUrl !== null && failedXAvatarUrl === currentXProfileImg;
 
+  // Whitelist trait and task progress tracking
+  const heldCategoriesFromWl = wlData?.status?.details?.heldCategories;
+  const heldCategoriesSet = new Set(
+    heldCategoriesFromWl ?? inventoryItems.map((item) => item.trait.category),
+  );
+  const heldCategoriesCount = heldCategoriesFromWl
+    ? heldCategoriesFromWl.length
+    : TRAIT_CATEGORIES.filter((c) => ownedCategories.has(c)).length;
+
+  const mandatoryTasksCompleted =
+    wlData?.status?.details?.completedMandatoryTasksCount ?? 0;
+  const mandatoryTasksTotal =
+    wlData?.status?.details?.totalMandatoryTasksCount ?? 0;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Page Header with Character Avatar */}
+      {/* Page Header with Character Avatar & Profile Overview */}
       <div className="mb-8 flex flex-col items-start gap-5 rounded-2xl border border-gray-800 bg-[#0c0e17]/60 p-6 backdrop-blur sm:flex-row sm:items-center">
         <UserAvatar
           identifier={address}
@@ -281,22 +417,38 @@ function ProfileContent() {
           showRefreshButton={status === "authenticated" && inventoryItems.length > 0}
           onRefresh={handleRefreshAll}
         />
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-white">User Profile</h1>
             <Badge variant="default">Stage 3</Badge>
+            {getWhitelistSummaryBadge(wlData?.status, status === "authenticated")}
           </div>
           <p className="text-sm text-gray-400">
             {currentXUsername
               ? `Connected via X (@${currentXUsername}) and Web3 Wallet.`
               : "Integrated identity management for Web3 Wallets and X (Twitter) accounts."}
           </p>
-          {address && (
-            <p className="font-mono text-xs text-gray-400">
-              Connected:{" "}
-              <span className="text-emerald-400">{shortenAddress(address)}</span>
-            </p>
-          )}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            {address ? (
+              <p className="font-mono text-gray-400">
+                Connected:{" "}
+                <span className="text-emerald-400" title={address}>
+                  {shortenAddress(address)}
+                </span>
+              </p>
+            ) : (
+              <p className="text-gray-500">Wallet: Not Connected</p>
+            )}
+            <span className="text-gray-600 hidden sm:inline">•</span>
+            {isXConnected && currentXUsername ? (
+              <p className="text-gray-400">
+                X Account:{" "}
+                <span className="text-sky-400 font-medium">@{currentXUsername} (Connected)</span>
+              </p>
+            ) : (
+              <p className="text-gray-500">X Account: Not Connected</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -417,7 +569,7 @@ function ProfileContent() {
         {/* Tier & Allocation Overview */}
         <Card className="md:col-span-2">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-purple-500/10 p-2 text-purple-400">
                   <Shield className="h-5 w-5" />
@@ -429,37 +581,301 @@ function ProfileContent() {
                   </CardDescription>
                 </div>
               </div>
-              {wlData?.status?.phase === "SLOT_ALLOCATED" ? (
-                <Badge variant="default" className="bg-emerald-500/20 text-emerald-300">
-                  WL Slot #{wlData.status.slotNumber}
-                </Badge>
-              ) : wlData?.status?.phase === "IN_QUEUE" ? (
-                <Badge variant="warning" className="bg-amber-500/20 text-amber-300">
-                  Queue Rank #{wlData.status.queueRank ?? wlData.status.queueNumber}
-                </Badge>
-              ) : (
-                <Badge variant="outline">Tier Unassigned</Badge>
-              )}
+              <div>
+                {status !== "authenticated" ? (
+                  <Badge variant="outline">Tier Unassigned</Badge>
+                ) : wlData?.status?.phase === "SLOT_ALLOCATED" ? (
+                  <Badge
+                    variant="default"
+                    className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
+                  >
+                    WL Slot #{wlData.status.slotNumber}
+                  </Badge>
+                ) : wlData?.status?.phase === "FCFS_REGISTERED" ? (
+                  <Badge
+                    variant="default"
+                    className="border-blue-500/30 bg-blue-500/20 text-blue-300 font-semibold"
+                  >
+                    FCFS Directory #{wlData.status.queueNumber}
+                  </Badge>
+                ) : wlData?.status?.phase === "REVOKED" ? (
+                  <Badge
+                    variant="outline"
+                    className="border-rose-500/40 bg-rose-500/20 text-rose-300 font-semibold"
+                  >
+                    REVOKED
+                  </Badge>
+                ) : wlData?.status?.phase === "NONE" ? (
+                  <Badge variant="outline" className="text-gray-400">
+                    Not Registered
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">Tier Unassigned</Badge>
+                )}
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2 rounded-lg border border-gray-800 bg-gray-900/60 p-4 text-sm text-gray-400">
-              <p>
-                Tier status, reward points, and Whitelist balances will be displayed here
-                once Stage 2 authentication and allocation engines are linked.
-              </p>
-              {wlData?.status && (
-                <div className="border-t border-gray-800 pt-2 text-xs text-gray-300">
-                  <span className="font-semibold text-emerald-400">
-                    Live Stage 3 Status:
-                  </span>{" "}
-                  Phase: {wlData.status.phase} | Categories:{" "}
-                  {wlData.status.details?.heldCategories?.length ?? 0}/5 Held | Tasks:{" "}
-                  {wlData.status.details?.completedMandatoryTasksCount ?? 0}/
-                  {wlData.status.details?.totalMandatoryTasksCount ?? 0} Verified
-                </div>
-              )}
-            </div>
+          <CardContent className="space-y-4">
+            {status !== "authenticated" ? (
+              <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-5 text-center text-sm text-gray-400">
+                <p className="font-medium text-gray-300">Wallet Not Authenticated</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Connect and authenticate your Web3 wallet via Sign in with Ethereum (SIWE) above to view your Whitelist allocation status, trait collection progress, and campaign tasks.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* 1. SLOT_ALLOCATED (GTD aktif) */}
+                {wlData?.status?.phase === "SLOT_ALLOCATED" && (() => {
+                  const review = getGtdReviewDetails(wlData.status.reviewStatus);
+                  const ReviewIcon = review.icon;
+                  return (
+                    <div
+                      className="space-y-3 rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-4"
+                      data-testid="gtd-status-card"
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-emerald-500/20 pb-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                              Allocation:
+                            </span>
+                            <span className="text-sm font-bold text-emerald-300">
+                              Guaranteed Whitelist Slot #{wlData.status.slotNumber} (Active)
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400">
+                            Your Guaranteed Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected.
+                          </p>
+                        </div>
+                        {wlData.status.allocatedAt && (
+                          <span className="text-[11px] text-gray-500">
+                            Secured on {formatRegistrationDate(wlData.status.allocatedAt)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Review Status Indicator (DEC-015) */}
+                      <div className="flex flex-col gap-2 rounded-lg border border-gray-800 bg-gray-900/40 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                              Review Status:
+                            </span>
+                            <Badge
+                              variant={review.badgeVariant}
+                              className={`text-xs ${review.colorClass}`}
+                            >
+                              <ReviewIcon className="mr-1 h-3 w-3 shrink-0" />
+                              {review.label}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-300">{review.subtext}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. FCFS_REGISTERED */}
+                {wlData?.status?.phase === "FCFS_REGISTERED" && (
+                  <div
+                    className="space-y-3 rounded-lg border border-blue-500/20 bg-blue-950/20 p-4"
+                    data-testid="fcfs-status-card"
+                  >
+                    {/* Registration sequence & timestamp */}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-300">
+                      <span className="font-semibold text-white">
+                        FCFS Directory Participant #{wlData.status.queueNumber}
+                      </span>
+                      {wlData.status.joinedAt && (
+                        <>
+                          <span className="text-gray-600">•</span>
+                          <span className="text-gray-400">
+                            Registered on {formatRegistrationDate(wlData.status.joinedAt)}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* OpenSea FCFS Allowlist Qualification Progress Banner */}
+                    {wlData.status.isFullyQualified ? (
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
+                        <div className="flex items-center gap-2 font-semibold text-emerald-200">
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                          Eligible for OpenSea FCFS Allowlist
+                        </div>
+                        <p className="mt-1 text-emerald-300/80">
+                          All 5 qualification requirements are satisfied! Your wallet will be included in the OpenSea FCFS allowlist export.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+                        <div className="flex items-center gap-2 font-semibold text-amber-200">
+                          <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
+                          Action Required — Incomplete Requirements
+                        </div>
+                        <p className="mt-1 text-amber-300/80">
+                          You are registered in the directory, but must satisfy all 5 requirements below to be included in the OpenSea FCFS allowlist export.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Explanatory Notice (DEC-018) */}
+                    <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-xs text-gray-400">
+                      <p className="font-medium text-gray-300">FCFS Directory Notice</p>
+                      <p className="mt-0.5 text-gray-400">
+                        Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed (GTD) slot or an allocation. GTD slots are never automatically filled.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. REVOKED Full Disqualification Alert (DEC-022) */}
+                {wlData?.status?.phase === "REVOKED" && (
+                  <div
+                    className="space-y-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-200"
+                    data-testid="revoked-status-card"
+                  >
+                    <div className="flex items-center gap-2 text-sm font-semibold text-rose-300">
+                      <XCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                      Whitelist Status Revoked
+                    </div>
+                    <p className="text-rose-200/90 font-medium">
+                      {wlData.status.missingRequirements?.[0] ||
+                        "Whitelist qualification has been revoked by an administrator."}
+                    </p>
+                    <div className="border-t border-rose-500/20 pt-2 text-rose-300/80 space-y-1">
+                      <p>
+                        In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program.
+                      </p>
+                      <p className="text-rose-400/90">
+                        Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the OpenSea FCFS allowlist export.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. NONE (Not Registered in FCFS Directory) */}
+                {(!wlData?.status || wlData?.status?.phase === "NONE") && (
+                  <div
+                    className="rounded-lg border border-gray-800 bg-gray-900/40 p-4 text-xs text-gray-400 space-y-2"
+                    data-testid="none-status-card"
+                  >
+                    <p className="font-semibold text-gray-300">Not Registered in FCFS Directory</p>
+                    <p className="text-gray-400 leading-relaxed">
+                      You are not currently registered in the FCFS Directory. Connect your EVM wallet and X (Twitter) account to automatically register in the FCFS Directory, and complete the 5 trait categories and mandatory tasks to qualify for the OpenSea FCFS allowlist.
+                    </p>
+                    <div className="pt-1">
+                      <Link
+                        href="/whitelist"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                      >
+                        Go to Whitelist Portal
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Progress Section: 5 Trait Categories & Mandatory Campaign Tasks (Hidden when REVOKED) */}
+                {wlData?.status?.phase !== "REVOKED" && (
+                  <div
+                    className="space-y-4 border-t border-gray-800 pt-4"
+                    data-testid="whitelist-progress-section"
+                  >
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                      Whitelist Qualification Progress
+                    </h3>
+
+                    {/* 5 Trait Categories Checklist */}
+                    <div>
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-xs text-gray-400">
+                          Required Trait Categories (5 of 5)
+                        </span>
+                        <span className="text-xs font-mono text-gray-300">
+                          {heldCategoriesCount} / 5 Collected
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                        {TRAIT_CATEGORIES.map((cat) => {
+                          const isHeld = heldCategoriesSet.has(cat);
+                          return (
+                            <div
+                              key={cat}
+                              data-testid={`profile-trait-${cat.toLowerCase()}`}
+                              className={`flex items-center gap-1.5 rounded border p-2 transition-colors ${
+                                isHeld
+                                  ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
+                                  : "border-gray-800 bg-gray-800/20 text-gray-500"
+                              }`}
+                            >
+                              {isHeld ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                              ) : (
+                                <XCircle className="h-3.5 w-3.5 shrink-0 text-gray-600" />
+                              )}
+                              <span className="font-medium">{cat}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Mandatory Campaign Tasks Progress */}
+                    <div className="flex flex-col gap-2 rounded-lg border border-gray-800 bg-gray-900/40 p-3 sm:flex-row sm:items-center sm:justify-between text-xs">
+                      <div>
+                        <span className="font-medium text-gray-300">Mandatory Campaign Tasks</span>
+                        <p className="text-[11px] text-gray-500">
+                          Complete all mandatory campaign quests to maintain whitelist eligibility
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`font-mono font-semibold ${
+                            mandatoryTasksCompleted >= mandatoryTasksTotal && mandatoryTasksTotal > 0
+                              ? "text-emerald-400"
+                              : "text-amber-400"
+                          }`}
+                        >
+                          {mandatoryTasksCompleted} / {mandatoryTasksTotal} Completed
+                        </span>
+                        {mandatoryTasksCompleted >= mandatoryTasksTotal && mandatoryTasksTotal > 0 ? (
+                          <Badge
+                            variant="default"
+                            className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 text-[10px]"
+                          >
+                            Complete
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="warning"
+                            className="border-amber-500/30 bg-amber-500/20 text-amber-300 text-[10px]"
+                          >
+                            Incomplete
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Missing Requirements List */}
+                    {wlData?.status?.missingRequirements &&
+                      wlData.status.missingRequirements.length > 0 &&
+                      !wlData.status.isFullyQualified &&
+                      wlData.status.phase !== "SLOT_ALLOCATED" && (
+                        <div className="space-y-1 rounded border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-300">
+                          <p className="font-semibold">Missing Requirements:</p>
+                          <ul className="list-inside list-disc space-y-0.5 text-amber-200/80">
+                            {wlData.status.missingRequirements.map((req, i) => (
+                              <li key={i}>{req}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
 

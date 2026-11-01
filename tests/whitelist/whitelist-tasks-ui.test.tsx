@@ -406,18 +406,25 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     });
   });
 
-  // 7. Check Eligibility / Qualify action & Results display
-  it("calls submitWhitelistQualification and displays qualification results, missing requirements, and queue rank", async () => {
+  // 7. Automatic Eligibility & Status Results display
+  it("automatically fetches whitelist status and displays qualification results, missing requirements, and status without manual buttons", async () => {
     vi.mocked(siweHook.useSiweAuth).mockReturnValue({
       status: "authenticated",
       sessionAddress: "0x1111111111111111111111111111111111111111",
       walletAddress: "0x1111111111111111111111111111111111111111",
     } as any);
 
-    vi.mocked(whitelistClient.submitWhitelistQualification).mockResolvedValueOnce({
-      success: true,
-      programId: "prog-1",
-      result: {
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+      configured: true,
+      program: {
+        id: "prog-1",
+        slug: "main",
+        name: "Genesis",
+        totalSlots: 1000,
+        allocatedSlotsCount: 10,
+        status: "OPEN",
+      },
+      status: {
         qualified: false,
         phase: "NONE",
         missingRequirements: [
@@ -438,14 +445,10 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
 
     render(<WhitelistPage />);
 
-    const qualifyBtn = screen.getByRole("button", { name: "Qualify / Claim Slot" });
-    fireEvent.click(qualifyBtn);
-
     await waitFor(() => {
-      expect(whitelistClient.submitWhitelistQualification).toHaveBeenCalled();
+      expect(screen.getByText("Not Registered / Ineligible")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("INELIGIBLE")).toBeInTheDocument();
     expect(
       screen.getByText("Missing trait categories: CLOTHING, EYEWEAR."),
     ).toBeInTheDocument();
@@ -453,22 +456,32 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
       screen.getByText('Incomplete task: "Follow Official X Handle".'),
     ).toBeInTheDocument();
     expect(screen.getByText("0 / 1 Completed")).toBeInTheDocument();
+    expect(screen.queryByText("Check Eligibility")).not.toBeInTheDocument();
+    expect(screen.queryByText("Qualify / Claim Slot")).not.toBeInTheDocument();
   });
 
-  it("displays SLOT_ALLOCATED and slot number when user qualifies directly into a slot", async () => {
+  it("displays SLOT_ALLOCATED and slot number when user status has active slot", async () => {
     vi.mocked(siweHook.useSiweAuth).mockReturnValue({
       status: "authenticated",
       sessionAddress: "0x1111111111111111111111111111111111111111",
       walletAddress: "0x1111111111111111111111111111111111111111",
     } as any);
 
-    vi.mocked(whitelistClient.submitWhitelistQualification).mockResolvedValueOnce({
-      success: true,
-      programId: "prog-1",
-      result: {
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+      configured: true,
+      program: {
+        id: "prog-1",
+        slug: "main",
+        name: "Genesis",
+        totalSlots: 1000,
+        allocatedSlotsCount: 10,
+        status: "OPEN",
+      },
+      status: {
         qualified: true,
         phase: "SLOT_ALLOCATED",
         slotNumber: 7,
+        reviewStatus: "NOT_REVIEWED",
         missingRequirements: [],
         details: {
           hasVerifiedWallet: true,
@@ -484,33 +497,39 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
 
     render(<WhitelistPage />);
 
-    const qualifyBtn = screen.getByRole("button", { name: "Qualify / Claim Slot" });
-    fireEvent.click(qualifyBtn);
-
     await waitFor(() => {
-      expect(screen.getByText("SLOT ALLOCATED #7")).toBeInTheDocument();
+      expect(screen.getByText("Guaranteed Slot #7 (Active)")).toBeInTheDocument();
     });
 
+    expect(screen.getByText("GTD SLOT ALLOCATED")).toBeInTheDocument();
     expect(
-      screen.getByText("Congratulations! Whitelist Slot #7 has been allocated."),
+      screen.getByText("Slot Confirmed — Routine verification in progress."),
     ).toBeInTheDocument();
   });
 
-  it("displays IN_QUEUE and queue rank when capacity is exhausted", async () => {
+  it("displays FCFS_REGISTERED with participant sequence and allowlist status", async () => {
     vi.mocked(siweHook.useSiweAuth).mockReturnValue({
       status: "authenticated",
       sessionAddress: "0x1111111111111111111111111111111111111111",
       walletAddress: "0x1111111111111111111111111111111111111111",
     } as any);
 
-    vi.mocked(whitelistClient.submitWhitelistQualification).mockResolvedValueOnce({
-      success: true,
-      programId: "prog-1",
-      result: {
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+      configured: true,
+      program: {
+        id: "prog-1",
+        slug: "main",
+        name: "Genesis",
+        totalSlots: 1000,
+        allocatedSlotsCount: 10,
+        status: "OPEN",
+      },
+      status: {
         qualified: true,
-        phase: "IN_QUEUE",
+        isFullyQualified: true,
+        phase: "FCFS_REGISTERED",
         queueNumber: 15,
-        queueRank: 3,
+        joinedAt: "2026-10-20T10:00:00.000Z",
         missingRequirements: [],
         details: {
           hasVerifiedWallet: true,
@@ -526,14 +545,12 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
 
     render(<WhitelistPage />);
 
-    const qualifyBtn = screen.getByRole("button", { name: "Qualify / Claim Slot" });
-    fireEvent.click(qualifyBtn);
-
     await waitFor(() => {
-      expect(screen.getByText("IN QUEUE (Rank #3)")).toBeInTheDocument();
+      expect(screen.getByText("FCFS Directory (Registered)")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("You are in the queue at rank #3.")).toBeInTheDocument();
+    expect(screen.getByText("Participant #15")).toBeInTheDocument();
+    expect(screen.getByText("Eligible for OpenSea FCFS Allowlist")).toBeInTheDocument();
   });
 
   it("renders pending review status directly from latestSubmission status PENDING_REVIEW even when progress is null", async () => {

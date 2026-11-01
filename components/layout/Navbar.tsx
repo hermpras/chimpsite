@@ -8,6 +8,7 @@ import { WalletButton } from "@/components/auth/WalletButton";
 
 const navLinks = [
   { href: "/", label: "Home" },
+  { href: "/drops", label: "Drops" },
   { href: "/whitelist", label: "Whitelist" },
   { href: "/profile", label: "Profile" },
   { href: "/docs", label: "Docs" },

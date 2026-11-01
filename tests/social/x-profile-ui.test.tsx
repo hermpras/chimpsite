@@ -152,12 +152,19 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     });
 
     const mockAuthUrl = "https://twitter.com/i/oauth2/authorize?state=mock123";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ url: mockAuthUrl }), {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/api/social/x/connect")) {
+        return new Response(JSON.stringify({ url: mockAuthUrl }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ linked: false }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }),
-    );
+      });
+    });
 
     render(
       <Providers>
@@ -184,18 +191,25 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     });
 
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          error: "X_OAUTH_NOT_CONFIGURED",
-          message: "X OAuth is not configured on this server.",
-        }),
-        {
-          status: 503,
-          headers: { "Content-Type": "application/json" },
-        },
-      ),
-    );
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/api/social/x/connect")) {
+        return new Response(
+          JSON.stringify({
+            error: "X_OAUTH_NOT_CONFIGURED",
+            message: "X OAuth is not configured on this server.",
+          }),
+          {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      return new Response(JSON.stringify({ linked: false }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
 
     render(
       <Providers>

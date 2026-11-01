@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   ShieldCheck,
-  Search,
-  Gift,
   Clock,
   Flame,
   CheckCircle2,
@@ -14,6 +13,7 @@ import {
   Send,
   RefreshCw,
   ExternalLink,
+  Info,
 } from "lucide-react";
 import {
   Card,
@@ -24,131 +24,25 @@ import {
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { useCurrentTime } from "@/lib/hooks/useCurrentTime";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import {
   fetchWhitelistStatus,
-  submitWhitelistQualification,
   type WhitelistStatusResponse,
+  type WLSlotReviewStatus,
 } from "@/lib/whitelist/client";
-import {
-  fetchCurrentDrop,
-  claimDropItem,
-  type CurrentDropResponse,
-} from "@/lib/drops/client";
 import {
   fetchActiveTasks,
   submitTaskEvidence,
   type ActiveCampaignItem,
   type ActiveCampaignTask,
 } from "@/lib/tasks/client";
-import {
-  ClaimLootboxModal,
-  type WonTraitData,
-} from "@/components/drops/ClaimLootboxModal";
-
-const RARITY_THEME: Record<
-  string,
-  {
-    border: string;
-    bg: string;
-    text: string;
-    badgeBg: string;
-    badgeBorder: string;
-    badgeText: string;
-    glow: string;
-    prefix: string;
-    barColor: string;
-  }
-> = {
-  LEGENDARY: {
-    border: "border-amber-500/50 hover:border-amber-400",
-    bg: "bg-gradient-to-r from-amber-950/40 via-amber-900/15 to-[#0c0e17]",
-    text: "text-amber-300 font-extrabold",
-    badgeBg: "bg-amber-500/20",
-    badgeBorder: "border-amber-500/50",
-    badgeText: "text-amber-300 font-bold",
-    glow: "shadow-sm shadow-amber-500/20",
-    prefix: "★ ",
-    barColor: "bg-gradient-to-r from-amber-500 to-yellow-300",
-  },
-  EPIC: {
-    border: "border-purple-500/40 hover:border-purple-400/80",
-    bg: "bg-gradient-to-r from-purple-950/35 via-purple-900/15 to-[#0c0e17]",
-    text: "text-purple-300 font-bold",
-    badgeBg: "bg-purple-500/20",
-    badgeBorder: "border-purple-500/40",
-    badgeText: "text-purple-300 font-semibold",
-    glow: "shadow-sm shadow-purple-500/15",
-    prefix: "◆ ",
-    barColor: "bg-gradient-to-r from-purple-500 to-fuchsia-400",
-  },
-  RARE: {
-    border: "border-sky-500/40 hover:border-sky-400/80",
-    bg: "bg-gradient-to-r from-sky-950/30 via-sky-900/10 to-[#0c0e17]",
-    text: "text-sky-300 font-semibold",
-    badgeBg: "bg-sky-500/20",
-    badgeBorder: "border-sky-500/40",
-    badgeText: "text-sky-300 font-semibold",
-    glow: "shadow-sm shadow-sky-500/10",
-    prefix: "▲ ",
-    barColor: "bg-gradient-to-r from-sky-500 to-cyan-300",
-  },
-  UNCOMMON: {
-    border: "border-emerald-500/30 hover:border-emerald-400/70",
-    bg: "bg-gradient-to-r from-emerald-950/25 via-emerald-900/10 to-[#0c0e17]",
-    text: "text-emerald-300 font-medium",
-    badgeBg: "bg-emerald-500/15",
-    badgeBorder: "border-emerald-500/30",
-    badgeText: "text-emerald-400",
-    glow: "",
-    prefix: "● ",
-    barColor: "bg-gradient-to-r from-emerald-500 to-teal-400",
-  },
-  COMMON: {
-    border: "border-gray-800 hover:border-gray-700",
-    bg: "bg-gray-900/50",
-    text: "text-gray-400 font-medium",
-    badgeBg: "bg-gray-800/80",
-    badgeBorder: "border-gray-700",
-    badgeText: "text-gray-400",
-    glow: "",
-    prefix: "",
-    barColor: "bg-gradient-to-r from-gray-500 to-gray-400",
-  },
-};
-
-const RARITY_WEIGHT_ORDER: Record<string, number> = {
-  LEGENDARY: 5,
-  EPIC: 4,
-  RARE: 3,
-  UNCOMMON: 2,
-  COMMON: 1,
-};
 
 export default function WhitelistPage() {
   const { status, sessionAddress, walletAddress } = useSiweAuth();
   const address = sessionAddress || walletAddress;
-  const [addressInput, setAddressInput] = useState("");
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusResult, setStatusResult] = useState<WhitelistStatusResponse | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
-
-  // Qualification evaluation state
-  const [qualifyLoading, setQualifyLoading] = useState(false);
-  const [qualifyMessage, setQualifyMessage] = useState<string | null>(null);
-  const [qualifyError, setQualifyError] = useState<string | null>(null);
-
-  // Drop status state
-  const [dropData, setDropData] = useState<CurrentDropResponse | null>(null);
-  const [claimLoading, setClaimLoading] = useState(false);
-  const [claimMessage, setClaimMessage] = useState<string | null>(null);
-  const [claimError, setClaimError] = useState<string | null>(null);
-  const [poolRarityFilter, setPoolRarityFilter] = useState<string>("ALL");
-  const [isLootboxOpen, setIsLootboxOpen] = useState(false);
-  const [claimedLootboxItem, setClaimedLootboxItem] = useState<WonTraitData | null>(null);
-  const [lootboxError, setLootboxError] = useState<string | null>(null);
-  const [claimedPeriodId, setClaimedPeriodId] = useState<string | null>(null);
 
   // Campaigns & Tasks state
   const [campaigns, setCampaigns] = useState<ActiveCampaignItem[]>([]);
@@ -162,68 +56,6 @@ export default function WhitelistPage() {
   const [submittingTaskId, setSubmittingTaskId] = useState<string | null>(null);
   const [taskErrors, setTaskErrors] = useState<Record<string, string | null>>({});
   const [taskSuccess, setTaskSuccess] = useState<Record<string, string | null>>({});
-
-  // Load current drop data on mount
-  useEffect(() => {
-    fetchCurrentDrop()
-      .then(setDropData)
-      .catch((err) => console.error("Failed to load drop:", err));
-  }, []);
-
-  // Live 1-second ticker for real-time countdowns
-  const currentTime = useCurrentTime();
-
-  // Helper to format remaining milliseconds as HH:MM:SS
-  const formatRemaining = (ms: number): string => {
-    if (ms <= 0) return "00:00:00";
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  };
-
-  // Calculate live countdowns
-  const claimWindowEndsMs = dropData?.claimWindow?.endsAt
-    ? new Date(dropData.claimWindow.endsAt).getTime()
-    : 0;
-  const periodEndsMs = dropData?.period?.endsAt
-    ? new Date(dropData.period.endsAt).getTime()
-    : dropData?.nextCycle?.startsAt
-      ? new Date(dropData.nextCycle.startsAt).getTime()
-      : 0;
-
-  const isWindowActive = Boolean(
-    dropData?.claimWindow?.isActive && claimWindowEndsMs > currentTime
-  );
-  const claimRemainingMs = Math.max(0, claimWindowEndsMs - currentTime);
-  const nextDropRemainingMs = Math.max(0, periodEndsMs - currentTime);
-
-  // Reset claim feedback & state whenever drop period rolls over
-  useEffect(() => {
-    if (dropData?.period?.id && claimedPeriodId && claimedPeriodId !== dropData.period.id) {
-      setClaimMessage(null);
-      setClaimError(null);
-      setLootboxError(null);
-      setClaimedLootboxItem(null);
-      setClaimedPeriodId(null);
-    }
-  }, [dropData?.period?.id, claimedPeriodId]);
-
-  const isAlreadyClaimed =
-    Boolean(dropData?.userHasClaimed) ||
-    Boolean(claimedPeriodId && claimedPeriodId === dropData?.period?.id) ||
-    Boolean(claimMessage && claimedPeriodId === dropData?.period?.id);
-
-  // Auto-refresh when a timer reaches 0
-  useEffect(() => {
-    if (!dropData?.active) return;
-    if (isWindowActive && claimRemainingMs === 0) {
-      fetchCurrentDrop().then(setDropData).catch(console.error);
-    } else if (!isWindowActive && nextDropRemainingMs === 0 && periodEndsMs > 0) {
-      fetchCurrentDrop().then(setDropData).catch(console.error);
-    }
-  }, [claimRemainingMs, nextDropRemainingMs, isWindowActive, dropData?.active, periodEndsMs]);
 
   // Fetch active campaigns and tasks
   const loadTasks = useCallback(async () => {
@@ -247,6 +79,8 @@ export default function WhitelistPage() {
   useEffect(() => {
     if (status === "authenticated" && address) {
       let isMounted = true;
+      setStatusLoading(true);
+      setStatusError(null);
       fetchWhitelistStatus(address)
         .then((data) => {
           if (isMounted) setStatusResult(data);
@@ -254,68 +88,18 @@ export default function WhitelistPage() {
         .catch((err) => {
           if (isMounted)
             setStatusError((err as Error).message || "Failed to check status.");
+        })
+        .finally(() => {
+          if (isMounted) setStatusLoading(false);
         });
       return () => {
         isMounted = false;
       };
-    }
-  }, [status, address]);
-
-  async function handleCheck(queryAddress?: string) {
-    const target = queryAddress || addressInput.trim() || address || "";
-    if (!target) return;
-    setStatusLoading(true);
-    setStatusError(null);
-    setQualifyMessage(null);
-    setQualifyError(null);
-    try {
-      const data = await fetchWhitelistStatus(target);
-      setStatusResult(data);
-    } catch (err: unknown) {
-      setStatusError((err as Error).message || "Failed to check status.");
-    } finally {
+    } else {
+      setStatusResult(null);
       setStatusLoading(false);
     }
-  }
-
-  async function handleQualify() {
-    setQualifyLoading(true);
-    setQualifyError(null);
-    setQualifyMessage(null);
-    try {
-      const res = await submitWhitelistQualification();
-      if (res.result) {
-        setStatusResult((prev) => ({
-          configured: true,
-          program: prev?.program,
-          address: address || undefined,
-          status: res.result,
-        }));
-
-        if (res.result.phase === "SLOT_ALLOCATED") {
-          setQualifyMessage(
-            `Congratulations! Whitelist Slot #${res.result.slotNumber} has been allocated.`,
-          );
-        } else if (res.result.phase === "IN_QUEUE") {
-          setQualifyMessage(
-            `You are in the queue at rank #${res.result.queueRank ?? res.result.queueNumber}.`,
-          );
-        } else if (res.result.qualified) {
-          setQualifyMessage("You meet all qualification requirements!");
-        } else {
-          setQualifyMessage(
-            "Evaluation complete. Please review the missing requirements below.",
-          );
-        }
-      }
-      // Refresh tasks
-      loadTasks();
-    } catch (err: unknown) {
-      setQualifyError((err as Error).message || "Failed to evaluate qualification.");
-    } finally {
-      setQualifyLoading(false);
-    }
-  }
+  }, [status, address]);
 
   async function handleEvidenceSubmit(task: ActiveCampaignTask) {
     const inputState = evidenceInputs[task.id] || {
@@ -399,30 +183,57 @@ export default function WhitelistPage() {
     }
   }
 
-  async function handleClaim() {
-    if (!dropData?.drop || !dropData?.period) return;
-    setClaimLoading(true);
-    setClaimMessage(null);
-    setClaimError(null);
-    setLootboxError(null);
-    setClaimedLootboxItem(null);
-    setIsLootboxOpen(true);
+  function getGtdReviewDetails(reviewStatus?: WLSlotReviewStatus) {
+    switch (reviewStatus) {
+      case "VALID":
+        return {
+          label: "Verified",
+          subtext: "Verified — All criteria confirmed by team.",
+          badgeVariant: "default" as const,
+          colorClass: "border-emerald-500/30 bg-emerald-500/20 text-emerald-300",
+          icon: CheckCircle2,
+        };
+      case "UNDER_REVIEW":
+        return {
+          label: "Under Verification",
+          subtext: "Under Verification — Account details being audited.",
+          badgeVariant: "warning" as const,
+          colorClass: "border-amber-500/30 bg-amber-500/20 text-amber-300",
+          icon: Clock,
+        };
+      case "FLAGGED":
+        return {
+          label: "Notice / Action Required",
+          subtext:
+            "Notice — Please review your linked accounts and task requirements. Slot remains active.",
+          badgeVariant: "warning" as const,
+          colorClass: "border-rose-500/30 bg-rose-500/20 text-rose-300",
+          icon: AlertCircle,
+        };
+      case "NOT_REVIEWED":
+      default:
+        return {
+          label: "Pending Routine Review",
+          subtext: "Slot Confirmed — Routine verification in progress.",
+          badgeVariant: "outline" as const,
+          colorClass: "border-blue-500/30 bg-blue-500/10 text-blue-300",
+          icon: Info,
+        };
+    }
+  }
 
+  function formatRegistrationDate(dateString?: string): string {
+    if (!dateString) return "";
     try {
-      const res = await claimDropItem(dropData.drop.id, dropData.period.id);
-      setClaimedPeriodId(dropData.period.id);
-      setClaimedLootboxItem(res.inventoryItem);
-      setClaimMessage(
-        `Successfully claimed ${res.inventoryItem.trait.name} (Edition #${res.inventoryItem.edition})!`,
-      );
-      // Refresh drop info
-      fetchCurrentDrop().then(setDropData).catch(console.error);
-    } catch (err: unknown) {
-      const msg = (err as Error).message || "Failed to claim drop.";
-      setClaimError(msg);
-      setLootboxError(msg);
-    } finally {
-      setClaimLoading(false);
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return dateString;
+      return d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return dateString;
     }
   }
 
@@ -490,102 +301,119 @@ export default function WhitelistPage() {
       </div>
 
       <div className="space-y-6">
-        {/* Whitelist Checker Tool */}
+        {/* Whitelist Status & Allocation */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-400">
-                <Search className="h-5 w-5" />
+                <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle>Check Whitelist Allocation Status</CardTitle>
+                <CardTitle>Whitelist Status & Allocation</CardTitle>
                 <CardDescription>
-                  Enter an EVM wallet address or check your connected wallet
+                  Real-time qualification status and allocation progress for your wallet
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <input
-                type="text"
-                placeholder="0x... EVM wallet address"
-                value={addressInput}
-                onChange={(e) => setAddressInput(e.target.value)}
-                className="flex-1 rounded-lg border border-gray-700 bg-gray-900/60 px-4 py-2 text-sm text-gray-200 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-              />
-              <Button
-                variant="primary"
-                onClick={() => handleCheck()}
-                disabled={statusLoading}
-              >
-                {statusLoading ? "Checking..." : "Check Eligibility"}
-              </Button>
-              {status === "authenticated" && (
-                <Button
-                  variant="outline"
-                  onClick={handleQualify}
-                  disabled={qualifyLoading}
-                >
-                  {qualifyLoading ? "Evaluating..." : "Qualify / Claim Slot"}
-                </Button>
-              )}
-            </div>
-
-            {statusError && <p className="text-xs text-rose-400">{statusError}</p>}
-            {qualifyError && <p className="text-xs text-rose-400">{qualifyError}</p>}
-            {qualifyMessage && (
-              <p className="rounded border border-emerald-800/40 bg-emerald-950/30 p-2.5 text-xs text-emerald-400">
-                {qualifyMessage}
-              </p>
-            )}
-
-            {/* Results display */}
-            {statusResult?.status && (
-              <div className="mt-4 space-y-4 rounded-lg border border-gray-800 bg-gray-900/60 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+            {status !== "authenticated" ? (
+              <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-6 text-center text-sm text-gray-400">
+                <p className="font-medium text-gray-300">Wallet Not Authenticated</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Connect your Web3 wallet via Sign in with Ethereum (SIWE) above to view your real-time Whitelist allocation status and trait checklist.
+                </p>
+              </div>
+            ) : statusLoading && !statusResult ? (
+              <div className="py-8 text-center text-sm text-gray-400">
+                Loading your Whitelist status...
+              </div>
+            ) : statusError ? (
+              <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-4 text-xs text-rose-400">
+                {statusError}
+              </div>
+            ) : statusResult?.status ? (
+              <div className="space-y-4 rounded-lg border border-gray-800 bg-gray-900/60 p-4">
+                {/* Header status bar */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-800/80 pb-3">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-gray-300">Phase:</span>
+
+                    {/* GTD Slot Holder */}
                     {statusResult.status.phase === "SLOT_ALLOCATED" && (
-                      <Badge
-                        variant="default"
-                        className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300"
-                      >
-                        SLOT ALLOCATED #{statusResult.status.slotNumber}
-                      </Badge>
+                      <>
+                        <Badge
+                          variant="default"
+                          className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
+                        >
+                          GTD SLOT ALLOCATED
+                        </Badge>
+                        <Badge
+                          variant="default"
+                          className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
+                        >
+                          Guaranteed Slot #{statusResult.status.slotNumber} (Active)
+                        </Badge>
+                      </>
                     )}
-                    {statusResult.status.phase === "IN_QUEUE" && (
-                      <Badge
-                        variant="warning"
-                        className="border-amber-500/30 bg-amber-500/20 text-amber-300"
-                      >
-                        IN QUEUE (Rank #
-                        {statusResult.status.queueRank ?? statusResult.status.queueNumber}
-                        )
-                      </Badge>
+
+                    {/* FCFS Directory Participant */}
+                    {statusResult.status.phase === "FCFS_REGISTERED" && (
+                      <>
+                        <Badge
+                          variant="default"
+                          className={
+                            statusResult.status.isFullyQualified
+                              ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
+                              : "border-blue-500/30 bg-blue-500/20 text-blue-300 font-semibold"
+                          }
+                        >
+                          {statusResult.status.isFullyQualified
+                            ? "FCFS Qualified"
+                            : "FCFS Registered"}
+                        </Badge>
+                        <Badge
+                          variant="default"
+                          className="border-blue-500/30 bg-blue-500/20 text-blue-300 font-semibold"
+                        >
+                          FCFS Directory (Registered)
+                        </Badge>
+                      </>
                     )}
-                    {statusResult.status.phase === "QUALIFIED" && (
-                      <Badge
-                        variant="default"
-                        className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300"
-                      >
-                        QUALIFIED
-                      </Badge>
-                    )}
+
+                    {/* Revoked User (Terminal Disqualification per DEC-022) */}
                     {statusResult.status.phase === "REVOKED" && (
                       <Badge
                         variant="outline"
-                        className="border-rose-500/30 bg-rose-500/20 text-rose-300"
+                        className="border-rose-500/40 bg-rose-500/20 text-rose-300 font-semibold"
                       >
                         REVOKED
                       </Badge>
                     )}
-                    {statusResult.status.phase === "NONE" && (
-                      <Badge variant="outline" className="text-gray-400">
-                        INELIGIBLE
+
+                    {/* Legacy QUALIFIED without slot (if any) */}
+                    {statusResult.status.phase === "QUALIFIED" && (
+                      <Badge
+                        variant="default"
+                        className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
+                      >
+                        QUALIFIED
                       </Badge>
                     )}
+
+                    {/* Ineligible / Not Registered / Incomplete */}
+                    {statusResult.status.phase === "NONE" && (
+                      <>
+                        <Badge variant="outline" className="border-gray-700 text-gray-400">
+                          Incomplete
+                        </Badge>
+                        <Badge variant="outline" className="text-gray-400">
+                          Not Registered / Ineligible
+                        </Badge>
+                      </>
+                    )}
                   </div>
+
                   {statusResult.program && (
                     <span className="text-xs text-gray-500">
                       Capacity: {statusResult.program.allocatedSlotsCount} /{" "}
@@ -594,67 +422,246 @@ export default function WhitelistPage() {
                   )}
                 </div>
 
-                {/* 5-Category Checklist */}
-                <div>
-                  <h4 className="mb-2 text-xs font-semibold tracking-wider text-gray-400 uppercase">
-                    Required Trait Categories (5 of 5)
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
-                    {["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"].map((cat) => {
-                      const isHeld =
-                        statusResult.status?.details.heldCategories.includes(cat);
-                      return (
-                        <div
-                          key={cat}
-                          className={`flex items-center gap-1.5 rounded border p-2 ${
-                            isHeld
-                              ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
-                              : "border-gray-800 bg-gray-800/20 text-gray-500"
-                          }`}
-                        >
-                          {isHeld ? (
+                {/* 1. SLOT_ALLOCATED Details & GTD Review Sub-indicator (DEC-015) */}
+                {statusResult.status.phase === "SLOT_ALLOCATED" && (() => {
+                  const review = getGtdReviewDetails(statusResult.status.reviewStatus);
+                  const ReviewIcon = review.icon;
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex flex-col gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                              Review Status:
+                            </span>
+                            <Badge
+                              variant={review.badgeVariant}
+                              className={`text-xs ${review.colorClass}`}
+                            >
+                              <ReviewIcon className="mr-1 h-3 w-3 shrink-0" />
+                              {review.label}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-300">{review.subtext}</p>
+                        </div>
+                        {statusResult.status.allocatedAt && (
+                          <span className="text-[11px] text-gray-500">
+                            Secured on {formatRegistrationDate(statusResult.status.allocatedAt)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        Your Guaranteed Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected.
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. FCFS_REGISTERED Details (DEC-013, DEC-017, DEC-018) */}
+                {statusResult.status.phase === "FCFS_REGISTERED" && (
+                  <div className="space-y-3">
+                    {/* Registration sequence and timestamp */}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-300">
+                      <span className="font-semibold text-white">
+                        Participant #{statusResult.status.queueNumber}
+                      </span>
+                      {statusResult.status.joinedAt && (
+                        <>
+                          <span className="text-gray-600">•</span>
+                          <span className="text-gray-400">
+                            Registered on {formatRegistrationDate(statusResult.status.joinedAt)}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* OpenSea FCFS Allowlist Eligibility Banner */}
+                    {statusResult.status.isFullyQualified ? (
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
+                        <div className="flex items-center gap-2 font-semibold text-emerald-200">
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                          Eligible for OpenSea FCFS Allowlist
+                        </div>
+                        <p className="mt-1 text-emerald-300/80">
+                          All 5 qualification requirements are satisfied! Your wallet will be included in the OpenSea FCFS allowlist export.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+                        <div className="flex items-center gap-2 font-semibold text-amber-200">
+                          <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
+                          Action Required — Incomplete Requirements
+                        </div>
+                        <p className="mt-1 text-amber-300/80">
+                          You are registered in the directory, but must satisfy all 5 requirements below to be included in the OpenSea FCFS allowlist export.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Clear Explanatory Notice (DEC-018) */}
+                    <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-xs text-gray-400">
+                      <p className="font-medium text-gray-300">FCFS Directory Notice</p>
+                      <p className="mt-0.5 text-gray-400">
+                        Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed (GTD) slot or an allocation. GTD slots are never automatically filled.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. REVOKED Full Disqualification Alert (DEC-022) */}
+                {statusResult.status.phase === "REVOKED" && (
+                  <div className="space-y-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-200">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-rose-300">
+                      <XCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                      Whitelist Status Revoked
+                    </div>
+                    <p className="text-rose-200/90 font-medium">
+                      {statusResult.status.missingRequirements[0] ||
+                        "Whitelist qualification has been revoked by an administrator."}
+                    </p>
+                    <div className="border-t border-rose-500/20 pt-2 text-rose-300/80 space-y-1">
+                      <p>
+                        In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program.
+                      </p>
+                      <p className="text-rose-400/90">
+                        Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the OpenSea FCFS allowlist export.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. NONE (Ineligible / Not Registered) */}
+                {statusResult.status.phase === "NONE" && (
+                  <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-xs text-gray-400">
+                    <p className="font-medium text-gray-300">Not Registered</p>
+                    <p className="mt-0.5 text-gray-400">
+                      Connect your EVM wallet and X (Twitter) account to automatically register in the FCFS Directory, and complete the 5 trait categories and mandatory tasks to qualify.
+                    </p>
+                  </div>
+                )}
+
+                {/* Checklist & Verification Section (Hidden when REVOKED) */}
+                {statusResult.status.phase !== "REVOKED" && (
+                  <>
+                    {/* Linked Identities Status */}
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 text-xs">
+                      <div
+                        className={`flex items-center justify-between rounded border p-2.5 ${
+                          statusResult.status.details?.hasVerifiedWallet
+                            ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
+                            : "border-gray-800 bg-gray-800/20 text-gray-500"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {statusResult.status.details?.hasVerifiedWallet ? (
                             <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
                           ) : (
                             <XCircle className="h-3.5 w-3.5 shrink-0 text-gray-600" />
                           )}
-                          <span>{cat}</span>
+                          <span>EVM Wallet</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                        <span className="font-mono text-[11px] text-gray-400">
+                          {statusResult.status.details?.hasVerifiedWallet
+                            ? "Verified"
+                            : "Required"}
+                        </span>
+                      </div>
 
-                {/* Mandatory Tasks Progress */}
-                {statusResult.status.details && (
-                  <div className="flex items-center justify-between rounded border border-gray-800 bg-gray-900/40 p-2.5 text-xs">
-                    <span className="text-gray-400">Mandatory Whitelist Tasks:</span>
-                    <span
-                      className={`font-semibold ${
-                        statusResult.status.details.completedMandatoryTasksCount >=
-                        statusResult.status.details.totalMandatoryTasksCount
-                          ? "text-emerald-400"
-                          : "text-amber-400"
-                      }`}
-                    >
-                      {statusResult.status.details.completedMandatoryTasksCount} /{" "}
-                      {statusResult.status.details.totalMandatoryTasksCount} Completed
-                    </span>
-                  </div>
-                )}
+                      <div
+                        className={`flex items-center justify-between rounded border p-2.5 ${
+                          statusResult.status.details?.hasLinkedX
+                            ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
+                            : "border-gray-800 bg-gray-800/20 text-gray-500"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {statusResult.status.details?.hasLinkedX ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5 shrink-0 text-gray-600" />
+                          )}
+                          <span>X (Twitter) Identity</span>
+                        </div>
+                        <span className="font-mono text-[11px] text-gray-400">
+                          {statusResult.status.details?.hasLinkedX
+                            ? statusResult.status.details.xUsername
+                              ? `@${statusResult.status.details.xUsername}`
+                              : "Linked"
+                            : "Required"}
+                        </span>
+                      </div>
+                    </div>
 
-                {/* Missing requirements summary */}
-                {statusResult.status.missingRequirements.length > 0 && (
-                  <div className="space-y-1 rounded border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-300">
-                    <p className="font-semibold">Missing Requirements:</p>
-                    <ul className="list-inside list-disc space-y-0.5 text-amber-200/80">
-                      {statusResult.status.missingRequirements.map((req, i) => (
-                        <li key={i}>{req}</li>
-                      ))}
-                    </ul>
-                  </div>
+                    {/* 5-Category Trait Checklist */}
+                    <div>
+                      <div className="mb-2 flex items-center justify-between">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                          Required Trait Categories (5 of 5)
+                        </h4>
+                        <span className="text-[11px] text-gray-500">
+                          {statusResult.status.details?.heldCategories?.length ?? 0} / 5 Collected
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                        {["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"].map((cat) => {
+                          const isHeld =
+                            statusResult.status?.details?.heldCategories?.includes(cat);
+                          return (
+                            <div
+                              key={cat}
+                              className={`flex items-center gap-1.5 rounded border p-2 ${
+                                isHeld
+                                  ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
+                                  : "border-gray-800 bg-gray-800/20 text-gray-500"
+                              }`}
+                            >
+                              {isHeld ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                              ) : (
+                                <XCircle className="h-3.5 w-3.5 shrink-0 text-gray-600" />
+                              )}
+                              <span>{cat}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Mandatory Tasks Progress */}
+                    {statusResult.status.details && (
+                      <div className="flex items-center justify-between rounded border border-gray-800 bg-gray-900/40 p-2.5 text-xs">
+                        <span className="text-gray-400">Mandatory Whitelist Tasks:</span>
+                        <span
+                          className={`font-semibold ${
+                            statusResult.status.details.completedMandatoryTasksCount >=
+                            statusResult.status.details.totalMandatoryTasksCount
+                              ? "text-emerald-400"
+                              : "text-amber-400"
+                          }`}
+                        >
+                          {statusResult.status.details.completedMandatoryTasksCount} /{" "}
+                          {statusResult.status.details.totalMandatoryTasksCount} Completed
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Missing requirements summary */}
+                    {statusResult.status.missingRequirements.length > 0 &&
+                      !statusResult.status.isFullyQualified &&
+                      statusResult.status.phase !== "SLOT_ALLOCATED" && (
+                        <div className="space-y-1 rounded border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-300">
+                          <p className="font-semibold">Missing Requirements:</p>
+                          <ul className="list-inside list-disc space-y-0.5 text-amber-200/80">
+                            {statusResult.status.missingRequirements.map((req, i) => (
+                              <li key={i}>{req}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                  </>
                 )}
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 
@@ -959,462 +966,31 @@ export default function WhitelistPage() {
           </CardContent>
         </Card>
 
-        {/* Drops & Claim Engine Section */}
-        <Card className="border-emerald-500/30">
+        {/* Trait Lootbox Drops CTA */}
+        <Card className="border-emerald-500/20 bg-gradient-to-r from-emerald-950/20 via-gray-900/40 to-[#0c0e17]">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-400">
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <div>
-                  <CardTitle>Hourly Drop & Trait Claim Engine</CardTitle>
+                  <CardTitle>Trait Lootbox Drops</CardTitle>
                   <CardDescription>
-                    {dropData?.drop?.cycleDurationHours === 5
-                      ? "5-hour hype control cycle with a 30-minute claim window"
-                      : "2-hour drop cycles with a 30-minute claim window"}
+                    Collect trait items across all 5 categories in our periodic drops to qualify for Whitelist
                   </CardDescription>
                 </div>
               </div>
-              {isWindowActive ? (
-                <Badge
-                  variant="default"
-                  className="flex items-center gap-1.5 border-emerald-500/30 bg-emerald-500/20 font-mono text-xs text-emerald-300"
-                >
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                  Claim Window Open ({formatRemaining(claimRemainingMs)})
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="flex items-center gap-1.5 border-amber-500/40 bg-amber-500/10 font-mono text-xs text-amber-300"
-                >
-                  <Clock className="h-3 w-3 text-amber-400" />
-                  Next Drop in {formatRemaining(nextDropRemainingMs)}
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {dropData?.active && dropData.period ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-                  <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
-                    <span className="text-xs text-gray-500">Period Index</span>
-                    <p className="font-medium text-gray-200">
-                      #{dropData.period.periodIndex}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
-                    <span className="text-xs text-gray-500">Remaining Stock</span>
-                    <p className="font-medium text-emerald-400">
-                      {dropData.stock?.totalRemaining} / {dropData.stock?.totalAllocated}{" "}
-                      Units
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
-                    <span className="text-xs text-gray-500">
-                      {isWindowActive ? "Claim Window Status" : "Next Drop Window"}
-                    </span>
-                    <p
-                      className={`mt-0.5 font-mono text-sm font-medium ${
-                        isWindowActive ? "text-emerald-400" : "text-amber-300"
-                      }`}
-                    >
-                      {isWindowActive
-                        ? `${formatRemaining(claimRemainingMs)} remaining`
-                        : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
-                    </p>
-                    {!isWindowActive && periodEndsMs > 0 && (
-                      <span className="mt-0.5 block text-[10px] text-gray-500">
-                        Cycle starts at{" "}
-                        {new Date(periodEndsMs).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Transparent pool probabilities */}
-                {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 && (() => {
-                  // Sort by rarity rank (Legendary first) then by probability descending
-                  const sortedPool = [...dropData.stock.poolItems].sort((a, b) => {
-                    const rankA = RARITY_WEIGHT_ORDER[a.rarity?.toUpperCase()] ?? 1;
-                    const rankB = RARITY_WEIGHT_ORDER[b.rarity?.toUpperCase()] ?? 1;
-                    if (rankB !== rankA) return rankB - rankA;
-                    return b.probabilityPercent - a.probabilityPercent;
-                  });
-
-                  const filteredPool =
-                    poolRarityFilter === "ALL"
-                      ? sortedPool
-                      : sortedPool.filter(
-                          (item) => item.rarity?.toUpperCase() === poolRarityFilter
-                        );
-
-                  const legendaryCount = sortedPool.filter(
-                    (p) => p.rarity?.toUpperCase() === "LEGENDARY"
-                  ).length;
-                  const epicCount = sortedPool.filter(
-                    (p) => p.rarity?.toUpperCase() === "EPIC"
-                  ).length;
-                  const rareCount = sortedPool.filter(
-                    (p) => p.rarity?.toUpperCase() === "RARE"
-                  ).length;
-                  const uncommonCount = sortedPool.filter(
-                    (p) => p.rarity?.toUpperCase() === "UNCOMMON"
-                  ).length;
-                  const commonCount = sortedPool.filter(
-                    (p) => p.rarity?.toUpperCase() === "COMMON"
-                  ).length;
-
-                  return (
-                    <div className="space-y-3 pt-2">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <h5 className="text-xs font-bold tracking-wider text-white uppercase flex items-center gap-1.5">
-                            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                            Drop Pool Probability Distribution ({sortedPool.length} Traits)
-                          </h5>
-                          <p className="text-[11px] text-gray-400">
-                            Transparent RNG weights sorted by rarity tier
-                          </p>
-                        </div>
-                        {dropData.stock && (
-                          <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-[11px] font-mono">
-                            <span className="text-gray-400">Pool Stock:</span>
-                            <span className="font-bold text-emerald-400">
-                              {dropData.stock.totalRemaining} / {dropData.stock.totalAllocated}
-                            </span>
-                            <div className="h-1.5 w-16 rounded-full bg-gray-950 overflow-hidden border border-gray-800 ml-1">
-                              <div
-                                className="h-full bg-emerald-400 transition-all duration-500"
-                                style={{
-                                  width: `${Math.min(
-                                    100,
-                                    Math.round(
-                                      (dropData.stock.totalRemaining /
-                                        Math.max(1, dropData.stock.totalAllocated)) *
-                                        100,
-                                    ),
-                                  )}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                        <div className="flex flex-wrap items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setPoolRarityFilter("ALL")}
-                            className={`rounded px-2 py-0.5 text-[10px] font-semibold transition-colors ${
-                              poolRarityFilter === "ALL"
-                                ? "bg-gray-800 text-white border border-gray-700"
-                                : "text-gray-400 hover:text-gray-200"
-                            }`}
-                          >
-                            All ({sortedPool.length})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPoolRarityFilter("LEGENDARY")}
-                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
-                              poolRarityFilter === "LEGENDARY"
-                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/50"
-                                : "text-amber-400/70 hover:text-amber-300"
-                            }`}
-                          >
-                            ★ Legendary ({legendaryCount})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPoolRarityFilter("EPIC")}
-                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
-                              poolRarityFilter === "EPIC"
-                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/50"
-                                : "text-purple-400/70 hover:text-purple-300"
-                            }`}
-                          >
-                            Epic ({epicCount})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPoolRarityFilter("RARE")}
-                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
-                              poolRarityFilter === "RARE"
-                                ? "bg-sky-500/20 text-sky-300 border border-sky-500/50"
-                                : "text-sky-400/70 hover:text-sky-300"
-                            }`}
-                          >
-                            Rare ({rareCount})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPoolRarityFilter("UNCOMMON")}
-                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
-                              poolRarityFilter === "UNCOMMON"
-                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50"
-                                : "text-emerald-400/70 hover:text-emerald-300"
-                            }`}
-                          >
-                            Uncommon ({uncommonCount})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPoolRarityFilter("COMMON")}
-                            className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors ${
-                              poolRarityFilter === "COMMON"
-                                ? "bg-gray-800 text-gray-300 border border-gray-700"
-                                : "text-gray-400 hover:text-gray-200"
-                            }`}
-                          >
-                            Common ({commonCount})
-                          </button>
-                        </div>
-
-                      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                        {filteredPool.map((item) => {
-                          const rarity = item.rarity?.toUpperCase() || "COMMON";
-                          const theme = RARITY_THEME[rarity] || RARITY_THEME.COMMON;
-
-                          return (
-                            <div
-                              key={item.poolItemId}
-                              className={`group relative flex flex-col justify-between rounded-xl border p-2.5 transition-all hover:scale-[1.01] ${theme.border} ${theme.bg} ${theme.glow}`}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                {/* Trait Thumbnail Preview */}
-                                <div
-                                  className={`relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border bg-[#0a0d14] flex items-center justify-center ${
-                                    rarity === "LEGENDARY"
-                                      ? "border-amber-500/40"
-                                      : rarity === "EPIC"
-                                        ? "border-purple-500/30"
-                                        : rarity === "RARE"
-                                          ? "border-sky-500/30"
-                                          : rarity === "UNCOMMON"
-                                            ? "border-emerald-500/30"
-                                            : "border-gray-800"
-                                  }`}
-                                >
-                                  {item.imageUrl ? (
-                                    <img
-                                      src={item.imageUrl}
-                                      alt={item.traitName}
-                                      className="h-full w-full object-contain [image-rendering:pixelated] transition-transform group-hover:scale-110"
-                                    />
-                                  ) : (
-                                    <Sparkles className="h-5 w-5 text-gray-600" />
-                                  )}
-                                </div>
-
-                                {/* Trait Info & Badges */}
-                                <div className="flex-1 min-w-0">
-                                  <p
-                                    className="truncate text-xs font-bold text-white tracking-wide"
-                                    title={item.traitName}
-                                  >
-                                    {item.traitName}
-                                  </p>
-                                  <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="rounded bg-gray-900/80 px-1.5 py-0.5 text-[8px] font-mono text-gray-400 uppercase border border-gray-800">
-                                      {item.category}
-                                    </span>
-                                    <span
-                                      className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase border ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText}`}
-                                    >
-                                      {theme.prefix}
-                                      {rarity}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Probability */}
-                                <div className="text-right shrink-0">
-                                  <span className={`font-mono text-xs ${theme.text}`}>
-                                    {item.probabilityPercent}%
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Stock Progress Bar */}
-                              {(() => {
-                                const allocated =
-                                  item.allocatedStock && item.allocatedStock > 0
-                                    ? item.allocatedStock
-                                    : Math.max(10, item.remainingStock);
-                                const stockPercent = Math.max(
-                                  0,
-                                  Math.min(
-                                    100,
-                                    Math.round(
-                                      (item.remainingStock / allocated) * 100,
-                                    ),
-                                  ),
-                                );
-                                const isLowStock =
-                                  item.remainingStock > 0 &&
-                                  (stockPercent <= 20 || item.remainingStock <= 2);
-
-                                return (
-                                  <div className="mt-2.5 pt-1.5 border-t border-gray-800/60">
-                                    <div className="flex items-center justify-between text-[9px] font-mono mb-1">
-                                      <span className="flex items-center gap-1">
-                                        {isLowStock && (
-                                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
-                                        )}
-                                        <span
-                                          className={
-                                            isLowStock
-                                              ? "text-rose-400 font-bold"
-                                              : "text-gray-400"
-                                          }
-                                        >
-                                          {isLowStock ? "Low Stock" : "Stock"}
-                                        </span>
-                                      </span>
-                                      <span className="text-gray-400">
-                                        <span
-                                          className={`font-semibold ${
-                                            isLowStock
-                                              ? "text-rose-300"
-                                              : "text-gray-200"
-                                          }`}
-                                        >
-                                          {item.remainingStock}
-                                        </span>
-                                        <span className="text-gray-500">
-                                          /{allocated} left
-                                        </span>
-                                      </span>
-                                    </div>
-                                    <div className="h-1.5 w-full rounded-full bg-gray-950/80 border border-gray-800/80 overflow-hidden">
-                                      <div
-                                        className={`h-full rounded-full transition-all duration-500 ${
-                                          isLowStock
-                                            ? "bg-gradient-to-r from-rose-500 to-amber-500"
-                                            : theme.barColor
-                                        }`}
-                                        style={{ width: `${stockPercent}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {claimMessage && (
-                  <p className="flex items-center gap-2 rounded border border-emerald-800/40 bg-emerald-950/30 p-2.5 text-xs text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                    <span>{claimMessage}</span>
-                  </p>
-                )}
-                {claimError && !isAlreadyClaimed && (
-                  <p className="rounded border border-rose-800/40 bg-rose-950/30 p-2.5 text-xs text-rose-400">
-                    {claimError}
-                  </p>
-                )}
-                {isAlreadyClaimed && !claimMessage && (
-                  <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/50 p-2.5 text-xs text-gray-400">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                    <span>
-                      You have already claimed your 1 trait allocation for Period #{dropData.period.periodIndex}. Next drop cycle begins in {formatRemaining(nextDropRemainingMs)}.
-                    </span>
-                  </div>
-                )}
-
-                <Button
-                  variant={isAlreadyClaimed ? "outline" : "primary"}
-                  className={`w-full font-medium sm:w-auto ${
-                    isAlreadyClaimed
-                      ? "border-gray-800 bg-gray-900/60 text-gray-400 opacity-60 cursor-not-allowed hover:bg-gray-900/60"
-                      : ""
-                  }`}
-                  onClick={handleClaim}
-                  disabled={
-                    !isWindowActive ||
-                    claimLoading ||
-                    status !== "authenticated" ||
-                    isAlreadyClaimed
-                  }
-                >
-                  {claimLoading ? (
-                    "Claiming..."
-                  ) : status !== "authenticated" ? (
-                    "Sign In to Claim"
-                  ) : isAlreadyClaimed ? (
-                    <span className="flex items-center gap-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                      Claimed for Period #{dropData.period.periodIndex} (1/1)
-                    </span>
-                  ) : isWindowActive ? (
-                    `Claim Trait Now (${formatRemaining(claimRemainingMs)})`
-                  ) : (
-                    `Next Drop in ${formatRemaining(nextDropRemainingMs)}`
-                  )}
+              <Link href="/drops">
+                <Button variant="primary" className="w-full sm:w-auto">
+                  Go to Drops
+                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
                 </Button>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">
-                No active drop event currently in progress. Cycles renew on UTC schedule.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Gifts & Referral Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-teal-500/10 p-2 text-teal-400">
-                <Gift className="h-5 w-5" />
-              </div>
-              <div>
-                <CardTitle>Gifts & Referral Allocation</CardTitle>
-                <CardDescription>Duplicate trait transfer workflow</CardDescription>
-              </div>
+              </Link>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900/40 p-4 text-sm text-gray-400">
-              <p>
-                Peer-to-peer duplicate gifting is active. Senders must retain at least 1
-                copy; 1 gift per wallet per UTC day.
-              </p>
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Pending Gift Window</span>
-                <span>24 Hours UTC</span>
-              </div>
-            </div>
-          </CardContent>
         </Card>
       </div>
-
-      {/* Claim Mystery Pod / Lootbox Reveal Modal */}
-      <ClaimLootboxModal
-        isOpen={isLootboxOpen}
-        onClose={() => setIsLootboxOpen(false)}
-        poolItems={dropData?.stock?.poolItems?.map((item) => ({
-          poolItemId: item.poolItemId,
-          traitName: item.traitName,
-          category: item.category,
-          rarity: item.rarity,
-          imageUrl: item.imageUrl,
-        }))}
-        claimedItem={claimedLootboxItem}
-        isLoading={claimLoading}
-        error={lootboxError}
-        periodIndex={dropData?.period?.periodIndex}
-      />
     </div>
   );
 }

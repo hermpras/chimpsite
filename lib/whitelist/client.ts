@@ -1,3 +1,9 @@
+export type WLSlotReviewStatus =
+  | "NOT_REVIEWED"
+  | "UNDER_REVIEW"
+  | "VALID"
+  | "FLAGGED";
+
 export interface WhitelistStatusResponse {
   configured: boolean;
   authenticated?: boolean;
@@ -13,10 +19,21 @@ export interface WhitelistStatusResponse {
   };
   status?: {
     qualified: boolean;
-    phase: "NONE" | "QUALIFIED" | "IN_QUEUE" | "SLOT_ALLOCATED" | "REVOKED";
+    isFullyQualified?: boolean;
+    phase:
+      | "NONE"
+      | "QUALIFIED"
+      | "IN_QUEUE"
+      | "SLOT_ALLOCATED"
+      | "REVOKED"
+      | "FCFS_REGISTERED";
     qualifiedAt?: string;
     slotNumber?: number;
+    reviewStatus?: WLSlotReviewStatus;
+    reviewedAt?: string | null;
+    allocatedAt?: string;
     queueNumber?: number;
+    joinedAt?: string;
     queueRank?: number;
     missingRequirements: string[];
     details: {
