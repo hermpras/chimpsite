@@ -13,6 +13,7 @@ import {
   type EvidenceSubmissionOutput,
   type TaskProgressOutput,
 } from "../tasks/evidence";
+import { triggerAutomaticEligibilityEvaluation } from "../whitelist/qualification";
 
 // ---------------------------------------------------------------------------
 // Error Class
@@ -170,7 +171,7 @@ export async function reviewEvidence(
   const reviewerNotes = normalizeReviewerNotes(input.reviewerNotes);
   const now = input.now ?? new Date();
 
-  return await prisma.$transaction(async (tx) => {
+  const reviewResult = await prisma.$transaction(async (tx) => {
     // 1. Fetch submission with task and progress
     const existingSubmission = await tx.evidenceSubmission.findUnique({
       where: { id: submissionId },
@@ -265,8 +266,33 @@ export async function reviewEvidence(
       submission: formatEvidenceSubmissionOutput(updatedSubmission),
       taskProgress: formatTaskProgressOutput(updatedTaskProgress),
       auditLogId: audit.id,
+      candidateUserId: existingSubmission.userId,
     };
   });
+
+  // Safely trigger automatic Whitelist eligibility evaluation if evidence is APPROVED
+  if (targetStatus === "APPROVED") {
+    try {
+      if (
+        typeof (prisma as any).wLProgram?.findFirst === "function" ||
+        typeof (prisma as any).wLProgram?.findUnique === "function"
+      ) {
+        await triggerAutomaticEligibilityEvaluation(prisma, {
+          userId: reviewResult.candidateUserId,
+          now,
+        });
+      }
+    } catch (evalErr) {
+      console.error("Automatic WL eligibility evaluation warning on evidence approval:", evalErr);
+    }
+  }
+
+  return {
+    success: true,
+    submission: reviewResult.submission,
+    taskProgress: reviewResult.taskProgress,
+    auditLogId: reviewResult.auditLogId,
+  };
 }
 
 /**

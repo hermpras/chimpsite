@@ -9,6 +9,8 @@ import { timingSafeEqualString } from "@/lib/auth/timing-safe";
 export { timingSafeEqualString };
 
 import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
+import { registerParticipantInDirectory } from "../whitelist/participant-registration";
+import { triggerAutomaticEligibilityEvaluation } from "../whitelist/qualification";
 
 export { normalizeXAvatarUrl };
 
@@ -469,8 +471,42 @@ export async function linkXAccountWithCode(
       },
     });
 
+    // FCFS Directory Auto-Registration (DEC-013, DEC-017)
+    // Concurrency-safe, idempotent registration when wallet and X are connected
+    try {
+      if (tx.wLProgram?.findFirst) {
+        const openProgram = await tx.wLProgram.findFirst({
+          where: { status: "OPEN" },
+          orderBy: { createdAt: "desc" },
+          select: { id: true },
+        });
+        if (openProgram) {
+          await registerParticipantInDirectory(tx, {
+            userId: input.userId,
+            programId: openProgram.id,
+          });
+        }
+      }
+    } catch (regErr) {
+      console.error("FCFS directory auto-registration warning during X linking:", regErr);
+    }
+
     return record;
   });
+
+  // Safely trigger automatic Whitelist eligibility evaluation if user now qualifies
+  try {
+    if (
+      typeof (prisma as any).wLProgram?.findFirst === "function" ||
+      typeof (prisma as any).wLProgram?.findUnique === "function"
+    ) {
+      await triggerAutomaticEligibilityEvaluation(prisma, {
+        userId: input.userId,
+      });
+    }
+  } catch (evalErr) {
+    console.error("Automatic WL eligibility evaluation warning on X linking:", evalErr);
+  }
 
   return xIdentity;
 }

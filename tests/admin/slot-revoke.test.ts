@@ -29,6 +29,8 @@ function createMockPrisma() {
 
   const hooks = {
     onAuditCreate: null as ((data: any) => Promise<void> | void) | null,
+    onStatusHistoryCreate: null as ((data: any) => Promise<void> | void) | null,
+    onProgramUpdate: null as ((data: any) => Promise<void> | void) | null,
   };
 
   const createTxClient = () => {
@@ -134,6 +136,9 @@ function createMockPrisma() {
           return store.wlPrograms.find((p) => p.id === where.id) || null;
         }),
         update: vi.fn(async ({ where, data }: any) => {
+          if (hooks.onProgramUpdate) {
+            await hooks.onProgramUpdate({ where, data });
+          }
           const p = store.wlPrograms.find((prog) => prog.id === where.id);
           if (p) {
             programSnapshots.push({
@@ -148,6 +153,31 @@ function createMockPrisma() {
             }
           }
           return p;
+        }),
+        updateMany: vi.fn(async ({ where, data }: any) => {
+          if (hooks.onProgramUpdate) {
+            await hooks.onProgramUpdate({ where, data });
+          }
+          let count = 0;
+          for (const p of store.wlPrograms) {
+            if (p.id === where.id) {
+              if (
+                where.allocatedSlotsCount?.gt !== undefined &&
+                !(p.allocatedSlotsCount > where.allocatedSlotsCount.gt)
+              ) {
+                continue;
+              }
+              programSnapshots.push({
+                id: p.id,
+                allocatedSlotsCount: p.allocatedSlotsCount,
+              });
+              if (data.allocatedSlotsCount?.decrement) {
+                p.allocatedSlotsCount -= data.allocatedSlotsCount.decrement;
+              }
+              count++;
+            }
+          }
+          return { count };
         }),
       },
       wLQualification: {
@@ -176,9 +206,37 @@ function createMockPrisma() {
           }
           return q;
         }),
+        create: vi.fn(async ({ data }: any) => {
+          const q = { id: `qual-${store.wlQualifications.length + 1}`, ...data };
+          store.wlQualifications.push(q);
+          return q;
+        }),
+        upsert: vi.fn(async ({ where, create, update }: any) => {
+          const existing = store.wlQualifications.find(
+            (q) =>
+              q.programId === where.programId_userId?.programId &&
+              q.userId === where.programId_userId?.userId,
+          );
+          if (existing) {
+            qualSnapshots.push({
+              id: existing.id,
+              status: existing.status,
+              disqualifiedAt: existing.disqualifiedAt,
+              reason: existing.reason,
+            });
+            Object.assign(existing, update);
+            return existing;
+          }
+          const created = { id: `qual-${store.wlQualifications.length + 1}`, ...create };
+          store.wlQualifications.push(created);
+          return created;
+        }),
       },
       wLStatusHistory: {
         create: vi.fn(async ({ data }: any) => {
+          if (hooks.onStatusHistoryCreate) {
+            await hooks.onStatusHistoryCreate(data);
+          }
           const record = { id: `hist-${store.wlStatusHistories.length + 1}`, ...data };
           store.wlStatusHistories.push(record);
           uncommittedStatusHistories.push(record);
@@ -369,6 +427,7 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
         validateRevokeWlSlotInput({
           slotId: "slot-1",
           adminUserId: "",
+          reason: "Valid reason",
         }),
       ).toThrowError(WlSlotRevokeError);
 
@@ -376,6 +435,7 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
         validateRevokeWlSlotInput({
           slotId: "slot-1",
           adminUserId: "   ",
+          reason: "Valid reason",
         }),
       ).toThrowError(/Admin authentication is required/);
     });
@@ -384,6 +444,7 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
       expect(() =>
         validateRevokeWlSlotInput({
           adminUserId: "admin-1",
+          reason: "Valid reason",
         }),
       ).toThrowError(
         /valid slotId or \(programId with userId or slotNumber\) is required/,
@@ -393,6 +454,7 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
         validateRevokeWlSlotInput({
           slotId: "",
           adminUserId: "admin-1",
+          reason: "Valid reason",
         }),
       ).toThrowError(
         /valid slotId or \(programId with userId or slotNumber\) is required/,
@@ -409,7 +471,79 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
       ).toThrowError(/Reason must be a string/);
     });
 
-    it("normalizes and accepts valid slot identifiers and optional reason", () => {
+    it("rejects missing or null reason with 400 REVOKE_REASON_REQUIRED", () => {
+      expect(() =>
+        validateRevokeWlSlotInput({
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: undefined,
+        }),
+      ).toThrowError(/Revocation reason is required/);
+
+      expect(() =>
+        validateRevokeWlSlotInput({
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: null,
+        }),
+      ).toThrowError(/Revocation reason is required/);
+    });
+
+    it("rejects empty or whitespace-only reason with 400 REVOKE_REASON_REQUIRED", () => {
+      expect(() =>
+        validateRevokeWlSlotInput({
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "",
+        }),
+      ).toThrowError(/Revocation reason is required and cannot be empty/);
+
+      expect(() =>
+        validateRevokeWlSlotInput({
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "    ",
+        }),
+      ).toThrowError(/Revocation reason is required and cannot be empty/);
+    });
+
+    it("rejects reason with less than 5 characters after trim with 400 REVOKE_REASON_REQUIRED", () => {
+      expect(() =>
+        validateRevokeWlSlotInput({
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "abc",
+        }),
+      ).toThrowError(/Revocation reason must be at least 5 characters long/);
+
+      expect(() =>
+        validateRevokeWlSlotInput({
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "  a  ",
+        }),
+      ).toThrowError(/Revocation reason must be at least 5 characters long/);
+
+      expect(() =>
+        validateRevokeWlSlotInput({
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "1234",
+        }),
+      ).toThrowError(/Revocation reason must be at least 5 characters long/);
+    });
+
+    it("rejects reason exceeding 1000 characters with 400 INVALID_INPUT", () => {
+      expect(() =>
+        validateRevokeWlSlotInput({
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "a".repeat(1001),
+        }),
+      ).toThrowError(/Revocation reason cannot exceed 1000 characters/);
+    });
+
+    it("normalizes and accepts valid slot identifiers and valid reason (>= 5 characters)", () => {
       const res = validateRevokeWlSlotInput({
         slotId: "  slot-1  ",
         adminUserId: "  admin-1  ",
@@ -506,6 +640,7 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
         programId: "prog-1",
         slotNumber: 1,
         adminUserId: "admin-1",
+        reason: "Revocation by slot number",
         now,
       });
 
@@ -521,6 +656,7 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
         revokeWlSlot(mockPrisma, {
           slotId: "non-existent-slot",
           adminUserId: "admin-1",
+          reason: "Non existent slot revocation",
         }),
       ).rejects.toThrow("Whitelist slot was not found.");
     });
@@ -558,6 +694,7 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
         revokeWlSlot(mockPrisma, {
           slotId: "slot-unknown-status",
           adminUserId: "admin-1",
+          reason: "Revoke invalid status slot",
         }),
       ).rejects.toThrow(/Whitelist slot cannot be revoked from status/);
     });
@@ -574,7 +711,7 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
         revokeWlSlot(mockPrisma, {
           slotId: "slot-1",
           adminUserId: "admin-1",
-          reason: "Will fail",
+          reason: "Will fail on audit log",
           now,
         }),
       ).rejects.toThrow("Audit log disk write failed");
@@ -585,6 +722,88 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
 
       const prog = mockPrisma._store.wlPrograms.find((p: any) => p.id === "prog-1");
       expect(prog?.allocatedSlotsCount).toBe(2);
+
+      const qual = mockPrisma._store.wlQualifications.find((q: any) => q.id === "qual-1");
+      expect(qual?.status).toBe("QUALIFIED");
+
+      expect(mockPrisma._store.auditLogs).toHaveLength(0);
+      expect(mockPrisma._store.wlStatusHistories).toHaveLength(0);
+    });
+
+    it("rolls back all mutations if WLStatusHistory creation fails", async () => {
+      mockPrisma._hooks.onStatusHistoryCreate = () => {
+        throw new Error("WLStatusHistory database error");
+      };
+
+      await expect(
+        revokeWlSlot(mockPrisma, {
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "Will fail on status history",
+          now,
+        }),
+      ).rejects.toThrow("WLStatusHistory database error");
+
+      // Verify complete rollback: slot still ALLOCATED, program count still 2, qual still QUALIFIED
+      const slot = mockPrisma._store.wlSlots.find((s: any) => s.id === "slot-1");
+      expect(slot?.status).toBe("ALLOCATED");
+
+      const prog = mockPrisma._store.wlPrograms.find((p: any) => p.id === "prog-1");
+      expect(prog?.allocatedSlotsCount).toBe(2);
+
+      const qual = mockPrisma._store.wlQualifications.find((q: any) => q.id === "qual-1");
+      expect(qual?.status).toBe("QUALIFIED");
+
+      expect(mockPrisma._store.auditLogs).toHaveLength(0);
+      expect(mockPrisma._store.wlStatusHistories).toHaveLength(0);
+    });
+
+    it("rolls back all mutations if counter decrement fails", async () => {
+      mockPrisma._hooks.onProgramUpdate = () => {
+        throw new Error("Database deadlock on counter update");
+      };
+
+      await expect(
+        revokeWlSlot(mockPrisma, {
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "Will fail on counter update",
+          now,
+        }),
+      ).rejects.toThrow("Database deadlock on counter update");
+
+      // Verify complete rollback: slot still ALLOCATED, program count still 2, qual still QUALIFIED
+      const slot = mockPrisma._store.wlSlots.find((s: any) => s.id === "slot-1");
+      expect(slot?.status).toBe("ALLOCATED");
+
+      const prog = mockPrisma._store.wlPrograms.find((p: any) => p.id === "prog-1");
+      expect(prog?.allocatedSlotsCount).toBe(2);
+
+      const qual = mockPrisma._store.wlQualifications.find((q: any) => q.id === "qual-1");
+      expect(qual?.status).toBe("QUALIFIED");
+
+      expect(mockPrisma._store.auditLogs).toHaveLength(0);
+      expect(mockPrisma._store.wlStatusHistories).toHaveLength(0);
+    });
+
+    it("rolls back all mutations and throws 500 COUNTER_INTEGRITY_VIOLATION when program counter is already 0", async () => {
+      // Set counter to 0 to simulate invariant violation
+      const prog = mockPrisma._store.wlPrograms.find((p: any) => p.id === "prog-1");
+      prog.allocatedSlotsCount = 0;
+
+      await expect(
+        revokeWlSlot(mockPrisma, {
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "Revoke when counter is 0",
+          now,
+        }),
+      ).rejects.toThrow("Cannot decrement counter: allocatedSlotsCount is already 0.");
+
+      // Verify complete rollback: slot still ALLOCATED, counter still 0 (never negative!), zero audit logs / history
+      const slot = mockPrisma._store.wlSlots.find((s: any) => s.id === "slot-1");
+      expect(slot?.status).toBe("ALLOCATED");
+      expect(prog?.allocatedSlotsCount).toBe(0);
 
       const qual = mockPrisma._store.wlQualifications.find((q: any) => q.id === "qual-1");
       expect(qual?.status).toBe("QUALIFIED");
@@ -662,6 +881,80 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
 
       expect(claimResult.claim).toBeDefined();
       expect(claimResult.claim.userId).toBe("user-1");
+    });
+
+    it("leaves revoked slot strictly vacant without auto-promoting waiting queue participants (DEC-016 & DEC-018)", async () => {
+      // Add a waiting participant in queue
+      mockPrisma._store.wlQueueEntries.push({
+        id: "qe-wait-1",
+        programId: "prog-1",
+        userId: "user-queued",
+        queueNumber: 1,
+        joinedAt: new Date(now.getTime() - 10000),
+        status: "WAITING",
+        processedAt: null,
+      });
+
+      const initialSlotCount = mockPrisma._store.wlSlots.length;
+      const initialProgramAllocated = mockPrisma._store.wlPrograms[0].allocatedSlotsCount;
+
+      const result = await revokeWlSlot(mockPrisma, {
+        slotId: "slot-1",
+        adminUserId: "admin-1",
+        reason: "Admin revoked slot for non-compliance",
+        now,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.promotedUserId).toBeUndefined();
+      expect(result.promotedSlotNumber).toBeUndefined();
+
+      // Revoked slot must be marked REVOKED_MANUAL_ADMIN
+      const revokedSlot = mockPrisma._store.wlSlots.find((s: any) => s.id === "slot-1");
+      expect(revokedSlot?.status).toBe("REVOKED_MANUAL_ADMIN");
+
+      // No new slot created
+      expect(mockPrisma._store.wlSlots.length).toBe(initialSlotCount);
+
+      // Waiting queue participant remains WAITING (not promoted)
+      const queuedEntry = mockPrisma._store.wlQueueEntries.find((q: any) => q.id === "qe-wait-1");
+      expect(queuedEntry?.status).toBe("WAITING");
+      expect(queuedEntry?.processedAt).toBeNull();
+
+      // Counter decremented by exactly 1
+      expect(mockPrisma._store.wlPrograms[0].allocatedSlotsCount).toBe(initialProgramAllocated - 1);
+    });
+
+    it("second revoke on already revoked slot fails with 409 without counter decrement or extra AuditLog", async () => {
+      // First revoke
+      await revokeWlSlot(mockPrisma, {
+        slotId: "slot-1",
+        adminUserId: "admin-1",
+        reason: "First valid revocation",
+        now,
+      });
+
+      const auditCountBefore = mockPrisma._store.auditLogs.length;
+      const allocatedBefore = mockPrisma._store.wlPrograms[0].allocatedSlotsCount;
+
+      // Second revoke attempt on same slot
+      await expect(
+        revokeWlSlot(mockPrisma, {
+          slotId: "slot-1",
+          adminUserId: "admin-1",
+          reason: "Second duplicate revocation attempt",
+          now: new Date(now.getTime() + 1000),
+        }),
+      ).rejects.toMatchObject({
+        code: "SLOT_ALREADY_REVOKED",
+        status: 409,
+      });
+
+      // No additional audit logs created
+      expect(mockPrisma._store.auditLogs.length).toBe(auditCountBefore);
+
+      // Allocated counter unchanged
+      expect(mockPrisma._store.wlPrograms[0].allocatedSlotsCount).toBe(allocatedBefore);
     });
   });
 });

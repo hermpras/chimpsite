@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { recordAuditLog } from "../audit/audit";
 import { resolveEquippedItemIdsFromList } from "./avatar-renderer";
+import { triggerAutomaticEligibilityEvaluation } from "../whitelist/qualification";
 
 export class GiftError extends Error {
   code: string;
@@ -424,6 +425,21 @@ export async function acceptGift(prisma: PrismaClient, input: ResolveGiftInput) 
       "You already own this trait. The gift cannot be accepted.",
       409,
     );
+  }
+
+  // Safely trigger automatic Whitelist eligibility evaluation if recipient now qualifies
+  try {
+    if (
+      typeof (prisma as any).wLProgram?.findFirst === "function" ||
+      typeof (prisma as any).wLProgram?.findUnique === "function"
+    ) {
+      await triggerAutomaticEligibilityEvaluation(prisma, {
+        userId: input.userId,
+        now,
+      });
+    }
+  } catch (evalErr) {
+    console.error("Automatic WL eligibility evaluation warning on gift accept:", evalErr);
   }
 
   return { gift: result.gift, item: result.item };

@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { isWithinClaimWindow } from "./schedule";
 import { recordAuditLog } from "../audit/audit";
+import { triggerAutomaticEligibilityEvaluation } from "../whitelist/qualification";
 
 export const SYBIL_CLUSTER_IP_THRESHOLD = 5;
 
@@ -302,7 +303,7 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
     const now = input.now ?? new Date();
 
     try {
-      return await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx) => {
         // 1. Check user ban records
         const activeBan = await tx.banRecord.findFirst({
           where: {
@@ -525,6 +526,23 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
           abuseFlags,
         };
       });
+
+      // Safely trigger automatic Whitelist eligibility evaluation if user now qualifies
+      try {
+        if (
+          typeof (prisma as any).wLProgram?.findFirst === "function" ||
+          typeof (prisma as any).wLProgram?.findUnique === "function"
+        ) {
+          await triggerAutomaticEligibilityEvaluation(prisma, {
+            userId: input.userId,
+            now,
+          });
+        }
+      } catch (evalErr) {
+        console.error("Automatic WL eligibility evaluation warning on drop claim:", evalErr);
+      }
+
+      return result;
     } catch (err: unknown) {
       if (isEditionCollision(err)) {
         if (attempt < maxRetries) {

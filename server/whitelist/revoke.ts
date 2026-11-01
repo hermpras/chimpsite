@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { recordAuditLog } from "../audit/audit";
+import { lockWlProgramForUpdate } from "./capacity-guard";
 
 export class WlSlotRevokeError extends Error {
   code: string;
@@ -36,33 +37,12 @@ export interface RevokeWlSlotResult {
   previousStatus: string;
   status: "REVOKED_MANUAL_ADMIN";
   revokedAt: Date;
-  reason: string | null;
+  reason: string;
   auditLogId: string;
   promotedUserId?: string;
   promotedSlotNumber?: number;
 }
 
-async function findLowestAvailableSlotNumber(
-  tx: any,
-  programId: string,
-  totalSlots: number,
-): Promise<number | null> {
-  const existingSlots = await tx.wLSlot.findMany({
-    where: {
-      programId,
-      status: { in: ["ALLOCATED", "CONFIRMED"] },
-    },
-    select: { slotNumber: true },
-  });
-  const occupied = new Set<number>(
-    existingSlots.map((s: { slotNumber: number }) => s.slotNumber),
-  );
-  let slotNumber = 1;
-  while (occupied.has(slotNumber)) {
-    slotNumber++;
-  }
-  return slotNumber <= totalSlots ? slotNumber : null;
-}
 
 export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
   slotId?: string;
@@ -70,7 +50,7 @@ export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
   userId?: string;
   slotNumber?: number;
   adminUserId: string;
-  reason: string | null;
+  reason: string;
   autoPromote?: boolean;
 } {
   if (
@@ -104,15 +84,42 @@ export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
     );
   }
 
-  if (
-    input.reason !== undefined &&
-    input.reason !== null &&
-    typeof input.reason !== "string"
-  ) {
+  if (input.reason === undefined || input.reason === null) {
+    throw new WlSlotRevokeError(
+      "REVOKE_REASON_REQUIRED",
+      "Revocation reason is required.",
+      400,
+    );
+  }
+
+  if (typeof input.reason !== "string") {
     throw new WlSlotRevokeError("INVALID_INPUT", "Reason must be a string.", 400);
   }
 
-  const reason = input.reason ? input.reason.trim() || null : null;
+  const trimmedReason = input.reason.trim();
+  if (trimmedReason.length === 0) {
+    throw new WlSlotRevokeError(
+      "REVOKE_REASON_REQUIRED",
+      "Revocation reason is required and cannot be empty.",
+      400,
+    );
+  }
+
+  if (trimmedReason.length < 5) {
+    throw new WlSlotRevokeError(
+      "REVOKE_REASON_REQUIRED",
+      "Revocation reason must be at least 5 characters long.",
+      400,
+    );
+  }
+
+  if (trimmedReason.length > 1000) {
+    throw new WlSlotRevokeError(
+      "INVALID_INPUT",
+      "Revocation reason cannot exceed 1000 characters.",
+      400,
+    );
+  }
 
   return {
     slotId,
@@ -120,7 +127,7 @@ export function validateRevokeWlSlotInput(input: RevokeWlSlotInput): {
     userId,
     slotNumber,
     adminUserId: input.adminUserId.trim(),
-    reason,
+    reason: trimmedReason,
     autoPromote: input.autoPromote,
   };
 }
@@ -234,7 +241,10 @@ export async function revokeWlSlot(
       );
     }
 
-    // 3. Conditional atomic state transition to prevent race conditions
+    // 3. Lock WLProgram before locking WLSlot to establish consistent lock order: WLProgram -> WLSlot
+    await lockWlProgramForUpdate(tx, slot.programId);
+
+    // Conditional atomic state transition to prevent race conditions
     const updateResult = await tx.wLSlot.updateMany({
       where: {
         id: slot.id,
@@ -242,49 +252,104 @@ export async function revokeWlSlot(
       },
       data: {
         status: "REVOKED_MANUAL_ADMIN",
-        notes: validated.reason ?? slot.notes,
+        notes: validated.reason,
       },
     });
 
-    if (updateResult.count === 0) {
+    if (updateResult.count !== 1) {
       throw new WlSlotRevokeError(
         "SLOT_ALREADY_REVOKED",
-        "Whitelist slot is already revoked.",
+        "Whitelist slot is already revoked or not active.",
         409,
       );
     }
 
-    // 4. Decrement allocatedSlotsCount on WLProgram to restore capacity consistency
-    const program = await tx.wLProgram.findUnique({
-      where: { id: slot.programId },
-      select: { id: true, allocatedSlotsCount: true },
-    });
-    if (program && program.allocatedSlotsCount > 0) {
-      await tx.wLProgram.update({
-        where: { id: slot.programId },
-        data: { allocatedSlotsCount: { decrement: 1 } },
+    // 4. Conditional decrement of allocatedSlotsCount on WLProgram (lower-bound protection)
+    let programUpdateCount = 0;
+    if (typeof tx.wLProgram.updateMany === "function") {
+      const programUpdate = await tx.wLProgram.updateMany({
+        where: {
+          id: slot.programId,
+          allocatedSlotsCount: { gt: 0 },
+        },
+        data: {
+          allocatedSlotsCount: { decrement: 1 },
+        },
       });
+      programUpdateCount = programUpdate.count;
+    } else {
+      const prog = await tx.wLProgram.findUnique({
+        where: { id: slot.programId },
+        select: { id: true, allocatedSlotsCount: true },
+      });
+      if (prog && prog.allocatedSlotsCount > 0) {
+        await tx.wLProgram.update({
+          where: { id: slot.programId },
+          data: { allocatedSlotsCount: { decrement: 1 } },
+        });
+        programUpdateCount = 1;
+      }
     }
 
-    // 5. Update WLQualification status to REVOKED if qualification record exists
-    const existingQual = await tx.wLQualification.findUnique({
-      where: {
-        programId_userId: {
+    if (programUpdateCount !== 1) {
+      throw new WlSlotRevokeError(
+        "COUNTER_INTEGRITY_VIOLATION",
+        "Cannot decrement counter: allocatedSlotsCount is already 0.",
+        500,
+      );
+    }
+
+    // 5. Upsert WLQualification status to REVOKED (DEC-022 Full WL Disqualification)
+    if (tx.wLQualification?.upsert) {
+      await tx.wLQualification.upsert({
+        where: {
+          programId_userId: {
+            programId: slot.programId,
+            userId: slot.userId,
+          },
+        },
+        create: {
           programId: slot.programId,
           userId: slot.userId,
-        },
-      },
-    });
-
-    if (existingQual) {
-      await tx.wLQualification.update({
-        where: { id: existingQual.id },
-        data: {
           status: "REVOKED",
           disqualifiedAt: now,
-          reason: validated.reason ?? "Revoked by administrator",
+          reason: validated.reason,
+        },
+        update: {
+          status: "REVOKED",
+          disqualifiedAt: now,
+          reason: validated.reason,
         },
       });
+    } else {
+      const existingQual = await tx.wLQualification.findUnique({
+        where: {
+          programId_userId: {
+            programId: slot.programId,
+            userId: slot.userId,
+          },
+        },
+      });
+      if (existingQual) {
+        await tx.wLQualification.update({
+          where: { id: existingQual.id },
+          data: {
+            status: "REVOKED",
+            disqualifiedAt: now,
+            reason: validated.reason,
+          },
+        });
+      } else if (tx.wLQualification?.create) {
+        await tx.wLQualification.create({
+          data: {
+            programId: slot.programId,
+            userId: slot.userId,
+            status: "REVOKED",
+            disqualifiedAt: now,
+            reason: validated.reason,
+          },
+        });
+      }
     }
 
     // 6. Record WLStatusHistory
@@ -320,7 +385,7 @@ export async function revokeWlSlot(
       },
       newValues: {
         status: "REVOKED_MANUAL_ADMIN",
-        notes: validated.reason ?? slot.notes,
+        notes: validated.reason,
       },
       metadata: {
         programId: slot.programId,
@@ -331,111 +396,8 @@ export async function revokeWlSlot(
       },
     });
 
-    // 8. Event-driven queue promotion (Task O-6):
-    // Atomically promote the next waiting queue participant into the freed slot.
-    let promotedUserId: string | undefined;
-    let promotedSlotNumber: number | undefined;
-
-    if (validated.autoPromote !== false && (tx as any).wLQueueEntry?.findMany) {
-      const prog = await tx.wLProgram.findUnique({
-        where: { id: slot.programId },
-        select: { id: true, status: true, totalSlots: true, allocatedSlotsCount: true },
-      });
-
-      if (prog && prog.status === "OPEN") {
-        const waitingEntries = await tx.wLQueueEntry.findMany({
-          where: {
-            programId: slot.programId,
-            status: "WAITING",
-          },
-          orderBy: [{ joinedAt: "asc" }, { queueNumber: "asc" }],
-          take: 5,
-        });
-
-        for (const entry of waitingEntries) {
-          const updateEntryResult = await tx.wLQueueEntry.updateMany({
-            where: {
-              id: entry.id,
-              status: "WAITING",
-            },
-            data: {
-              status: "PROCESSED",
-              processedAt: now,
-            },
-          });
-
-          if (updateEntryResult.count === 0) {
-            // Another concurrent transaction already handled this entry; advance to next
-            continue;
-          }
-
-          const nextSlotNumber = await findLowestAvailableSlotNumber(
-            tx,
-            slot.programId,
-            prog.totalSlots,
-          );
-
-          if (nextSlotNumber !== null) {
-            const allocatedSlot = await tx.wLSlot.create({
-              data: {
-                programId: slot.programId,
-                userId: entry.userId,
-                slotNumber: nextSlotNumber,
-                status: "ALLOCATED",
-                allocatedAt: now,
-                allocatedBy: "QUEUE_RECONCILER",
-              },
-            });
-
-            await tx.wLProgram.update({
-              where: { id: slot.programId },
-              data: { allocatedSlotsCount: { increment: 1 } },
-            });
-
-            await tx.wLStatusHistory.create({
-              data: {
-                programId: slot.programId,
-                userId: entry.userId,
-                fromPhase: "IN_QUEUE",
-                toPhase: "SLOT_ALLOCATED",
-                action: "RECONCILED_FROM_QUEUE",
-                metadata: {
-                  slotNumber: nextSlotNumber,
-                  queueNumber: entry.queueNumber,
-                },
-                createdAt: now,
-              },
-            });
-
-            await recordAuditLog(tx, {
-              actorId: entry.userId,
-              action: "WL_SLOT_ALLOCATED_QUEUE",
-              entityType: "WLSlot",
-              entityId: allocatedSlot.id,
-              newValues: {
-                programId: slot.programId,
-                slotNumber: nextSlotNumber,
-                status: "ALLOCATED",
-                allocatedBy: "QUEUE_RECONCILER",
-                queueNumber: entry.queueNumber,
-              },
-            });
-
-            promotedUserId = entry.userId;
-            promotedSlotNumber = nextSlotNumber;
-            break;
-          } else {
-            // Rollback entry status if slot capacity exhausted
-            await tx.wLQueueEntry.update({
-              where: { id: entry.id },
-              data: { status: "WAITING", processedAt: null },
-            });
-            break;
-          }
-        }
-      }
-    }
-
+    // 8. Vacant Slot Policy (DEC-016 & DEC-018):
+    // Zero auto-promotion of waiting queue participants. The revoked slot is left vacant.
     return {
       success: true,
       slotId: slot.id,
@@ -447,8 +409,6 @@ export async function revokeWlSlot(
       revokedAt: now,
       reason: validated.reason,
       auditLogId: auditRecord.id,
-      promotedUserId,
-      promotedSlotNumber,
     };
   });
     } catch (err: unknown) {

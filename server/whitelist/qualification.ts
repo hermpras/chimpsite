@@ -1,6 +1,15 @@
 import type { PrismaClient, TraitCategory } from "@prisma/client";
 import { recordAuditLog } from "../audit/audit";
 import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
+import {
+  lockWlProgramForUpdate,
+  acquireProgramCapacityGuard,
+  type ProgramCapacityCheckResult,
+} from "./capacity-guard";
+
+export { lockWlProgramForUpdate, acquireProgramCapacityGuard };
+export type { ProgramCapacityCheckResult };
+export { registerParticipantInDirectory } from "./participant-registration";
 
 export const REQUIRED_TRAIT_CATEGORIES: TraitCategory[] = [
   "BG",
@@ -196,7 +205,7 @@ async function getNextQueueNumber(
  * Safe to execute on raw PrismaClient for readOnly evaluations (zero mutations, non-locking),
  * or inside an interactive transaction (tx) when mutations are needed.
  */
-async function executeQualificationEvaluation(
+export async function executeQualificationEvaluation(
   tx: PrismaClient | PrismaTransactionClient,
   input: {
     userId: string;
@@ -204,6 +213,7 @@ async function executeQualificationEvaluation(
     now?: Date;
     maxRetries?: number;
     readOnly?: boolean;
+    allowClosed?: boolean;
   },
   now: Date,
 ): Promise<QualificationCheckResult> {
@@ -226,9 +236,11 @@ async function executeQualificationEvaluation(
           throw new WhitelistError("USER_NOT_FOUND", "User not found.", 404);
         }
 
-        const program = await tx.wLProgram.findUnique({
-          where: { id: input.programId },
-        });
+        const program = input.readOnly
+          ? await tx.wLProgram.findUnique({
+              where: { id: input.programId },
+            })
+          : await lockWlProgramForUpdate(tx, input.programId);
         if (!program) {
           throw new WhitelistError(
             "PROGRAM_NOT_FOUND",
@@ -237,7 +249,12 @@ async function executeQualificationEvaluation(
           );
         }
 
-        if (program.status !== "OPEN") {
+        const isClosedAllowed =
+          Boolean(input.readOnly) &&
+          Boolean(input.allowClosed) &&
+          (program.status === "FINALIZED" || program.status === "CLOSED");
+
+        if (program.status !== "OPEN" && !isClosedAllowed) {
           throw new WhitelistError(
             "PROGRAM_NOT_ACTIVE",
             `Whitelist program is not open (current status: ${program.status}).`,
@@ -256,6 +273,50 @@ async function executeQualificationEvaluation(
         );
         if (isBanned) {
           missingRequirements.push("Account is banned or disqualified from Whitelist.");
+        }
+
+        // Check GTD Revocation (DEC-022: Full Whitelist Disqualification Policy)
+        const existingQualRecord = await tx.wLQualification.findUnique({
+          where: {
+            programId_userId: {
+              programId: input.programId,
+              userId: input.userId,
+            },
+          },
+        });
+
+        const revokedSlotRecord = tx.wLSlot?.findFirst
+          ? await tx.wLSlot.findFirst({
+              where: {
+                programId: input.programId,
+                userId: input.userId,
+                status: { in: ["REVOKED_MANUAL_ADMIN", "REVOKED_SYSTEM"] },
+              },
+            })
+          : tx.wLSlot?.findMany
+            ? (
+                await tx.wLSlot.findMany({
+                  where: {
+                    programId: input.programId,
+                    userId: input.userId,
+                  },
+                })
+              ).find(
+                (s: any) =>
+                  s.status === "REVOKED_MANUAL_ADMIN" ||
+                  s.status === "REVOKED_SYSTEM",
+              ) || null
+            : null;
+
+        const isRevoked =
+          existingQualRecord?.status === "REVOKED" || Boolean(revokedSlotRecord);
+
+        if (isRevoked) {
+          missingRequirements.push(
+            existingQualRecord?.reason
+              ? `Whitelist qualification revoked: ${existingQualRecord.reason}`
+              : "Whitelist qualification has been revoked by an administrator.",
+          );
         }
 
         // Check wallet verification
@@ -332,9 +393,91 @@ async function executeQualificationEvaluation(
               },
             });
 
-            const isTaskDone =
+            let isTaskDone =
               progress?.status === "VERIFIED" ||
               (progress?.evidenceSubmissions && progress.evidenceSubmissions.length > 0);
+
+            // Carry-over check for LEGACY_CARRIED versions along the compatibility chain
+            if (
+              !isTaskDone &&
+              currentVersion.compatibilityMode === "LEGACY_CARRIED" &&
+              currentVersion.compatibleFromVersionId
+            ) {
+              let ancestorVersionId: string | null = currentVersion.compatibleFromVersionId;
+              const visited = new Set<string>([currentVersion.id]);
+
+              while (ancestorVersionId && !isTaskDone) {
+                if (visited.has(ancestorVersionId)) break;
+                visited.add(ancestorVersionId);
+
+                const ancestorVersion: {
+                  id: string;
+                  campaignId: string;
+                  compatibilityMode: string;
+                  compatibleFromVersionId: string | null;
+                } | null = await tx.campaignVersion.findUnique({
+                  where: { id: ancestorVersionId },
+                  select: {
+                    id: true,
+                    campaignId: true,
+                    compatibilityMode: true,
+                    compatibleFromVersionId: true,
+                  },
+                });
+
+                if (!ancestorVersion) break;
+                // STRICT SECURITY: Never carry-over across different campaigns
+                if (ancestorVersion.campaignId !== campaign.id) break;
+
+                // Find task with identical taskCode in the ancestor version
+                const ancestorTask = await tx.campaignTask.findUnique({
+                  where: {
+                    versionId_taskCode: {
+                      versionId: ancestorVersion.id,
+                      taskCode: task.taskCode,
+                    },
+                  },
+                  select: { id: true },
+                });
+
+                if (ancestorTask) {
+                  const ancestorProgress = await tx.taskProgress.findUnique({
+                    where: {
+                      userId_versionId_taskId: {
+                        userId: input.userId,
+                        versionId: ancestorVersion.id,
+                        taskId: ancestorTask.id,
+                      },
+                    },
+                    include: {
+                      evidenceSubmissions: {
+                        where: { status: "APPROVED" },
+                      },
+                    },
+                  });
+
+                  const isAncestorDone =
+                    ancestorProgress?.status === "VERIFIED" ||
+                    (ancestorProgress?.evidenceSubmissions &&
+                      ancestorProgress.evidenceSubmissions.length > 0);
+
+                  if (isAncestorDone) {
+                    isTaskDone = true;
+                    break;
+                  }
+                }
+
+                // If ancestor is also LEGACY_CARRIED, continue traversing back
+                if (
+                  ancestorVersion.compatibilityMode === "LEGACY_CARRIED" &&
+                  ancestorVersion.compatibleFromVersionId
+                ) {
+                  ancestorVersionId = ancestorVersion.compatibleFromVersionId;
+                } else {
+                  break;
+                }
+              }
+            }
 
             if (isTaskDone) {
               completedMandatoryTasksCount++;
@@ -392,7 +535,7 @@ async function executeQualificationEvaluation(
             });
             return {
               qualified: false,
-              phase: existingQual?.status === "REVOKED" ? "REVOKED" : "NONE",
+              phase: isRevoked || existingQual?.status === "REVOKED" ? "REVOKED" : "NONE",
               missingRequirements,
               details: {
                 hasVerifiedWallet,
@@ -551,7 +694,7 @@ async function executeQualificationEvaluation(
 
           return {
             qualified: false,
-            phase: "NONE",
+            phase: isRevoked || existingQual?.status === "REVOKED" ? "REVOKED" : "NONE",
             missingRequirements,
             details: {
               hasVerifiedWallet,
@@ -602,13 +745,8 @@ async function executeQualificationEvaluation(
           },
         });
 
-        // 6. Capacity allocation vs Queue
-        const activeSlotsCount = await tx.wLSlot.count({
-          where: {
-            programId: input.programId,
-            status: { in: ["ALLOCATED", "CONFIRMED"] },
-          },
-        });
+        // 6. Shared Capacity Guard vs Queue
+        const capacityGuard = await acquireProgramCapacityGuard(tx, input.programId);
 
         // Check if any users are waiting in the queue ahead of this user
         const nextWaitingEntry = await tx.wLQueueEntry.findFirst({
@@ -621,14 +759,14 @@ async function executeQualificationEvaluation(
         });
 
         const isEligibleForDirectSlot =
-          activeSlotsCount < program.totalSlots &&
+          capacityGuard.hasCapacity &&
           (!nextWaitingEntry || nextWaitingEntry.userId === input.userId);
 
         if (isEligibleForDirectSlot) {
           const availableSlotNumber = await findLowestAvailableSlotNumber(
             tx,
             input.programId,
-            program.totalSlots,
+            capacityGuard.program.totalSlots,
           );
 
           if (availableSlotNumber !== null) {
@@ -638,6 +776,7 @@ async function executeQualificationEvaluation(
                 userId: input.userId,
                 slotNumber: availableSlotNumber,
                 status: "ALLOCATED",
+                reviewStatus: "NOT_REVIEWED",
                 allocatedAt: now,
                 allocatedBy: "QUALIFICATION_ENGINE",
               },
@@ -808,6 +947,7 @@ export async function evaluateUserQualification(
     now?: Date;
     maxRetries?: number;
     readOnly?: boolean;
+    allowClosed?: boolean;
   },
 ): Promise<QualificationCheckResult> {
   const maxRetries = input.readOnly ? 0 : (input.maxRetries ?? MAX_WL_RETRIES);
@@ -838,228 +978,6 @@ export async function evaluateUserQualification(
   );
 }
 
-/**
- * Reconciles open WL slots with queued participants (first-qualified-first-allocated).
- * Safely handles concurrency collisions and guarantees idempotency.
- */
-export async function reconcileQueueSlots(
-  prisma: PrismaClient,
-  programId: string,
-  now: Date = new Date(),
-  maxRetries: number = MAX_WL_RETRIES,
-): Promise<{ slotsFilled: number; openSlotsRemaining: number }> {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await prisma.$transaction(async (tx) => {
-        const program = await tx.wLProgram.findUnique({
-          where: { id: programId },
-        });
-        if (!program) {
-          throw new WhitelistError("PROGRAM_NOT_FOUND", "Program not found.", 404);
-        }
-        if (program.status !== "OPEN") {
-          throw new WhitelistError(
-            "PROGRAM_NOT_ACTIVE",
-            `Whitelist program is not open (current status: ${program.status}).`,
-            400,
-          );
-        }
-
-        const activeSlotsCount = await tx.wLSlot.count({
-          where: {
-            programId,
-            status: { in: ["ALLOCATED", "CONFIRMED"] },
-          },
-        });
-
-        const openSlotsCount = program.totalSlots - activeSlotsCount;
-        if (openSlotsCount <= 0) {
-          return { slotsFilled: 0, openSlotsRemaining: 0 };
-        }
-
-        // Fetch waiting queue entries ordered strictly by joinedAt ASC, then queueNumber ASC
-        const waitingEntries = await tx.wLQueueEntry.findMany({
-          where: {
-            programId,
-            status: "WAITING",
-          },
-          orderBy: [{ joinedAt: "asc" }, { queueNumber: "asc" }],
-          take: openSlotsCount,
-        });
-
-        if (waitingEntries.length === 0) {
-          return { slotsFilled: 0, openSlotsRemaining: openSlotsCount };
-        }
-
-        let slotsFilled = 0;
-        for (const entry of waitingEntries) {
-          // Re-verify remaining capacity before allocating next slot
-          const currentActiveCount = await tx.wLSlot.count({
-            where: {
-              programId,
-              status: { in: ["ALLOCATED", "CONFIRMED"] },
-            },
-          });
-          if (currentActiveCount >= program.totalSlots) {
-            break;
-          }
-
-          // Atomic transition: mark as PROCESSED only if still WAITING
-          const updatedEntry = await tx.wLQueueEntry.updateMany({
-            where: {
-              id: entry.id,
-              status: "WAITING",
-            },
-            data: {
-              status: "PROCESSED",
-              processedAt: now,
-            },
-          });
-
-          // Another concurrent reconciler already handled this entry
-          if (updatedEntry.count === 0) {
-            continue;
-          }
-
-          const slotNumber = await findLowestAvailableSlotNumber(
-            tx,
-            programId,
-            program.totalSlots,
-          );
-
-          if (slotNumber === null) {
-            // Capacity exhausted concurrently; restore entry status and stop
-            await tx.wLQueueEntry.update({
-              where: { id: entry.id },
-              data: {
-                status: "WAITING",
-                processedAt: null,
-              },
-            });
-            break;
-          }
-
-          const allocatedSlot = await tx.wLSlot.create({
-            data: {
-              programId,
-              userId: entry.userId,
-              slotNumber,
-              status: "ALLOCATED",
-              allocatedAt: now,
-              allocatedBy: "QUEUE_RECONCILER",
-            },
-          });
-
-          await tx.wLStatusHistory.create({
-            data: {
-              programId,
-              userId: entry.userId,
-              fromPhase: "IN_QUEUE",
-              toPhase: "SLOT_ALLOCATED",
-              action: "RECONCILED_FROM_QUEUE",
-              metadata: { slotNumber, queueNumber: entry.queueNumber },
-            },
-          });
-
-          await recordAuditLog(tx, {
-            actorId: entry.userId,
-            action: "WL_SLOT_ALLOCATED_QUEUE",
-            entityType: "WLSlot",
-            entityId: allocatedSlot.id,
-            newValues: {
-              programId,
-              slotNumber,
-              status: "ALLOCATED",
-              allocatedBy: "QUEUE_RECONCILER",
-              queueNumber: entry.queueNumber,
-            },
-          });
-
-          slotsFilled++;
-        }
-
-        if (slotsFilled > 0) {
-          await tx.wLProgram.update({
-            where: { id: programId },
-            data: { allocatedSlotsCount: { increment: slotsFilled } },
-          });
-        }
-
-        const finalActiveSlotsCount = await tx.wLSlot.count({
-          where: {
-            programId,
-            status: { in: ["ALLOCATED", "CONFIRMED"] },
-          },
-        });
-
-        return {
-          slotsFilled,
-          openSlotsRemaining: Math.max(0, program.totalSlots - finalActiveSlotsCount),
-        };
-      });
-    } catch (err: unknown) {
-      if (isRetryableWlConcurrencyConflict(err) && attempt < maxRetries) {
-        continue;
-      }
-      throw err;
-    }
-  }
-
-  throw new WhitelistError(
-    "CONCURRENCY_COLLISION_RETRYABLE",
-    "A concurrency collision occurred during queue reconciliation. Please retry.",
-    409,
-  );
-}
-
-/**
- * Reconciles open whitelist programs in the database (O-4).
- * Iterates through all OPEN programs and reconciles their waiting queues.
- * Safe for concurrent invocations and fully idempotent.
- */
-export async function reconcileAllOpenPrograms(
-  prisma: PrismaClient,
-  now: Date = new Date(),
-  maxRetries: number = MAX_WL_RETRIES,
-): Promise<{
-  processedPrograms: number;
-  totalSlotsFilled: number;
-  results: Array<{
-    programId: string;
-    slotsFilled: number;
-    openSlotsRemaining: number;
-  }>;
-}> {
-  const openPrograms = await prisma.wLProgram.findMany({
-    where: { status: "OPEN" },
-    select: { id: true },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const results: Array<{
-    programId: string;
-    slotsFilled: number;
-    openSlotsRemaining: number;
-  }> = [];
-
-  let totalSlotsFilled = 0;
-
-  for (const program of openPrograms) {
-    const res = await reconcileQueueSlots(prisma, program.id, now, maxRetries);
-    results.push({
-      programId: program.id,
-      slotsFilled: res.slotsFilled,
-      openSlotsRemaining: res.openSlotsRemaining,
-    });
-    totalSlotsFilled += res.slotsFilled;
-  }
-
-  return {
-    processedPrograms: openPrograms.length,
-    totalSlotsFilled,
-    results,
-  };
-}
 
 /**
  * Read-only status evaluation that performs zero mutations or side-effects.
@@ -1070,12 +988,254 @@ export async function getUserQualificationStatus(
     userId: string;
     programId: string;
     now?: Date;
+    allowClosed?: boolean;
   },
 ): Promise<QualificationCheckResult> {
   return evaluateUserQualification(prisma, {
     ...input,
     readOnly: true,
   });
+}
+
+import {
+  enqueueDurableRecovery,
+  completeRecoveryJob,
+  processDurableRecoveryQueue,
+  __resetRecoveryRedis,
+} from "./durable-recovery";
+
+export interface EvaluationRecoveryItem {
+  userId: string;
+  programId?: string;
+  attempts: number;
+  maxAttempts: number;
+  nextRetryAt: Date;
+  lastError?: string;
+  createdAt: Date;
+}
+
+export type EvaluationRetryItem = EvaluationRecoveryItem;
+
+// In-memory failure recovery queue for asynchronous retry of failed evaluations
+export const evaluationRecoveryQueue = new Map<string, EvaluationRecoveryItem>();
+
+export function getEvaluationRecoveryQueue(): EvaluationRecoveryItem[] {
+  return Array.from(evaluationRecoveryQueue.values());
+}
+
+export function clearEvaluationRecoveryQueue(): void {
+  evaluationRecoveryQueue.clear();
+  __resetRecoveryRedis();
+}
+
+async function resolveTargetProgramId(prismaOrTx: any): Promise<string> {
+  const openProgram = await prismaOrTx.wLProgram.findFirst({
+    where: { status: "OPEN" },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (!openProgram?.id) {
+    throw new WhitelistError("NO_OPEN_PROGRAM", "No open Whitelist program found.", 404);
+  }
+  return openProgram.id;
+}
+
+export function enqueueEvaluationRetry(item: {
+  userId: string;
+  programId?: string;
+  error?: unknown;
+  maxAttempts?: number;
+  now?: Date;
+}): EvaluationRetryItem {
+  const now = item.now ?? new Date();
+  const key = `${item.userId}:${item.programId || "default"}`;
+  const existing = evaluationRecoveryQueue.get(key);
+  const attempts = (existing?.attempts ?? 0) + 1;
+  const maxAttempts = item.maxAttempts ?? 5;
+  const backoffMs = Math.min(100 * Math.pow(2, attempts - 1), 60000);
+  const nextRetryAt = new Date(now.getTime() + backoffMs);
+  const lastError =
+    item.error instanceof Error
+      ? item.error.message
+      : typeof item.error === "string"
+        ? item.error
+        : "Unknown evaluation failure";
+
+  const retryItem: EvaluationRetryItem = {
+    userId: item.userId,
+    programId: item.programId,
+    attempts,
+    maxAttempts,
+    nextRetryAt,
+    lastError,
+    createdAt: existing?.createdAt ?? now,
+  };
+
+  evaluationRecoveryQueue.set(key, retryItem);
+  return retryItem;
+}
+
+export async function processEvaluationRecoveryQueue(
+  prisma: PrismaClient | any,
+  options?: {
+    now?: Date;
+    maxBatchSize?: number;
+  },
+): Promise<{
+  processed: number;
+  succeeded: number;
+  failed: number;
+  dropped: number;
+}> {
+  const durableResult = await processDurableRecoveryQueue(prisma, options);
+  return {
+    processed: durableResult.processed,
+    succeeded: durableResult.succeeded,
+    failed: durableResult.failed,
+    dropped: durableResult.movedToDlq,
+  };
+}
+
+export async function retryEvaluationForUser(
+  prisma: PrismaClient | any,
+  userId: string,
+  programId?: string,
+  now?: Date,
+): Promise<QualificationCheckResult | null> {
+  const key = `${userId}:${programId || "default"}`;
+  try {
+    const resolvedProgramId = programId || (await resolveTargetProgramId(prisma));
+    const result = await evaluateUserQualification(prisma, {
+      userId,
+      programId: resolvedProgramId,
+      now: now ?? new Date(),
+    });
+    evaluationRecoveryQueue.delete(key);
+    await completeRecoveryJob(key).catch(() => {});
+    return result;
+  } catch (err: unknown) {
+    enqueueEvaluationRetry({ userId, programId, error: err, now });
+    await enqueueDurableRecovery({ userId, programId, error: err, now }).catch(() => {});
+    return null;
+  }
+}
+
+/**
+ * Triggers automatic eligibility evaluation for a user when a qualification-altering event occurs.
+ * Evaluates requirements using the existing qualification engine, allocates a GTD slot if
+ * qualified and capacity is available, or registers/updates the user in the FCFS directory if full.
+ *
+ * Safe and idempotent:
+ * - Does not throw fatal errors to caller if the program is not found or closed.
+ * - Supports bounded immediate retries with exponential backoff on transient errors.
+ * - Enqueues unrecovered failures into the evaluation recovery queue so user never loses evaluation opportunity.
+ * - Supports both raw PrismaClient and active PrismaTransactionClient.
+ * - Idempotent against repeat evaluations (does not duplicate slots or queue entries).
+ */
+export async function triggerAutomaticEligibilityEvaluation(
+  prismaOrTx: any,
+  input: {
+    userId: string;
+    programId?: string;
+    now?: Date;
+    maxRetries?: number;
+    retryDelayMs?: number;
+    enableQueueFallback?: boolean;
+  },
+): Promise<QualificationCheckResult | null> {
+  if (!input.userId || typeof input.userId !== "string") {
+    return null;
+  }
+
+  const maxRetries = input.maxRetries ?? 3;
+  const initialDelayMs = input.retryDelayMs ?? 20;
+  const enableQueueFallback = input.enableQueueFallback ?? true;
+
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (!prismaOrTx?.wLProgram?.findFirst && !prismaOrTx?.wLProgram?.findUnique) {
+        return null;
+      }
+
+      let programId = input.programId;
+      if (!programId) {
+        const openProgram = await prismaOrTx.wLProgram.findFirst({
+          where: { status: "OPEN" },
+          orderBy: { createdAt: "desc" },
+          select: { id: true },
+        });
+        if (!openProgram?.id) {
+          return null;
+        }
+        programId = openProgram.id;
+      }
+
+      if (!programId) {
+        return null;
+      }
+
+      const now = input.now ?? new Date();
+
+      let result: QualificationCheckResult;
+      // If caller passed an active transaction client (no $transaction method)
+      if (typeof prismaOrTx.$transaction !== "function") {
+        result = await executeQualificationEvaluation(
+          prismaOrTx,
+          {
+            userId: input.userId,
+            programId,
+            now,
+          },
+          now,
+        );
+      } else {
+        // Otherwise execute via evaluateUserQualification with interactive transaction and retry protection
+        result = await evaluateUserQualification(prismaOrTx, {
+          userId: input.userId,
+          programId,
+          now,
+        });
+      }
+
+      // If previously enqueued for recovery, remove upon success
+      const key = `${input.userId}:${programId || "default"}`;
+      evaluationRecoveryQueue.delete(key);
+      await completeRecoveryJob(key).catch(() => {});
+
+      return result;
+    } catch (err: unknown) {
+      lastError = err;
+      if (attempt < maxRetries - 1) {
+        const backoff = initialDelayMs * Math.pow(2, attempt);
+        await new Promise((resolve) => setTimeout(resolve, backoff));
+        continue;
+      }
+    }
+  }
+
+  // If all immediate retries exhausted, enqueue in durable recovery queue
+  if (enableQueueFallback) {
+    enqueueEvaluationRetry({
+      userId: input.userId,
+      programId: input.programId,
+      error: lastError,
+      now: input.now,
+    });
+    await enqueueDurableRecovery({
+      userId: input.userId,
+      programId: input.programId,
+      error: lastError,
+      now: input.now,
+    }).catch(() => {});
+  }
+
+  console.error(
+    `[WL Automatic Evaluation] Warning: failed to auto-evaluate user ${input.userId} after ${maxRetries} immediate attempts. Enqueued for recovery:`,
+    lastError,
+  );
+  return null;
 }
 
 export {
@@ -1086,3 +1246,26 @@ export {
   type RevokeWlSlotInput,
   type RevokeWlSlotResult,
 } from "./revoke";
+
+/**
+ * @deprecated Pruned in Phase 3 per DEC-018. Revoked slots strictly remain vacant and auto-reconciliation is disabled.
+ */
+export async function reconcileQueueSlots(
+  _prisma: PrismaClient | any,
+  _inputOrProgramId?: any,
+  _limitOrNow?: any,
+  _now?: any,
+): Promise<{ slotsFilled: number; openSlotsRemaining: number }> {
+  return { slotsFilled: 0, openSlotsRemaining: 0 };
+}
+
+/**
+ * @deprecated Pruned in Phase 3 per DEC-018. Auto-reconciliation is disabled.
+ */
+export async function reconcileAllOpenPrograms(
+  _prisma: PrismaClient | any,
+  _nowOrLimit?: any,
+  _limitPerProgram?: any,
+): Promise<{ processedPrograms: number; totalSlotsFilled: number; results: Array<{ programId: string; slotsFilled: number; openSlotsRemaining: number }> }> {
+  return { processedPrograms: 0, totalSlotsFilled: 0, results: [] };
+}

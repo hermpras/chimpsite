@@ -1,4 +1,9 @@
 {
   "regions": ["icn1"],
-  "crons": []
+  "crons": [
+    {
+      "path": "/api/cron/wl-recovery",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }

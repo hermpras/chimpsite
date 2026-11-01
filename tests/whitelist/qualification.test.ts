@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   evaluateUserQualification,
-  reconcileQueueSlots,
   getUserQualificationStatus,
   REQUIRED_TRAIT_CATEGORIES,
 } from "@/server/whitelist/qualification";
@@ -95,6 +94,17 @@ function createMockPrisma() {
       }),
     },
     wLSlot: {
+      findFirst: vi.fn(async ({ where }: any) => {
+        return (
+          store.slots.find((s) => {
+            if (where?.programId && s.programId !== where.programId) return false;
+            if (where?.userId && s.userId !== where.userId) return false;
+            if (where?.status?.in && !where.status.in.includes(s.status)) return false;
+            if (where?.status && typeof where.status === "string" && s.status !== where.status) return false;
+            return true;
+          }) || null
+        );
+      }),
       findUnique: vi.fn(async ({ where }: any) => {
         const key = where.programId_userId;
         return (
@@ -765,52 +775,6 @@ describe("Whitelist Lifecycle & Qualification Engine", () => {
     expect(result.qualifiedAt?.toISOString()).toBe(newQualTime.toISOString());
   });
 
-  it("reconciles waiting queue entries strictly by joinedAt and queueNumber when slots open", async () => {
-    // Capacity 2, 2 users in queue
-    setupFullQualifiedUser("q1");
-    mockPrisma._store.queueEntries.push({
-      id: "qe-1",
-      programId: "program-1",
-      userId: "q1",
-      queueNumber: 1,
-      joinedAt: new Date("2026-10-16T09:00:00.000Z"),
-      status: "WAITING",
-    });
-
-    setupFullQualifiedUser("q2");
-    mockPrisma._store.queueEntries.push({
-      id: "qe-2",
-      programId: "program-1",
-      userId: "q2",
-      queueNumber: 2,
-      joinedAt: new Date("2026-10-16T09:30:00.000Z"),
-      status: "WAITING",
-    });
-
-    // 1 slot opens (totalSlots=2, current slots=1)
-    mockPrisma._store.slots.push({
-      id: "slot-existing",
-      programId: "program-1",
-      userId: "existing-user",
-      slotNumber: 1,
-      status: "ALLOCATED",
-    });
-
-    const recon = await reconcileQueueSlots(mockPrisma, "program-1", baseTime);
-    expect(recon.slotsFilled).toBe(1);
-
-    // First queued user (q1) received the slot
-    const q1Slot = mockPrisma._store.slots.find((s) => s.userId === "q1");
-    expect(q1Slot).toBeDefined();
-    expect(q1Slot?.slotNumber).toBe(2);
-
-    const qe1 = mockPrisma._store.queueEntries.find((e) => e.id === "qe-1");
-    expect(qe1?.status).toBe("PROCESSED");
-
-    // Second queued user (q2) remains WAITING
-    const qe2 = mockPrisma._store.queueEntries.find((e) => e.id === "qe-2");
-    expect(qe2?.status).toBe("WAITING");
-  });
 
   it("handles concurrent qualification: two users competing for the last slot safely allocates one slot and queues the other", async () => {
     // 1 of 2 slots occupied by alice
@@ -923,107 +887,6 @@ describe("Whitelist Lifecycle & Qualification Engine", () => {
     expect(storedQueueNumbers).toEqual([1, 2, 3]);
   });
 
-  it("handles concurrent queue reconciliation: two concurrent reconcilers safely allocate available slots without over-allocating capacity", async () => {
-    // Program with 3 slots, 1 slot filled, 2 open slots
-    mockPrisma._store.programs[0].totalSlots = 3;
-    mockPrisma._store.slots.push({
-      id: "slot-1",
-      programId: "program-1",
-      userId: "user-1",
-      slotNumber: 1,
-      status: "ALLOCATED",
-    });
-    mockPrisma._store.programs[0].allocatedSlotsCount = 1;
-
-    // 2 users waiting in queue
-    setupFullQualifiedUser("q-alice");
-    mockPrisma._store.queueEntries.push({
-      id: "qe-alice",
-      programId: "program-1",
-      userId: "q-alice",
-      queueNumber: 1,
-      joinedAt: new Date("2026-10-16T08:00:00.000Z"),
-      status: "WAITING",
-    });
-
-    setupFullQualifiedUser("q-bob");
-    mockPrisma._store.queueEntries.push({
-      id: "qe-bob",
-      programId: "program-1",
-      userId: "q-bob",
-      queueNumber: 2,
-      joinedAt: new Date("2026-10-16T08:30:00.000Z"),
-      status: "WAITING",
-    });
-
-    // Two reconcilers execute concurrently
-    const [reconA, reconB] = await Promise.all([
-      reconcileQueueSlots(mockPrisma, "program-1", baseTime),
-      reconcileQueueSlots(mockPrisma, "program-1", baseTime),
-    ]);
-
-    // Combined slots filled must equal exactly 2
-    expect(reconA.slotsFilled + reconB.slotsFilled).toBe(2);
-
-    // Total slots must equal 3
-    const totalAllocated = mockPrisma._store.slots.filter(
-      (s) => s.programId === "program-1" && ["ALLOCATED", "CONFIRMED"].includes(s.status),
-    );
-    expect(totalAllocated).toHaveLength(3);
-
-    // Both queue entries must be marked PROCESSED
-    expect(
-      mockPrisma._store.queueEntries.filter(
-        (qe) => qe.programId === "program-1" && qe.status === "WAITING",
-      ),
-    ).toHaveLength(0);
-
-    // Slot numbers assigned must be strictly 1, 2, 3 with no duplicates
-    const slotNumbers = totalAllocated.map((s) => s.slotNumber).sort((a, b) => a - b);
-    expect(slotNumbers).toEqual([1, 2, 3]);
-  });
-
-  it("handles reconciliation idempotency: repeated reconciliation runs without new slots or queue entries are safe no-ops", async () => {
-    // 2 total slots, slot 1 allocated, slot 2 open
-    mockPrisma._store.slots.push({
-      id: "slot-1",
-      programId: "program-1",
-      userId: "user-1",
-      slotNumber: 1,
-      status: "ALLOCATED",
-    });
-    mockPrisma._store.programs[0].allocatedSlotsCount = 1;
-
-    setupFullQualifiedUser("q1");
-    mockPrisma._store.queueEntries.push({
-      id: "qe-1",
-      programId: "program-1",
-      userId: "q1",
-      queueNumber: 1,
-      joinedAt: new Date("2026-10-16T09:00:00.000Z"),
-      status: "WAITING",
-    });
-
-    // First reconciliation fills slot 2
-    const firstRun = await reconcileQueueSlots(mockPrisma, "program-1", baseTime);
-    expect(firstRun.slotsFilled).toBe(1);
-    expect(firstRun.openSlotsRemaining).toBe(0);
-
-    // Second run immediately after is a clean no-op
-    const secondRun = await reconcileQueueSlots(mockPrisma, "program-1", baseTime);
-    expect(secondRun.slotsFilled).toBe(0);
-    expect(secondRun.openSlotsRemaining).toBe(0);
-
-    // Total slots remains 2
-    expect(mockPrisma._store.slots).toHaveLength(2);
-    expect(mockPrisma._store.programs[0].allocatedSlotsCount).toBe(2);
-
-    // Third run with capacity expanded but no queued users
-    mockPrisma._store.programs[0].totalSlots = 5;
-    const thirdRun = await reconcileQueueSlots(mockPrisma, "program-1", baseTime);
-    expect(thirdRun.slotsFilled).toBe(0);
-    expect(thirdRun.openSlotsRemaining).toBe(3);
-  });
 
   it("does not retry unrelated unique constraint violations", async () => {
     setupFullQualifiedUser("unrelated-user");
@@ -1143,33 +1006,6 @@ describe("Whitelist Lifecycle & Qualification Engine", () => {
       expect(log.newValues.status).toBe("DISQUALIFIED");
     });
 
-    it("records WL_SLOT_ALLOCATED_QUEUE when queue reconciler allocates a slot", async () => {
-      setupFullQualifiedUser("audit-queue-user");
-      mockPrisma._store.queueEntries.push({
-        id: "qe-audit-1",
-        programId: "program-1",
-        userId: "audit-queue-user",
-        queueNumber: 1,
-        status: "WAITING",
-        joinedAt: baseTime,
-      });
-
-      const res = await reconcileQueueSlots(
-        mockPrisma,
-        "program-1",
-        new Date(baseTime.getTime() + 2000),
-      );
-      expect(res.slotsFilled).toBe(1);
-
-      const log = mockPrisma._store.auditLogs.find(
-        (l: any) =>
-          l.action === "WL_SLOT_ALLOCATED_QUEUE" && l.actorId === "audit-queue-user",
-      );
-      expect(log).toBeDefined();
-      expect(log.entityType).toBe("WLSlot");
-      expect(log.newValues.queueNumber).toBe(1);
-    });
-
     it("rolls back slot allocation and status history when audit log creation fails during direct qualification", async () => {
       setupFullQualifiedUser("audit-rollback-user");
 
@@ -1242,41 +1078,55 @@ describe("Whitelist Lifecycle & Qualification Engine", () => {
       mockPrisma._hooks.onAuditCreate = null;
     });
 
-    it("rolls back queue reconciliation when audit log creation fails", async () => {
-      setupFullQualifiedUser("audit-queue-fail-user");
-      mockPrisma._store.queueEntries.push({
-        id: "qe-audit-fail-1",
+    it("enforces DEC-022 full disqualification and prevents auto-restoration for revoked participants", async () => {
+      // Setup fully qualified user (wallet, X, 5 traits, mandatory tasks)
+      setupFullQualifiedUser("revoked-user-charlie");
+
+      // Mark qualification as REVOKED
+      mockPrisma._store.qualifications.push({
+        id: "qual-revoked-charlie",
         programId: "program-1",
-        userId: "audit-queue-fail-user",
-        queueNumber: 1,
-        status: "WAITING",
-        joinedAt: baseTime,
+        userId: "revoked-user-charlie",
+        status: "REVOKED",
+        reason: "Sybil detection multi-accounting",
+        disqualifiedAt: baseTime,
       });
 
-      mockPrisma._hooks.onAuditCreate = (data: any) => {
-        if (data.action === "WL_SLOT_ALLOCATED_QUEUE") {
-          throw new Error("Audit log database failure");
-        }
-      };
+      // 1. Read-only evaluation must return qualified: false and phase: REVOKED
+      const roResult = await evaluateUserQualification(mockPrisma, {
+        userId: "revoked-user-charlie",
+        programId: "program-1",
+        readOnly: true,
+        now: baseTime,
+      });
 
-      await expect(
-        reconcileQueueSlots(
-          mockPrisma,
-          "program-1",
-          new Date(baseTime.getTime() + 2000),
-          0,
-        ),
-      ).rejects.toThrow("Audit log database failure");
+      expect(roResult.qualified).toBe(false);
+      expect(roResult.phase).toBe("REVOKED");
+      expect(roResult.missingRequirements).toContain(
+        "Whitelist qualification revoked: Sybil detection multi-accounting",
+      );
 
-      expect(
-        mockPrisma._store.slots.find((s) => s.userId === "audit-queue-fail-user"),
-      ).toBeUndefined();
-      const qe = mockPrisma._store.queueEntries.find((e) => e.id === "qe-audit-fail-1");
-      expect(qe?.status).toBe("WAITING");
-      const prog = mockPrisma._store.programs.find((p) => p.id === "program-1")!;
-      expect(prog.allocatedSlotsCount).toBe(0);
+      // 2. Write evaluation (attempting to qualify/claim) must NOT auto-restore
+      const writeResult = await evaluateUserQualification(mockPrisma, {
+        userId: "revoked-user-charlie",
+        programId: "program-1",
+        now: new Date(baseTime.getTime() + 5000),
+      });
 
-      mockPrisma._hooks.onAuditCreate = null;
+      expect(writeResult.qualified).toBe(false);
+      expect(writeResult.phase).toBe("REVOKED");
+
+      // Verify no slot was allocated
+      const slot = mockPrisma._store.slots.find(
+        (s) => s.userId === "revoked-user-charlie",
+      );
+      expect(slot).toBeUndefined();
+
+      // Verify status remains REVOKED and was not auto-restored to QUALIFIED
+      const qual = mockPrisma._store.qualifications.find(
+        (q) => q.userId === "revoked-user-charlie",
+      );
+      expect(qual?.status).toBe("REVOKED");
     });
   });
 });
