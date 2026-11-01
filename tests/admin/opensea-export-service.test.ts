@@ -9,6 +9,12 @@ import {
   OpenSeaExportError,
 } from "@/server/admin/opensea-export";
 
+vi.mock("@/server/whitelist/qualification", () => ({
+  executeQualificationEvaluation: vi.fn(),
+}));
+
+import { executeQualificationEvaluation } from "@/server/whitelist/qualification";
+
 describe("OpenSea Allowlist Export Service", () => {
   let mockPrisma: any;
 
@@ -18,10 +24,18 @@ describe("OpenSea Allowlist Export Service", () => {
   const validAddress4 = "0x000000000000000000000000000000000000dEaD";
 
   beforeEach(() => {
+    vi.clearAllMocks();
+    (executeQualificationEvaluation as any).mockResolvedValue({
+      qualified: true,
+      phase: "QUALIFIED",
+      missingRequirements: [],
+    });
+
     mockPrisma = {
       wLProgram: {
         findUnique: vi.fn(),
         findFirst: vi.fn(),
+        findMany: vi.fn(),
       },
       wLSlot: {
         findMany: vi.fn(),
@@ -240,6 +254,51 @@ describe("OpenSea Allowlist Export Service", () => {
       expect(wallets).toHaveLength(1);
       expect(wallets[0]).toBe(validAddress1.toLowerCase());
     });
+
+    it("includes active slots with reviewStatus: FLAGGED as long as status is ALLOCATED or CONFIRMED (Task 4.2)", async () => {
+      mockPrisma.wLSlot.findMany.mockResolvedValueOnce([
+        {
+          id: "slot_flagged",
+          slotNumber: 1,
+          status: "ALLOCATED",
+          reviewStatus: "FLAGGED", // FLAGGED active slot remains in GTD export
+          user: {
+            id: "user_flagged",
+            isBanned: false,
+            wallet: { address: validAddress1 },
+            banRecords: [],
+            wlQualifications: [{ status: "QUALIFIED" }],
+          },
+        },
+        {
+          id: "slot_valid",
+          slotNumber: 2,
+          status: "CONFIRMED",
+          reviewStatus: "VALID",
+          user: {
+            id: "user_valid",
+            isBanned: false,
+            wallet: { address: validAddress2 },
+            banRecords: [],
+            wlQualifications: [{ status: "QUALIFIED" }],
+          },
+        },
+      ]);
+
+      const wallets = await getGTDWallets(mockPrisma, "prog_1");
+
+      expect(wallets).toHaveLength(2);
+      expect(wallets).toContain(validAddress1.toLowerCase());
+      expect(wallets).toContain(validAddress2.toLowerCase());
+      expect(mockPrisma.wLSlot.findMany).toHaveBeenCalledWith({
+        where: {
+          programId: "prog_1",
+          status: { in: ["ALLOCATED", "CONFIRMED"] },
+        },
+        orderBy: { slotNumber: "asc" },
+        include: expect.any(Object),
+      });
+    });
   });
 
   describe("FCFS Allowlist Generation (getFCFSWallets)", () => {
@@ -296,6 +355,45 @@ describe("OpenSea Allowlist Export Service", () => {
       expect(wallets.includes(validAddress1.toLowerCase())).toBe(false);
     });
 
+    it("strictly excludes revoked participants even if they have WAITING queue entries (DEC-022)", async () => {
+      const gtdSet = new Set<string>();
+
+      mockPrisma.wLQueueEntry.findMany.mockResolvedValueOnce([
+        {
+          id: "q_revoked",
+          queueNumber: 1,
+          status: "WAITING",
+          priorityScore: 0,
+          user: {
+            id: "user_revoked",
+            isBanned: false,
+            wallet: { address: validAddress3 },
+            banRecords: [],
+            wlQualifications: [{ status: "REVOKED" }],
+          },
+        },
+        {
+          id: "q_active",
+          queueNumber: 2,
+          status: "WAITING",
+          priorityScore: 0,
+          user: {
+            id: "user_active",
+            isBanned: false,
+            wallet: { address: validAddress2 },
+            banRecords: [],
+            wlQualifications: [{ status: "QUALIFIED" }],
+          },
+        },
+      ]);
+
+      const wallets = await getFCFSWallets(mockPrisma, "prog_1", gtdSet);
+
+      expect(wallets).toHaveLength(1);
+      expect(wallets[0]).toBe(validAddress2.toLowerCase());
+      expect(wallets.includes(validAddress3.toLowerCase())).toBe(false);
+    });
+
     it("deduplicates multiple queue entries for the same wallet", async () => {
       const gtdSet = new Set<string>();
 
@@ -331,6 +429,65 @@ describe("OpenSea Allowlist Export Service", () => {
       const wallets = await getFCFSWallets(mockPrisma, "prog_1", gtdSet);
       expect(wallets).toHaveLength(1);
       expect(wallets[0]).toBe(validAddress2.toLowerCase());
+    });
+
+    it("strictly excludes under-qualified FCFS candidates evaluated by qualification engine (Task 4.3)", async () => {
+      const gtdSet = new Set<string>();
+
+      mockPrisma.wLQueueEntry.findMany.mockResolvedValueOnce([
+        {
+          id: "q_underqualified",
+          queueNumber: 1,
+          status: "WAITING",
+          priorityScore: 90,
+          user: {
+            id: "user_underqualified",
+            isBanned: false,
+            wallet: { address: validAddress1 },
+            banRecords: [],
+          },
+        },
+        {
+          id: "q_fullyqualified",
+          queueNumber: 2,
+          status: "WAITING",
+          priorityScore: 80,
+          user: {
+            id: "user_fullyqualified",
+            isBanned: false,
+            wallet: { address: validAddress2 },
+            banRecords: [],
+          },
+        },
+      ]);
+
+      // Mock executeQualificationEvaluation:
+      // user_underqualified -> qualified: false (missing traits/tasks)
+      // user_fullyqualified -> qualified: true
+      (executeQualificationEvaluation as any).mockImplementation(
+        async (_prisma: any, input: any) => {
+          if (input.userId === "user_underqualified") {
+            return { qualified: false, missingRequirements: ["Missing BG trait"] };
+          }
+          return { qualified: true, missingRequirements: [] };
+        },
+      );
+
+      const wallets = await getFCFSWallets(mockPrisma, "prog_1", gtdSet);
+
+      expect(wallets).toHaveLength(1);
+      expect(wallets[0]).toBe(validAddress2.toLowerCase());
+      expect(wallets.includes(validAddress1.toLowerCase())).toBe(false);
+      expect(executeQualificationEvaluation).toHaveBeenCalledWith(
+        mockPrisma,
+        expect.objectContaining({
+          userId: "user_underqualified",
+          programId: "prog_1",
+          readOnly: true,
+          allowClosed: true,
+        }),
+        expect.any(Date),
+      );
     });
   });
 
@@ -479,6 +636,36 @@ describe("OpenSea Allowlist Export Service", () => {
       expect(result.stage).toBe("fcfs");
       expect(result.csv).toBe(`${validAddress2.toLowerCase()},1\n`);
       expect(result.csv.includes(validAddress1.toLowerCase())).toBe(false);
+    });
+
+    it("throws AMBIGUOUS_PROGRAM_SELECTION if programId is omitted and multiple programs exist", async () => {
+      mockPrisma.wLProgram.findMany.mockResolvedValueOnce([
+        frozenProgram,
+        { ...frozenProgram, id: "prog_2", slug: "prog-two" },
+      ]);
+
+      await expect(
+        exportOpenSeaAllowlist({
+          prisma: mockPrisma,
+          stage: "gtd",
+        }),
+      ).rejects.toMatchObject({
+        code: "AMBIGUOUS_PROGRAM_SELECTION",
+        status: 400,
+      });
+    });
+
+    it("auto-selects single program when programId is omitted and exactly 1 program exists", async () => {
+      mockPrisma.wLProgram.findMany.mockResolvedValueOnce([frozenProgram]);
+      mockPrisma.wLSlot.findMany.mockResolvedValueOnce([]);
+
+      const result = await exportOpenSeaAllowlist({
+        prisma: mockPrisma,
+        stage: "gtd",
+      });
+
+      expect(result.program.id).toBe(frozenProgram.id);
+      expect(result.filename).toBe("chimphood-gtd-allowlist.csv");
     });
   });
 });
