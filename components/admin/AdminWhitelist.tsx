@@ -1,21 +1,27 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Shield,
-  RefreshCw,
-  XCircle,
   Search,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   ListOrdered,
-  Plus,
-  Layers,
   Sparkles,
   Download,
   FileSpreadsheet,
+  Copy,
+  Check,
+  UserCheck,
+  UserX,
+  Clock,
+  Layers,
+  RefreshCw,
+  X,
+  XCircle,
 } from "lucide-react";
 import {
   Card,
@@ -27,88 +33,407 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
-  adminReconcileQueue,
-  adminRevokeSlot,
-  adminListSlots,
   adminListWLPrograms,
-  adminCreateWLProgram,
   adminUpdateWLProgram,
   adminExportOpenSeaAllowlist,
-  type AdminRevokeSlotInput,
-  type AdminReconcileQueueResponse,
-  type AdminSlotRecord,
+  adminListGtdSlotReviews,
+  adminUpdateGtdSlotReview,
+  adminGetGtdSlotReviewDetail,
+  adminListFcfsDirectory,
+  adminManualGrantSlot,
+  adminRevokeSlot,
+  adminGetPreExportSummary,
   type AdminWLProgramRecord,
+  type AdminPreExportSummaryResponse,
+  type AdminGtdSlotReviewDetailResponse,
+  type AdminFcfsDirectoryEntry,
 } from "@/lib/admin/client";
-import {
-  fetchWhitelistStatus,
-  type WhitelistStatusResponse,
-} from "@/lib/whitelist/client";
+import type { GtdSlotReviewItem } from "@/server/admin/slot-review";
 import { shortenAddress } from "@/lib/auth/address";
 
-export function AdminWhitelist() {
-  // Reconcile state
-  const [reconcileProgramId, setReconcileProgramId] = useState("");
-  const [reconciling, setReconciling] = useState(false);
-  const [reconcileResult, setReconcileResult] =
-    useState<AdminReconcileQueueResponse | null>(null);
-  const [reconcileError, setReconcileError] = useState<string | null>(null);
+function safeFormatAddress(address?: string | null): string {
+  if (!address) return "—";
+  try {
+    return shortenAddress(address);
+  } catch {
+    if (address.length <= 12) return address;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  }
+}
 
-  // Revoke slot state
-  const [revokeSlotId, setRevokeSlotId] = useState("");
-  const [revokeProgramId, setRevokeProgramId] = useState("");
-  const [revokeUserId, setRevokeUserId] = useState("");
+export function AdminWhitelist() {
+  // Global reload triggers
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // ---------------------------------------------------------------------------
+  // 1. Permanent Whitelist Program & Summary State
+  // ---------------------------------------------------------------------------
+  const [program, setProgram] = useState<AdminWLProgramRecord | null>(null);
+  const [loadingProgram, setLoadingProgram] = useState(true);
+  const [programError, setProgramError] = useState<string | null>(null);
+  const [updatingProgStatus, setUpdatingProgStatus] = useState(false);
+  const [progStatusSuccess, setProgStatusSuccess] = useState<string | null>(null);
+
+  const [summary, setSummary] = useState<AdminPreExportSummaryResponse | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+
+  // Copy feedback helper
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedAddress(text);
+    setTimeout(() => setCopiedAddress(null), 2000);
+  };
+
+  // Fetch single permanent program and pre-export summary
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingProgram(true);
+    setLoadingSummary(true);
+
+    adminListWLPrograms()
+      .then((res) => {
+        if (!isMounted) return;
+        const canonicalProg = res.programs?.[0] || null;
+        setProgram(canonicalProg);
+        setProgramError(null);
+        setLoadingProgram(false);
+
+        if (canonicalProg) {
+          return adminGetPreExportSummary({ programId: canonicalProg.id });
+        }
+        return null;
+      })
+      .then((summaryRes) => {
+        if (!isMounted) return;
+        if (summaryRes) {
+          setSummary(summaryRes);
+        }
+        setLoadingSummary(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        setProgramError((err as Error).message || "Failed to load whitelist program.");
+        setLoadingProgram(false);
+        setLoadingSummary(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reloadKey]);
+
+  const handleUpdateProgramStatus = async (newStatus: "UPCOMING" | "OPEN" | "PAUSED" | "FINALIZED" | "CLOSED") => {
+    if (!program) return;
+    setUpdatingProgStatus(true);
+    setProgStatusSuccess(null);
+    try {
+      const updated = await adminUpdateWLProgram(program.id, { status: newStatus });
+      setProgram(updated.program);
+      setProgStatusSuccess(`Program status updated to ${newStatus}.`);
+      setReloadKey((k) => k + 1);
+      setTimeout(() => setProgStatusSuccess(null), 3000);
+    } catch (err: unknown) {
+      setProgramError((err as Error).message || "Failed to update program status.");
+    } finally {
+      setUpdatingProgStatus(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // 2. GTD Review Console State (Task 6.3)
+  // ---------------------------------------------------------------------------
+  const [reviews, setReviews] = useState<GtdSlotReviewItem[]>([]);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsTab, setReviewsTab] = useState<
+    "ALL" | "NOT_REVIEWED" | "UNDER_REVIEW" | "VALID" | "FLAGGED"
+  >("ALL");
+  const [reviewSearchQuery, setReviewSearchQuery] = useState("");
+  const [reviewSearchSubmitted, setReviewSearchSubmitted] = useState("");
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
+  const reviewsLimit = 10;
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingReviews(true);
+
+    adminListGtdSlotReviews({
+      programId: program?.id,
+      reviewStatus: reviewsTab === "ALL" ? undefined : reviewsTab,
+      search: reviewSearchSubmitted.trim() || undefined,
+      limit: reviewsLimit,
+      offset: (reviewsPage - 1) * reviewsLimit,
+    })
+      .then((res) => {
+        if (!isMounted) return;
+        setReviews(res.slots as unknown as GtdSlotReviewItem[]);
+        setReviewsTotal(res.total);
+        setReviewsError(null);
+        setLoadingReviews(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        setReviewsError((err as Error).message || "Failed to load GTD reviews.");
+        setLoadingReviews(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reviewsPage, reviewsTab, reviewSearchSubmitted, reloadKey, program?.id]);
+
+  const handleReviewSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setReviewsPage(1);
+    setReviewSearchSubmitted(reviewSearchQuery);
+  };
+
+  // ---------------------------------------------------------------------------
+  // 3. Review Details Modal State (Task 6.3)
+  // ---------------------------------------------------------------------------
+  const [selectedReviewSlotId, setSelectedReviewSlotId] = useState<string | null>(null);
+  const [reviewDetail, setReviewDetail] = useState<AdminGtdSlotReviewDetailResponse | null>(null);
+  const [loadingReviewDetail, setLoadingReviewDetail] = useState(false);
+  const [reviewDetailError, setReviewDetailError] = useState<string | null>(null);
+
+  const [editReviewStatus, setEditReviewStatus] = useState<
+    "NOT_REVIEWED" | "UNDER_REVIEW" | "VALID" | "FLAGGED"
+  >("NOT_REVIEWED");
+  const [editReviewNotes, setEditReviewNotes] = useState("");
+  const [savingReview, setSavingReview] = useState(false);
+  const [saveReviewSuccess, setSaveReviewSuccess] = useState<string | null>(null);
+  const [saveReviewError, setSaveReviewError] = useState<string | null>(null);
+
+  const openReviewModal = async (slotId: string) => {
+    setSelectedReviewSlotId(slotId);
+    setLoadingReviewDetail(true);
+    setReviewDetailError(null);
+    setSaveReviewSuccess(null);
+    setSaveReviewError(null);
+    try {
+      const detail = await adminGetGtdSlotReviewDetail(slotId);
+      setReviewDetail(detail);
+      setEditReviewStatus(detail.slot.reviewStatus);
+      setEditReviewNotes(detail.slot.reviewNotes || "");
+    } catch (err: unknown) {
+      setReviewDetailError((err as Error).message || "Failed to fetch review detail.");
+    } finally {
+      setLoadingReviewDetail(false);
+    }
+  };
+
+  const closeReviewModal = () => {
+    setSelectedReviewSlotId(null);
+    setReviewDetail(null);
+    setSaveReviewSuccess(null);
+    setSaveReviewError(null);
+  };
+
+  const handleSaveReview = async () => {
+    if (!selectedReviewSlotId) return;
+    setSavingReview(true);
+    setSaveReviewError(null);
+    setSaveReviewSuccess(null);
+    try {
+      await adminUpdateGtdSlotReview({
+        slotId: selectedReviewSlotId,
+        reviewStatus: editReviewStatus,
+        reviewNotes: editReviewNotes.trim() || null,
+      });
+      setSaveReviewSuccess("Review updated successfully.");
+      setReloadKey((k) => k + 1);
+      // Refresh review detail in modal
+      const refreshed = await adminGetGtdSlotReviewDetail(selectedReviewSlotId);
+      setReviewDetail(refreshed);
+      setTimeout(() => setSaveReviewSuccess(null), 3000);
+    } catch (err: unknown) {
+      setSaveReviewError((err as Error).message || "Failed to update review status.");
+    } finally {
+      setSavingReview(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // 4. FCFS Directory State (Task 6.4)
+  // ---------------------------------------------------------------------------
+  const [directory, setDirectory] = useState<AdminFcfsDirectoryEntry[]>([]);
+  const [directoryTotal, setDirectoryTotal] = useState(0);
+  const [directoryPage, setDirectoryPage] = useState(1);
+  const [directoryQualifiedOnly, setDirectoryQualifiedOnly] = useState(false);
+  const [directorySearchQuery, setDirectorySearchQuery] = useState("");
+  const [directorySearchSubmitted, setDirectorySearchSubmitted] = useState("");
+  const [loadingDirectory, setLoadingDirectory] = useState(true);
+  const [directoryError, setDirectoryError] = useState<string | null>(null);
+  const directoryLimit = 10;
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingDirectory(true);
+
+    adminListFcfsDirectory({
+      programId: program?.id,
+      search: directorySearchSubmitted.trim() || undefined,
+      qualifiedOnly: directoryQualifiedOnly,
+      limit: directoryLimit,
+      offset: (directoryPage - 1) * directoryLimit,
+    })
+      .then((res) => {
+        if (!isMounted) return;
+        setDirectory(res.entries);
+        setDirectoryTotal(res.total);
+        setDirectoryError(null);
+        setLoadingDirectory(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        setDirectoryError((err as Error).message || "Failed to load FCFS directory.");
+        setLoadingDirectory(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    directoryPage,
+    directoryQualifiedOnly,
+    directorySearchSubmitted,
+    reloadKey,
+    program?.id,
+  ]);
+
+  const handleDirectorySearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setDirectoryPage(1);
+    setDirectorySearchSubmitted(directorySearchQuery);
+  };
+
+  // ---------------------------------------------------------------------------
+  // 5. Manual GTD Grant Confirmation Modal State (Task 6.4)
+  // ---------------------------------------------------------------------------
+  const [grantCandidate, setGrantCandidate] = useState<AdminFcfsDirectoryEntry | null>(null);
+  const [grantNotes, setGrantNotes] = useState("");
+  const [granting, setGranting] = useState(false);
+  const [grantError, setGrantError] = useState<string | null>(null);
+  const [grantSuccess, setGrantSuccess] = useState<string | null>(null);
+
+  const openGrantModal = (candidate: AdminFcfsDirectoryEntry) => {
+    setGrantCandidate(candidate);
+    setGrantNotes("");
+    setGrantError(null);
+    setGrantSuccess(null);
+  };
+
+  const closeGrantModal = () => {
+    setGrantCandidate(null);
+    setGrantNotes("");
+    setGrantError(null);
+    setGrantSuccess(null);
+  };
+
+  const handleConfirmGrant = async () => {
+    if (!grantCandidate || !program) return;
+    setGranting(true);
+    setGrantError(null);
+    setGrantSuccess(null);
+    try {
+      const res = await adminManualGrantSlot({
+        programId: program.id,
+        candidateUserId: grantCandidate.userId,
+        notes: grantNotes.trim() || null,
+      });
+      setGrantSuccess(`Successfully granted GTD slot #${res.slot.slotNumber}!`);
+      setReloadKey((k) => k + 1);
+      setTimeout(() => {
+        closeGrantModal();
+      }, 1500);
+    } catch (err: unknown) {
+      setGrantError((err as Error).message || "Failed to manually grant GTD slot.");
+    } finally {
+      setGranting(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // 6. Guarded Revocation Modal State (Task 6.5)
+  // ---------------------------------------------------------------------------
+  const [revokeTarget, setRevokeTarget] = useState<{
+    slotId: string;
+    slotNumber: number;
+    walletAddress?: string | null;
+    username?: string | null;
+  } | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
   const [revoking, setRevoking] = useState(false);
-  const [revokeResult, setRevokeResult] = useState<any>(null);
   const [revokeError, setRevokeError] = useState<string | null>(null);
+  const [revokeSuccess, setRevokeSuccess] = useState<string | null>(null);
 
-  // Address lookup state
-  const [lookupAddress, setLookupAddress] = useState("");
-  const [lookingUp, setLookingUp] = useState(false);
-  const [lookupResult, setLookupResult] = useState<WhitelistStatusResponse | null>(null);
-  const [lookupError, setLookupError] = useState<string | null>(null);
+  const openRevokeModal = (target: {
+    slotId: string;
+    slotNumber: number;
+    walletAddress?: string | null;
+    username?: string | null;
+  }) => {
+    setRevokeTarget(target);
+    setRevokeReason("");
+    setRevokeError(null);
+    setRevokeSuccess(null);
+  };
 
-  // WL Programs State
-  const [programs, setPrograms] = useState<AdminWLProgramRecord[]>([]);
-  const [loadingPrograms, setLoadingPrograms] = useState(true);
-  const [programsError, setProgramsError] = useState<string | null>(null);
-  const [reloadProgramsKey, setReloadProgramsKey] = useState(0);
+  const closeRevokeModal = () => {
+    setRevokeTarget(null);
+    setRevokeReason("");
+    setRevokeError(null);
+    setRevokeSuccess(null);
+  };
 
-  // Create Program Form State
-  const [showCreateProgram, setShowCreateProgram] = useState(false);
-  const [newProgName, setNewProgName] = useState("");
-  const [newProgSlug, setNewProgSlug] = useState("");
-  const [newProgCapacity, setNewProgCapacity] = useState("");
-  const [newProgStatus, setNewProgStatus] = useState("UPCOMING");
-  const [newProgStartsAt, setNewProgStartsAt] = useState("");
-  const [newProgEndsAt, setNewProgEndsAt] = useState("");
-  const [newProgDescription, setNewProgDescription] = useState("");
-  const [creatingProgram, setCreatingProgram] = useState(false);
-  const [createProgramError, setCreateProgramError] = useState<string | null>(null);
-  const [createProgramSuccess, setCreateProgramSuccess] = useState<string | null>(null);
+  const handleConfirmRevoke = async () => {
+    if (!revokeTarget) return;
+    if (revokeReason.trim().length < 5) {
+      setRevokeError("Reason must be at least 5 characters long.");
+      return;
+    }
+    setRevoking(true);
+    setRevokeError(null);
+    setRevokeSuccess(null);
+    try {
+      await adminRevokeSlot({
+        slotId: revokeTarget.slotId,
+        reason: revokeReason.trim(),
+      });
+      setRevokeSuccess(`Slot #${revokeTarget.slotNumber} was successfully revoked.`);
+      setReloadKey((k) => k + 1);
+      // Close review detail modal if open
+      if (selectedReviewSlotId === revokeTarget.slotId) {
+        closeReviewModal();
+      }
+      setTimeout(() => {
+        closeRevokeModal();
+      }, 1500);
+    } catch (err: unknown) {
+      setRevokeError((err as Error).message || "Failed to revoke whitelist slot.");
+    } finally {
+      setRevoking(false);
+    }
+  };
 
-  // Updating program status state
-  const [updatingProgId, setUpdatingProgId] = useState<string | null>(null);
-  const [progUpdateMsg, setProgUpdateMsg] = useState<{
-    id: string;
-    text: string;
-    error?: boolean;
-  } | null>(null);
-
-  // OpenSea Allowlist Export State
-  const [exportProgramId, setExportProgramId] = useState("");
+  // ---------------------------------------------------------------------------
+  // 7. OpenSea CSV Export State (Task 6.6)
+  // ---------------------------------------------------------------------------
   const [exportingStage, setExportingStage] = useState<"gtd" | "fcfs" | null>(null);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const handleExport = async (stage: "gtd" | "fcfs", programId?: string) => {
+  const handleExport = async (stage: "gtd" | "fcfs") => {
+    if (!program) return;
     setExportingStage(stage);
     setExportError(null);
     setExportSuccess(null);
     try {
       const res = await adminExportOpenSeaAllowlist({
         stage,
-        programId: programId || exportProgramId || undefined,
+        programId: program.id,
       });
       setExportSuccess(
         `Successfully exported ${res.count} ${stage.toUpperCase()} wallet(s) to ${res.filename}`,
@@ -122,645 +447,416 @@ export function AdminWhitelist() {
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    adminListWLPrograms()
-      .then((res) => {
-        if (isMounted) {
-          setPrograms(res.programs || []);
-          setProgramsError(null);
-          setLoadingPrograms(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setProgramsError(
-            (err as Error).message || "Failed to load whitelist programs.",
-          );
-          setLoadingPrograms(false);
-        }
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, [reloadProgramsKey]);
+  // Metrics calculation
+  const totalSlots = program?.totalSlots ?? 0;
+  const allocatedCount = summary?.gtd.allocatedCount ?? program?.allocatedSlotsCount ?? 0;
+  const vacantSlots = Math.max(0, totalSlots - allocatedCount);
+  const capacityPercent = totalSlots > 0 ? Math.round((allocatedCount / totalSlots) * 100) : 0;
 
-  // Allocated Slots Registry State
-  const [slots, setSlots] = useState<AdminSlotRecord[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(true);
-  const [slotsError, setSlotsError] = useState<string | null>(null);
-  const [slotsPage, setSlotsPage] = useState(1);
-  const [slotsTotal, setSlotsTotal] = useState(0);
-  const [slotSearchQuery, setSlotSearchQuery] = useState("");
-  const [slotProgramFilter, setSlotProgramFilter] = useState("");
-  const [slotStatusFilter, setSlotStatusFilter] = useState("");
-  const [reloadSlotsKey, setReloadSlotsKey] = useState(0);
-  const slotsLimit = 10;
+  const totalDirectoryEntries = summary?.fcfs.totalDirectoryEntries ?? directoryTotal ?? 0;
+  const qualifiedReadyCount = summary?.fcfs.qualifiedReadyCount ?? 0;
 
-  useEffect(() => {
-    let isMounted = true;
-    adminListSlots({
-      search: slotSearchQuery.trim() || undefined,
-      programId: slotProgramFilter.trim() || undefined,
-      status: slotStatusFilter.trim() || undefined,
-      limit: slotsLimit,
-      offset: (slotsPage - 1) * slotsLimit,
-    })
-      .then((res) => {
-        if (isMounted) {
-          setSlots(res.slots);
-          setSlotsTotal(res.total);
-          setSlotsError(null);
-          setLoadingSlots(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setSlotsError((err as Error).message || "Failed to load whitelist slots.");
-          setLoadingSlots(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [slotsPage, reloadSlotsKey, slotSearchQuery, slotProgramFilter, slotStatusFilter]);
-
-  const handleSlotsFilterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoadingSlots(true);
-    setSlotsPage(1);
-    setReloadSlotsKey((k) => k + 1);
-  };
-
-  const handleReconcile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reconcileProgramId.trim()) return;
-    setReconciling(true);
-    setReconcileError(null);
-    setReconcileResult(null);
-    try {
-      const res = await adminReconcileQueue({ programId: reconcileProgramId.trim() });
-      setReconcileResult(res);
-      // Refresh slots table after reconciliation
-      setReloadSlotsKey((k) => k + 1);
-    } catch (err: unknown) {
-      setReconcileError((err as Error).message || "Queue reconciliation failed.");
-    } finally {
-      setReconciling(false);
-    }
-  };
-
-  const handleRevokeSlot = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!revokeSlotId.trim() && (!revokeProgramId.trim() || !revokeUserId.trim())) {
-      setRevokeError("Either Slot ID or both Program ID and User ID are required.");
-      return;
-    }
-    setRevoking(true);
-    setRevokeError(null);
-    setRevokeResult(null);
-    try {
-      const input: AdminRevokeSlotInput = {
-        slotId: revokeSlotId.trim() || undefined,
-        programId: revokeProgramId.trim() || undefined,
-        userId: revokeUserId.trim() || undefined,
-        reason: revokeReason.trim() || null,
-      };
-      const res = await adminRevokeSlot(input);
-      setRevokeResult(res);
-      setRevokeSlotId("");
-      setRevokeReason("");
-      // Refresh slots table after revocation
-      setReloadSlotsKey((k) => k + 1);
-    } catch (err: unknown) {
-      setRevokeError((err as Error).message || "Slot revocation failed.");
-    } finally {
-      setRevoking(false);
-    }
-  };
-
-  const handleLookup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!lookupAddress.trim()) return;
-    setLookingUp(true);
-    setLookupError(null);
-    setLookupResult(null);
-    try {
-      const res = await fetchWhitelistStatus(lookupAddress.trim());
-      setLookupResult(res);
-    } catch (err: unknown) {
-      setLookupError((err as Error).message || "Failed to check whitelist status.");
-    } finally {
-      setLookingUp(false);
-    }
-  };
-
-  const handleProgNameChange = (name: string) => {
-    setNewProgName(name);
-    const generatedSlug = name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    setNewProgSlug(generatedSlug);
-  };
-
-  const handleCreateProgram = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreateProgramError(null);
-    setCreateProgramSuccess(null);
-
-    if (!newProgName.trim()) {
-      setCreateProgramError("Program Name is required.");
-      return;
-    }
-    if (!newProgSlug.trim()) {
-      setCreateProgramError("Program Slug is required.");
-      return;
-    }
-    const capNum = parseInt(newProgCapacity, 10);
-    if (!newProgCapacity || isNaN(capNum) || capNum <= 0) {
-      setCreateProgramError(
-        "Explicit capacity (Total Slots) is required and must be an integer > 0.",
-      );
-      return;
-    }
-    if (!newProgStartsAt) {
-      setCreateProgramError("Starts At timestamp is required.");
-      return;
-    }
-
-    setCreatingProgram(true);
-    try {
-      const startsAtIso = new Date(newProgStartsAt).toISOString();
-      const endsAtIso = newProgEndsAt ? new Date(newProgEndsAt).toISOString() : null;
-
-      await adminCreateWLProgram({
-        name: newProgName.trim(),
-        slug: newProgSlug.trim().toLowerCase(),
-        totalSlots: capNum,
-        status: newProgStatus,
-        startsAt: startsAtIso,
-        endsAt: endsAtIso,
-        description: newProgDescription.trim() || null,
-      });
-
-      setCreateProgramSuccess(`WL Program "${newProgName}" created successfully!`);
-      setShowCreateProgram(false);
-      setNewProgName("");
-      setNewProgSlug("");
-      setNewProgCapacity("");
-      setNewProgStatus("UPCOMING");
-      setNewProgStartsAt("");
-      setNewProgEndsAt("");
-      setNewProgDescription("");
-      setReloadProgramsKey((k) => k + 1);
-    } catch (err: unknown) {
-      setCreateProgramError(
-        (err as Error).message || "Failed to create whitelist program.",
-      );
-    } finally {
-      setCreatingProgram(false);
-    }
-  };
-
-  const handleUpdateProgramStatus = async (programId: string, newStatus: string) => {
-    setUpdatingProgId(programId);
-    setProgUpdateMsg(null);
-    try {
-      await adminUpdateWLProgram(programId, { status: newStatus });
-      setProgUpdateMsg({ id: programId, text: `Status updated to ${newStatus}` });
-      setReloadProgramsKey((k) => k + 1);
-    } catch (err: unknown) {
-      setProgUpdateMsg({
-        id: programId,
-        text: (err as Error).message || "Update failed",
-        error: true,
-      });
-    } finally {
-      setUpdatingProgId(null);
-    }
-  };
-
-  const totalSlotPages = Math.max(1, Math.ceil(slotsTotal / slotsLimit));
+  const flaggedCount = summary?.gtd.flaggedCount ?? 0;
+  const notReviewedCount =
+    reviews.filter((r) => r.reviewStatus === "NOT_REVIEWED").length;
+  const underReviewCount =
+    reviews.filter((r) => r.reviewStatus === "UNDER_REVIEW").length;
+  const validCount = reviews.filter((r) => r.reviewStatus === "VALID").length;
+  const totalNeedsReview = flaggedCount + notReviewedCount + underReviewCount;
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            Whitelist Operations
-          </h1>
-          <Badge variant="default">Stage 3 WL Engine</Badge>
-        </div>
-        <p className="mt-1 text-sm text-gray-400">
-          Execute FIFO queue reconciliation, inspect allocated whitelist slots, enforce
-          manual slot revocations, and check user qualification tiers.
-        </p>
-      </div>
+    <div className="space-y-6">
+      {/* --------------------------------------------------------------------- */}
+      {/* SECTION 1: PROGRAM OVERVIEW & METRICS CARDS                            */}
+      {/* --------------------------------------------------------------------- */}
+      <Card className="border border-white/10 bg-slate-900/60 backdrop-blur-sm">
+        <CardHeader className="pb-4 border-b border-white/5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <Layers className="h-6 w-6 text-emerald-400" />
+                <CardTitle className="text-xl font-bold text-white">
+                  {program ? program.name : "Permanent Whitelist Program"}
+                </CardTitle>
+                {program && (
+                  <Badge
+                    variant={
+                      program.status === "OPEN"
+                        ? "success"
+                        : program.status === "PAUSED"
+                        ? "warning"
+                        : "default"
+                    }
+                    className="font-mono text-xs"
+                  >
+                    {program.status}
+                  </Badge>
+                )}
+              </div>
+              <CardDescription className="text-xs text-gray-400">
+                Single canonical ChimpHood qualification program (slug:{" "}
+                <span className="font-mono text-gray-300">
+                  {program?.slug || "loading..."}
+                </span>
+                )
+              </CardDescription>
+            </div>
 
-      {/* Whitelist Programs Management */}
-      <Card className="border-gray-800 bg-[#0c0e17]/90">
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+            {/* Quick status controller */}
+            {program && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">Status:</span>
+                <select
+                  disabled={updatingProgStatus || program.status === "CLOSED"}
+                  value={program.status}
+                  onChange={(e) =>
+                    handleUpdateProgramStatus(
+                      e.target.value as "UPCOMING" | "OPEN" | "PAUSED" | "FINALIZED" | "CLOSED",
+                    )
+                  }
+                  className="rounded bg-slate-800 border border-white/10 px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50"
+                  title={program.status === "CLOSED" ? "Program is permanently CLOSED and cannot be reopened." : undefined}
+                >
+                  <option value="UPCOMING">UPCOMING</option>
+                  <option value="OPEN">OPEN</option>
+                  <option value="PAUSED">PAUSED</option>
+                  <option value="FINALIZED">FINALIZED</option>
+                  <option value="CLOSED">CLOSED</option>
+                </select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={loadingProgram || loadingSummary}
+                  onClick={() => setReloadKey((k) => k + 1)}
+                  className="h-8 w-8 p-0 border-white/10 text-gray-300 hover:text-white"
+                  title="Refresh Overview"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${
+                      loadingProgram || loadingSummary ? "animate-spin" : ""
+                    }`}
+                  />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {progStatusSuccess && (
+            <div className="mt-3 flex items-center gap-2 rounded border border-emerald-500/20 bg-emerald-500/10 p-2 text-xs text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>{progStatusSuccess}</span>
+            </div>
+          )}
+          {programError && (
+            <div className="mt-3 flex items-center gap-2 rounded border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-400">
+              <AlertCircle className="h-4 w-4" />
+              <span>{programError}</span>
+            </div>
+          )}
+        </CardHeader>
+
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* 1. GTD Slots Capacity */}
+            <div className="rounded-lg border border-white/5 bg-slate-800/40 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-400">GTD Capacity</span>
+                <Badge
+                  variant={vacantSlots > 0 ? "success" : "warning"}
+                  className="text-[11px]"
+                >
+                  {vacantSlots > 0 ? `${vacantSlots} Vacant` : "Capacity Full"}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-white tracking-tight">
+                  {allocatedCount}{" "}
+                  <span className="text-sm font-normal text-gray-400">
+                    / {totalSlots}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      capacityPercent >= 100 ? "bg-amber-500" : "bg-emerald-500"
+                    }`}
+                    style={{ width: `${Math.min(100, capacityPercent)}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-400">
+                {capacityPercent}% filled. Instant allocation for qualified users.
+              </p>
+            </div>
+
+            {/* 2. FCFS Directory Total */}
+            <div className="rounded-lg border border-white/5 bg-slate-800/40 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-400">FCFS Directory</span>
+                <Badge variant="default" className="text-[11px]">
+                  EVM + X Linked
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-white tracking-tight">
+                  {totalDirectoryEntries}
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
+                    <UserCheck className="h-3.5 w-3.5" />
+                    {qualifiedReadyCount} Qualified
+                  </span>
+                  <span className="text-gray-500">•</span>
+                  <span className="text-gray-400">
+                    {Math.max(0, totalDirectoryEntries - qualifiedReadyCount)} Pending
+                  </span>
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-400">
+                Chronologically ordered registry. Zero auto-promotion queues.
+              </p>
+            </div>
+
+            {/* 3. Needs Review Counter */}
+            <div className="rounded-lg border border-white/5 bg-slate-800/40 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-400">Needs Review</span>
+                {flaggedCount > 0 ? (
+                  <Badge variant="warning" className="text-[11px]">
+                    {flaggedCount} Flagged
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[11px] text-gray-400">
+                    Normal
+                  </Badge>
+                )}
+              </div>
+              <div className="text-2xl font-bold text-white tracking-tight">
+                {totalNeedsReview}{" "}
+                <span className="text-sm font-normal text-gray-400">Total</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 pt-1 text-[11px]">
+                <div className="rounded bg-slate-900/60 p-1 text-center">
+                  <div className="text-gray-400">Unreviewed</div>
+                  <div className="font-semibold text-gray-300">{notReviewedCount}</div>
+                </div>
+                <div className="rounded bg-slate-900/60 p-1 text-center">
+                  <div className="text-blue-400">In Review</div>
+                  <div className="font-semibold text-blue-300">{underReviewCount}</div>
+                </div>
+                <div className="rounded bg-slate-900/60 p-1 text-center">
+                  <div className="text-amber-400">Flagged</div>
+                  <div className="font-semibold text-amber-300">{flaggedCount}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* --------------------------------------------------------------------- */}
+      {/* SECTION 2: GTD POST-ALLOCATION REVIEW CONSOLE (Task 6.3)             */}
+      {/* --------------------------------------------------------------------- */}
+      <Card className="border border-white/10 bg-slate-900/60 backdrop-blur-sm">
+        <CardHeader className="pb-3 border-b border-white/5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Layers className="h-5 w-5 text-emerald-400" />
-              <CardTitle className="text-base text-white">Whitelist Programs</CardTitle>
-              <Badge variant="default" className="text-xs">
-                {programs.length} Registered
+              <Shield className="h-5 w-5 text-emerald-400" />
+              <CardTitle className="text-base text-white">GTD Post-Allocation Review</CardTitle>
+              <Badge variant="outline" className="text-xs">
+                {reviewsTotal} Allocated Slots
               </Badge>
             </div>
-            <CardDescription className="text-xs text-gray-400">
-              Create and manage Whitelist Programs, explicit slot capacities, and
-              lifecycle statuses.
-            </CardDescription>
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap gap-1 bg-slate-950/60 p-1 rounded-lg border border-white/5">
+              {(
+                [
+                  { key: "ALL", label: "All" },
+                  { key: "NOT_REVIEWED", label: "Not Reviewed" },
+                  { key: "UNDER_REVIEW", label: "Under Review" },
+                  { key: "VALID", label: "Valid" },
+                  { key: "FLAGGED", label: "Flagged" },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => {
+                    setReviewsTab(tab.key);
+                    setReviewsPage(1);
+                  }}
+                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                    reviewsTab === tab.key
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setLoadingPrograms(true);
-                setReloadProgramsKey((k) => k + 1);
-              }}
-              disabled={loadingPrograms}
-              className="gap-1.5 text-xs"
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${loadingPrograms ? "animate-spin" : ""}`}
-              />
-              <span>Refresh</span>
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                setShowCreateProgram(!showCreateProgram);
-                setCreateProgramError(null);
-                setCreateProgramSuccess(null);
-              }}
-              className="gap-1.5 text-xs"
-            >
-              <Plus className="h-4 w-4" />
-              <span>{showCreateProgram ? "Cancel" : "New Program"}</span>
-            </Button>
-          </div>
+
+          <CardDescription className="text-xs text-gray-400 mt-1">
+            Review allocated GTD slots post-qualification. Review status is independent of slot
+            active status (DEC-015).
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {createProgramSuccess && (
-            <div className="flex items-center gap-2 rounded border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs text-emerald-300">
-              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-              <span>{createProgramSuccess}</span>
+
+        <CardContent className="pt-4 space-y-4">
+          {/* Search bar */}
+          <form onSubmit={handleReviewSearchSubmit} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search GTD slots by wallet (0x...) or X username (@...)"
+                value={reviewSearchQuery}
+                onChange={(e) => setReviewSearchQuery(e.target.value)}
+                className="w-full rounded bg-slate-800/80 border border-white/10 pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+            <Button type="submit" variant="outline" size="sm" className="text-xs">
+              Search
+            </Button>
+            {reviewSearchSubmitted && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setReviewSearchQuery("");
+                  setReviewSearchSubmitted("");
+                  setReviewsPage(1);
+                }}
+                className="text-xs text-gray-400 hover:text-white"
+              >
+                Clear
+              </Button>
+            )}
+          </form>
+
+          {/* Table */}
+          {reviewsError && (
+            <div className="p-3 rounded bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+              {reviewsError}
             </div>
           )}
 
-          {/* Create Program Form */}
-          {showCreateProgram && (
-            <form
-              onSubmit={handleCreateProgram}
-              className="space-y-4 rounded-lg border border-gray-800 bg-gray-900/40 p-4"
-            >
-              <h3 className="text-sm font-semibold text-white">
-                Create New Whitelist Program
-              </h3>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="prog-name"
-                    className="mb-1 block text-xs font-medium text-gray-400"
-                  >
-                    Program Name *
-                  </label>
-                  <input
-                    id="prog-name"
-                    type="text"
-                    placeholder="e.g. Genesis Whitelist Program"
-                    value={newProgName}
-                    onChange={(e) => handleProgNameChange(e.target.value)}
-                    required
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="prog-slug"
-                    className="mb-1 block text-xs font-medium text-gray-400"
-                  >
-                    Slug *
-                  </label>
-                  <input
-                    id="prog-slug"
-                    type="text"
-                    placeholder="e.g. genesis-wl-program"
-                    value={newProgSlug}
-                    onChange={(e) => setNewProgSlug(e.target.value)}
-                    required
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="prog-capacity"
-                    className="mb-1 block text-xs font-medium text-gray-400"
-                  >
-                    Capacity (Total Slots) *
-                  </label>
-                  <input
-                    id="prog-capacity"
-                    type="number"
-                    min="1"
-                    step="1"
-                    placeholder="e.g. 500"
-                    value={newProgCapacity}
-                    onChange={(e) => setNewProgCapacity(e.target.value)}
-                    required
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                  />
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    Explicit slot limit. Must be greater than 0.
-                  </p>
-                </div>
-                <div>
-                  <label
-                    htmlFor="prog-status"
-                    className="mb-1 block text-xs font-medium text-gray-400"
-                  >
-                    Initial Status
-                  </label>
-                  <select
-                    id="prog-status"
-                    value={newProgStatus}
-                    onChange={(e) => setNewProgStatus(e.target.value)}
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  >
-                    <option value="UPCOMING">UPCOMING</option>
-                    <option value="OPEN">OPEN</option>
-                    <option value="PAUSED">PAUSED</option>
-                    <option value="FINALIZED">FINALIZED</option>
-                    <option value="CLOSED">CLOSED</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="prog-starts"
-                    className="mb-1 block text-xs font-medium text-gray-400"
-                  >
-                    Starts At *
-                  </label>
-                  <input
-                    id="prog-starts"
-                    type="datetime-local"
-                    value={newProgStartsAt}
-                    onChange={(e) => setNewProgStartsAt(e.target.value)}
-                    required
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="prog-ends"
-                    className="mb-1 block text-xs font-medium text-gray-400"
-                  >
-                    Ends At (optional)
-                  </label>
-                  <input
-                    id="prog-ends"
-                    type="datetime-local"
-                    value={newProgEndsAt}
-                    onChange={(e) => setNewProgEndsAt(e.target.value)}
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="prog-desc"
-                  className="mb-1 block text-xs font-medium text-gray-400"
-                >
-                  Description (optional)
-                </label>
-                <textarea
-                  id="prog-desc"
-                  rows={2}
-                  placeholder="Program overview and qualification criteria..."
-                  value={newProgDescription}
-                  onChange={(e) => setNewProgDescription(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              {createProgramError && (
-                <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <span>{createProgramError}</span>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCreateProgram(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="sm"
-                  disabled={creatingProgram}
-                >
-                  {creatingProgram ? "Creating..." : "Create Program"}
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {/* Programs Error Alert */}
-          {programsError && (
-            <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <span>{programsError}</span>
-            </div>
-          )}
-
-          {/* Programs List Table */}
-          <div className="overflow-x-auto rounded-lg border border-gray-800">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-gray-800 bg-gray-900/60 text-gray-400">
+          <div className="overflow-x-auto rounded border border-white/5">
+            <table className="w-full text-left text-xs text-gray-300">
+              <thead className="bg-slate-950/80 text-[11px] uppercase tracking-wider text-gray-400 border-b border-white/5">
                 <tr>
-                  <th className="px-3 py-2.5 font-medium">Program</th>
-                  <th className="px-3 py-2.5 font-medium">Status</th>
-                  <th className="px-3 py-2.5 font-medium">Capacity (Slots)</th>
-                  <th className="px-3 py-2.5 font-medium">Schedule</th>
-                  <th className="px-3 py-2.5 font-medium">Campaigns</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Actions</th>
+                  <th className="py-2.5 px-3">Slot #</th>
+                  <th className="py-2.5 px-3">Participant</th>
+                  <th className="py-2.5 px-3">Allocation</th>
+                  <th className="py-2.5 px-3">Review Status</th>
+                  <th className="py-2.5 px-3">Reviewer</th>
+                  <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/60 bg-[#0c0e17]/40 text-gray-300">
-                {loadingPrograms && programs.length === 0 ? (
+              <tbody className="divide-y divide-white/5">
+                {loadingReviews ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-500">
-                      <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin text-emerald-400" />
-                      Loading whitelist programs...
+                      Loading GTD slots...
                     </td>
                   </tr>
-                ) : programs.length === 0 ? (
+                ) : reviews.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-500">
-                      No whitelist programs registered yet. Click &quot;New Program&quot;
-                      above to create one.
+                      No GTD slots found matching criteria.
                     </td>
                   </tr>
                 ) : (
-                  programs.map((p) => {
-                    const pct =
-                      p.totalSlots > 0
-                        ? Math.min(
-                            100,
-                            Math.round((p.allocatedSlotsCount / p.totalSlots) * 100),
-                          )
-                        : 0;
+                  reviews.map((slot) => {
+                    const address = slot.user?.wallet?.address;
+                    const username = slot.user?.xIdentity?.username;
                     return (
-                      <tr key={p.id} className="transition-colors hover:bg-gray-800/30">
-                        <td className="px-3 py-2.5">
-                          <div className="font-semibold text-white">{p.name}</div>
-                          <div className="font-mono text-[11px] text-gray-400">
-                            slug: {p.slug}
-                          </div>
-                          <div className="font-mono text-[10px] text-gray-500">
-                            ID: {p.id}
+                      <tr key={slot.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-2.5 px-3 font-mono font-bold text-white">
+                          #{slot.slotNumber.toString().padStart(3, "0")}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex flex-col gap-0.5">
+                            {address ? (
+                              <div className="flex items-center gap-1 font-mono text-gray-200">
+                                <span>{safeFormatAddress(address)}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(address)}
+                                  className="text-gray-500 hover:text-white"
+                                  title="Copy address"
+                                >
+                                  {copiedAddress === address ? (
+                                    <Check className="h-3 w-3 text-emerald-400" />
+                                  ) : (
+                                    <Copy className="h-3 w-3" />
+                                  )}
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">No wallet</span>
+                            )}
+                            {username ? (
+                              <span className="text-[11px] text-blue-400">
+                                @{username}
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-gray-500">No X linked</span>
+                            )}
                           </div>
                         </td>
-                        <td className="px-3 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant={
-                                p.status === "OPEN"
-                                  ? "success"
-                                  : p.status === "PAUSED"
-                                    ? "warning"
-                                    : p.status === "CLOSED"
-                                      ? "outline"
-                                      : "default"
-                              }
-                              className="text-[10px]"
-                            >
-                              {p.status}
-                            </Badge>
-                            <select
-                              aria-label={`Change status for ${p.name}`}
-                              value={p.status}
-                              disabled={updatingProgId === p.id}
-                              onChange={(e) =>
-                                handleUpdateProgramStatus(p.id, e.target.value)
-                              }
-                              className="rounded border border-gray-700 bg-gray-900 px-1.5 py-0.5 text-[10px] text-gray-300 focus:border-emerald-500 focus:outline-none"
-                            >
-                              <option value="UPCOMING">UPCOMING</option>
-                              <option value="OPEN">OPEN</option>
-                              <option value="PAUSED">PAUSED</option>
-                              <option value="FINALIZED">FINALIZED</option>
-                              <option value="CLOSED">CLOSED</option>
-                            </select>
-                          </div>
-                          {progUpdateMsg?.id === p.id && (
-                            <p
-                              className={`mt-1 text-[10px] ${
-                                progUpdateMsg.error ? "text-rose-400" : "text-emerald-400"
-                              }`}
-                            >
-                              {progUpdateMsg.text}
-                            </p>
-                          )}
+                        <td className="py-2.5 px-3 text-[11px] text-gray-400">
+                          <div>{new Date(slot.allocatedAt).toLocaleDateString()}</div>
+                          <span className="text-[10px] text-gray-500">
+                            {slot.allocatedBy || "SYSTEM"}
+                          </span>
                         </td>
-                        <td className="px-3 py-2.5">
-                          <div className="font-mono text-xs text-white">
-                            {p.allocatedSlotsCount} / {p.totalSlots}
-                          </div>
-                          <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-gray-800">
-                            <div
-                              className="h-full bg-emerald-500"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="text-[10px] text-gray-500">{pct}% filled</span>
+                        <td className="py-2.5 px-3">
+                          <Badge
+                            variant={
+                              slot.reviewStatus === "VALID"
+                                ? "success"
+                                : slot.reviewStatus === "FLAGGED"
+                                ? "warning"
+                                : slot.reviewStatus === "UNDER_REVIEW"
+                                ? "default"
+                                : "outline"
+                            }
+                            className="text-[10px]"
+                          >
+                            {slot.reviewStatus}
+                          </Badge>
                         </td>
-                        <td className="px-3 py-2.5 text-gray-400">
-                          <div>From: {new Date(p.startsAt).toLocaleDateString()}</div>
-                          {p.endsAt && (
-                            <div>To: {new Date(p.endsAt).toLocaleDateString()}</div>
-                          )}
+                        <td className="py-2.5 px-3 text-[11px] text-gray-400">
+                          {safeFormatAddress(slot.reviewedBy)}
                         </td>
-                        <td className="px-3 py-2.5 text-gray-300">
-                          {p.campaignsCount ?? 0}
-                        </td>
-                        <td className="px-3 py-2.5 text-right">
+                        <td className="py-2.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
-                              type="button"
-                              variant="outline"
                               size="sm"
-                              className="h-6 px-2 text-[11px]"
-                              onClick={() => {
-                                setReconcileProgramId(p.id);
-                                const el = document.getElementById("rec-prog-id");
-                                el?.scrollIntoView({ behavior: "smooth" });
-                              }}
+                              variant="outline"
+                              onClick={() => openReviewModal(slot.id)}
+                              className="h-7 text-xs px-2.5 border-white/10"
                             >
-                              Reconcile
+                              Review Details
                             </Button>
                             <Button
-                              type="button"
-                              variant="outline"
                               size="sm"
-                              className="h-6 px-2 text-[11px]"
-                              onClick={() => {
-                                setSlotProgramFilter(p.id);
-                                setSlotSearchQuery("");
-                                setLoadingSlots(true);
-                                setSlotsPage(1);
-                                setReloadSlotsKey((k) => k + 1);
-                              }}
+                              variant="ghost"
+                              onClick={() =>
+                                openRevokeModal({
+                                  slotId: slot.id,
+                                  slotNumber: slot.slotNumber,
+                                  walletAddress: address,
+                                  username,
+                                })
+                              }
+                              className="h-7 text-xs px-2 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              title="Revoke Slot"
                             >
-                              Slots
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              data-testid={`export-gtd-row-${p.id}`}
-                              className="h-6 px-2 text-[11px] border-emerald-800/60 text-emerald-400 hover:bg-emerald-950/40"
-                              disabled={exportingStage !== null}
-                              onClick={() => handleExport("gtd", p.id)}
-                              title={`Export GTD Allowlist CSV for ${p.name}`}
-                            >
-                              GTD CSV
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              data-testid={`export-fcfs-row-${p.id}`}
-                              className="h-6 px-2 text-[11px] border-sky-800/60 text-sky-400 hover:bg-sky-950/40"
-                              disabled={exportingStage !== null}
-                              onClick={() => handleExport("fcfs", p.id)}
-                              title={`Export FCFS Allowlist CSV for ${p.name}`}
-                            >
-                              FCFS CSV
+                              Revoke
                             </Button>
                           </div>
                         </td>
@@ -771,631 +867,877 @@ export function AdminWhitelist() {
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* OpenSea SeaDrop Allowlist CSV Export */}
-      <Card className="border-gray-800 bg-[#0c0e17]/90" data-testid="opensea-export-card">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-emerald-400" />
-              <CardTitle className="text-base text-white">
-                OpenSea SeaDrop Allowlist CSV Export
-              </CardTitle>
-              <Badge variant="success" className="text-[10px]">
-                Strict Disjoint Guarantee
-              </Badge>
-            </div>
-            <CardDescription className="text-xs text-gray-400">
-              Export allowlist CSV files formatted specifically for OpenSea SeaDrop stages.
-              Guaranteed (GTD) and First-Come, First-Served (FCFS) recipients are strictly separated without duplicates.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-end">
-            <div className="sm:col-span-1">
-              <label
-                htmlFor="export-prog-select"
-                className="mb-1 block text-xs font-medium text-gray-400"
-              >
-                Target Whitelist Program
-              </label>
-              <select
-                id="export-prog-select"
-                value={exportProgramId}
-                onChange={(e) => setExportProgramId(e.target.value)}
-                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
-              >
-                <option value="">Default / Latest Active Program</option>
-                {programs.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.slug})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-wrap gap-3 sm:col-span-2">
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                data-testid="export-gtd-btn"
-                disabled={exportingStage !== null}
-                onClick={() => handleExport("gtd")}
-                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500"
-              >
-                <Download
-                  className={`h-4 w-4 ${exportingStage === "gtd" ? "animate-bounce" : ""}`}
-                />
-                <span>
-                  {exportingStage === "gtd"
-                    ? "Exporting GTD..."
-                    : "Download GTD Allowlist (1 NFT)"}
-                </span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                data-testid="export-fcfs-btn"
-                disabled={exportingStage !== null}
-                onClick={() => handleExport("fcfs")}
-                className="flex items-center gap-1.5 border-sky-500/40 text-sky-400 hover:bg-sky-500/10"
-              >
-                <Download
-                  className={`h-4 w-4 ${exportingStage === "fcfs" ? "animate-bounce" : ""}`}
-                />
-                <span>
-                  {exportingStage === "fcfs"
-                    ? "Exporting FCFS..."
-                    : "Download FCFS Allowlist (Queue)"}
-                </span>
-              </Button>
-            </div>
-          </div>
-
-          {exportSuccess && (
-            <div
-              data-testid="export-success-banner"
-              className="flex items-center gap-2 rounded border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs text-emerald-300"
-            >
-              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-              <span>{exportSuccess}</span>
+          {/* Pagination */}
+          {reviewsTotal > reviewsLimit && (
+            <div className="flex items-center justify-between text-xs text-gray-400 pt-2">
+              <div>
+                Showing {(reviewsPage - 1) * reviewsLimit + 1}–
+                {Math.min(reviewsPage * reviewsLimit, reviewsTotal)} of {reviewsTotal}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={reviewsPage <= 1}
+                  onClick={() => setReviewsPage((p) => Math.max(1, p - 1))}
+                  className="h-7 w-7 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2">Page {reviewsPage}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={reviewsPage * reviewsLimit >= reviewsTotal}
+                  onClick={() => setReviewsPage((p) => p + 1)}
+                  className="h-7 w-7 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
-
-          {exportError && (
-            <div
-              data-testid="export-error-banner"
-              className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300"
-            >
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <span>{exportError}</span>
-            </div>
-          )}
-
-          <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-[11px] text-gray-400">
-            <span className="font-semibold text-gray-300">OpenSea Configuration Rule:</span>{" "}
-            Configure Stage 1 in OpenSea Studio as{" "}
-            <strong className="text-emerald-400">Allowlist Stage</strong> using the GTD CSV
-            (1 mint limit). Configure Stage 2 as a second{" "}
-            <strong className="text-sky-400">Allowlist Stage</strong> using the FCFS CSV.
-            Because OpenSea allowlists are additive, ChimpHood automatically prevents GTD
-            wallets from appearing in the FCFS list.
-          </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Tool 1: Queue Reconciliation */}
-        <Card className="border-gray-800 bg-[#0c0e17]/90">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <RefreshCw className="h-5 w-5 text-emerald-400" />
-              <CardTitle className="text-base text-white">Queue Reconciliation</CardTitle>
-            </div>
-            <CardDescription className="text-xs text-gray-400">
-              Triggers the FIFO queue reconcile engine for a program to fill vacated slot
-              capacities.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleReconcile} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="rec-prog-id"
-                  className="mb-1 block text-xs font-medium text-gray-400"
-                >
-                  Whitelist Program ID *
-                </label>
-                <input
-                  id="rec-prog-id"
-                  type="text"
-                  placeholder="e.g. wl-program-genesis"
-                  value={reconcileProgramId}
-                  onChange={(e) => setReconcileProgramId(e.target.value)}
-                  required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              {reconcileError && (
-                <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <span>{reconcileError}</span>
-                </div>
-              )}
-
-              {reconcileResult && (
-                <div className="space-y-1 rounded border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-                  <div className="flex items-center gap-2 font-semibold">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Reconciliation Succeeded</span>
-                  </div>
-                  <p className="text-[11px] text-emerald-200">
-                    Reconciled {reconcileResult.slotsFilled ?? 0} slots (Remaining:{" "}
-                    {reconcileResult.openSlotsRemaining ?? 0})
-                  </p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="sm"
-                className="w-full gap-2 text-xs"
-                disabled={reconciling}
-              >
-                <RefreshCw
-                  className={`h-3.5 w-3.5 ${reconciling ? "animate-spin" : ""}`}
-                />
-                {reconciling ? "Reconciling..." : "Reconcile Program Queue"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Tool 2: Whitelist Slot Revocation */}
-        <Card className="border-gray-800 bg-[#0c0e17]/90">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-amber-400" />
-              <CardTitle className="text-base text-white">
-                Revoke Whitelist Slot
-              </CardTitle>
-            </div>
-            <CardDescription className="text-xs text-gray-400">
-              Manually revoke an allocated whitelist slot due to policy violations or
-              disqualification.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleRevokeSlot} className="space-y-3">
-              <div>
-                <label
-                  htmlFor="rev-slot-id"
-                  className="mb-1 block text-xs font-medium text-gray-400"
-                >
-                  Slot ID (preferred)
-                </label>
-                <input
-                  id="rev-slot-id"
-                  type="text"
-                  placeholder="e.g. clabc123456789 (or select from Allocated Slots table below)"
-                  value={revokeSlotId}
-                  onChange={(e) => setRevokeSlotId(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="rev-prog-id"
-                    className="mb-1 block text-xs font-medium text-gray-400"
-                  >
-                    Program ID (alt)
-                  </label>
-                  <input
-                    id="rev-prog-id"
-                    type="text"
-                    placeholder="e.g. wl-program-genesis"
-                    value={revokeProgramId}
-                    onChange={(e) => setRevokeProgramId(e.target.value)}
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="rev-user-id"
-                    className="mb-1 block text-xs font-medium text-gray-400"
-                  >
-                    User ID (alt)
-                  </label>
-                  <input
-                    id="rev-user-id"
-                    type="text"
-                    placeholder="e.g. user-cuid"
-                    value={revokeUserId}
-                    onChange={(e) => setRevokeUserId(e.target.value)}
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="rev-reason"
-                  className="mb-1 block text-xs font-medium text-gray-400"
-                >
-                  Revocation Reason
-                </label>
-                <input
-                  id="rev-reason"
-                  type="text"
-                  placeholder="e.g. Sybil evidence confirmed during audit"
-                  value={revokeReason}
-                  onChange={(e) => setRevokeReason(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              {revokeError && (
-                <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <span>{revokeError}</span>
-                </div>
-              )}
-
-              {revokeResult && (
-                <div className="space-y-1 rounded border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-                  <div className="flex items-center gap-2 font-semibold">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Slot Revoked Successfully</span>
-                  </div>
-                  <p className="text-[11px] text-emerald-200">
-                    Slot ID: {revokeResult.slotId} (Audit Log: {revokeResult.auditLogId})
-                  </p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                variant="secondary"
-                size="sm"
-                className="w-full text-xs text-rose-300 hover:bg-rose-900/30 hover:text-rose-200"
-                disabled={revoking}
-              >
-                {revoking ? "Revoking..." : "Revoke Whitelist Slot"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tool 3: Whitelist Address Lookup */}
-      <Card className="border-gray-800 bg-[#0c0e17]/90">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Search className="h-5 w-5 text-teal-400" />
-            <CardTitle className="text-base text-white">
-              Address Whitelist Lookup
-            </CardTitle>
-          </div>
-          <CardDescription className="text-xs text-gray-400">
-            Check the live qualification tier, points balance, and slot allocation for any
-            wallet address.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLookup} className="space-y-4">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                type="text"
-                placeholder="0x... EVM wallet address"
-                value={lookupAddress}
-                onChange={(e) => setLookupAddress(e.target.value)}
-                required
-                className="flex-1 rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-              />
-              <Button
-                type="submit"
-                variant="outline"
-                size="sm"
-                className="gap-2 text-xs"
-                disabled={lookingUp}
-              >
-                <Search className="h-3.5 w-3.5" />
-                {lookingUp ? "Searching..." : "Lookup Status"}
-              </Button>
-            </div>
-
-            {lookupError && (
-              <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <span>{lookupError}</span>
-              </div>
-            )}
-
-            {lookupResult && (
-              <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900/40 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2">
-                  <span className="font-mono text-xs font-semibold text-emerald-400">
-                    {lookupAddress}
-                  </span>
-                  <Badge
-                    variant={
-                      lookupResult.status?.qualified
-                        ? "success"
-                        : lookupResult.status?.phase === "SLOT_ALLOCATED"
-                          ? "default"
-                          : "outline"
-                    }
-                  >
-                    {lookupResult.status?.phase ??
-                      (lookupResult.status?.qualified ? "QUALIFIED" : "UNQUALIFIED")}
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                  <div>
-                    <span className="block text-gray-500">Program:</span>
-                    <span className="font-semibold text-white">
-                      {lookupResult.program?.name ?? lookupResult.program?.slug ?? "None"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-500">Phase:</span>
-                    <span className="font-semibold text-emerald-400">
-                      {lookupResult.status?.phase ?? "NONE"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-500">Allocated Slot:</span>
-                    <span className="font-semibold text-white">
-                      {lookupResult.status?.slotNumber
-                        ? `#${lookupResult.status.slotNumber}`
-                        : "None"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-gray-500">Queue Position:</span>
-                    <span className="font-semibold text-white">
-                      {lookupResult.status?.queueNumber
-                        ? `#${lookupResult.status.queueNumber}`
-                        : "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Tool 4: Allocated Whitelist Slots Registry */}
-      <Card className="border-gray-800 bg-[#0c0e17]/90">
-        <CardHeader>
-          <div className="flex items-center justify-between">
+      {/* --------------------------------------------------------------------- */}
+      {/* SECTION 3: FCFS DIRECTORY (ALL PARTICIPANTS) (Task 6.4)               */}
+      {/* --------------------------------------------------------------------- */}
+      <Card className="border border-white/10 bg-slate-900/60 backdrop-blur-sm">
+        <CardHeader className="pb-3 border-b border-white/5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <ListOrdered className="h-5 w-5 text-emerald-400" />
               <CardTitle className="text-base text-white">
-                Allocated Whitelist Slots
+                FCFS Directory (All Participants)
               </CardTitle>
+              <Badge variant="outline" className="text-xs">
+                {directoryTotal} Total Entries
+              </Badge>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setLoadingSlots(true);
-                setReloadSlotsKey((k) => k + 1);
-              }}
-              disabled={loadingSlots}
-              className="gap-1.5 text-xs"
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${loadingSlots ? "animate-spin" : ""}`}
-              />
-              <span>Refresh</span>
-            </Button>
+
+            {/* Filter Toggle */}
+            <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-white/5">
+              <button
+                type="button"
+                onClick={() => {
+                  setDirectoryQualifiedOnly(false);
+                  setDirectoryPage(1);
+                }}
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                  !directoryQualifiedOnly
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                All Participants
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDirectoryQualifiedOnly(true);
+                  setDirectoryPage(1);
+                }}
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                  directoryQualifiedOnly
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Fully Qualified Only
+              </button>
+            </div>
           </div>
-          <CardDescription className="text-xs text-gray-400">
-            Browse allocated whitelist slots across programs with live statuses, wallet
-            addresses, and allocation timestamps. Click &quot;Revoke&quot; to populate the
-            revocation form above.
+
+          <CardDescription className="text-xs text-gray-400 mt-1">
+            Ordered strictly chronologically by registration timestamp (joinedAt ASC, queueNumber
+            ASC). Under-qualified participants are retained in the directory but excluded from CSV
+            export (DEC-013, DEC-017).
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Filters Form */}
-          <form
-            onSubmit={handleSlotsFilterSubmit}
-            className="grid grid-cols-1 gap-2 sm:grid-cols-4"
-          >
-            <div className="sm:col-span-2">
+
+        <CardContent className="pt-4 space-y-4">
+          {/* Search bar */}
+          <form onSubmit={handleDirectorySearchSubmit} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by wallet (0x...), User ID, or Slot ID..."
-                value={slotSearchQuery}
-                onChange={(e) => setSlotSearchQuery(e.target.value)}
-                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                placeholder="Search FCFS directory by wallet address or @username..."
+                value={directorySearchQuery}
+                onChange={(e) => setDirectorySearchQuery(e.target.value)}
+                className="w-full rounded bg-slate-800/80 border border-white/10 pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
-            <div>
-              <input
-                type="text"
-                placeholder="Program ID..."
-                value={slotProgramFilter}
-                onChange={(e) => setSlotProgramFilter(e.target.value)}
-                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={slotStatusFilter}
-                onChange={(e) => setSlotStatusFilter(e.target.value)}
-                className="flex-1 rounded-md border border-gray-700 bg-gray-900/60 px-2 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
-              >
-                <option value="">All Statuses</option>
-                <option value="ALLOCATED">ALLOCATED</option>
-                <option value="CONFIRMED">CONFIRMED</option>
-                <option value="REVOKED_MANUAL_ADMIN">REVOKED</option>
-              </select>
+            <Button type="submit" variant="outline" size="sm" className="text-xs">
+              Search
+            </Button>
+            {directorySearchSubmitted && (
               <Button
-                type="submit"
-                variant="primary"
+                type="button"
+                variant="ghost"
                 size="sm"
-                disabled={loadingSlots}
-                className="text-xs"
+                onClick={() => {
+                  setDirectorySearchQuery("");
+                  setDirectorySearchSubmitted("");
+                  setDirectoryPage(1);
+                }}
+                className="text-xs text-gray-400 hover:text-white"
               >
-                Filter
+                Clear
               </Button>
-            </div>
+            )}
           </form>
 
-          {slotsError && (
-            <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <span>{slotsError}</span>
+          {directoryError && (
+            <div className="p-3 rounded bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+              {directoryError}
             </div>
           )}
 
-          {/* Slots Table */}
-          <div className="overflow-x-auto rounded-lg border border-gray-800">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-gray-800 bg-gray-900/60 text-gray-400">
+          <div className="overflow-x-auto rounded border border-white/5">
+            <table className="w-full text-left text-xs text-gray-300">
+              <thead className="bg-slate-950/80 text-[11px] uppercase tracking-wider text-gray-400 border-b border-white/5">
                 <tr>
-                  <th className="px-3 py-2.5 font-medium">Slot #</th>
-                  <th className="px-3 py-2.5 font-medium">Program</th>
-                  <th className="px-3 py-2.5 font-medium">Wallet Address</th>
-                  <th className="px-3 py-2.5 font-medium">User ID</th>
-                  <th className="px-3 py-2.5 font-medium">Allocated At</th>
-                  <th className="px-3 py-2.5 font-medium">Status</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Actions</th>
+                  <th className="py-2.5 px-3">Join #</th>
+                  <th className="py-2.5 px-3">Wallet</th>
+                  <th className="py-2.5 px-3">X Handle</th>
+                  <th className="py-2.5 px-3">WL Qualification Status</th>
+                  <th className="py-2.5 px-3">Registered At</th>
+                  <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/60 bg-[#0c0e17]/40 text-gray-300">
-                {loadingSlots && slots.length === 0 ? (
+              <tbody className="divide-y divide-white/5">
+                {loadingDirectory ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">
-                      Loading allocated slots...
+                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                      Loading FCFS directory...
                     </td>
                   </tr>
-                ) : slots.length === 0 ? (
+                ) : directory.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">
-                      No whitelist slots found.
+                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                      No participants found.
                     </td>
                   </tr>
                 ) : (
-                  slots.map((s) => (
-                    <tr key={s.id} className="transition-colors hover:bg-gray-800/30">
-                      <td className="px-3 py-2.5 font-semibold text-white">
-                        #{s.slotNumber}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="text-gray-300">
-                          {s.programName ?? s.programSlug ?? s.programId}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 font-mono text-emerald-400">
-                        {s.walletAddress ? (
-                          <span title={s.walletAddress}>
-                            {shortenAddress(s.walletAddress)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5 font-mono text-gray-400">
-                        <span title={s.userId}>{s.userId}</span>
-                      </td>
-                      <td className="px-3 py-2.5 text-gray-400">
-                        {new Date(s.allocatedAt).toLocaleString()}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <Badge
-                          variant={
-                            s.status === "CONFIRMED"
-                              ? "success"
-                              : s.status === "ALLOCATED"
-                                ? "default"
-                                : "warning"
-                          }
-                          className="text-[10px]"
-                        >
-                          {s.status}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2.5 text-right">
-                        {s.status !== "REVOKED_MANUAL_ADMIN" && (
+                  directory.map((entry) => {
+                    const address = entry.user.walletAddress;
+                    const username = entry.user.xIdentity?.username;
+                    const qual = entry.qualification;
+                    const canGrant = qual.isFullyQualified && vacantSlots > 0;
+
+                    let grantDisabledReason = "";
+                    if (!qual.isFullyQualified) {
+                      grantDisabledReason =
+                        qual.missingRequirements?.[0] ||
+                        `Missing requirements (${qual.heldCategoriesCount}/5 traits, tasks incomplete)`;
+                    } else if (vacantSlots === 0) {
+                      grantDisabledReason = "GTD capacity is full (0 vacant slots)";
+                    }
+
+                    return (
+                      <tr key={entry.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-2.5 px-3 font-mono font-bold text-white">
+                          #{entry.queueNumber}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {address ? (
+                            <div className="flex items-center gap-1 font-mono text-gray-200">
+                              <span>{safeFormatAddress(address)}</span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(address)}
+                                className="text-gray-500 hover:text-white"
+                                title="Copy address"
+                              >
+                                {copiedAddress === address ? (
+                                  <Check className="h-3 w-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">No wallet</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {username ? (
+                            <span className="text-blue-400">@{username}</span>
+                          ) : (
+                            <span className="text-gray-500">No X linked</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {/* Trait category badge */}
+                            <Badge
+                              variant={qual.heldCategoriesCount === 5 ? "success" : "default"}
+                              className="text-[10px]"
+                            >
+                              {qual.heldCategoriesCount}/5 Traits
+                            </Badge>
+
+                            {/* Campaign tasks badge */}
+                            <Badge
+                              variant={qual.tasksCompleted ? "success" : "warning"}
+                              className="text-[10px]"
+                            >
+                              {qual.tasksCompleted ? "Tasks Done" : "Tasks Incomplete"}
+                            </Badge>
+
+                            {/* Ban status */}
+                            {qual.isBanned && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] text-red-400 border-red-500/30 bg-red-500/10"
+                              >
+                                Banned
+                              </Badge>
+                            )}
+
+                            {/* Fully Qualified highlight */}
+                            {qual.isFullyQualified && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-bold"
+                              >
+                                Ready
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-[11px] text-gray-400">
+                          {new Date(entry.joinedAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
                           <Button
-                            type="button"
-                            variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-[11px] hover:text-rose-300"
-                            onClick={() => {
-                              setRevokeSlotId(s.id);
-                              setRevokeProgramId(s.programId);
-                              setRevokeUserId(s.userId);
-                              window.scrollTo({ top: 0, behavior: "smooth" });
-                            }}
+                            disabled={!canGrant}
+                            onClick={() => openGrantModal(entry)}
+                            title={grantDisabledReason || "Grant Vacant GTD Slot"}
+                            className={`h-7 text-xs px-2.5 ${
+                              canGrant
+                                ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                                : "opacity-40 cursor-not-allowed"
+                            }`}
                           >
-                            Revoke
+                            Grant GTD
                           </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between pt-1 text-xs text-gray-400">
-            <span>
-              Showing {slots.length > 0 ? (slotsPage - 1) * slotsLimit + 1 : 0} to{" "}
-              {Math.min(slotsPage * slotsLimit, slotsTotal)} of {slotsTotal} slots
-            </span>
-            <div className="flex items-center gap-1.5">
+          {directoryTotal > directoryLimit && (
+            <div className="flex items-center justify-between text-xs text-gray-400 pt-2">
+              <div>
+                Showing {(directoryPage - 1) * directoryLimit + 1}–
+                {Math.min(directoryPage * directoryLimit, directoryTotal)} of {directoryTotal}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={directoryPage <= 1}
+                  onClick={() => setDirectoryPage((p) => Math.max(1, p - 1))}
+                  className="h-7 w-7 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2">Page {directoryPage}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={directoryPage * directoryLimit >= directoryTotal}
+                  onClick={() => setDirectoryPage((p) => p + 1)}
+                  className="h-7 w-7 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* --------------------------------------------------------------------- */}
+      {/* SECTION 4: OPENSEA ALLOWLIST CSV EXPORT (Task 6.6)                    */}
+      {/* --------------------------------------------------------------------- */}
+      <Card className="border border-white/10 bg-slate-900/60 backdrop-blur-sm">
+        <CardHeader className="pb-3 border-b border-white/5">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5 text-emerald-400" />
+            <CardTitle className="text-base text-white">
+              OpenSea SeaDrop Allowlist CSV Export
+            </CardTitle>
+            <Badge variant="success" className="text-[10px]">
+              Strict Disjoint Guarantee
+            </Badge>
+          </div>
+          <CardDescription className="text-xs text-gray-400">
+            Generate production allowlist CSV files consumed by OpenSea Studio for SeaDrop Phase 1
+            (GTD) and Phase 2 (FCFS). Revoked and banned wallets are strictly excluded.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="pt-6 space-y-4">
+          {/* Notification Banners */}
+          {exportSuccess && (
+            <div
+              data-testid="export-success-banner"
+              className="flex items-center gap-2 rounded border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-400"
+            >
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>{exportSuccess}</span>
+            </div>
+          )}
+          {exportError && (
+            <div
+              data-testid="export-error-banner"
+              className="flex items-center gap-2 rounded border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{exportError}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Card 1: GTD Allowlist Export */}
+            <div className="rounded-lg border border-white/10 bg-slate-800/40 p-5 space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-white text-sm">
+                    1. Guaranteed Allowlist (GTD)
+                  </span>
+                  <Badge variant="default" className="text-xs font-mono">
+                    {summary?.gtd.allocatedCount ?? allocatedCount} Wallets
+                  </Badge>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Active guaranteed slots in slot number order. OpenSea format:{" "}
+                  <code className="text-emerald-400">&lt;address&gt;,1</code> without headers.
+                </p>
+
+                {/* FLAGGED Slots Pre-Export Warning (DEC-015, DEC-020) */}
+                {flaggedCount > 0 && (
+                  <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300 space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                      <span>Notice: {flaggedCount} FLAGGED slot(s) included</span>
+                    </div>
+                    <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                      Active FLAGGED slots remain in the GTD export because they have not been
+                      revoked. To exclude an account, revoke its slot with an official reason before
+                      exporting.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <Button
-                variant="outline"
-                size="sm"
-                aria-label="Previous slots page"
-                disabled={slotsPage <= 1 || loadingSlots}
-                onClick={() => {
-                  setLoadingSlots(true);
-                  setSlotsPage((p) => p - 1);
-                }}
-                className="h-7 px-2"
+                data-testid="export-gtd-btn"
+                disabled={exportingStage !== null || !program}
+                onClick={() => handleExport("gtd")}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-2 text-xs py-2"
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <Download className="h-4 w-4" />
+                {exportingStage === "gtd" ? "Generating GTD CSV..." : "Download GTD CSV"}
               </Button>
-              <span className="px-2 text-gray-300">
-                Page {slotsPage} of {totalSlotPages}
-              </span>
+            </div>
+
+            {/* Card 2: FCFS Allowlist Export */}
+            <div className="rounded-lg border border-white/10 bg-slate-800/40 p-5 space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-white text-sm">
+                    2. FCFS Allowlist
+                  </span>
+                  <Badge variant="success" className="text-xs font-mono">
+                    {summary?.fcfs.qualifiedReadyCount ?? 0} Qualified Wallets
+                  </Badge>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Strictly exports participants who meet all 5 WL criteria. Under-qualified
+                  directory participants and active GTD holders are excluded (DEC-017, DEC-020).
+                </p>
+
+                <div className="rounded border border-white/5 bg-slate-900/50 p-2.5 text-xs text-gray-300 space-y-1">
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Disjoint Set Guarantee</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400">
+                    Runtime verification ensures zero wallet overlap between GTD and FCFS lists.
+                  </p>
+                </div>
+              </div>
+
               <Button
-                variant="outline"
-                size="sm"
-                aria-label="Next slots page"
-                disabled={slotsPage >= totalSlotPages || loadingSlots}
-                onClick={() => {
-                  setLoadingSlots(true);
-                  setSlotsPage((p) => p + 1);
-                }}
-                className="h-7 px-2"
+                data-testid="export-fcfs-btn"
+                disabled={exportingStage !== null || !program}
+                onClick={() => handleExport("fcfs")}
+                className="w-full bg-teal-600 hover:bg-teal-500 text-white flex items-center justify-center gap-2 text-xs py-2"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
+                <Download className="h-4 w-4" />
+                {exportingStage === "fcfs" ? "Generating FCFS CSV..." : "Download FCFS CSV"}
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* --------------------------------------------------------------------- */}
+      {/* MODAL 1: REVIEW DETAILS MODAL (Task 6.3)                              */}
+      {/* --------------------------------------------------------------------- */}
+      {selectedReviewSlotId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-xl border border-white/15 bg-slate-900 shadow-2xl overflow-hidden my-8">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/60">
+              <div className="flex items-center gap-3">
+                <Shield className="h-5 w-5 text-emerald-400" />
+                <h3 className="text-base font-semibold text-white">
+                  GTD Slot Review Details — #{reviewDetail?.slot.slotNumber ?? "..."}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={closeReviewModal}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto text-xs">
+              {loadingReviewDetail ? (
+                <div className="py-12 text-center text-gray-400 flex items-center justify-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin text-emerald-400" />
+                  <span>Loading review details...</span>
+                </div>
+              ) : reviewDetailError ? (
+                <div className="p-3 rounded bg-red-500/10 border border-red-500/20 text-red-400">
+                  {reviewDetailError}
+                </div>
+              ) : reviewDetail ? (
+                <>
+                  {/* User Profile Info */}
+                  <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-slate-800/40 border border-white/5">
+                    <div>
+                      <span className="text-gray-400">Wallet Address:</span>
+                      <div className="flex items-center gap-1 font-mono font-bold text-white mt-0.5">
+                        <span>{reviewDetail.slot.user.wallet?.address || "No Wallet"}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Linked X (Twitter):</span>
+                      <div className="text-white font-medium mt-0.5">
+                        {reviewDetail.slot.user.xIdentity ? (
+                          <span className="text-blue-400">
+                            @{reviewDetail.slot.user.xIdentity.username} (
+                            {reviewDetail.slot.user.xIdentity.name || "N/A"})
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">Not linked</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 1. Trait Categories Checklist */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-white">1. Trait Inventory Checklist</span>
+                      <Badge
+                        variant={
+                          reviewDetail.traits.hasAllCategories ? "success" : "default"
+                        }
+                        className="text-[10px]"
+                      >
+                        {reviewDetail.traits.heldCategoriesCount}/5 Categories Owned
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2 text-center">
+                      {(["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const).map(
+                        (cat) => {
+                          const isHeld = reviewDetail.traits.heldCategories.includes(cat);
+                          return (
+                            <div
+                              key={cat}
+                              className={`p-2 rounded border text-xs font-mono font-medium ${
+                                isHeld
+                                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                                  : "border-white/5 bg-slate-800/30 text-gray-500"
+                              }`}
+                            >
+                              <div>{cat}</div>
+                              <div className="text-[10px] mt-1 font-sans">
+                                {isHeld ? "✓ Held" : "✗ Missing"}
+                              </div>
+                            </div>
+                          );
+                        },
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 2. Campaign Tasks Evidence */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-white">2. Campaign Evidence Submissions</span>
+                      <span className="text-gray-400">
+                        {reviewDetail.campaigns.completedMandatoryTasksCount} /{" "}
+                        {reviewDetail.campaigns.totalMandatoryTasksCount} Tasks Completed
+                      </span>
+                    </div>
+                    {reviewDetail.campaigns.submissions.length === 0 ? (
+                      <div className="p-3 rounded bg-slate-800/30 text-gray-400 text-center">
+                        No evidence submissions recorded for this user.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {reviewDetail.campaigns.submissions.map((sub) => (
+                          <div
+                            key={sub.id}
+                            className="p-3 rounded bg-slate-800/40 border border-white/5 space-y-1"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-white">{sub.taskTitle}</span>
+                              <Badge
+                                variant={sub.status === "APPROVED" ? "success" : "outline"}
+                                className={`text-[10px] ${
+                                  sub.status === "REJECTED"
+                                    ? "text-red-400 border-red-500/30 bg-red-500/10"
+                                    : sub.status === "PENDING_REVIEW"
+                                    ? "text-amber-400 border-amber-500/30"
+                                    : ""
+                                }`}
+                              >
+                                {sub.status}
+                              </Badge>
+                            </div>
+                            <div className="text-gray-400 truncate">
+                              Proof: <span className="text-gray-300">{sub.payload}</span>
+                            </div>
+                            {sub.reviewerNotes && (
+                              <div className="text-[11px] text-gray-400">
+                                Note: {sub.reviewerNotes}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. Status Transition & Notes */}
+                  <div className="space-y-3 pt-2 border-t border-white/10">
+                    <span className="font-semibold text-white">3. Review Decision</span>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(
+                        [
+                          { key: "NOT_REVIEWED", label: "Not Reviewed" },
+                          { key: "UNDER_REVIEW", label: "Under Review" },
+                          { key: "VALID", label: "Valid" },
+                          { key: "FLAGGED", label: "Flagged" },
+                        ] as const
+                      ).map((s) => (
+                        <button
+                          key={s.key}
+                          type="button"
+                          onClick={() => setEditReviewStatus(s.key)}
+                          className={`py-2 px-3 rounded text-xs font-medium border text-center transition-colors ${
+                            editReviewStatus === s.key
+                              ? s.key === "VALID"
+                                ? "border-emerald-500 bg-emerald-500/20 text-emerald-300"
+                                : s.key === "FLAGGED"
+                                ? "border-amber-500 bg-amber-500/20 text-amber-300"
+                                : "border-blue-500 bg-blue-500/20 text-blue-300"
+                              : "border-white/10 bg-slate-800/40 text-gray-400 hover:text-white"
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-gray-300 font-medium">Internal Review Notes</label>
+                      <textarea
+                        rows={3}
+                        maxLength={2048}
+                        value={editReviewNotes}
+                        onChange={(e) => setEditReviewNotes(e.target.value)}
+                        placeholder="Internal notes regarding audit findings, Sybil risk, or evidence validation..."
+                        className="w-full rounded bg-slate-800 border border-white/10 p-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    {saveReviewSuccess && (
+                      <div className="p-2 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+                        {saveReviewSuccess}
+                      </div>
+                    )}
+                    {saveReviewError && (
+                      <div className="p-2 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                        {saveReviewError}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 4. Slot Audit History */}
+                  <div className="space-y-2 pt-2 border-t border-white/10">
+                    <span className="font-semibold text-white">4. Review Audit History</span>
+                    {reviewDetail.auditHistory.length === 0 ? (
+                      <div className="text-gray-500 text-[11px]">
+                        No prior audit log updates for this slot.
+                      </div>
+                    ) : (
+                      <div className="space-y-1 max-h-36 overflow-y-auto">
+                        {reviewDetail.auditHistory.map((log) => (
+                          <div
+                            key={log.id}
+                            className="flex items-center justify-between p-2 rounded bg-slate-950/40 border border-white/5 text-[11px]"
+                          >
+                            <span className="font-mono text-gray-300">{log.action}</span>
+                            <span className="text-gray-500">
+                              {new Date(log.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-slate-950/60">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!reviewDetail) return;
+                  openRevokeModal({
+                    slotId: reviewDetail.slot.id,
+                    slotNumber: reviewDetail.slot.slotNumber,
+                    walletAddress: reviewDetail.slot.user.wallet?.address,
+                    username: reviewDetail.slot.user.xIdentity?.username,
+                  });
+                }}
+                className="text-xs text-red-400 border-red-500/30 hover:bg-red-500/10"
+              >
+                Revoke Slot
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={closeReviewModal} className="text-xs">
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={savingReview}
+                  onClick={handleSaveReview}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs"
+                >
+                  {savingReview ? "Saving..." : "Save Review"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --------------------------------------------------------------------- */}
+      {/* MODAL 2: MANUAL GTD GRANT MODAL (Task 6.4)                            */}
+      {/* --------------------------------------------------------------------- */}
+      {grantCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-lg rounded-xl border border-white/15 bg-slate-900 shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-emerald-400" />
+                <h3 className="text-base font-semibold text-white">
+                  Manually Grant GTD Slot
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={closeGrantModal}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded bg-slate-800/50 border border-white/5 space-y-1">
+                <div className="text-gray-400">Candidate Wallet:</div>
+                <div className="font-mono font-bold text-white">
+                  {grantCandidate.user.walletAddress}
+                </div>
+                {grantCandidate.user.xIdentity?.username && (
+                  <div className="text-blue-400">
+                    @{grantCandidate.user.xIdentity.username}
+                  </div>
+                )}
+              </div>
+
+              {/* 5 Criteria confirmation checklist */}
+              <div className="space-y-1.5 p-3 rounded bg-emerald-500/5 border border-emerald-500/20 text-emerald-300">
+                <div className="font-semibold text-emerald-400">
+                  Verification Checklist Confirmed:
+                </div>
+                <div className="space-y-1 text-[11px]">
+                  <div>✓ EVM Wallet Connected</div>
+                  <div>✓ X (Twitter) Account Linked</div>
+                  <div>✓ All 5 Trait Categories Collected</div>
+                  <div>✓ Mandatory Campaign Tasks Completed</div>
+                  <div>✓ Clean Account Standing (Not Banned)</div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-gray-300 font-medium">Grant Notes (Optional)</label>
+                <input
+                  type="text"
+                  value={grantNotes}
+                  onChange={(e) => setGrantNotes(e.target.value)}
+                  placeholder="Reason for manual allocation (e.g. community reward or contest winner)..."
+                  className="w-full rounded bg-slate-800 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+
+              {grantSuccess && (
+                <div className="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+                  {grantSuccess}
+                </div>
+              )}
+              {grantError && (
+                <div className="p-2.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                  {grantError}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+              <Button variant="ghost" size="sm" onClick={closeGrantModal} className="text-xs">
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={granting}
+                onClick={handleConfirmGrant}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs"
+              >
+                {granting ? "Granting..." : "Confirm Grant GTD"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --------------------------------------------------------------------- */}
+      {/* MODAL 3: GUARDED REVOCATION MODAL (Task 6.5)                          */}
+      {/* --------------------------------------------------------------------- */}
+      {revokeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-lg rounded-xl border border-red-500/30 bg-slate-900 shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2 text-red-400">
+                <XCircle className="h-5 w-5" />
+                <h3 className="text-base font-semibold text-white">
+                  Revoke Guaranteed Slot #{revokeTarget.slotNumber}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={closeRevokeModal}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded bg-red-500/10 border border-red-500/20 text-red-200 space-y-1">
+                <div className="font-semibold text-red-400">⚠️ Permanent Revocation Warning:</div>
+                <p className="text-[11px] leading-relaxed">
+                  This action will permanently revoke this GTD slot. The slot will be left
+                  vacant, decremented from active capacity, and excluded from the OpenSea GTD
+                  export. You may subsequently grant the vacant slot to an eligible FCFS
+                  candidate.
+                </p>
+              </div>
+
+              <div className="p-3 rounded bg-slate-800/50 border border-white/5 space-y-1">
+                <div className="text-gray-400">Target User:</div>
+                <div className="font-mono text-white">
+                  {revokeTarget.walletAddress || "Unknown Address"}
+                </div>
+                {revokeTarget.username && (
+                  <div className="text-blue-400">@{revokeTarget.username}</div>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-gray-300 font-medium">
+                    Reason for Revocation *
+                  </label>
+                  <span
+                    className={`text-[10px] ${
+                      revokeReason.trim().length >= 5 ? "text-emerald-400" : "text-gray-500"
+                    }`}
+                  >
+                    ({revokeReason.trim().length} / 5 min chars)
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={revokeReason}
+                  onChange={(e) => setRevokeReason(e.target.value)}
+                  placeholder="Official reason for revocation (e.g. Account flagged for sybil cluster #12; failed evidence verification)..."
+                  className="w-full rounded bg-slate-800 border border-white/10 p-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                />
+              </div>
+
+              {revokeSuccess && (
+                <div className="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+                  {revokeSuccess}
+                </div>
+              )}
+              {revokeError && (
+                <div className="p-2.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                  {revokeError}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+              <Button variant="ghost" size="sm" onClick={closeRevokeModal} className="text-xs">
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={revoking || revokeReason.trim().length < 5}
+                onClick={handleConfirmRevoke}
+                className="text-xs text-white bg-red-600 hover:bg-red-500 border-red-500 disabled:opacity-50"
+              >
+                {revoking ? "Revoking..." : "Confirm Revocation"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,6 +9,14 @@ vi.mock("@/lib/admin/client", () => ({
   adminListWLPrograms: vi.fn(),
   adminCreateWLProgram: vi.fn(),
   adminUpdateWLProgram: vi.fn(),
+  adminGetPreExportSummary: vi.fn().mockResolvedValue({
+    program: { id: "p1", name: "P1", status: "OPEN" },
+    gtd: { allocatedCount: 150, vacantCount: 350, flaggedCount: 0 },
+    fcfs: { totalDirectoryEntries: 30, qualifiedReadyCount: 10 },
+    disjointVerification: { disjointSetVerified: true },
+  }),
+  adminListGtdSlotReviews: vi.fn().mockResolvedValue({ slots: [], total: 0 }),
+  adminListFcfsDirectory: vi.fn().mockResolvedValue({ entries: [], total: 0 }),
   adminReconcileQueue: vi.fn(),
   adminRevokeSlot: vi.fn(),
   adminListSlots: vi
@@ -66,121 +74,28 @@ describe("B-2: Admin Portal WL Program Management & Campaign Integration UI", ()
     Element.prototype.scrollIntoView = vi.fn();
   });
 
-  describe("1. Admin Whitelist - WL Programs Display & Lifecycle Management", () => {
-    it("renders registered Whitelist Programs list with capacity progress and statuses", async () => {
+  describe("1. Admin Whitelist - Permanent WL Program Display & Lifecycle Management", () => {
+    it("renders permanent Whitelist Program card with capacity progress and status", async () => {
       vi.mocked(adminClient.adminListWLPrograms).mockResolvedValueOnce({
-        programs: mockPrograms,
-        total: 2,
+        programs: [mockPrograms[0]],
+        total: 1,
       });
 
       render(<AdminWhitelist />);
 
       await waitFor(() => {
         expect(screen.getByText("Genesis Alpha Whitelist")).toBeInTheDocument();
-      });
-
-      expect(screen.getByText("Genesis Beta Whitelist")).toBeInTheDocument();
-      expect(screen.getByText("slug: genesis-alpha")).toBeInTheDocument();
-      expect(screen.getByText("slug: genesis-beta")).toBeInTheDocument();
-      expect(screen.getByText("150 / 500")).toBeInTheDocument();
-      expect(screen.getByText("0 / 1000")).toBeInTheDocument();
-      expect(screen.getByText("30% filled")).toBeInTheDocument();
-    });
-
-    it("displays empty state when no whitelist programs exist", async () => {
-      vi.mocked(adminClient.adminListWLPrograms).mockResolvedValueOnce({
-        programs: [],
-        total: 0,
-      });
-
-      render(<AdminWhitelist />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/No whitelist programs registered yet/i),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("allows creating a new Whitelist Program with explicit capacity requirement", async () => {
-      vi.mocked(adminClient.adminListWLPrograms).mockResolvedValue({
-        programs: mockPrograms,
-        total: 2,
-      });
-
-      vi.mocked(adminClient.adminCreateWLProgram).mockResolvedValueOnce({
-        program: {
-          id: "prog-gamma",
-          slug: "genesis-gamma",
-          name: "Genesis Gamma",
-          description: "Batch 3",
-          totalSlots: 350,
-          allocatedSlotsCount: 0,
-          status: "UPCOMING",
-          startsAt: "2026-11-20T00:00:00.000Z",
-          endsAt: null,
-          createdAt: "2026-10-25T00:00:00.000Z",
-          updatedAt: "2026-10-25T00:00:00.000Z",
-        },
-        auditLogId: "audit-gamma",
-      });
-
-      render(<AdminWhitelist />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Genesis Alpha Whitelist")).toBeInTheDocument();
-      });
-
-      // Click "New Program" to open form
-      const newProgBtn = screen.getByRole("button", { name: /New Program/i });
-      fireEvent.click(newProgBtn);
-
-      expect(screen.getByText("Create New Whitelist Program")).toBeInTheDocument();
-
-      // Fill form
-      fireEvent.change(screen.getByLabelText(/Program Name \*/i), {
-        target: { value: "Genesis Gamma" },
-      });
-      // Slug should be auto-derived or editable
-      expect(screen.getByLabelText(/Slug \*/i)).toHaveValue("genesis-gamma");
-
-      // Set explicit capacity
-      fireEvent.change(screen.getByLabelText(/Capacity \(Total Slots\) \*/i), {
-        target: { value: "350" },
-      });
-
-      // Set startsAt
-      fireEvent.change(screen.getByLabelText(/Starts At \*/i), {
-        target: { value: "2026-11-20T00:00" },
-      });
-
-      // Submit
-      const createBtn = screen.getByRole("button", { name: /Create Program/i });
-      fireEvent.click(createBtn);
-
-      await waitFor(() => {
-        expect(adminClient.adminCreateWLProgram).toHaveBeenCalledWith(
-          expect.objectContaining({
-            name: "Genesis Gamma",
-            slug: "genesis-gamma",
-            totalSlots: 350,
-            status: "UPCOMING",
-            startsAt: expect.any(String),
-          }),
-        );
-      });
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/WL Program "Genesis Gamma" created successfully!/i),
-        ).toBeInTheDocument();
+        expect(screen.getByText("genesis-alpha")).toBeInTheDocument();
+        expect(screen.getByText("150")).toBeInTheDocument();
+        expect(screen.getByText("/ 500")).toBeInTheDocument();
+        expect(screen.getByText(/30% filled/i)).toBeInTheDocument();
       });
     });
 
     it("allows updating program status via dropdown", async () => {
-      vi.mocked(adminClient.adminListWLPrograms).mockResolvedValueOnce({
-        programs: mockPrograms,
-        total: 2,
+      vi.mocked(adminClient.adminListWLPrograms).mockResolvedValue({
+        programs: [mockPrograms[0]],
+        total: 1,
       });
 
       vi.mocked(adminClient.adminUpdateWLProgram).mockResolvedValueOnce({
@@ -197,37 +112,17 @@ describe("B-2: Admin Portal WL Program Management & Campaign Integration UI", ()
         expect(screen.getByText("Genesis Alpha Whitelist")).toBeInTheDocument();
       });
 
-      // Change status select for Genesis Alpha
-      const statusSelect = screen.getByLabelText(
-        "Change status for Genesis Alpha Whitelist",
-      );
-      fireEvent.change(statusSelect, { target: { value: "PAUSED" } });
+      const select = screen.getByRole("combobox");
+      fireEvent.change(select, { target: { value: "PAUSED" } });
 
       await waitFor(() => {
         expect(adminClient.adminUpdateWLProgram).toHaveBeenCalledWith("prog-alpha", {
           status: "PAUSED",
         });
-        expect(screen.getByText("Status updated to PAUSED")).toBeInTheDocument();
+        expect(
+          screen.getByText(/Program status updated to PAUSED/i),
+        ).toBeInTheDocument();
       });
-    });
-
-    it("quick 'Reconcile' button sets program ID in reconciliation form", async () => {
-      vi.mocked(adminClient.adminListWLPrograms).mockResolvedValueOnce({
-        programs: mockPrograms,
-        total: 2,
-      });
-
-      render(<AdminWhitelist />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Genesis Alpha Whitelist")).toBeInTheDocument();
-      });
-
-      const reconcileButtons = screen.getAllByRole("button", { name: /^Reconcile$/i });
-      fireEvent.click(reconcileButtons[0]);
-
-      const recInput = screen.getByLabelText(/Whitelist Program ID \*/i);
-      expect(recInput).toHaveValue("prog-alpha");
     });
   });
 

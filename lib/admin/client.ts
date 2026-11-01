@@ -265,6 +265,165 @@ export async function adminListCampaignTasks(
   return data;
 }
 
+export interface AdminCreateCampaignTaskInput {
+  taskCode: string;
+  title: string;
+  description?: string | null;
+  taskType?: string;
+  points?: number;
+  isRequired?: boolean;
+  sortOrder?: number;
+  requirementMetadata?: Record<string, unknown> | null;
+}
+
+export async function adminCreateCampaignTask(
+  campaignId: string,
+  versionNumber: number | string,
+  input: AdminCreateCampaignTaskInput,
+) {
+  const res = await fetch(
+    `/api/admin/campaigns/${encodeURIComponent(campaignId)}/versions/${encodeURIComponent(String(versionNumber))}/tasks`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to create campaign task.");
+  }
+  return data;
+}
+
+export interface AdminUpdateCampaignTaskInput {
+  taskId: string;
+  taskCode?: string;
+  title?: string;
+  description?: string | null;
+  taskType?: string;
+  points?: number;
+  isRequired?: boolean;
+  sortOrder?: number;
+  requirementMetadata?: Record<string, unknown> | null;
+}
+
+export async function adminUpdateCampaignTask(
+  campaignId: string,
+  versionNumber: number | string,
+  input: AdminUpdateCampaignTaskInput,
+) {
+  const res = await fetch(
+    `/api/admin/campaigns/${encodeURIComponent(campaignId)}/versions/${encodeURIComponent(String(versionNumber))}/tasks`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update campaign task.");
+  }
+  return data;
+}
+
+export async function adminDeleteCampaignTask(
+  campaignId: string,
+  versionNumber: number | string,
+  taskId: string,
+) {
+  const res = await fetch(
+    `/api/admin/campaigns/${encodeURIComponent(campaignId)}/versions/${encodeURIComponent(String(versionNumber))}/tasks?taskId=${encodeURIComponent(taskId)}`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to delete campaign task.");
+  }
+  return data;
+}
+
+export interface AdminCreateCampaignVersionInput {
+  changeNotes?: string | null;
+  startsAt?: string;
+  endsAt?: string | null;
+  compatibilityMode?: string;
+  taskUpdates?: Array<{
+    taskCode: string;
+    title?: string;
+    description?: string | null;
+    taskType?: string;
+    points?: number;
+    isRequired?: boolean;
+    sortOrder?: number;
+    requirementMetadata?: Record<string, unknown> | null;
+  }>;
+  taskAdditions?: Array<{
+    taskCode: string;
+    title: string;
+    description?: string | null;
+    taskType?: string;
+    points?: number;
+    isRequired?: boolean;
+    sortOrder?: number;
+    requirementMetadata?: Record<string, unknown> | null;
+  }>;
+  taskRemovals?: string[];
+  tasks?: Array<{
+    taskCode: string;
+    title: string;
+    description?: string | null;
+    taskType?: string;
+    points?: number;
+    isRequired?: boolean;
+    sortOrder?: number;
+    requirementMetadata?: Record<string, unknown> | null;
+  }>;
+}
+
+export async function adminListCampaignVersions(campaignId: string) {
+  const res = await fetch(
+    `/api/admin/campaigns/${encodeURIComponent(campaignId)}/versions`,
+    {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to list campaign versions.");
+  }
+  return data;
+}
+
+export async function adminCreateCampaignVersion(
+  campaignId: string,
+  input: AdminCreateCampaignVersionInput,
+) {
+  const res = await fetch(
+    `/api/admin/campaigns/${encodeURIComponent(campaignId)}/versions`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to create campaign version.");
+  }
+  return data;
+}
+
 export interface AdminUserRecord {
   id: string;
   role: string;
@@ -873,5 +1032,362 @@ export async function adminListAuditLogs(
   }
   return data;
 }
+
+export interface AdminListGtdSlotReviewsInput {
+  programId?: string;
+  reviewStatus?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AdminGtdSlotReviewItem {
+  id: string;
+  slotNumber: number;
+  programId: string;
+  program: { id: string; name: string; slug: string } | null;
+  userId: string;
+  status: string;
+  reviewStatus: string;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  reviewNotes: string | null;
+  allocatedAt: string;
+  confirmedAt: string | null;
+  allocatedBy: string;
+  user: {
+    id: string;
+    wallet: { address: string } | null;
+    xIdentity: {
+      xId: string;
+      username: string;
+      name: string | null;
+      profileImageUrl: string | null;
+    } | null;
+  };
+}
+
+export interface AdminListGtdSlotReviewsResponse {
+  slots: AdminGtdSlotReviewItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function adminListGtdSlotReviews(
+  input?: AdminListGtdSlotReviewsInput,
+): Promise<AdminListGtdSlotReviewsResponse> {
+  const params = new URLSearchParams();
+  if (input?.programId) params.set("programId", input.programId);
+  if (input?.reviewStatus) params.set("reviewStatus", input.reviewStatus);
+  if (input?.search) params.set("search", input.search);
+  if (input?.limit !== undefined) params.set("limit", String(input.limit));
+  if (input?.offset !== undefined) params.set("offset", String(input.offset));
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`/api/admin/whitelist/reviews${query}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch GTD slot reviews.");
+  }
+  return data;
+}
+
+export interface AdminUpdateGtdSlotReviewInput {
+  slotId: string;
+  reviewStatus: "NOT_REVIEWED" | "UNDER_REVIEW" | "VALID" | "FLAGGED";
+  reviewNotes?: string | null;
+}
+
+export interface AdminUpdateGtdSlotReviewResponse {
+  success: boolean;
+  slot: { id: string; reviewStatus: string };
+  auditLogId: string;
+}
+
+export async function adminUpdateGtdSlotReview(
+  input: AdminUpdateGtdSlotReviewInput,
+): Promise<AdminUpdateGtdSlotReviewResponse> {
+  const { slotId, ...body } = input;
+  const res = await fetch(`/api/admin/whitelist/reviews/${encodeURIComponent(slotId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to update GTD slot review status.");
+  }
+  return data;
+}
+
+export interface AdminManualGrantSlotInput {
+  programId: string;
+  candidateUserId: string;
+  slotNumber?: number;
+  notes?: string | null;
+}
+
+export interface AdminManualGrantSlotResponse {
+  success: boolean;
+  slot: {
+    id: string;
+    programId: string;
+    slotNumber: number;
+    userId: string;
+    status: string;
+    reviewStatus: string;
+    allocatedAt: string;
+    allocatedBy: string;
+    notes: string | null;
+  };
+  auditLogId: string;
+  previousUserId?: string;
+}
+
+export async function adminManualGrantSlot(
+  input: AdminManualGrantSlotInput,
+): Promise<AdminManualGrantSlotResponse> {
+  const res = await fetch("/api/admin/whitelist/slots/manual-grant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to manually grant whitelist slot.");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Pre-Export Audit Summary API
+// ---------------------------------------------------------------------------
+
+export interface AdminPreExportSummaryResponse {
+  program: {
+    id: string;
+    slug: string;
+    name: string;
+    status: string;
+    totalSlots: number;
+    allocatedSlotsCount: number;
+  };
+  gtd: {
+    totalSlots: number;
+    allocatedCount: number;
+    vacantCount: number;
+    flaggedCount: number;
+    walletsCount: number;
+  };
+  fcfs: {
+    totalDirectoryEntries: number;
+    bannedOrDisqualifiedCount: number;
+    inactiveDirectoryEntriesCount: number;
+    underQualifiedCount: number;
+    alreadyGtdCount: number;
+    qualifiedReadyCount: number;
+    accountingBalanceCheck: boolean;
+  };
+  disjointVerification: {
+    disjointSetVerified: boolean;
+    overlappingWalletsCount: number;
+    overlappingWallets: string[];
+  };
+  timestamp: string;
+}
+
+export async function adminGetPreExportSummary(params?: {
+  programId?: string;
+}): Promise<AdminPreExportSummaryResponse> {
+  const query = params?.programId ? `?programId=${encodeURIComponent(params.programId)}` : "";
+  const res = await fetch(`/api/admin/whitelist/export/summary${query}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch pre-export audit summary.");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// FCFS Directory API
+// ---------------------------------------------------------------------------
+
+export interface AdminListFcfsDirectoryInput {
+  programId?: string;
+  search?: string;
+  qualifiedOnly?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AdminFcfsDirectoryUser {
+  id: string;
+  walletAddress: string | null;
+  xIdentity: {
+    xId: string;
+    username: string;
+    name: string | null;
+    profileImageUrl: string | null;
+  } | null;
+  isBanned: boolean;
+}
+
+export interface AdminFcfsDirectoryQualification {
+  isFullyQualified: boolean;
+  heldCategories: string[];
+  heldCategoriesCount: number;
+  missingCategories: string[];
+  tasksCompleted: boolean;
+  completedTasksCount: number;
+  totalTasksCount: number;
+  isBanned: boolean;
+  missingRequirements: string[];
+}
+
+export interface AdminFcfsDirectoryEntry {
+  id: string;
+  userId: string;
+  programId: string;
+  queueNumber: number;
+  joinedAt: string;
+  status: string;
+  user: AdminFcfsDirectoryUser;
+  qualification: AdminFcfsDirectoryQualification;
+}
+
+export interface AdminListFcfsDirectoryResponse {
+  entries: AdminFcfsDirectoryEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+  program: {
+    id: string;
+    name: string;
+    slug: string;
+    status: string;
+    totalSlots: number;
+    allocatedSlotsCount: number;
+    vacantCount: number;
+  };
+}
+
+export async function adminListFcfsDirectory(
+  input?: AdminListFcfsDirectoryInput,
+): Promise<AdminListFcfsDirectoryResponse> {
+  const params = new URLSearchParams();
+  if (input?.programId) params.set("programId", input.programId);
+  if (input?.search) params.set("search", input.search);
+  if (input?.qualifiedOnly !== undefined) params.set("qualifiedOnly", String(input.qualifiedOnly));
+  if (input?.limit !== undefined) params.set("limit", String(input.limit));
+  if (input?.offset !== undefined) params.set("offset", String(input.offset));
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`/api/admin/whitelist/directory${query}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch FCFS directory.");
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// GTD Slot Review Detail API
+// ---------------------------------------------------------------------------
+
+export interface AdminGtdSlotReviewDetailResponse {
+  slot: {
+    id: string;
+    slotNumber: number;
+    programId: string;
+    program?: { id: string; name: string; slug: string } | null;
+    userId: string;
+    status: string;
+    reviewStatus: "NOT_REVIEWED" | "UNDER_REVIEW" | "VALID" | "FLAGGED";
+    reviewedAt: string | null;
+    reviewedBy: string | null;
+    reviewNotes: string | null;
+    allocatedAt: string;
+    confirmedAt: string | null;
+    allocatedBy: string | null;
+    user: {
+      id: string;
+      wallet: { address: string } | null;
+      xIdentity: {
+        xId: string;
+        username: string;
+        name: string | null;
+        profileImageUrl: string | null;
+      } | null;
+      isBanned: boolean;
+    };
+  };
+  traits: {
+    heldCategories: string[];
+    heldCategoriesCount: number;
+    missingCategories: string[];
+    hasAllCategories: boolean;
+  };
+  campaigns: {
+    completedMandatoryTasksCount: number;
+    totalMandatoryTasksCount: number;
+    tasksCompleted: boolean;
+    submissions: Array<{
+      id: string;
+      taskId: string;
+      taskTitle: string;
+      status: string;
+      payload: string;
+      reviewerNotes: string | null;
+      reviewedAt: string | null;
+      createdAt: string;
+    }>;
+  };
+  auditHistory: Array<{
+    id: string;
+    action: string;
+    actorId: string | null;
+    actor: {
+      id: string;
+      role: string;
+      address?: string | null;
+      username?: string | null;
+    } | null;
+    oldValues: any;
+    newValues: any;
+    metadata: any;
+    createdAt: string;
+  }>;
+}
+
+export async function adminGetGtdSlotReviewDetail(
+  slotId: string,
+): Promise<AdminGtdSlotReviewDetailResponse> {
+  const res = await fetch(`/api/admin/whitelist/reviews/${encodeURIComponent(slotId)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to fetch GTD slot review details.");
+  }
+  return data;
+}
+
 
 

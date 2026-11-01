@@ -64,6 +64,18 @@ vi.mock("@/lib/admin/client", () => ({
   adminListWLPrograms: vi.fn().mockResolvedValue({ programs: [], total: 0 }),
   adminCreateWLProgram: vi.fn().mockResolvedValue({ success: true }),
   adminUpdateWLProgram: vi.fn().mockResolvedValue({ success: true }),
+  adminGetPreExportSummary: vi.fn().mockResolvedValue({
+    program: { id: "p1", name: "P1", status: "OPEN" },
+    gtd: { allocatedCount: 0, vacantCount: 0, flaggedCount: 0 },
+    fcfs: { totalDirectoryEntries: 0, qualifiedReadyCount: 0 },
+    disjointVerification: { disjointSetVerified: true },
+  }),
+  adminListGtdSlotReviews: vi.fn().mockResolvedValue({ slots: [], total: 0 }),
+  adminListFcfsDirectory: vi.fn().mockResolvedValue({ entries: [], total: 0 }),
+  adminGetGtdSlotReviewDetail: vi.fn().mockResolvedValue(null),
+  adminUpdateGtdSlotReview: vi.fn().mockResolvedValue({ success: true }),
+  adminManualGrantSlot: vi.fn().mockResolvedValue({ success: true }),
+  adminExportOpenSeaAllowlist: vi.fn().mockResolvedValue({ count: 0, filename: "test.csv" }),
   adminListAbuseFlags: vi.fn().mockResolvedValue({ flags: [], total: 0 }),
   adminUpdateAbuseFlag: vi.fn().mockResolvedValue({ success: true }),
 }));
@@ -263,8 +275,8 @@ describe("Admin Dashboard Route Protection & Access Control", () => {
     const wlButtons = screen.getAllByRole("button", { name: /Whitelist/i });
     fireEvent.click(wlButtons[0]);
     await waitFor(() => {
-      expect(screen.getByText("Queue Reconciliation")).toBeInTheDocument();
-      expect(screen.getAllByText("Revoke Whitelist Slot").length).toBeGreaterThan(0);
+      expect(screen.getByText("GTD Post-Allocation Review")).toBeInTheDocument();
+      expect(screen.getByText("FCFS Directory (All Participants)")).toBeInTheDocument();
     });
 
     // Click "Users & Bans"
