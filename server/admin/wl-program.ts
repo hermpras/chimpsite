@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, WLProgramStatus } from "@prisma/client";
+import type { Prisma, PrismaClient, WLProgram, WLProgramStatus } from "@prisma/client";
 import { recordAuditLog } from "../audit/audit";
 
 // ---------------------------------------------------------------------------
@@ -286,15 +286,32 @@ export async function updateWLProgram(
   const programId = input.programId.trim();
 
   return await prisma.$transaction(async (tx) => {
-    const existing = await tx.wLProgram.findUnique({
-      where: { id: programId },
-    });
-    if (!existing) {
-      throw new AdminWLProgramError(
-        "PROGRAM_NOT_FOUND",
-        `Whitelist Program '${programId}' was not found.`,
-        404,
-      );
+    // Acquire row-level lock (SELECT ... FOR UPDATE) on PostgreSQL to prevent concurrent update races
+    let existing: WLProgram;
+    if (typeof (tx as any).$queryRaw === "function") {
+      const rows = await (tx as any).$queryRaw`
+        SELECT * FROM "WLProgram" WHERE id = ${programId} FOR UPDATE
+      `;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        throw new AdminWLProgramError(
+          "PROGRAM_NOT_FOUND",
+          `Whitelist Program '${programId}' was not found.`,
+          404,
+        );
+      }
+      existing = rows[0] as WLProgram;
+    } else {
+      const found = await tx.wLProgram.findUnique({
+        where: { id: programId },
+      });
+      if (!found) {
+        throw new AdminWLProgramError(
+          "PROGRAM_NOT_FOUND",
+          `Whitelist Program '${programId}' was not found.`,
+          404,
+        );
+      }
+      existing = found;
     }
 
     const oldValues: Record<string, unknown> = {
@@ -302,8 +319,8 @@ export async function updateWLProgram(
       description: existing.description,
       totalSlots: existing.totalSlots,
       status: existing.status,
-      startsAt: existing.startsAt.toISOString(),
-      endsAt: existing.endsAt ? existing.endsAt.toISOString() : null,
+      startsAt: existing.startsAt instanceof Date ? existing.startsAt.toISOString() : new Date(existing.startsAt).toISOString(),
+      endsAt: existing.endsAt ? (existing.endsAt instanceof Date ? existing.endsAt.toISOString() : new Date(existing.endsAt).toISOString()) : null,
     };
 
     const updateData: Prisma.WLProgramUpdateInput = {};
@@ -342,11 +359,23 @@ export async function updateWLProgram(
         );
       }
 
-      // Invariant: capacity cannot be lower than already allocated slots!
+      // Invariant 1: Capacity can never be reduced below already allocated slots
       if (input.totalSlots < existing.allocatedSlotsCount) {
         throw new AdminWLProgramError(
           "CAPACITY_EXCEEDED",
           `Cannot reduce capacity to ${input.totalSlots}. Program already has ${existing.allocatedSlotsCount} allocated slots.`,
+          409,
+        );
+      }
+
+      // Invariant 2: Once started (startsAt reached or status non-UPCOMING), totalSlots cannot be reduced
+      const now = new Date();
+      const startsAtDate = new Date(existing.startsAt);
+      const hasStarted = existing.status !== "UPCOMING" || now >= startsAtDate;
+      if (hasStarted && input.totalSlots < existing.totalSlots) {
+        throw new AdminWLProgramError(
+          "CAPACITY_CANNOT_BE_REDUCED",
+          `Cannot reduce capacity once the program has started. Current capacity: ${existing.totalSlots}, requested: ${input.totalSlots}.`,
           409,
         );
       }
@@ -365,6 +394,16 @@ export async function updateWLProgram(
           422,
         );
       }
+
+      // Safeguard: Once a program is CLOSED, it cannot be reopened or transitioned to any other status
+      if (existing.status === "CLOSED" && rawStatus !== "CLOSED") {
+        throw new AdminWLProgramError(
+          "PROGRAM_PERMANENTLY_CLOSED",
+          "Program is permanently CLOSED and cannot be reopened or transitioned to any other status.",
+          409,
+        );
+      }
+
       updateData.status = rawStatus;
       newValues.status = rawStatus;
     }
@@ -451,20 +490,6 @@ export async function updateWLProgram(
       },
     });
 
-    // Task O-6: Event-driven queue reconciliation when capacity increases or status changes to OPEN
-    if (
-      updated.status === "OPEN" &&
-      (updateData.totalSlots !== undefined || updateData.status === "OPEN")
-    ) {
-      try {
-        if ((prisma as any).wLQueueEntry?.findMany) {
-          const { reconcileQueueSlots } = await import("../whitelist/qualification");
-          await reconcileQueueSlots(prisma, updated.id, new Date());
-        }
-      } catch (err) {
-        console.error("Event-driven reconciliation error after WL program update:", err);
-      }
-    }
 
     return {
       program: {

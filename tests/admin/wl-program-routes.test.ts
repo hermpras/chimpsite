@@ -343,6 +343,48 @@ describe("Admin WL Program API Routes - Permission & Endpoint Suite", () => {
       expect(json.error).toBe("CAPACITY_EXCEEDED");
     });
 
+    it("enforces capacity non-reduction invariant and returns 409 with CAPACITY_CANNOT_BE_REDUCED", async () => {
+      vi.spyOn(wlProgramService, "updateWLProgram").mockRejectedValueOnce(
+        new AdminWLProgramError(
+          "CAPACITY_CANNOT_BE_REDUCED",
+          "Cannot reduce capacity once the program has started.",
+          409,
+        ),
+      );
+
+      const req = new Request("http://localhost/api/admin/wl-programs/prog-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ totalSlots: 80 }),
+      });
+
+      const res = await UPDATE_PATCH(req, { params: Promise.resolve({ id: "prog-1" }) });
+      expect(res.status).toBe(409);
+      const json = await res.json();
+      expect(json.error).toBe("CAPACITY_CANNOT_BE_REDUCED");
+    });
+
+    it("enforces permanent CLOSED invariant and returns 409 with PROGRAM_PERMANENTLY_CLOSED", async () => {
+      vi.spyOn(wlProgramService, "updateWLProgram").mockRejectedValueOnce(
+        new AdminWLProgramError(
+          "PROGRAM_PERMANENTLY_CLOSED",
+          "Program is permanently CLOSED and cannot be reopened or transitioned to any other status.",
+          409,
+        ),
+      );
+
+      const req = new Request("http://localhost/api/admin/wl-programs/prog-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "OPEN" }),
+      });
+
+      const res = await UPDATE_PATCH(req, { params: Promise.resolve({ id: "prog-1" }) });
+      expect(res.status).toBe(409);
+      const json = await res.json();
+      expect(json.error).toBe("PROGRAM_PERMANENTLY_CLOSED");
+    });
+
     it("updates program successfully", async () => {
       vi.spyOn(wlProgramService, "updateWLProgram").mockResolvedValueOnce({
         program: {

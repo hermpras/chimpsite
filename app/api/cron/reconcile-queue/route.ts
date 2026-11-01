@@ -1,9 +1,3 @@
-import { prisma } from "@/server/db";
-import {
-  reconcileQueueSlots,
-  reconcileAllOpenPrograms,
-  WhitelistError,
-} from "@/server/whitelist/qualification";
 import { timingSafeEqualString } from "@/lib/auth/timing-safe";
 import { readLimitedBody } from "@/lib/auth/body-limit";
 
@@ -122,65 +116,19 @@ async function handleCronReconcile(request: Request): Promise<Response> {
 
   const now = new Date();
 
-  // If specific programId is requested
-  if (programId) {
-    try {
-      const result = await reconcileQueueSlots(prisma, programId, now);
-      return Response.json({
-        success: true,
-        programId,
-        slotsFilled: result.slotsFilled,
-        openSlotsRemaining: result.openSlotsRemaining,
-        totalSlotsFilled: result.slotsFilled,
-        processedPrograms: 1,
-        programs: [
-          {
-            programId,
-            slotsFilled: result.slotsFilled,
-            openSlotsRemaining: result.openSlotsRemaining,
-          },
-        ],
-        at: now.toISOString(),
-      });
-    } catch (err: unknown) {
-      if (err instanceof WhitelistError) {
-        return Response.json(
-          { error: err.code, message: err.message },
-          { status: err.status },
-        );
-      }
-      console.error(`Error reconciling program ${programId}:`, err);
-      return Response.json(
-        {
-          error: "SERVER_ERROR",
-          message: "An unexpected error occurred while reconciling whitelist queue.",
-        },
-        { status: 500 },
-      );
-    }
-  }
-
-  // Default: reconcile all open programs
-  try {
-    const result = await reconcileAllOpenPrograms(prisma, now);
-    return Response.json({
-      success: true,
-      processedPrograms: result.processedPrograms,
-      totalSlotsFilled: result.totalSlotsFilled,
-      slotsFilled: result.totalSlotsFilled,
-      programs: result.results,
-      at: now.toISOString(),
-    });
-  } catch (err: unknown) {
-    console.error("Error executing reconcileAllOpenPrograms:", err);
-    return Response.json(
-      {
-        error: "SERVER_ERROR",
-        message: "An unexpected error occurred while reconciling whitelist queues.",
-      },
-      { status: 500 },
-    );
-  }
+  // Decommissioned per DEC-018: Queue auto-reconciliation is eliminated.
+  return Response.json({
+    success: true,
+    deprecated: true,
+    message: "Queue reconciliation cron has been decommissioned per DEC-018.",
+    programId,
+    processedPrograms: 0,
+    totalSlotsFilled: 0,
+    slotsFilled: 0,
+    openSlotsRemaining: 0,
+    programs: [],
+    at: now.toISOString(),
+  });
 }
 
 export async function GET(request: Request): Promise<Response> {

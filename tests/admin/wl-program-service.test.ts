@@ -25,6 +25,7 @@ describe("Admin WL Program Service - B-2 Whitelist Program Engine", () => {
         count: vi.fn(),
       },
       promoCampaign: {
+        findFirst: vi.fn(),
         findMany: vi.fn(),
         findUnique: vi.fn(),
         create: vi.fn(),
@@ -372,6 +373,211 @@ describe("Admin WL Program Service - B-2 Whitelist Program Engine", () => {
           newValues: expect.objectContaining({ status: "PAUSED" }),
         }),
         select: { id: true },
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // Regression Tests: Capacity Non-Reduction & Permanent CLOSED Safeguards
+    // -------------------------------------------------------------------------
+
+    it("strictly rejects reducing capacity once program has started, even if requested capacity is greater than allocatedSlotsCount", async () => {
+      const startedProgram = {
+        ...existingProgram,
+        totalSlots: 100,
+        allocatedSlotsCount: 10,
+        status: "OPEN",
+        startsAt: new Date("2026-10-01T00:00:00.000Z"),
+      };
+      mockPrisma.wLProgram.findUnique.mockResolvedValueOnce(startedProgram);
+
+      // Reducing from 100 to 80 (where 80 > 10, but 80 < 100) must be rejected with CAPACITY_CANNOT_BE_REDUCED
+      await expect(
+        updateWLProgram(mockPrisma, {
+          programId: "prog-update-1",
+          totalSlots: 80,
+          adminUserId: "admin-1",
+        }),
+      ).rejects.toMatchObject({
+        code: "CAPACITY_CANNOT_BE_REDUCED",
+        status: 409,
+      });
+    });
+
+    it("allows increasing capacity after program has started", async () => {
+      const startedProgram = {
+        ...existingProgram,
+        totalSlots: 100,
+        allocatedSlotsCount: 45,
+        status: "OPEN",
+      };
+      mockPrisma.wLProgram.findUnique.mockResolvedValueOnce(startedProgram);
+      mockPrisma.wLProgram.update.mockResolvedValueOnce({
+        ...startedProgram,
+        totalSlots: 200,
+      });
+
+      const res = await updateWLProgram(mockPrisma, {
+        programId: "prog-update-1",
+        totalSlots: 200,
+        adminUserId: "admin-1",
+      });
+
+      expect(res.program.totalSlots).toBe(200);
+      expect(mockPrisma.wLProgram.update).toHaveBeenCalledWith({
+        where: { id: "prog-update-1" },
+        data: expect.objectContaining({ totalSlots: 200 }),
+      });
+    });
+
+    it("allows updating program with unchanged capacity", async () => {
+      const startedProgram = {
+        ...existingProgram,
+        totalSlots: 100,
+        allocatedSlotsCount: 45,
+        status: "OPEN",
+      };
+      mockPrisma.wLProgram.findUnique.mockResolvedValueOnce(startedProgram);
+      mockPrisma.wLProgram.update.mockResolvedValueOnce({
+        ...startedProgram,
+        name: "Updated Name While Keeping Capacity",
+      });
+
+      const res = await updateWLProgram(mockPrisma, {
+        programId: "prog-update-1",
+        name: "Updated Name While Keeping Capacity",
+        totalSlots: 100, // exact same capacity
+        adminUserId: "admin-1",
+      });
+
+      expect(res.program.totalSlots).toBe(100);
+      expect(mockPrisma.wLProgram.update).toHaveBeenCalledWith({
+        where: { id: "prog-update-1" },
+        data: expect.objectContaining({ totalSlots: 100 }),
+      });
+    });
+
+    it("strictly rejects reopening or transitioning out of CLOSED status", async () => {
+      const closedProgram = {
+        ...existingProgram,
+        status: "CLOSED",
+      };
+
+      for (const targetStatus of ["OPEN", "PAUSED", "FINALIZED", "UPCOMING"] as const) {
+        mockPrisma.wLProgram.findUnique.mockResolvedValueOnce(closedProgram);
+
+        await expect(
+          updateWLProgram(mockPrisma, {
+            programId: "prog-update-1",
+            status: targetStatus,
+            adminUserId: "admin-1",
+          }),
+        ).rejects.toMatchObject({
+          code: "PROGRAM_PERMANENTLY_CLOSED",
+          status: 409,
+        });
+      }
+    });
+
+    it("allows transitioning from OPEN or PAUSED to CLOSED", async () => {
+      mockPrisma.wLProgram.findUnique.mockResolvedValueOnce({
+        ...existingProgram,
+        status: "OPEN",
+      });
+      mockPrisma.wLProgram.update.mockResolvedValueOnce({
+        ...existingProgram,
+        status: "CLOSED",
+      });
+
+      const res = await updateWLProgram(mockPrisma, {
+        programId: "prog-update-1",
+        status: "CLOSED",
+        adminUserId: "admin-1",
+      });
+
+      expect(res.program.status).toBe("CLOSED");
+      expect(mockPrisma.wLProgram.update).toHaveBeenCalledWith({
+        where: { id: "prog-update-1" },
+        data: expect.objectContaining({ status: "CLOSED" }),
+      });
+    });
+
+    it("guarantees allocated slots remain intact when program transitions to CLOSED", async () => {
+      mockPrisma.wLSlot = {
+        delete: vi.fn(),
+        deleteMany: vi.fn(),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+      };
+
+      mockPrisma.wLProgram.findUnique.mockResolvedValueOnce({
+        ...existingProgram,
+        status: "OPEN",
+        allocatedSlotsCount: 88,
+      });
+      mockPrisma.wLProgram.update.mockResolvedValueOnce({
+        ...existingProgram,
+        status: "CLOSED",
+        allocatedSlotsCount: 88,
+      });
+
+      await updateWLProgram(mockPrisma, {
+        programId: "prog-update-1",
+        status: "CLOSED",
+        adminUserId: "admin-1",
+      });
+
+      // Assert zero slot mutations or deletions were invoked
+      expect(mockPrisma.wLSlot.delete).not.toHaveBeenCalled();
+      expect(mockPrisma.wLSlot.deleteMany).not.toHaveBeenCalled();
+      expect(mockPrisma.wLSlot.update).not.toHaveBeenCalled();
+      expect(mockPrisma.wLSlot.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("prevents concurrent updates from bypassing safeguards using row-level locking", async () => {
+      // 1. Verify row-level lock query is executed when $queryRaw is available
+      const mockRaw = vi.fn().mockResolvedValueOnce([{ ...existingProgram, status: "CLOSED" }]);
+      const mockPrismaWithRaw = {
+        ...mockPrisma,
+        $queryRaw: mockRaw,
+        $transaction: vi.fn(async (cb: any) => cb({ ...mockPrisma, $queryRaw: mockRaw })),
+      };
+
+      // Concurrent update attempting to reopen to OPEN must be blocked by locked row state
+      await expect(
+        updateWLProgram(mockPrismaWithRaw, {
+          programId: "prog-update-1",
+          status: "OPEN",
+          adminUserId: "admin-1",
+        }),
+      ).rejects.toMatchObject({
+        code: "PROGRAM_PERMANENTLY_CLOSED",
+        status: 409,
+      });
+
+      expect(mockRaw).toHaveBeenCalled();
+
+      // 2. Concurrent update attempting to reduce capacity after another transaction increased it
+      const mockRawCapacity = vi.fn().mockResolvedValueOnce([{
+        ...existingProgram,
+        totalSlots: 200, // another concurrent transaction already raised it from 100 to 200
+        status: "OPEN",
+      }]);
+      const mockPrismaCapacity = {
+        ...mockPrisma,
+        $queryRaw: mockRawCapacity,
+        $transaction: vi.fn(async (cb: any) => cb({ ...mockPrisma, $queryRaw: mockRawCapacity })),
+      };
+
+      // Stale client trying to set capacity to 150 (thinking it was 100) must be rejected because fresh locked state is 200
+      await expect(
+        updateWLProgram(mockPrismaCapacity, {
+          programId: "prog-update-1",
+          totalSlots: 150,
+          adminUserId: "admin-1",
+        }),
+      ).rejects.toMatchObject({
+        code: "CAPACITY_CANNOT_BE_REDUCED",
+        status: 409,
       });
     });
   });

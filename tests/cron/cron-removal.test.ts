@@ -11,7 +11,6 @@ import {
 } from "@/server/inventory/gift";
 import { revokeWlSlot } from "@/server/whitelist/revoke";
 import { updateWLProgram } from "@/server/admin/wl-program";
-import { reconcileQueueSlots } from "@/server/whitelist/qualification";
 
 describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architecture", () => {
   // ─── 1. vercel.json Cron Schedule Removal ────────────────────────────────
@@ -30,7 +29,8 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
       expect(sweepCron).toBeUndefined();
       expect(authCron).toBeUndefined();
       expect(queueCron).toBeUndefined();
-      expect(crons).toHaveLength(0);
+      const legacyCrons = crons.filter((c) => c.path !== "/api/cron/wl-recovery");
+      expect(legacyCrons).toHaveLength(0);
     });
   });
 
@@ -534,7 +534,7 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
       return prismaObj;
     }
 
-    it("automatically and atomically promotes the next queued participant when an admin revokes a slot", async () => {
+    it("leaves revoked slot strictly vacant without auto-promoting waiting queue participants (DEC-016 & DEC-018)", async () => {
       const mockPrisma = createMockPrismaForWL();
       const now = new Date("2026-10-25T11:00:00Z");
 
@@ -547,29 +547,26 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
 
       expect(revokeResult.success).toBe(true);
       expect(revokeResult.status).toBe("REVOKED_MANUAL_ADMIN");
-      expect(revokeResult.promotedUserId).toBe("queued-user-1");
+      expect(revokeResult.promotedUserId).toBeUndefined();
 
-      // Verify slot in store
+      // Verify slot in store is revoked
       const revoked = mockPrisma._store.slots.find((s: any) => s.id === "slot-1");
       expect(revoked.status).toBe("REVOKED_MANUAL_ADMIN");
 
-      // Verify newly promoted slot
+      // Verify no queued participant was promoted
       const promoted = mockPrisma._store.slots.find((s: any) => s.userId === "queued-user-1");
-      expect(promoted).toBeDefined();
-      expect(promoted.status).toBe("ALLOCATED");
-      expect(promoted.slotNumber).toBe(1); // Freed slot 1 re-assigned
+      expect(promoted).toBeUndefined();
 
-      // Verify queue entry transitioned
+      // Verify queue entry remains WAITING
       const qe1 = mockPrisma._store.queueEntries.find((q: any) => q.id === "qe-1");
-      expect(qe1.status).toBe("PROCESSED");
+      expect(qe1.status).toBe("WAITING");
 
-      // Allocated count remains consistent (2 slots occupied: user-2 and queued-user-1)
-      expect(mockPrisma._store.programs[0].allocatedSlotsCount).toBe(2);
+      // Allocated count decrements by 1 (1 slot occupied: user-2)
+      expect(mockPrisma._store.programs[0].allocatedSlotsCount).toBe(1);
     });
 
-    it("reconciles queue slots immediately when an admin increases program capacity", async () => {
+    it("does not auto-promote queue slots when program capacity is updated (DEC-018)", async () => {
       const mockPrisma = createMockPrismaForWL();
-      const now = new Date("2026-10-25T12:00:00Z");
 
       // Admin increases totalSlots from 2 to 3
       await updateWLProgram(mockPrisma, {
@@ -578,127 +575,16 @@ describe("Task O-6: Removal of Cron Dependencies & Event-Driven Process Architec
         totalSlots: 3,
       });
 
-      // Queued user 1 should be promoted event-driven
+      // Queued user 1 should NOT be auto-promoted (DEC-018 eliminates auto-reconciliation)
       const qe1 = mockPrisma._store.queueEntries.find((q: any) => q.id === "qe-1");
-      expect(qe1.status).toBe("PROCESSED");
+      expect(qe1.status).toBe("WAITING");
 
       const promotedSlot = mockPrisma._store.slots.find(
         (s: any) => s.userId === "queued-user-1",
       );
-      expect(promotedSlot).toBeDefined();
-      expect(promotedSlot.slotNumber).toBe(3);
-      expect(mockPrisma._store.programs[0].allocatedSlotsCount).toBe(3);
-    });
-
-    it("guarantees concurrency safety: concurrent operations never produce double slot allocation", async () => {
-      const mockPrisma = createMockPrismaForWL();
-      const now = new Date("2026-10-25T13:00:00Z");
-
-      // Revoking both slots successively or concurrently promotes both waiting users safely
-      await revokeWlSlot(mockPrisma, {
-        slotId: "slot-1",
-        adminUserId: "admin-1",
-        reason: "Revoke 1",
-        now,
-      });
-      await revokeWlSlot(mockPrisma, {
-        slotId: "slot-2",
-        adminUserId: "admin-1",
-        reason: "Revoke 2",
-        now,
-      });
-
-      // Both queued users (qe-1 and qe-2) should be promoted without duplicate slot numbers
-      const activeSlots = mockPrisma._store.slots.filter((s: any) =>
-        ["ALLOCATED", "CONFIRMED"].includes(s.status),
-      );
-      expect(activeSlots).toHaveLength(2);
-
-      const assignedNumbers = activeSlots
-        .map((s: any) => s.slotNumber)
-        .sort((a: any, b: any) => a - b);
-      expect(assignedNumbers).toEqual([1, 2]);
-
-      const userIds = activeSlots.map((s: any) => s.userId).sort();
-      expect(userIds).toEqual(["queued-user-1", "queued-user-2"]);
-    });
-
-    it("Task O-7 audit: concurrent revocation and capacity increase safely assign distinct slot numbers without collisions or duplicates", async () => {
-      const mockPrisma = createMockPrismaForWL();
-      const now = new Date("2026-10-25T14:00:00Z");
-
-      // Initial state: 2 slots occupied (user-1: slot 1, user-2: slot 2).
-      // Queue: queued-user-1 (queue 1), queued-user-2 (queue 2).
-      // Fire revocation of slot-1 concurrently with capacity increase (totalSlots: 2 -> 3)
-      await Promise.all([
-        revokeWlSlot(mockPrisma, {
-          slotId: "slot-1",
-          adminUserId: "admin-1",
-          reason: "Concurrent Revoke",
-          now,
-        }),
-        updateWLProgram(mockPrisma, {
-          programId: "prog-1",
-          adminUserId: "admin-2",
-          totalSlots: 3,
-        }),
-      ]);
-
-      const activeSlots = mockPrisma._store.slots.filter((s: any) =>
-        ["ALLOCATED", "CONFIRMED"].includes(s.status),
-      );
-
-      // Total active slots should be 3 (user-2, and promoted queued-user-1 and queued-user-2)
-      expect(activeSlots).toHaveLength(3);
-
-      const assignedNumbers = activeSlots
-        .map((s: any) => s.slotNumber)
-        .sort((a: any, b: any) => a - b);
-      expect(assignedNumbers).toEqual([1, 2, 3]);
-
-      const assignedUsers = activeSlots.map((s: any) => s.userId).sort();
-      expect(assignedUsers).toEqual(["queued-user-1", "queued-user-2", "user-2"]);
-
-      // Program allocatedSlotsCount reflects exact active count
-      expect(mockPrisma._store.programs[0].allocatedSlotsCount).toBe(3);
-    });
-
-    it("Task O-7 audit: recovers from transient slotNumber unique constraint collision (P2002) via bounded retry", async () => {
-      const mockPrisma = createMockPrismaForWL();
-      const now = new Date("2026-10-25T15:00:00Z");
-
-      let hasInjectedCollision = false;
-      const originalCreate = mockPrisma.wLSlot.create;
-
-      mockPrisma.wLSlot.create = vi.fn(async (args: any) => {
-        if (!hasInjectedCollision) {
-          hasInjectedCollision = true;
-          const err: any = new Error(
-            "Unique constraint failed on the fields: (`programId`,`slotNumber`)",
-          );
-          err.code = "P2002";
-          err.meta = { target: ["programId", "slotNumber"], modelName: "WLSlot" };
-          throw err;
-        }
-        return originalCreate(args);
-      });
-
-      const res = await revokeWlSlot(mockPrisma, {
-        slotId: "slot-1",
-        adminUserId: "admin-1",
-        reason: "Test Collision Recovery",
-        now,
-      });
-
-      expect(res.success).toBe(true);
-      expect(hasInjectedCollision).toBe(true);
-      expect(mockPrisma.wLSlot.create).toHaveBeenCalledTimes(2);
-
-      const promotedSlot = mockPrisma._store.slots.find(
-        (s: any) => s.userId === "queued-user-1" && s.status === "ALLOCATED",
-      );
-      expect(promotedSlot).toBeDefined();
-      expect(promotedSlot.slotNumber).toBe(1);
+      expect(promotedSlot).toBeUndefined();
+      expect(mockPrisma._store.programs[0].totalSlots).toBe(3);
+      expect(mockPrisma._store.programs[0].allocatedSlotsCount).toBe(2);
     });
   });
 });
