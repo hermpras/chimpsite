@@ -281,10 +281,7 @@ export async function ensureActiveCyclePeriod(
     }
   }
 
-  const cycleDurationHours =
-    drop.cycleDurationHours && drop.cycleDurationHours !== 2
-      ? drop.cycleDurationHours
-      : DEFAULT_CYCLE_DURATION_HOURS;
+  const cycleDurationHours = drop.cycleDurationHours ?? DEFAULT_CYCLE_DURATION_HOURS;
   const cycle = getUtcCycleForTime(now, cycleDurationHours, drop.startsAt);
   const cycleDurationMs = cycleDurationHours * 60 * 60 * 1000;
 

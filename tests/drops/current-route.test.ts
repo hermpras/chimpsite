@@ -31,6 +31,7 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
     expect(data.active).toBe(false);
     expect(data.message).toBe("No drop event is currently active.");
     expect(data.nextCycle).toBeDefined();
+    expect(data.nextCycle.cycleDurationHours).toBe(2);
   });
 
   it("returns public drop details, stock counts, and transparent probabilities without exposing sensitive internal fields", async () => {

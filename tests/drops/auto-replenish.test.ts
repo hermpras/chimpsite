@@ -252,6 +252,63 @@ describe("Auto-Replenish Drop Engine", () => {
     expect(capturedUpsertData.endsAt.toISOString()).toBe("2026-10-26T10:00:00.000Z");
   });
 
+  it("ensureActiveCyclePeriod strictly respects drop.cycleDurationHours = 2 and generates 2-hour boundaries without falling back to another duration", async () => {
+    let capturedUpsertData: any = null;
+    const createdPeriod = {
+      id: "period-standard-2h",
+      periodIndex: 1,
+      status: "ACTIVE",
+      isStockConfigured: true,
+      isStockLocked: true,
+      poolItems: [],
+    };
+
+    const txMock = {
+      $queryRaw: vi.fn().mockResolvedValue([{ pg_advisory_xact_lock: null }]),
+      dropPeriod: {
+        upsert: vi.fn().mockImplementation(({ create }) => {
+          capturedUpsertData = create;
+          return Promise.resolve(createdPeriod);
+        }),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(createdPeriod),
+      },
+      dropPoolItem: {
+        upsert: vi.fn().mockResolvedValue({}),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+    };
+
+    const mockPrisma = {
+      dropPeriod: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      trait: {
+        upsert: vi.fn().mockImplementation(({ create }) =>
+          Promise.resolve({ id: `trait-${create.slug}`, ...create }),
+        ),
+      },
+      $transaction: vi.fn().mockImplementation(async (cb) => cb(txMock)),
+    } as any;
+
+    const anchor = new Date("2026-10-26T00:00:00.000Z");
+    const testNow = new Date("2026-10-26T03:15:00.000Z"); // In 02:00 - 04:00 UTC cycle
+    const drop = {
+      id: "drop-standard",
+      startsAt: anchor,
+      endsAt: new Date("2026-11-26T00:00:00.000Z"),
+      cycleDurationHours: 2, // Standard DB value
+    } as any;
+
+    const result = await ensureActiveCyclePeriod(mockPrisma, drop, testNow);
+
+    expect(result.id).toBe("period-standard-2h");
+    expect(capturedUpsertData).toBeDefined();
+    // startsAt is 02:00 UTC, endsAt is 04:00 UTC (exact 2-hour duration, NOT 2.5 hours)
+    expect(capturedUpsertData.startsAt.toISOString()).toBe("2026-10-26T02:00:00.000Z");
+    expect(capturedUpsertData.endsAt.toISOString()).toBe("2026-10-26T04:00:00.000Z");
+  });
+
   it("dynamically allocates 250 stock units across 25 traits proportionally by rarity (Opsi 1)", () => {
     const categories = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
     const rarities = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"] as const;

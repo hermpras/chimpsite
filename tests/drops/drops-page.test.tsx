@@ -181,6 +181,28 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         expect(screen.getByText("Period Cycle")).toBeInTheDocument();
         expect(screen.getAllByText(/150/).length).toBeGreaterThanOrEqual(1);
         expect(screen.getByText(/\/ 200 Units/)).toBeInTheDocument();
+        expect(
+          screen.getByText("2-hour drop cycles with a 30-minute claim window"),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("renders 5-hour hype control cycle description when cycleDurationHours is 5", async () => {
+      const hypeDrop: dropsClient.CurrentDropResponse = {
+        ...mockActiveDrop,
+        drop: {
+          ...mockActiveDrop.drop!,
+          cycleDurationHours: 5,
+        },
+      };
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValueOnce(hypeDrop);
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("5-hour hype control cycle with a 30-minute claim window"),
+        ).toBeInTheDocument();
       });
     });
   });

@@ -335,4 +335,73 @@ describe("Admin Drops Portal UI - B-1 Drop Configuration Component", () => {
       expect(screen.getByText(/Drop Period Closed Successfully/i)).toBeInTheDocument();
     });
   });
+
+  it("toggles cycle mode: calls adminUpdateDrop with 5 when activating Hype Control", async () => {
+    vi.mocked(adminClient.adminUpdateDrop).mockResolvedValueOnce({
+      drop: { id: "drop-1", cycleDurationHours: 5 },
+      auditLogId: "audit-hype-1",
+    });
+
+    render(<AdminDrops />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Drop Cooldown Strategy & Hype Control")).toBeInTheDocument();
+      expect(screen.getByText("⚡ 2-Hour Standard Cycle Active")).toBeInTheDocument();
+    });
+
+    const activateBtn = screen.getByRole("button", { name: /activate 5-hour hype control/i });
+    fireEvent.click(activateBtn);
+
+    await waitFor(() => {
+      expect(adminClient.adminUpdateDrop).toHaveBeenCalledWith("drop-1", {
+        cycleDurationHours: 5,
+      });
+      expect(
+        screen.getByText(/Activated 5-Hour Hype Control Mode!/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("toggles cycle mode: calls adminUpdateDrop with 2 when reverting to Standard 2-hour cycle", async () => {
+    const { mockDropsList } = getMockDropData();
+    const hypeDropList = [
+      {
+        ...mockDropsList[0],
+        cycleDurationHours: 5,
+      },
+    ];
+
+    vi.mocked(adminClient.adminListDrops).mockResolvedValueOnce({
+      drops: hypeDropList,
+      total: 1,
+      limit: 50,
+      offset: 0,
+    });
+    vi.mocked(adminClient.adminGetDrop).mockResolvedValueOnce({
+      drop: hypeDropList[0],
+    });
+    vi.mocked(adminClient.adminUpdateDrop).mockResolvedValueOnce({
+      drop: { id: "drop-1", cycleDurationHours: 2 },
+      auditLogId: "audit-hype-2",
+    });
+
+    render(<AdminDrops />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Drop Cooldown Strategy & Hype Control")).toBeInTheDocument();
+      expect(screen.getByText("🔥 5-Hour Hype Control Active")).toBeInTheDocument();
+    });
+
+    const revertBtn = screen.getByRole("button", { name: /revert to 2-hour standard/i });
+    fireEvent.click(revertBtn);
+
+    await waitFor(() => {
+      expect(adminClient.adminUpdateDrop).toHaveBeenCalledWith("drop-1", {
+        cycleDurationHours: 2,
+      });
+      expect(
+        screen.getByText(/Reverted to 2-Hour Standard Mode!/i),
+      ).toBeInTheDocument();
+    });
+  });
 });
