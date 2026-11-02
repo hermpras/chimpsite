@@ -37,8 +37,47 @@ import {
   type ActiveCampaignTask,
 } from "@/lib/tasks/client";
 
+const CATEGORY_THEMES: Record<
+  string,
+  { heldClass: string; unheldClass: string; checkColor: string }
+> = {
+  BG: {
+    heldClass: "border-sky-500/40 bg-sky-500/10 text-sky-300",
+    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
+    checkColor: "text-sky-400",
+  },
+  FUR: {
+    heldClass: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
+    checkColor: "text-amber-400",
+  },
+  CLOTHING: {
+    heldClass: "border-violet-500/40 bg-violet-500/10 text-violet-300",
+    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
+    checkColor: "text-violet-400",
+  },
+  HEADWEAR: {
+    heldClass: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
+    checkColor: "text-emerald-400",
+  },
+  EYEWEAR: {
+    heldClass: "border-teal-500/40 bg-teal-500/10 text-teal-300",
+    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
+    checkColor: "text-teal-400",
+  },
+};
+
 export default function WhitelistPage() {
-  const { status, sessionAddress, walletAddress } = useSiweAuth();
+  const {
+    status,
+    sessionAddress,
+    walletAddress,
+    error: authError,
+    busyMessage,
+    login,
+    dismissError,
+  } = useSiweAuth();
   const address = sessionAddress || walletAddress;
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusResult, setStatusResult] = useState<WhitelistStatusResponse | null>(null);
@@ -318,11 +357,60 @@ export default function WhitelistPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {status !== "authenticated" ? (
-              <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-6 text-center text-sm text-gray-400">
-                <p className="font-medium text-gray-300">Wallet Not Authenticated</p>
-                <p className="mt-1 text-xs text-gray-500">
-                  Connect your Web3 wallet via Sign in with Ethereum (SIWE) above to view your real-time Whitelist allocation status and trait checklist.
-                </p>
+              <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-6 text-center text-sm text-gray-400 space-y-4">
+                <div>
+                  <p className="font-medium text-gray-300">Wallet Not Authenticated</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Connect your Web3 wallet via Sign in with Ethereum (SIWE) above to view your real-time Whitelist allocation status and trait checklist.
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-center justify-center gap-2">
+                  {status === "wallet-only" ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => void login?.()}
+                      className="w-full sm:w-auto"
+                    >
+                      Sign In with Ethereum
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => void login?.()}
+                      disabled={status === "signing"}
+                      className="w-full sm:w-auto"
+                    >
+                      Connect Wallet
+                    </Button>
+                  )}
+
+                  {status === "signing" && (
+                    <div className="mt-1 flex items-center gap-2 text-xs text-emerald-400">
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      <span>{busyMessage ?? "Processing authentication…"}</span>
+                    </div>
+                  )}
+
+                  {authError && status !== "signing" && (
+                    <div className="mt-2 flex w-full max-w-md items-center justify-between gap-2 rounded border border-rose-500/20 bg-rose-500/10 p-2 text-xs text-rose-300">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
+                        <span className="truncate">{authError}</span>
+                      </div>
+                      {dismissError && (
+                        <button
+                          onClick={dismissError}
+                          className="shrink-0 text-[11px] text-rose-400 underline hover:text-rose-200"
+                        >
+                          Dismiss
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : statusLoading && !statusResult ? (
               <div className="py-8 text-center text-sm text-gray-400">
@@ -360,18 +448,14 @@ export default function WhitelistPage() {
                     {/* FCFS Directory Participant */}
                     {statusResult.status.phase === "FCFS_REGISTERED" && (
                       <>
-                        <Badge
-                          variant="default"
-                          className={
-                            statusResult.status.isFullyQualified
-                              ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
-                              : "border-blue-500/30 bg-blue-500/20 text-blue-300 font-semibold"
-                          }
-                        >
-                          {statusResult.status.isFullyQualified
-                            ? "FCFS Qualified"
-                            : "FCFS Registered"}
-                        </Badge>
+                        {statusResult.status.isFullyQualified && (
+                          <Badge
+                            variant="default"
+                            className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
+                          >
+                            FCFS Qualified
+                          </Badge>
+                        )}
                         <Badge
                           variant="default"
                           className="border-blue-500/30 bg-blue-500/20 text-blue-300 font-semibold"
@@ -415,9 +499,9 @@ export default function WhitelistPage() {
                   </div>
 
                   {statusResult.program && (
-                    <span className="text-xs text-gray-500">
-                      Capacity: {statusResult.program.allocatedSlotsCount} /{" "}
-                      {statusResult.program.totalSlots} Slots
+                    <span className="text-xs text-gray-400 font-mono">
+                      GTD Allocation: {statusResult.program.allocatedSlotsCount.toLocaleString()} /{" "}
+                      {statusResult.program.totalSlots.toLocaleString()} Slots
                     </span>
                   )}
                 </div>
@@ -568,7 +652,7 @@ export default function WhitelistPage() {
                       </div>
 
                       <div
-                        className={`flex items-center justify-between rounded border p-2.5 ${
+                        className={`flex flex-col gap-2 rounded border p-2.5 sm:flex-row sm:items-center sm:justify-between ${
                           statusResult.status.details?.hasLinkedX
                             ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
                             : "border-gray-800 bg-gray-800/20 text-gray-500"
@@ -582,13 +666,27 @@ export default function WhitelistPage() {
                           )}
                           <span>X (Twitter) Identity</span>
                         </div>
-                        <span className="font-mono text-[11px] text-gray-400">
-                          {statusResult.status.details?.hasLinkedX
-                            ? statusResult.status.details.xUsername
+                        {statusResult.status.details?.hasLinkedX ? (
+                          <span className="font-mono text-[11px] text-gray-400">
+                            {statusResult.status.details.xUsername
                               ? `@${statusResult.status.details.xUsername}`
-                              : "Linked"
-                            : "Required"}
-                        </span>
+                              : "Linked"}
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[11px] text-gray-400">Required</span>
+                            <Link href="/profile">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
+                              >
+                                Connect X on Profile
+                                <ExternalLink className="ml-1 h-2.5 w-2.5" />
+                              </Button>
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -603,24 +701,25 @@ export default function WhitelistPage() {
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
-                        {["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"].map((cat) => {
+                        {["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"].map((cat, idx) => {
                           const isHeld =
                             statusResult.status?.details?.heldCategories?.includes(cat);
+                          const theme = CATEGORY_THEMES[cat];
                           return (
                             <div
                               key={cat}
-                              className={`flex items-center gap-1.5 rounded border p-2 ${
-                                isHeld
-                                  ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
-                                  : "border-gray-800 bg-gray-800/20 text-gray-500"
+                              className={`flex items-center gap-1.5 rounded border p-2 transition-colors ${
+                                idx === 4 ? "col-span-2 sm:col-span-1" : ""
+                              } ${
+                                isHeld ? theme.heldClass : theme.unheldClass
                               }`}
                             >
                               {isHeld ? (
-                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                                <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${theme.checkColor}`} />
                               ) : (
                                 <XCircle className="h-3.5 w-3.5 shrink-0 text-gray-600" />
                               )}
-                              <span>{cat}</span>
+                              <span className="font-semibold">{cat}</span>
                             </div>
                           );
                         })}

@@ -66,9 +66,6 @@ export function WalletConnectCard() {
               <p className="mt-1 truncate font-mono text-xs text-gray-500">
                 {sessionAddress}
               </p>
-              {userId && (
-                <p className="mt-1 font-mono text-[11px] text-gray-600">user: {userId}</p>
-              )}
             </div>
             <Button variant="outline" className="w-full" onClick={() => void logout()}>
               Sign out

@@ -420,9 +420,7 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
       walletAddress: null,
       userId: null,
       logout: vi.fn(),
-      signIn: vi.fn(),
-      isSigningIn: false,
-      signInError: null,
+      login: vi.fn(),
     } as any);
 
     render(<WhitelistPage />);
@@ -433,7 +431,125 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
         /Connect your Web3 wallet via Sign in with Ethereum \(SIWE\) above to view your real-time Whitelist allocation status and trait checklist\./,
       ),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Connect Wallet" })).toBeInTheDocument();
     expect(screen.queryByPlaceholderText("0x... EVM wallet address")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Lookup" })).not.toBeInTheDocument();
+  });
+
+  // 10. Direct Authentication Button in Status Card: wallet-only vs signed-out
+  it("renders Sign In with Ethereum when status is wallet-only and triggers login on click", async () => {
+    const mockLogin = vi.fn();
+    vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+      status: "wallet-only",
+      sessionAddress: null,
+      walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
+      userId: null,
+      login: mockLogin,
+      logout: vi.fn(),
+    } as any);
+
+    render(<WhitelistPage />);
+
+    const signInBtn = screen.getByRole("button", { name: "Sign In with Ethereum" });
+    expect(signInBtn).toBeInTheDocument();
+    fireEvent.click(signInBtn);
+    expect(mockLogin).toHaveBeenCalledTimes(1);
+  });
+
+  // 11. Auth Error state and dismissal in Status Card
+  it("renders auth error and dismiss button when authError is present", async () => {
+    const mockDismiss = vi.fn();
+    vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+      status: "signed-out",
+      sessionAddress: null,
+      walletAddress: null,
+      userId: null,
+      error: "User rejected connection request.",
+      dismissError: mockDismiss,
+      login: vi.fn(),
+    } as any);
+
+    render(<WhitelistPage />);
+
+    expect(screen.getByText("User rejected connection request.")).toBeInTheDocument();
+    const dismissBtn = screen.getByRole("button", { name: "Dismiss" });
+    expect(dismissBtn).toBeInTheDocument();
+    fireEvent.click(dismissBtn);
+    expect(mockDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  // 12. Connect X on Profile link when X identity is required
+  it("renders Connect X on Profile button linking to /profile when X is not linked", async () => {
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+      configured: true,
+      program: defaultProgram,
+      address: "0x1111111111111111111111111111111111111111",
+      status: {
+        qualified: false,
+        isFullyQualified: false,
+        phase: "NONE",
+        missingRequirements: ["Linked X (Twitter) account required."],
+        details: {
+          hasVerifiedWallet: true,
+          hasLinkedX: false,
+          heldCategories: ["BG"],
+          missingCategories: ["FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"],
+          completedMandatoryTasksCount: 0,
+          totalMandatoryTasksCount: 2,
+          isBanned: false,
+        },
+      },
+    });
+
+    render(<WhitelistPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("X (Twitter) Identity")).toBeInTheDocument();
+    });
+
+    const connectXBtn = screen.getByRole("button", { name: /Connect X on Profile/i });
+    expect(connectXBtn).toBeInTheDocument();
+    const link = connectXBtn.closest("a");
+    expect(link).toHaveAttribute("href", "/profile");
+  });
+
+  // 13. GTD Allocation capacity label format and color-themed trait category checklist
+  it("renders GTD Allocation capacity label and trait category checklist with responsive grid classes", async () => {
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+      configured: true,
+      program: {
+        ...defaultProgram,
+        totalSlots: 1000,
+        allocatedSlotsCount: 450,
+      },
+      address: "0x1111111111111111111111111111111111111111",
+      status: {
+        qualified: false,
+        isFullyQualified: false,
+        phase: "NONE",
+        missingRequirements: [],
+        details: {
+          hasVerifiedWallet: true,
+          hasLinkedX: true,
+          heldCategories: ["BG", "FUR"],
+          missingCategories: ["CLOTHING", "HEADWEAR", "EYEWEAR"],
+          completedMandatoryTasksCount: 0,
+          totalMandatoryTasksCount: 2,
+          isBanned: false,
+        },
+      },
+    });
+
+    render(<WhitelistPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("GTD Allocation: 450 / 1,000 Slots")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("BG")).toBeInTheDocument();
+    expect(screen.getByText("FUR")).toBeInTheDocument();
+    expect(screen.getByText("CLOTHING")).toBeInTheDocument();
+    expect(screen.getByText("HEADWEAR")).toBeInTheDocument();
+    expect(screen.getByText("EYEWEAR")).toBeInTheDocument();
   });
 });
