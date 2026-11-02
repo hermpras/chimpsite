@@ -105,12 +105,21 @@ const RARITY_THEME: Record<
   },
 };
 
+const CATEGORY_BADGE_STYLES: Record<string, string> = {
+  BG: "border-sky-500/30 bg-sky-500/10 text-sky-400",
+  FUR: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+  CLOTHING: "border-violet-500/30 bg-violet-500/10 text-violet-400",
+  HEADWEAR: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+  EYEWEAR: "border-teal-500/30 bg-teal-500/10 text-teal-400",
+};
+
 export default function DropsPage() {
-  const { status } = useSiweAuth();
+  const { status, login, busyMessage } = useSiweAuth();
 
   // Drop status state
   const [dropData, setDropData] = useState<CurrentDropResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [claimLoading, setClaimLoading] = useState<boolean>(false);
   const [claimMessage, setClaimMessage] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
@@ -121,33 +130,54 @@ export default function DropsPage() {
 
   // Fetch current drop data
   const loadDropData = useCallback(async () => {
+    setIsLoading(true);
+    setFetchError(null);
     try {
       const data = await fetchCurrentDrop();
       setDropData(data);
-    } catch (err) {
+      setFetchError(null);
+      return data;
+    } catch (err: unknown) {
       console.error("Failed to load drop:", err);
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Failed to load drop data. Please try again.";
+      setFetchError(msg);
+      return null;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  // Fetch or re-fetch drop data on initial mount and whenever auth status changes
   useEffect(() => {
     let isMounted = true;
+    setIsLoading(true);
+    setFetchError(null);
     fetchCurrentDrop()
       .then((data) => {
         if (isMounted) {
           setDropData(data);
+          setFetchError(null);
           setIsLoading(false);
         }
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("Failed to load drop:", err);
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          const msg =
+            err instanceof Error
+              ? err.message
+              : "Failed to load drop data. Please try again.";
+          setFetchError(msg);
+          setIsLoading(false);
+        }
       });
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [status]);
 
   // Live 1-second ticker for real-time countdowns
   const currentTime = useCurrentTime();
@@ -162,7 +192,30 @@ export default function DropsPage() {
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   };
 
-  // Calculate live countdowns
+  // Helper to format timestamp with UTC and local timezone
+  const formatTimeWithUtc = (dateInput?: string | Date | number | null): string => {
+    if (!dateInput) return "";
+    try {
+      const d = new Date(dateInput);
+      if (isNaN(d.getTime())) return "";
+
+      const utcHours = String(d.getUTCHours()).padStart(2, "0");
+      const utcMinutes = String(d.getUTCMinutes()).padStart(2, "0");
+      const utcStr = `${utcHours}:${utcMinutes} UTC`;
+
+      const localStr = d.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short",
+      });
+
+      return `${utcStr} (${localStr})`;
+    } catch {
+      return "";
+    }
+  };
+
+  // Calculate live countdowns & window status
   const claimWindowEndsMs = dropData?.claimWindow?.endsAt
     ? new Date(dropData.claimWindow.endsAt).getTime()
     : 0;
@@ -172,11 +225,16 @@ export default function DropsPage() {
       ? new Date(dropData.nextCycle.startsAt).getTime()
       : 0;
 
-  const isWindowActive = Boolean(
-    dropData?.claimWindow?.isActive && claimWindowEndsMs > currentTime
-  );
+  // Server isActive flag is the single source of truth for claim window status
+  const isWindowActive = Boolean(dropData?.claimWindow?.isActive);
   const claimRemainingMs = Math.max(0, claimWindowEndsMs - currentTime);
   const nextDropRemainingMs = Math.max(0, periodEndsMs - currentTime);
+
+  // Period stock status
+  const isStockExhausted = Boolean(
+    dropData?.stock?.isExhausted ||
+    (dropData?.stock && dropData.stock.totalRemaining <= 0)
+  );
 
   // Reset claim feedback & state whenever drop period rolls over
   useEffect(() => {
@@ -194,15 +252,21 @@ export default function DropsPage() {
     Boolean(claimedPeriodId && claimedPeriodId === dropData?.period?.id) ||
     Boolean(claimMessage && claimedPeriodId === dropData?.period?.id);
 
-  // Auto-refresh when a timer reaches 0
+  // Auto-refresh when a timer reaches 0 (throttled to avoid rapid repeated requests)
+  const lastAutoRefreshRef = React.useRef<number>(0);
   useEffect(() => {
     if (!dropData?.active) return;
-    if (isWindowActive && claimRemainingMs === 0) {
+    const now = Date.now();
+    if (now - lastAutoRefreshRef.current < 5000) return;
+
+    if (isWindowActive && claimRemainingMs === 0 && claimWindowEndsMs > 0) {
+      lastAutoRefreshRef.current = now;
       loadDropData();
     } else if (!isWindowActive && nextDropRemainingMs === 0 && periodEndsMs > 0) {
+      lastAutoRefreshRef.current = now;
       loadDropData();
     }
-  }, [claimRemainingMs, nextDropRemainingMs, isWindowActive, dropData?.active, periodEndsMs, loadDropData]);
+  }, [claimRemainingMs, nextDropRemainingMs, isWindowActive, dropData?.active, claimWindowEndsMs, periodEndsMs, loadDropData]);
 
   async function handleClaim() {
     if (!dropData?.drop || !dropData?.period) return;
@@ -320,10 +384,55 @@ export default function DropsPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {fetchError && dropData && (
+              <div
+                role="alert"
+                className="flex flex-col gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 sm:flex-row sm:items-center sm:justify-between text-xs text-rose-300"
+              >
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                  <span>{fetchError}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void loadDropData()}
+                  disabled={isLoading}
+                  className="border-rose-500/40 text-xs text-rose-300 hover:bg-rose-500/20 shrink-0"
+                >
+                  <RefreshCw className={`mr-1.5 h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
+                  Try Again
+                </Button>
+              </div>
+            )}
+
             {isLoading && !dropData ? (
               <div className="py-12 text-center text-sm text-gray-400">
                 <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-emerald-400" />
                 Loading drop event and stock data...
+              </div>
+            ) : fetchError && !dropData ? (
+              <div
+                role="alert"
+                className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-8 text-center"
+              >
+                <AlertCircle className="mx-auto mb-3 h-8 w-8 text-rose-400" />
+                <h3 className="text-base font-bold text-white">Failed to Load Drop Event</h3>
+                <p className="mt-1 text-sm text-rose-300">
+                  {fetchError}
+                </p>
+                <div className="mt-5">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => void loadDropData()}
+                    disabled={isLoading}
+                    className="gap-2 font-semibold"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                    Try Again
+                  </Button>
+                </div>
               </div>
             ) : dropData?.active && dropData.period ? (
               <div className="space-y-6">
@@ -381,13 +490,14 @@ export default function DropsPage() {
                         ? `${formatRemaining(claimRemainingMs)} left`
                         : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
                     </p>
+                    {isWindowActive && dropData.claimWindow?.endsAt && (
+                      <span className="mt-1 block text-[11px] text-gray-400">
+                        Closes at {formatTimeWithUtc(dropData.claimWindow.endsAt)}
+                      </span>
+                    )}
                     {!isWindowActive && periodEndsMs > 0 && (
-                      <span className="mt-1 block text-[11px] text-gray-500">
-                        Cycle starts at{" "}
-                        {new Date(periodEndsMs).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                      <span className="mt-1 block text-[11px] text-gray-400">
+                        Cycle starts at {formatTimeWithUtc(periodEndsMs)}
                       </span>
                     )}
                   </div>
@@ -406,40 +516,88 @@ export default function DropsPage() {
                     </div>
 
                     <div className="shrink-0">
-                      <Button
-                        variant={isAlreadyClaimed ? "outline" : "primary"}
-                        size="lg"
-                        className={`w-full font-semibold sm:w-auto ${
-                          isAlreadyClaimed
-                            ? "border-gray-800 bg-gray-900/60 text-gray-400 opacity-60 cursor-not-allowed hover:bg-gray-900/60"
-                            : ""
-                        }`}
-                        onClick={handleClaim}
-                        disabled={
-                          !isWindowActive ||
-                          claimLoading ||
-                          status !== "authenticated" ||
-                          isAlreadyClaimed
-                        }
-                      >
-                        {claimLoading ? (
+                      {claimLoading ? (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          className="w-full font-semibold sm:w-auto"
+                          disabled
+                        >
                           <span className="flex items-center gap-2">
                             <RefreshCw className="h-4 w-4 animate-spin" />
                             Claiming...
                           </span>
-                        ) : status !== "authenticated" ? (
-                          "Sign In to Claim"
-                        ) : isAlreadyClaimed ? (
+                        </Button>
+                      ) : status === "signing" ? (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          className="w-full font-semibold sm:w-auto"
+                          disabled
+                        >
+                          <span className="flex items-center gap-2">
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            {busyMessage || "Authenticating..."}
+                          </span>
+                        </Button>
+                      ) : status === "wallet-only" ? (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          className="w-full font-semibold sm:w-auto"
+                          onClick={() => void login()}
+                        >
+                          Sign In with Ethereum
+                        </Button>
+                      ) : status !== "authenticated" ? (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          className="w-full font-semibold sm:w-auto"
+                          onClick={() => void login()}
+                        >
+                          Connect Wallet
+                        </Button>
+                      ) : isAlreadyClaimed ? (
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="w-full font-semibold sm:w-auto border-gray-800 bg-gray-900/60 text-gray-400 opacity-60 cursor-not-allowed hover:bg-gray-900/60"
+                          disabled
+                        >
                           <span className="flex items-center gap-1.5">
                             <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                             Claimed for Period #{dropData.period.periodIndex} (1/1)
                           </span>
-                        ) : isWindowActive ? (
-                          `Claim Trait Now (${formatRemaining(claimRemainingMs)})`
-                        ) : (
-                          `Next Drop in ${formatRemaining(nextDropRemainingMs)}`
-                        )}
-                      </Button>
+                        </Button>
+                      ) : isStockExhausted ? (
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="w-full font-semibold sm:w-auto border-gray-800 bg-gray-900/60 text-gray-400 opacity-60 cursor-not-allowed hover:bg-gray-900/60"
+                          disabled
+                        >
+                          Period Stock Exhausted
+                        </Button>
+                      ) : isWindowActive ? (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          className="w-full font-semibold sm:w-auto"
+                          onClick={handleClaim}
+                        >
+                          Claim Trait Now ({formatRemaining(claimRemainingMs)})
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="w-full font-semibold sm:w-auto border-gray-800 bg-gray-900/60 text-gray-400 opacity-60 cursor-not-allowed"
+                          disabled
+                        >
+                          Next Drop in {formatRemaining(nextDropRemainingMs)}
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -466,54 +624,58 @@ export default function DropsPage() {
                 </div>
 
                 {/* Trait Inventory Pool */}
-                {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 && (
-                  <div className="space-y-4 pt-2">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <h3 className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-white uppercase">
-                          <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-                          Drop Pool Inventory ({dropData.stock.poolItems.length} Available Traits)
-                        </h3>
-                        <p className="text-[11px] text-gray-400">
-                          Real-time trait stock and distribution directly from drop service
-                        </p>
-                      </div>
-
-                      {dropData.stock && (
-                        <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-[11px] font-mono">
-                          <span className="text-gray-400">Pool Stock:</span>
-                          <span className="font-bold text-emerald-400">
-                            {dropData.stock.totalRemaining} / {dropData.stock.totalAllocated}
-                          </span>
-                          <div className="ml-1 h-1.5 w-16 overflow-hidden rounded-full border border-gray-800 bg-gray-950">
-                            <div
-                              className="h-full bg-emerald-400 transition-all duration-500"
-                              style={{
-                                width: `${Math.min(
-                                  100,
-                                  Math.round(
-                                    (dropData.stock.totalRemaining /
-                                      Math.max(1, dropData.stock.totalAllocated)) *
-                                      100
-                                  )
-                                )}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
+                <div className="space-y-4 pt-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-white uppercase">
+                        <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+                        Drop Pool Inventory ({dropData.stock?.poolItems?.length ?? 0} Available Traits)
+                      </h3>
+                      <p className="text-[11px] text-gray-400">
+                        Real-time trait stock and distribution directly from drop service
+                      </p>
                     </div>
 
-                    {/* Trait Card Grid */}
+                    {dropData.stock && (
+                      <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-[11px] font-mono">
+                        <span className="text-gray-400">Pool Stock:</span>
+                        <span className="font-bold text-emerald-400">
+                          {dropData.stock.totalRemaining} / {dropData.stock.totalAllocated}
+                        </span>
+                        <div className="ml-1 h-1.5 w-16 overflow-hidden rounded-full border border-gray-800 bg-gray-950">
+                          <div
+                            className="h-full bg-emerald-400 transition-all duration-500"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                Math.round(
+                                  ((dropData.stock.totalRemaining ?? 0) /
+                                    Math.max(1, dropData.stock.totalAllocated ?? 1)) *
+                                    100
+                                )
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 ? (
+                    /* Trait Card Grid */
                     <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                       {dropData.stock.poolItems.map((item) => {
                         const rarity = item.rarity?.toUpperCase() || "COMMON";
                         const theme = RARITY_THEME[rarity] || RARITY_THEME.COMMON;
+                        const categoryStyle =
+                          CATEGORY_BADGE_STYLES[item.category?.toUpperCase()] ||
+                          "border-gray-800 bg-gray-900/80 text-gray-400";
+                        const isSoldOut = item.remainingStock <= 0;
 
                         return (
                           <div
                             key={item.poolItemId}
-                            className={`group relative flex flex-col justify-between rounded-xl border p-2.5 transition-all hover:scale-[1.01] ${theme.border} ${theme.bg} ${theme.glow}`}
+                            className={`group relative flex flex-col justify-between rounded-xl border p-2.5 transition-all hover:scale-[1.01] ${theme.border} ${theme.bg} ${theme.glow} ${isSoldOut ? "opacity-75" : ""}`}
                           >
                             <div className="flex items-center gap-2.5">
                               {/* Trait Thumbnail Preview */}
@@ -550,8 +712,10 @@ export default function DropsPage() {
                                 >
                                   {item.traitName}
                                 </p>
-                                <div className="mt-0.5 flex items-center gap-1.5">
-                                  <span className="rounded border border-gray-800 bg-gray-900/80 px-1.5 py-0.5 text-[8px] font-mono uppercase text-gray-400">
+                                <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                                  <span
+                                    className={`rounded border px-1.5 py-0.5 text-[8px] font-mono uppercase font-semibold ${categoryStyle}`}
+                                  >
                                     {item.category}
                                   </span>
                                   <span
@@ -560,6 +724,14 @@ export default function DropsPage() {
                                     {theme.prefix}
                                     {rarity}
                                   </span>
+                                  {isSoldOut && (
+                                    <span
+                                      data-testid="badge-sold-out"
+                                      className="rounded border border-rose-500/40 bg-rose-500/20 px-1.5 py-0.5 text-[8px] font-bold uppercase text-rose-300"
+                                    >
+                                      Sold Out
+                                    </span>
+                                  )}
                                 </div>
                               </div>
 
@@ -585,7 +757,7 @@ export default function DropsPage() {
                                 )
                               );
                               const isLowStock =
-                                item.remainingStock > 0 &&
+                                !isSoldOut &&
                                 (stockPercent <= 20 || item.remainingStock <= 2);
 
                               return (
@@ -597,20 +769,24 @@ export default function DropsPage() {
                                       )}
                                       <span
                                         className={
-                                          isLowStock
+                                          isSoldOut
                                             ? "font-bold text-rose-400"
-                                            : "text-gray-400"
+                                            : isLowStock
+                                              ? "font-bold text-rose-400"
+                                              : "text-gray-400"
                                         }
                                       >
-                                        {isLowStock ? "Low Stock" : "Stock"}
+                                        {isSoldOut ? "Sold Out" : isLowStock ? "Low Stock" : "Stock"}
                                       </span>
                                     </span>
                                     <span className="text-gray-400">
                                       <span
                                         className={`font-semibold ${
-                                          isLowStock
-                                            ? "text-rose-300"
-                                            : "text-gray-200"
+                                          isSoldOut
+                                            ? "text-rose-400"
+                                            : isLowStock
+                                              ? "text-rose-300"
+                                              : "text-gray-200"
                                         }`}
                                       >
                                         {item.remainingStock}
@@ -623,9 +799,11 @@ export default function DropsPage() {
                                   <div className="h-1.5 w-full overflow-hidden rounded-full border border-gray-800/80 bg-gray-950/80">
                                     <div
                                       className={`h-full rounded-full transition-all duration-500 ${
-                                        isLowStock
-                                          ? "bg-gradient-to-r from-rose-500 to-amber-500"
-                                          : theme.barColor
+                                        isSoldOut
+                                          ? "bg-rose-500/40"
+                                          : isLowStock
+                                            ? "bg-gradient-to-r from-rose-500 to-amber-500"
+                                            : theme.barColor
                                       }`}
                                       style={{ width: `${stockPercent}%` }}
                                     />
@@ -637,8 +815,21 @@ export default function DropsPage() {
                         );
                       })}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div
+                      data-testid="empty-drop-pool"
+                      className="rounded-xl border border-dashed border-gray-800 bg-gray-900/30 p-8 text-center"
+                    >
+                      <Sparkles className="mx-auto mb-2 h-6 w-6 text-gray-500" />
+                      <p className="text-sm font-semibold text-gray-300">
+                        No traits currently available in this drop pool
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        This drop period does not have any items allocated in its pool yet or stock is being prepared for the upcoming cycle.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-gray-400">

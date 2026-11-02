@@ -172,4 +172,23 @@ describe("ClaimLootboxModal Component", () => {
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
+
+  it("supports scrollability on short viewports with overflow classes", () => {
+    render(
+      <ClaimLootboxModal
+        isOpen={true}
+        onClose={() => {}}
+        claimedItem={MOCK_WON_ITEM}
+        isLoading={false}
+      />,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveClass("overflow-y-auto");
+
+    // Modal container inside dialog
+    const modalContainer = dialog.querySelector(".max-h-\\[90vh\\]");
+    expect(modalContainer).toBeInTheDocument();
+    expect(modalContainer).toHaveClass("overflow-y-auto");
+  });
 });

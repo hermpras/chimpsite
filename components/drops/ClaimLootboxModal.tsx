@@ -301,7 +301,7 @@ export function ClaimLootboxModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="lootbox-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
     >
       {/* Dynamic Keyframe & Particle Styles */}
       <style>{`
@@ -379,7 +379,7 @@ export function ClaimLootboxModal({
       </div>
 
       {/* Main Container */}
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-gray-800 bg-[#090b12] p-6 text-center shadow-2xl">
+      <div className="relative my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-800 bg-[#090b12] p-6 text-center shadow-2xl">
         {/* ===================== PHASE 1: ROLLING ===================== */}
         {phase === "ROLLING" && (
           <div className="flex flex-col items-center py-4">

@@ -220,7 +220,8 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
   });
 
   describe("3. Authentication Guard", () => {
-    it("shows 'Sign In to Claim' when user is unauthenticated", async () => {
+    it("shows actionable 'Connect Wallet' button when user is signed-out and calls login on click", async () => {
+      const mockLogin = vi.fn();
       vi.mocked(siweHook.useSiweAuth).mockReturnValue({
         status: "signed-out",
         sessionAddress: null,
@@ -228,6 +229,59 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         userId: null,
         error: null,
         busyMessage: null,
+        login: mockLogin,
+        logout: vi.fn(),
+        dismissError: vi.fn(),
+      });
+
+      render(<DropsPage />);
+
+      let connectBtn: HTMLElement | null = null;
+      await waitFor(() => {
+        connectBtn = screen.getByRole("button", { name: /Connect Wallet/i });
+        expect(connectBtn).toBeInTheDocument();
+        expect(connectBtn).not.toBeDisabled();
+      });
+
+      fireEvent.click(connectBtn!);
+      expect(mockLogin).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows actionable 'Sign In with Ethereum' button when status is wallet-only and calls login on click", async () => {
+      const mockLogin = vi.fn();
+      vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+        status: "wallet-only",
+        sessionAddress: null,
+        walletAddress: "0x1111111111111111111111111111111111111111",
+        userId: null,
+        error: null,
+        busyMessage: null,
+        login: mockLogin,
+        logout: vi.fn(),
+        dismissError: vi.fn(),
+      });
+
+      render(<DropsPage />);
+
+      let siweBtn: HTMLElement | null = null;
+      await waitFor(() => {
+        siweBtn = screen.getByRole("button", { name: /Sign In with Ethereum/i });
+        expect(siweBtn).toBeInTheDocument();
+        expect(siweBtn).not.toBeDisabled();
+      });
+
+      fireEvent.click(siweBtn!);
+      expect(mockLogin).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows loading state when status is signing", async () => {
+      vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+        status: "signing",
+        sessionAddress: null,
+        walletAddress: "0x1111111111111111111111111111111111111111",
+        userId: null,
+        error: null,
+        busyMessage: "Waiting for signature…",
         login: vi.fn(),
         logout: vi.fn(),
         dismissError: vi.fn(),
@@ -236,9 +290,9 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       render(<DropsPage />);
 
       await waitFor(() => {
-        const claimBtn = screen.getByRole("button", { name: /Sign In to Claim/i });
-        expect(claimBtn).toBeInTheDocument();
-        expect(claimBtn).toBeDisabled();
+        const signingBtn = screen.getByRole("button", { name: /Waiting for signature…/i });
+        expect(signingBtn).toBeInTheDocument();
+        expect(signingBtn).toBeDisabled();
       });
     });
   });
@@ -366,6 +420,318 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
           )
         ).toBeInTheDocument();
       });
+    });
+  });
+
+  describe("9. Period Stock Exhausted State", () => {
+    it("disables claim button and shows 'Period Stock Exhausted' when total remaining stock is 0", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
+        ...mockActiveDrop,
+        stock: {
+          totalAllocated: 200,
+          totalRemaining: 0,
+          isExhausted: true,
+          poolItems: [],
+        },
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        const exhaustedBtn = screen.getByRole("button", {
+          name: /Period Stock Exhausted/i,
+        });
+        expect(exhaustedBtn).toBeInTheDocument();
+        expect(exhaustedBtn).toBeDisabled();
+      });
+    });
+  });
+
+  describe("10. Time Formatting with UTC & Local Timezone", () => {
+    it("displays closing time with UTC in metric card when claim window is active", async () => {
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Closes at.*UTC/i)).toBeInTheDocument();
+      });
+    });
+
+    it("displays cycle start time with UTC in metric card when claim window is closed", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
+        ...mockActiveDrop,
+        claimWindow: {
+          isActive: false,
+          startsAt: pastDate,
+          endsAt: pastDate,
+          timeRemainingMs: 0,
+        },
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Cycle starts at.*UTC/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("11. Auth Status Reactive Sync", () => {
+    it("re-fetches drop data when auth status transitions to authenticated", async () => {
+      vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+        status: "signed-out",
+        sessionAddress: null,
+        walletAddress: null,
+        userId: null,
+        error: null,
+        busyMessage: null,
+        login: vi.fn(),
+        logout: vi.fn(),
+        dismissError: vi.fn(),
+      });
+
+      const { rerender } = render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+      });
+
+      // User connects and authenticates
+      vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+        status: "authenticated",
+        sessionAddress: "0x1111111111111111111111111111111111111111",
+        walletAddress: "0x1111111111111111111111111111111111111111",
+        userId: "user-1",
+        error: null,
+        busyMessage: null,
+        login: vi.fn(),
+        logout: vi.fn(),
+        dismissError: vi.fn(),
+      });
+
+      rerender(<DropsPage />);
+
+      await waitFor(() => {
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+      });
+    });
+  });
+
+  describe("12. Slice 2: Error State API & Recovery", () => {
+    it("renders clear error state and Try Again button when fetch fails on initial mount", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockRejectedValueOnce(
+        new Error("Network connection lost. Failed to contact drop service.")
+      );
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to Load Drop Event")).toBeInTheDocument();
+      });
+
+      expect(
+        screen.getByText("Network connection lost. Failed to contact drop service.")
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Try Again/i })).toBeInTheDocument();
+      expect(
+        screen.queryByText(/No active drop event currently in progress/i)
+      ).not.toBeInTheDocument();
+    });
+
+    it("retries fetch and recovers when user clicks Try Again", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop)
+        .mockRejectedValueOnce(new Error("500 Internal Server Error"))
+        .mockResolvedValueOnce(mockActiveDrop);
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to Load Drop Event")).toBeInTheDocument();
+      });
+
+      const tryAgainButton = screen.getByRole("button", { name: /Try Again/i });
+      fireEvent.click(tryAgainButton);
+
+      await waitFor(() => {
+        expect(screen.getByText("#1")).toBeInTheDocument();
+        expect(screen.getByText("Golden Katana")).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText("Failed to Load Drop Event")).not.toBeInTheDocument();
+    });
+
+    it("does not display 'No active drop' message when an error occurred", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockRejectedValueOnce(
+        new Error("API rate limit exceeded")
+      );
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to Load Drop Event")).toBeInTheDocument();
+      });
+
+      expect(
+        screen.queryByText(/No active drop event currently in progress/i)
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders error banner with Try Again when manual refresh fails after successful initial load", async () => {
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Golden Katana")).toBeInTheDocument();
+      });
+
+      // Subsequent refresh fails
+      vi.mocked(dropsClient.fetchCurrentDrop).mockRejectedValueOnce(
+        new Error("Temporary service disruption")
+      );
+
+      const refreshBtn = screen.getByTitle("Refresh Drop Status");
+      fireEvent.click(refreshBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText("Temporary service disruption")).toBeInTheDocument();
+      });
+
+      // Existing content remains visible
+      expect(screen.getByText("Golden Katana")).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: /Try Again/i }).length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe("13. Slice 2: Drop Pool Empty State", () => {
+    it("renders informative empty state when active drop has no pool items without hiding pool section", async () => {
+      const dropWithoutPool: dropsClient.CurrentDropResponse = {
+        ...mockActiveDrop,
+        stock: {
+          totalAllocated: 0,
+          totalRemaining: 0,
+          isExhausted: true,
+          poolItems: [],
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValueOnce(dropWithoutPool);
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Drop Pool Inventory \(0 Available Traits\)/i)).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId("empty-drop-pool")).toBeInTheDocument();
+      expect(
+        screen.getByText("No traits currently available in this drop pool")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/This drop period does not have any items allocated in its pool yet/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("14. Slice 2: Category Palette Consistency & Sold Out Badge", () => {
+    it("applies category color palette for BG, FUR, CLOTHING, HEADWEAR, EYEWEAR", async () => {
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Golden Katana")).toBeInTheDocument();
+      });
+
+      // Category text elements with their respective styles
+      const bgBadge = screen.getByText("BG");
+      expect(bgBadge.className).toContain("text-sky-400");
+
+      const furBadge = screen.getByText("FUR");
+      expect(furBadge.className).toContain("text-amber-400");
+
+      const clothingBadge = screen.getByText("CLOTHING");
+      expect(clothingBadge.className).toContain("text-violet-400");
+
+      const headwearBadge = screen.getByText("HEADWEAR");
+      expect(headwearBadge.className).toContain("text-emerald-400");
+
+      const eyewearBadge = screen.getByText("EYEWEAR");
+      expect(eyewearBadge.className).toContain("text-teal-400");
+    });
+
+    it("displays 'Sold Out' badge when an item has remaining stock of 0", async () => {
+      const dropWithSoldOutItem: dropsClient.CurrentDropResponse = {
+        ...mockActiveDrop,
+        stock: {
+          totalAllocated: 200,
+          totalRemaining: 150,
+          isExhausted: false,
+          poolItems: [
+            {
+              poolItemId: "pool-item-sold-out",
+              traitId: "trait-katana-sold-out",
+              traitName: "Ancient Katana",
+              category: "CLOTHING",
+              rarity: "LEGENDARY",
+              imageUrl: "/images/katana.png",
+              remainingStock: 0, // SOLD OUT
+              allocatedStock: 10,
+              weight: 10,
+              probabilityPercent: 5.0,
+            },
+            {
+              poolItemId: "pool-item-available",
+              traitId: "trait-helmet",
+              traitName: "Cyber Helmet",
+              category: "HEADWEAR",
+              rarity: "EPIC",
+              imageUrl: "/images/helmet.png",
+              remainingStock: 15, // IN STOCK
+              allocatedStock: 30,
+              weight: 20,
+              probabilityPercent: 15.0,
+            },
+          ],
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValueOnce(dropWithSoldOutItem);
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Ancient Katana")).toBeInTheDocument();
+      });
+
+      // Exactly 1 sold-out badge
+      const soldOutBadges = screen.getAllByTestId("badge-sold-out");
+      expect(soldOutBadges).toHaveLength(1);
+      expect(soldOutBadges[0]).toHaveTextContent("Sold Out");
+
+      // Cyber Helmet should not have a sold out badge
+      expect(screen.getByText("Cyber Helmet")).toBeInTheDocument();
+      expect(screen.getByText("Ancient Katana").closest(".group")?.querySelector('[data-testid="badge-sold-out"]')).toBeInTheDocument();
+      expect(screen.getByText("Cyber Helmet").closest(".group")?.querySelector('[data-testid="badge-sold-out"]')).toBeNull();
+    });
+  });
+
+  describe("15. Slice 2: Responsive Visual QA Layout Structure", () => {
+    it("renders responsive mobile & desktop container classes correctly across all drop sections", async () => {
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Golden Katana")).toBeInTheDocument();
+      });
+
+      // Hero banner has flex-col for mobile and sm:flex-row for desktop
+      const heroContainer = screen.getByText("Trait Drops & Lootbox Engine").closest(".flex-col");
+      expect(heroContainer?.className).toContain("sm:flex-row");
+
+      // Metrics grid is 1 column on mobile and 3 columns on desktop
+      const metricsGrid = screen.getByText("Period Cycle").closest(".grid-cols-1");
+      expect(metricsGrid?.className).toContain("sm:grid-cols-3");
+
+      // Pool inventory grid is 1 col on mobile, 2 on sm, 3 on md, 4 on lg
+      const poolGrid = screen.getByText("Golden Katana").closest(".grid-cols-1");
+      expect(poolGrid?.className).toContain("sm:grid-cols-2");
+      expect(poolGrid?.className).toContain("md:grid-cols-3");
+      expect(poolGrid?.className).toContain("lg:grid-cols-4");
     });
   });
 });
