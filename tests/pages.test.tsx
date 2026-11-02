@@ -7,6 +7,7 @@ import DropsPage from "@/app/drops/page";
 import WhitelistPage from "@/app/whitelist/page";
 import ProfilePage from "@/app/profile/page";
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { Providers } from "@/components/providers";
 
 // Mock next/navigation
@@ -49,12 +50,29 @@ describe("Public Pages English Copy Rendering", () => {
     }
   });
 
-  it("renders DocsPage with English architecture information and roadmap", () => {
+  it("renders DocsPage with English community guide sections and terminology", () => {
     const { container } = render(<DocsPage />);
-    expect(screen.getByText("ChimpHood Documentation")).toBeInTheDocument();
-    expect(screen.getByText("Architecture & Tech Stack")).toBeInTheDocument();
-    expect(screen.getByText("Project Documentation")).toBeInTheDocument();
-    expect(screen.getByText("Development Roadmap")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "ChimpHood Community Guide" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "1. Trait Collection & Inventory" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "2. Drops & Lootbox" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "3. Gifts & Duplicate Sharing" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "4. Whitelist: GTD & FCFS" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "5. Campaign Tasks & Evidence Review" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "6. Wallet Security & Identity" }),
+    ).toBeInTheDocument();
 
     for (const pattern of INDONESIAN_UI_WORDS) {
       expect(container.textContent).not.toMatch(pattern);
@@ -102,6 +120,44 @@ describe("Public Pages English Copy Rendering", () => {
     // Clicking mobile link closes drawer
     fireEvent.click(dropsLinks[1]);
     expect(screen.getAllByRole("link", { name: "Drops" }).length).toBe(1);
+  });
+
+  it("renders Footer with branded logo link and aligned navigation matching Navbar", () => {
+    const { container } = render(<Footer />);
+
+    // Brand link to "/"
+    const brandLink = screen.getByRole("link", { name: /CHIMPHOOD/i });
+    expect(brandLink).toHaveAttribute("href", "/");
+    expect(brandLink.textContent).toContain("CHIMP");
+    expect(brandLink.textContent).toContain("HOOD");
+
+    // Footer navigation links in exact order
+    const footerNav = screen.getByRole("navigation", { name: "Footer navigation" });
+    const links = footerNav.querySelectorAll("a");
+    expect(links.length).toBe(5);
+
+    expect(links[0]).toHaveTextContent("Home");
+    expect(links[0]).toHaveAttribute("href", "/");
+
+    expect(links[1]).toHaveTextContent("Drops");
+    expect(links[1]).toHaveAttribute("href", "/drops");
+
+    expect(links[2]).toHaveTextContent("Whitelist");
+    expect(links[2]).toHaveAttribute("href", "/whitelist");
+
+    expect(links[3]).toHaveTextContent("Profile");
+    expect(links[3]).toHaveAttribute("href", "/profile");
+
+    expect(links[4]).toHaveTextContent("Docs");
+    expect(links[4]).toHaveAttribute("href", "/docs");
+
+    // Old scaffold text is gone
+    expect(screen.queryByText(/Foundation & Data Architecture/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Identity, Drops & Whitelist/i)).toBeInTheDocument();
+
+    for (const pattern of INDONESIAN_UI_WORDS) {
+      expect(container.textContent).not.toMatch(pattern);
+    }
   });
 
   it("renders WhitelistPage with English portal headings and campaigns", () => {
