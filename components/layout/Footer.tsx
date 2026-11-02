@@ -5,16 +5,26 @@ export function Footer() {
   return (
     <footer className="border-t border-gray-800 bg-[#07080c] py-8 text-sm text-gray-400">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
-        <div>
-          <p className="font-semibold text-gray-200">ChimpHood Site</p>
+        <div className="text-center sm:text-left">
+          <Link href="/" className="inline-block">
+            <span className="text-lg font-black tracking-tight text-emerald-400">
+              CHIMP<span className="text-gray-100">HOOD</span>
+            </span>
+          </Link>
           <p className="text-xs text-gray-500">
-            Web3 Collectible Ecosystem — Foundation & Data Architecture.
+            Web3 Collectible Ecosystem — Identity, Drops & Whitelist.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 text-xs text-gray-400">
+        <nav
+          aria-label="Footer navigation"
+          className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-400"
+        >
           <Link href="/" className="transition-colors hover:text-emerald-400">
             Home
+          </Link>
+          <Link href="/drops" className="transition-colors hover:text-emerald-400">
+            Drops
           </Link>
           <Link href="/whitelist" className="transition-colors hover:text-emerald-400">
             Whitelist
@@ -25,9 +35,9 @@ export function Footer() {
           <Link href="/docs" className="transition-colors hover:text-emerald-400">
             Docs
           </Link>
-        </div>
+        </nav>
 
-        <p className="text-xs text-gray-600">
+        <p className="text-center text-xs text-gray-600 sm:text-right">
           &copy; {new Date().getFullYear()} ChimpHood. All rights reserved.
         </p>
       </div>
