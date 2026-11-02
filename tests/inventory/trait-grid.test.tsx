@@ -80,18 +80,18 @@ describe("TraitGrid Component & Profile Inventory States", () => {
   });
 
   describe("TraitGrid", () => {
-    it("renders items with name, category, rarity, edition and locked badges", () => {
+    it("renders items with name, category, edition and locked badges without rarity badges", () => {
       render(<TraitGrid items={sampleItems} />);
 
       expect(screen.getByText("Diamond Grill")).toBeInTheDocument();
       expect(screen.getByText("FUR")).toBeInTheDocument();
-      expect(screen.getByText("LEGENDARY")).toBeInTheDocument();
+      expect(screen.queryByText("LEGENDARY")).not.toBeInTheDocument();
       expect(screen.getByText("#1")).toBeInTheDocument();
       expect(screen.getByText("Via claim")).toBeInTheDocument();
 
       expect(screen.getByText("Pilot Cap")).toBeInTheDocument();
       expect(screen.getByText("HEADWEAR")).toBeInTheDocument();
-      expect(screen.getByText("RARE")).toBeInTheDocument();
+      expect(screen.queryByText("RARE")).not.toBeInTheDocument();
       expect(screen.getByText("#3")).toBeInTheDocument();
       expect(screen.getByText("Via gift")).toBeInTheDocument();
 

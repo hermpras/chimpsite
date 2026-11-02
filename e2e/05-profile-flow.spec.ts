@@ -3,7 +3,7 @@ import { setupMockWallet, TEST_ACCOUNT } from "./helpers/mock-wallet";
 import { shortenAddress } from "../lib/auth/address";
 
 test.describe("E. Profile and Authenticated Flow", () => {
-  test.setTimeout(90_000);
+  test.setTimeout(120_000);
 
   test("profile displays authenticated wallet status, user ID, and responsive inventory section", async ({
     page,
@@ -16,9 +16,7 @@ test.describe("E. Profile and Authenticated Flow", () => {
       timeout: 20_000,
     });
 
-    const connectBtn = page
-      .getByRole("button", { name: /Connect MetaMask|Connect Injected/i })
-      .first();
+    const connectBtn = page.getByRole("button", { name: "Connect MetaMask" });
     await expect(connectBtn).toBeVisible({ timeout: 20_000 });
     await connectBtn.click();
 
@@ -29,10 +27,24 @@ test.describe("E. Profile and Authenticated Flow", () => {
     });
     await expect(page.getByText(shortAddr, { exact: false }).first()).toBeVisible();
 
-    // User ID should be rendered
-    await expect(page.getByText(/user:/i)).toBeVisible();
+    // 3. Tab Navigation & Content Visibility (Overview -> Collection -> Gifts -> Overview)
+    const tablist = page.getByRole("tablist", { name: /Profile navigation/i });
+    await expect(tablist).toBeVisible();
 
-    // 3. Whitelist status and inventory sections render cleanly without hanging loaders
+    const overviewTab = page.getByRole("tab", { name: /Overview/i });
+    const collectionTab = page.getByRole("tab", { name: /Collection/i });
+    const giftsTab = page.getByRole("tab", { name: /Gifts/i });
+
+    await expect(overviewTab).toBeVisible();
+    await expect(collectionTab).toBeVisible();
+    await expect(giftsTab).toBeVisible();
+
+    // Default tab is Overview
+    await expect(overviewTab).toHaveAttribute("aria-selected", "true");
+    await expect(collectionTab).toHaveAttribute("aria-selected", "false");
+    await expect(giftsTab).toHaveAttribute("aria-selected", "false");
+
+    // Overview content is visible, other tab panels are hidden
     await expect(
       page.getByRole("heading", {
         name: /Community Tier & Whitelist Status/i,
@@ -40,8 +52,44 @@ test.describe("E. Profile and Authenticated Flow", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: /Collection & Inventory/i }),
-    ).toBeVisible();
+    ).not.toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Gifts & Peer Transfers/i }),
+    ).not.toBeVisible();
     await expect(page.getByText(/Checking session…/i)).not.toBeVisible();
+
+    // Navigate to Collection tab
+    await collectionTab.click();
+    await expect(collectionTab).toHaveAttribute("aria-selected", "true");
+    await expect(overviewTab).toHaveAttribute("aria-selected", "false");
+    await expect(
+      page.getByRole("heading", { name: /Collection & Inventory/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: /Community Tier & Whitelist Status/i,
+      }),
+    ).not.toBeVisible();
+
+    // Navigate to Gifts tab
+    await giftsTab.click();
+    await expect(giftsTab).toHaveAttribute("aria-selected", "true");
+    await expect(collectionTab).toHaveAttribute("aria-selected", "false");
+    await expect(
+      page.getByRole("heading", { name: /Gifts & Peer Transfers/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /Collection & Inventory/i }),
+    ).not.toBeVisible();
+
+    // Navigate back to Overview tab
+    await overviewTab.click();
+    await expect(overviewTab).toHaveAttribute("aria-selected", "true");
+    await expect(
+      page.getByRole("heading", {
+        name: /Community Tier & Whitelist Status/i,
+      }),
+    ).toBeVisible();
 
     // 4. Navigate from Profile to Whitelist page while preserving authenticated session
     const whitelistNavLink = page

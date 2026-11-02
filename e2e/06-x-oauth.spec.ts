@@ -128,7 +128,7 @@ test.describe("F. X (Twitter) OAuth 2.0 PKCE End-to-End Flow", () => {
     ).toBeVisible();
 
     // 6. Verify profile card updates to connected status with username @e2e_tester
-    await expect(page.getByText("Status: Connected (@e2e_tester)")).toBeVisible({
+    await expect(page.getByText("Status: Connected")).toBeVisible({
       timeout: 20_000,
     });
     await expect(page.getByText("@e2e_tester").first()).toBeVisible();

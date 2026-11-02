@@ -12,6 +12,7 @@ import {
   Clock,
   AlertCircle,
   Info,
+  Gift,
 } from "lucide-react";
 import * as navigation from "next/navigation";
 
@@ -50,6 +51,42 @@ import { shortenAddress } from "@/lib/auth/address";
 import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
 
 const TRAIT_CATEGORIES = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
+
+const CATEGORY_THEMES: Record<
+  string,
+  { heldClass: string; unheldClass: string; checkColor: string; badgeClass: string }
+> = {
+  BG: {
+    heldClass: "border-sky-500/40 bg-sky-500/10 text-sky-300",
+    unheldClass: "border-gray-800 bg-gray-800/20 text-gray-500",
+    checkColor: "text-sky-400",
+    badgeClass: "border-sky-500/30 bg-sky-500/10 text-sky-400",
+  },
+  FUR: {
+    heldClass: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+    unheldClass: "border-gray-800 bg-gray-800/20 text-gray-500",
+    checkColor: "text-amber-400",
+    badgeClass: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+  },
+  CLOTHING: {
+    heldClass: "border-violet-500/40 bg-violet-500/10 text-violet-300",
+    unheldClass: "border-gray-800 bg-gray-800/20 text-gray-500",
+    checkColor: "text-violet-400",
+    badgeClass: "border-violet-500/30 bg-violet-500/10 text-violet-400",
+  },
+  HEADWEAR: {
+    heldClass: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+    unheldClass: "border-gray-800 bg-gray-800/20 text-gray-500",
+    checkColor: "text-emerald-400",
+    badgeClass: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+  },
+  EYEWEAR: {
+    heldClass: "border-teal-500/40 bg-teal-500/10 text-teal-300",
+    unheldClass: "border-gray-800 bg-gray-800/20 text-gray-500",
+    checkColor: "text-teal-400",
+    badgeClass: "border-teal-500/30 bg-teal-500/10 text-teal-400",
+  },
+};
 
 function getGtdReviewDetails(reviewStatus?: WLSlotReviewStatus) {
   switch (reviewStatus) {
@@ -176,10 +213,14 @@ function getNavigationSearchParams(): URLSearchParams | null {
   return null;
 }
 
+type ProfileTab = "overview" | "collection" | "gifts";
+
 function ProfileContent() {
   const searchParams = getNavigationSearchParams();
   const xLinked = searchParams?.get("x_linked");
   const xError = searchParams?.get("x_error") || searchParams?.get("error");
+
+  const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
 
   const { status, sessionAddress, walletAddress } = useSiweAuth();
   const address = sessionAddress || walletAddress;
@@ -420,13 +461,10 @@ function ProfileContent() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-white">User Profile</h1>
-            <Badge variant="default">Stage 3</Badge>
             {getWhitelistSummaryBadge(wlData?.status, status === "authenticated")}
           </div>
           <p className="text-sm text-gray-400">
-            {currentXUsername
-              ? `Connected via X (@${currentXUsername}) and Web3 Wallet.`
-              : "Integrated identity management for Web3 Wallets and X (Twitter) accounts."}
+            Integrated identity management for Web3 Wallets and X (Twitter) accounts.
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
             {address ? (
@@ -489,9 +527,77 @@ function ProfileContent() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Wallet Connection Section — live SIWE login (Stage 2) */}
-        <WalletConnectCard />
+      {/* Profile Tab Navigation */}
+      <div
+        role="tablist"
+        aria-label="Profile navigation"
+        className="mb-8 border-b border-gray-800"
+      >
+        <div className="flex gap-2 sm:gap-6 overflow-x-auto">
+          <button
+            type="button"
+            role="tab"
+            id="tab-overview"
+            aria-controls="panel-overview"
+            aria-selected={activeTab === "overview"}
+            tabIndex={activeTab === "overview" ? 0 : -1}
+            onClick={() => setActiveTab("overview")}
+            className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${
+              activeTab === "overview"
+                ? "border-emerald-400 text-emerald-400"
+                : "border-transparent text-gray-400 hover:border-gray-700 hover:text-gray-200"
+            }`}
+          >
+            <User className="h-4 w-4" />
+            <span>Overview</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-collection"
+            aria-controls="panel-collection"
+            aria-selected={activeTab === "collection"}
+            tabIndex={activeTab === "collection" ? 0 : -1}
+            onClick={() => setActiveTab("collection")}
+            className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${
+              activeTab === "collection"
+                ? "border-emerald-400 text-emerald-400"
+                : "border-transparent text-gray-400 hover:border-gray-700 hover:text-gray-200"
+            }`}
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Collection</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-gifts"
+            aria-controls="panel-gifts"
+            aria-selected={activeTab === "gifts"}
+            tabIndex={activeTab === "gifts" ? 0 : -1}
+            onClick={() => setActiveTab("gifts")}
+            className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${
+              activeTab === "gifts"
+                ? "border-emerald-400 text-emerald-400"
+                : "border-transparent text-gray-400 hover:border-gray-700 hover:text-gray-200"
+            }`}
+          >
+            <Gift className="h-4 w-4" />
+            <span>Gifts</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 1. Overview Tab Panel */}
+      <div
+        role="tabpanel"
+        id="panel-overview"
+        aria-labelledby="tab-overview"
+        className={activeTab === "overview" ? "block" : "hidden"}
+      >
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {/* Wallet Connection Section — live SIWE login (Stage 2) */}
+          <WalletConnectCard />
 
         {/* X (Twitter) Account Section */}
         <Card>
@@ -531,7 +637,7 @@ function ProfileContent() {
                   )}
                   <div className="text-left">
                     <p className="text-sm font-semibold text-white">
-                      Status: Connected (@{currentXUsername})
+                      Status: Connected
                     </p>
                     <p className="mt-0.5 text-xs text-sky-400">
                       @{currentXUsername}
@@ -554,7 +660,7 @@ function ProfileContent() {
             <Button
               variant={isXConnected ? "outline" : "primary"}
               className="w-full"
-              disabled={isLinking || isXConnected}
+              disabled={isLinking || isXConnected || status !== "authenticated"}
               onClick={handleLinkX}
             >
               {isLinking
@@ -563,6 +669,11 @@ function ProfileContent() {
                   ? "X Account Connected"
                   : "Link X Account"}
             </Button>
+            {status !== "authenticated" && (
+              <p className="text-center text-xs text-gray-400">
+                Connect and authenticate your Web3 wallet first to enable X linking.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -634,7 +745,7 @@ function ProfileContent() {
                       className="space-y-3 rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-4"
                       data-testid="gtd-status-card"
                     >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-emerald-500/20 pb-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
@@ -656,7 +767,7 @@ function ProfileContent() {
                       </div>
 
                       {/* Review Status Indicator (DEC-015) */}
-                      <div className="flex flex-col gap-2 rounded-lg border border-gray-800 bg-gray-900/40 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="border-t border-emerald-500/20 pt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
@@ -800,18 +911,21 @@ function ProfileContent() {
                       <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
                         {TRAIT_CATEGORIES.map((cat) => {
                           const isHeld = heldCategoriesSet.has(cat);
+                          const theme = CATEGORY_THEMES[cat];
                           return (
                             <div
                               key={cat}
                               data-testid={`profile-trait-${cat.toLowerCase()}`}
                               className={`flex items-center gap-1.5 rounded border p-2 transition-colors ${
                                 isHeld
-                                  ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
-                                  : "border-gray-800 bg-gray-800/20 text-gray-500"
+                                  ? theme?.heldClass || "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
+                                  : theme?.unheldClass || "border-gray-800 bg-gray-800/20 text-gray-500"
                               }`}
                             >
                               {isHeld ? (
-                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                                <CheckCircle2
+                                  className={`h-3.5 w-3.5 shrink-0 ${theme?.checkColor || "text-emerald-400"}`}
+                                />
                               ) : (
                                 <XCircle className="h-3.5 w-3.5 shrink-0 text-gray-600" />
                               )}
@@ -878,9 +992,18 @@ function ProfileContent() {
             )}
           </CardContent>
         </Card>
+      </div>
+    </div>
 
-        {/* Collection & Inventory Overview */}
-        <Card className="md:col-span-2">
+    {/* 2. Collection Tab Panel */}
+    <div
+      role="tabpanel"
+      id="panel-collection"
+      aria-labelledby="tab-collection"
+      className={activeTab === "collection" ? "block" : "hidden"}
+    >
+      {/* Collection & Inventory Overview */}
+      <Card className="w-full">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -934,7 +1057,7 @@ function ProfileContent() {
               <div className="space-y-6">
                 {/* 5-Category Trait Collection Overview */}
                 <div
-                  className="rounded-lg border border-gray-800 bg-gray-950/60 p-4"
+                  className="space-y-3 pb-6 border-b border-gray-800"
                   data-testid="trait-collection-summary"
                 >
                   <div className="mb-3 flex items-center justify-between">
@@ -952,18 +1075,21 @@ function ProfileContent() {
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                     {TRAIT_CATEGORIES.map((category) => {
                       const isHeld = ownedCategories.has(category);
+                      const theme = CATEGORY_THEMES[category];
                       return (
                         <div
                           key={category}
                           data-testid={`collection-category-${category.toLowerCase()}`}
                           className={`flex items-center gap-2 rounded-lg border p-2.5 text-xs transition-colors ${
                             isHeld
-                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 shadow-sm"
+                              ? `${theme?.heldClass || "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"} shadow-sm`
                               : "border-gray-800 bg-gray-900/30 text-gray-500 opacity-60 grayscale"
                           }`}
                         >
                           {isHeld ? (
-                            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                            <CheckCircle2
+                              className={`h-4 w-4 shrink-0 ${theme?.checkColor || "text-emerald-400"}`}
+                            />
                           ) : (
                             <div className="h-4 w-4 shrink-0 rounded-full border border-gray-600 bg-gray-800" />
                           )}
@@ -971,6 +1097,12 @@ function ProfileContent() {
                         </div>
                       );
                     })}
+                  </div>
+                  <div className="mt-3 flex items-start gap-1.5 text-xs text-gray-400">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-500" />
+                    <p>
+                      Your avatar automatically equips the lowest edition trait in each category. Equipped traits cannot be transferred as gifts.
+                    </p>
                   </div>
                 </div>
 
@@ -980,7 +1112,7 @@ function ProfileContent() {
               <div data-testid="inventory-empty" className="space-y-6">
                 {/* 5-Category Trait Collection Overview */}
                 <div
-                  className="rounded-lg border border-gray-800 bg-gray-950/60 p-4"
+                  className="space-y-3 pb-6 border-b border-gray-800"
                   data-testid="trait-collection-summary"
                 >
                   <div className="mb-3 flex items-center justify-between">
@@ -1002,6 +1134,12 @@ function ProfileContent() {
                         <span className="font-semibold tracking-wide">{category}</span>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-3 flex items-start gap-1.5 text-xs text-gray-400">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-500" />
+                    <p>
+                      Your avatar automatically equips the lowest edition trait in each category. Equipped traits cannot be transferred as gifts.
+                    </p>
                   </div>
                 </div>
 
@@ -1040,9 +1178,16 @@ function ProfileContent() {
             )}
           </CardContent>
         </Card>
+      </div>
 
-        {/* Gifting & Peer Transfers Section (I-1) */}
-        {status === "authenticated" && (
+      {/* 3. Gifts Tab Panel */}
+      <div
+        role="tabpanel"
+        id="panel-gifts"
+        aria-labelledby="tab-gifts"
+        className={activeTab === "gifts" ? "block" : "hidden"}
+      >
+        {status === "authenticated" ? (
           <GiftsSection
             sentGifts={sentGifts}
             receivedGifts={receivedGifts}
@@ -1050,6 +1195,30 @@ function ProfileContent() {
             isWlAllocated={wlData?.status?.phase === "SLOT_ALLOCATED"}
             onRefresh={handleRefreshAll}
           />
+        ) : (
+          <Card className="w-full" data-testid="gifts-unauthenticated">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-teal-500/10 p-2 text-teal-400">
+                  <Gift className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle>Gifts & Peer Transfers</CardTitle>
+                  <CardDescription>
+                    Review incoming trait gifts and manage your outgoing transfers
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-5 text-center text-sm text-gray-400">
+                <p className="font-medium text-gray-300">Wallet Not Authenticated</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Connect and authenticate your Web3 wallet via Sign in with Ethereum (SIWE) above to view and manage trait gifts.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 

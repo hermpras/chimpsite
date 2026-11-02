@@ -13,6 +13,14 @@ interface GiftModalProps {
   onGiftSuccess: () => void;
 }
 
+const CATEGORY_BADGE_STYLES: Record<string, string> = {
+  BG: "border-sky-500/30 bg-sky-500/10 text-sky-400",
+  FUR: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+  CLOTHING: "border-violet-500/30 bg-violet-500/10 text-violet-400",
+  HEADWEAR: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+  EYEWEAR: "border-teal-500/30 bg-teal-500/10 text-teal-400",
+};
+
 export function GiftModal({
   isOpen,
   onClose,
@@ -229,15 +237,18 @@ export function GiftModal({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold tracking-wider text-gray-400 uppercase">
+              <span
+                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
+                  CATEGORY_BADGE_STYLES[item.trait.category] || "border-gray-700 bg-gray-800 text-gray-300"
+                }`}
+              >
                 {item.trait.category}
               </span>
               <span className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-[10px] text-gray-300">
                 #{item.edition}
               </span>
             </div>
-            <p className="truncate font-semibold text-white">{item.trait.name}</p>
-            <p className="text-xs text-gray-400">Rarity: {item.trait.rarity}</p>
+            <p className="mt-1 truncate font-semibold text-white">{item.trait.name}</p>
           </div>
         </div>
 

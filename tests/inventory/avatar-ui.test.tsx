@@ -365,12 +365,12 @@ describe("I-3: Avatar UI ChimpHood — Unit & Integration Test Suite", () => {
         expect(screen.getByTestId("trait-collection-summary")).toBeInTheDocument();
       });
 
-      // Owned categories: FUR and HEADWEAR should have colored styling
+      // Owned categories: FUR (amber) and HEADWEAR (emerald) should have category colored styling
       const furEl = screen.getByTestId("collection-category-fur");
       const headwearEl = screen.getByTestId("collection-category-headwear");
-      expect(furEl.className).toContain("border-emerald-500/30");
-      expect(furEl.className).toContain("text-emerald-300");
-      expect(headwearEl.className).toContain("border-emerald-500/30");
+      expect(furEl.className).toContain("border-amber-500/40");
+      expect(furEl.className).toContain("text-amber-300");
+      expect(headwearEl.className).toContain("border-emerald-500/40");
       expect(headwearEl.className).toContain("text-emerald-300");
 
       // Unowned categories: BG, CLOTHING, EYEWEAR should have grayscale styling

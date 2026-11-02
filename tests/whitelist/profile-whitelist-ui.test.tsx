@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import ProfilePage from "@/app/profile/page";
 import * as whitelistClient from "@/lib/whitelist/client";
 import * as inventoryClient from "@/lib/inventory/client";
@@ -470,5 +470,81 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     expect(content).not.toMatch(/Queue Rank/i);
     expect(content).not.toMatch(/auto-promot/i);
     expect(content).not.toMatch(/automatically promoted/i);
+  });
+
+  // 7. Profile Tab Navigation (Slice 2)
+  it("renders semantic tab navigation and toggles active panels while keeping all panels mounted", async () => {
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
+      configured: true,
+      address: MOCK_ADDRESS,
+      status: {
+        qualified: true,
+        isFullyQualified: true,
+        phase: "SLOT_ALLOCATED",
+        slotNumber: 1,
+        reviewStatus: "VALID",
+        missingRequirements: [],
+        details: {
+          hasVerifiedWallet: true,
+          hasLinkedX: true,
+          xUsername: "tab_tester",
+          heldCategories: ["BG"],
+          missingCategories: [],
+          completedMandatoryTasksCount: 1,
+          totalMandatoryTasksCount: 1,
+          isBanned: false,
+        },
+      },
+    });
+
+    render(
+      <Providers>
+        <ProfilePage />
+      </Providers>,
+    );
+
+    // Verify tablist and 3 tabs exist
+    const tablist = screen.getByRole("tablist", { name: "Profile navigation" });
+    expect(tablist).toBeInTheDocument();
+
+    const overviewTab = screen.getByRole("tab", { name: /Overview/i });
+    const collectionTab = screen.getByRole("tab", { name: /Collection/i });
+    const giftsTab = screen.getByRole("tab", { name: /Gifts/i });
+
+    expect(overviewTab).toHaveAttribute("aria-selected", "true");
+    expect(collectionTab).toHaveAttribute("aria-selected", "false");
+    expect(giftsTab).toHaveAttribute("aria-selected", "false");
+
+    // Overview panel is active (not hidden)
+    const overviewPanel = screen.getByRole("tabpanel", { name: /Overview/i });
+    const collectionPanel = screen.getByRole("tabpanel", { name: /Collection/i });
+    const giftsPanel = screen.getByRole("tabpanel", { name: /Gifts/i });
+
+    expect(overviewPanel).toHaveClass("block");
+    expect(collectionPanel).toHaveClass("hidden");
+    expect(giftsPanel).toHaveClass("hidden");
+
+    // Click Collection tab
+    fireEvent.click(collectionTab);
+    expect(collectionTab).toHaveAttribute("aria-selected", "true");
+    expect(overviewTab).toHaveAttribute("aria-selected", "false");
+    expect(collectionPanel).toHaveClass("block");
+    expect(overviewPanel).toHaveClass("hidden");
+    expect(giftsPanel).toHaveClass("hidden");
+
+    // Click Gifts tab
+    fireEvent.click(giftsTab);
+    expect(giftsTab).toHaveAttribute("aria-selected", "true");
+    expect(collectionTab).toHaveAttribute("aria-selected", "false");
+    expect(giftsPanel).toHaveClass("block");
+    expect(collectionPanel).toHaveClass("hidden");
+    expect(overviewPanel).toHaveClass("hidden");
+
+    // Click Overview tab to return
+    fireEvent.click(overviewTab);
+    expect(overviewTab).toHaveAttribute("aria-selected", "true");
+    expect(overviewPanel).toHaveClass("block");
+    expect(collectionPanel).toHaveClass("hidden");
+    expect(giftsPanel).toHaveClass("hidden");
   });
 });

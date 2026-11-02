@@ -8,12 +8,12 @@ interface TraitGridProps {
   onGiftItem?: (item: InventoryItemData) => void;
 }
 
-const RARITY_BADGE_STYLES: Record<string, string> = {
-  COMMON: "bg-gray-500/10 text-gray-400 border-gray-600/30",
-  UNCOMMON: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-  RARE: "bg-sky-500/10 text-sky-400 border-sky-500/30",
-  EPIC: "bg-purple-500/10 text-purple-400 border-purple-500/30",
-  LEGENDARY: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+const CATEGORY_BADGE_STYLES: Record<string, string> = {
+  BG: "border-sky-500/30 bg-sky-500/10 text-sky-400",
+  FUR: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+  CLOTHING: "border-violet-500/30 bg-violet-500/10 text-violet-400",
+  HEADWEAR: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+  EYEWEAR: "border-teal-500/30 bg-teal-500/10 text-teal-400",
 };
 
 export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
@@ -144,16 +144,13 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
             {/* Item Metadata */}
             <div className="flex flex-1 flex-col justify-between space-y-2 p-3.5">
               <div>
-                <div className="mb-1 flex items-center justify-between gap-1">
-                  <span className="text-[11px] font-semibold tracking-wider text-gray-400 uppercase">
-                    {item.trait.category}
-                  </span>
+                <div className="mb-1.5 flex items-center justify-between gap-1">
                   <span
-                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${
-                      RARITY_BADGE_STYLES[item.trait.rarity] || RARITY_BADGE_STYLES.COMMON
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
+                      CATEGORY_BADGE_STYLES[item.trait.category] || "border-gray-700 bg-gray-800 text-gray-300"
                     }`}
                   >
-                    {item.trait.rarity}
+                    {item.trait.category}
                   </span>
                 </div>
                 <h4 className="line-clamp-1 text-sm font-semibold text-white">

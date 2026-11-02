@@ -123,7 +123,7 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     ).toBeInTheDocument();
   });
 
-  it("requires wallet connection before initiating X OAuth linking", () => {
+  it("disables Link X button and guides user to authenticate wallet first when unauthenticated", () => {
     mockUseSiweAuth.mockReturnValue({
       status: "unauthenticated",
       sessionAddress: null,
@@ -137,10 +137,9 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     );
 
     const linkButton = screen.getByRole("button", { name: "Link X Account" });
-    fireEvent.click(linkButton);
-
+    expect(linkButton).toBeDisabled();
     expect(
-      screen.getByText("Please connect and authenticate your Web3 wallet first."),
+      screen.getByText("Connect and authenticate your Web3 wallet first to enable X linking."),
     ).toBeInTheDocument();
   });
 
@@ -231,7 +230,7 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     fetchSpy.mockRestore();
   });
 
-  it("displays connected state and disables link button when X account is linked", async () => {
+  it("displays connected state with non-duplicate username and neutral header description when X account is linked", async () => {
     mockUseSiweAuth.mockReturnValue({
       status: "authenticated",
       sessionAddress: "0x1234567890123456789012345678901234567890",
@@ -261,12 +260,87 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Status: Connected (@chimphood_og)")).toBeInTheDocument();
+      // Baris status must be "Status: Connected" without repeating username
+      expect(screen.getByText("Status: Connected")).toBeInTheDocument();
+      // Username is displayed once below it
       expect(screen.getByText("@chimphood_og")).toBeInTheDocument();
+      // Profile header description is neutral
+      expect(
+        screen.getByText("Integrated identity management for Web3 Wallets and X (Twitter) accounts."),
+      ).toBeInTheDocument();
+      // Header meta chip retains username
+      expect(screen.getByText(/@chimphood_og \(Connected\)/)).toBeInTheDocument();
     });
 
     const connectedButton = screen.getByRole("button", { name: "X Account Connected" });
     expect(connectedButton).toBeInTheDocument();
     expect(connectedButton).toBeDisabled();
+  });
+
+  it("enables Link X button when wallet is authenticated and X is not linked", () => {
+    mockUseSiweAuth.mockReturnValue({
+      status: "authenticated",
+      sessionAddress: "0x1234567890123456789012345678901234567890",
+      walletAddress: "0x1234567890123456789012345678901234567890",
+    });
+
+    render(
+      <Providers>
+        <ProfilePage />
+      </Providers>,
+    );
+
+    const linkButton = screen.getByRole("button", { name: "Link X Account" });
+    expect(linkButton).toBeEnabled();
+    expect(
+      screen.queryByText("Connect and authenticate your Web3 wallet first to enable X linking."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("simplifies nested borders on GTD allocation card and Collection summary", async () => {
+    mockUseSiweAuth.mockReturnValue({
+      status: "authenticated",
+      sessionAddress: "0x1234567890123456789012345678901234567890",
+      walletAddress: "0x1234567890123456789012345678901234567890",
+    });
+
+    mockFetchWhitelistStatus.mockResolvedValue({
+      configured: true,
+      authenticated: true,
+      status: {
+        phase: "SLOT_ALLOCATED",
+        slotNumber: 42,
+        reviewStatus: "VALID",
+        details: {
+          hasLinkedX: true,
+          xUsername: "chimphood_og",
+          heldCategories: ["FUR"],
+          completedMandatoryTasksCount: 1,
+          totalMandatoryTasksCount: 1,
+        },
+      },
+    });
+
+    render(
+      <Providers>
+        <ProfilePage />
+      </Providers>,
+    );
+
+    await waitFor(() => {
+      const gtdCard = screen.getByTestId("gtd-status-card");
+      expect(gtdCard).toBeInTheDocument();
+      // Verify GTD card uses subtle divider for Review Status without nested boxed border
+      expect(gtdCard.innerHTML).toContain("border-t border-emerald-500/20");
+      expect(gtdCard.innerHTML).not.toContain("rounded-lg border border-gray-800 bg-gray-900/40 p-3");
+    });
+
+    // Check Collection tab summary borders
+    const collectionTab = screen.getByRole("tab", { name: /Collection/i });
+    fireEvent.click(collectionTab);
+
+    const collectionSummary = screen.getByTestId("trait-collection-summary");
+    expect(collectionSummary.className).toContain("border-b border-gray-800");
+    expect(collectionSummary.className).not.toContain("rounded-lg border border-gray-800 bg-gray-950/60 p-4");
   });
 });
