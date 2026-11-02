@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db";
 import { requireAdminSession, AdminAuthError } from "@/server/auth/session";
+import { syncActiveDropPeriodPool } from "@/server/drops/auto-replenish";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -83,6 +84,9 @@ export async function PUT(
       },
     });
 
+    // Auto-sync active drop period pool in real-time
+    await syncActiveDropPeriodPool(prisma);
+
     return Response.json({ success: true, trait: updated });
   } catch (err: unknown) {
     console.error("PUT /api/admin/traits/[id] error:", err);
@@ -134,6 +138,9 @@ export async function DELETE(
         data: { isActive: false },
       });
 
+      // Auto-sync active drop period pool in real-time
+      await syncActiveDropPeriodPool(prisma);
+
       return Response.json({
         success: true,
         mode: "deactivated",
@@ -152,6 +159,9 @@ export async function DELETE(
         data: { isActive: false },
       });
 
+      // Auto-sync active drop period pool in real-time
+      await syncActiveDropPeriodPool(prisma);
+
       return Response.json({
         success: true,
         mode: "deactivated",
@@ -167,6 +177,9 @@ export async function DELETE(
     await prisma.trait.delete({
       where: { id },
     });
+
+    // Auto-sync active drop period pool in real-time
+    await syncActiveDropPeriodPool(prisma);
 
     return Response.json({
       success: true,

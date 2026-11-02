@@ -533,3 +533,128 @@ export async function ensureActiveCyclePeriod(
     },
   );
 }
+
+/**
+ * Real-time synchronization of the currently ACTIVE drop period pool.
+ * Automatically called when an admin creates, updates, activates, deactivates,
+ * or deletes a trait in the Traits Manager.
+ *
+ * Ensures:
+ * 1. Active traits are immediately added to the active period pool.
+ * 2. Inactive/deleted traits are removed from the active period pool (or zeroed if claimed).
+ * 3. Total stock of exactly 250 units is dynamically rebalanced across active traits.
+ */
+export async function syncActiveDropPeriodPool(
+  prisma: PrismaClient,
+): Promise<{ periodId: string; updatedCount: number } | null> {
+  try {
+    if (
+      typeof prisma?.drop?.findFirst !== "function" ||
+      typeof prisma?.dropPeriod?.findFirst !== "function" ||
+      typeof prisma?.trait?.findMany !== "function"
+    ) {
+      return null;
+    }
+
+    const activeDrop = await prisma.drop.findFirst({
+      where: { status: "ACTIVE" },
+    });
+
+    if (!activeDrop) return null;
+
+    const activePeriod = await prisma.dropPeriod.findFirst({
+      where: {
+        dropId: activeDrop.id,
+        status: "ACTIVE",
+      },
+      include: {
+        poolItems: true,
+      },
+    });
+
+    if (!activePeriod) return null;
+
+    const activeTraits = await prisma.trait.findMany({
+      where: { isActive: true },
+      orderBy: [{ category: "asc" }, { rarity: "asc" }, { name: "asc" }],
+    });
+
+    if (activeTraits.length === 0) return null;
+
+    const allocations = calculateDynamicPoolAllocations(activeTraits);
+    const activeTraitIds = new Set(activeTraits.map((t) => t.id));
+
+    // 1. Remove or zero out pool items whose trait is no longer active
+    const existingPoolItems = activePeriod.poolItems ?? [];
+    const foreignItems = existingPoolItems.filter((i) => !activeTraitIds.has(i.traitId));
+
+    for (const item of foreignItems) {
+      if (item.claimedStock === 0 && typeof prisma.dropPoolItem?.delete === "function") {
+        await prisma.dropPoolItem.delete({
+          where: { id: item.id },
+        });
+      } else if (typeof prisma.dropPoolItem?.update === "function") {
+        await prisma.dropPoolItem.update({
+          where: { id: item.id },
+          data: {
+            remainingStock: 0,
+            weight: 0,
+          },
+        });
+      }
+    }
+
+    // 2. Upsert pool items for all active traits with dynamically rebalanced stock & weight
+    const existingMap = new Map(existingPoolItems.map((i) => [i.traitId, i]));
+
+    for (const alloc of allocations) {
+      const existing = existingMap.get(alloc.traitId);
+      if (existing) {
+        const claimedStock = existing.claimedStock ?? 0;
+        const allocatedStock = Math.max(alloc.stock, claimedStock);
+        const remainingStock = Math.max(0, allocatedStock - claimedStock);
+
+        if (typeof prisma.dropPoolItem?.update === "function") {
+          await prisma.dropPoolItem.update({
+            where: { id: existing.id },
+            data: {
+              allocatedStock,
+              remainingStock,
+              weight: alloc.weight,
+            },
+          });
+        }
+      } else {
+        if (typeof prisma.dropPoolItem?.create === "function") {
+          await prisma.dropPoolItem.create({
+            data: {
+              periodId: activePeriod.id,
+              traitId: alloc.traitId,
+              allocatedStock: alloc.stock,
+              remainingStock: alloc.stock,
+              claimedStock: 0,
+              weight: alloc.weight,
+            },
+          });
+        }
+      }
+    }
+
+    if (typeof prisma.dropPeriod?.update === "function") {
+      await prisma.dropPeriod.update({
+        where: { id: activePeriod.id },
+        data: {
+          isStockConfigured: true,
+        },
+      });
+    }
+
+    return {
+      periodId: activePeriod.id,
+      updatedCount: allocations.length,
+    };
+  } catch (err) {
+    console.warn("[syncActiveDropPeriodPool] Non-fatal sync error:", err);
+    return null;
+  }
+}

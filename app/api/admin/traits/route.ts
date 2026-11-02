@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db";
 import { requireAdminSession, AdminAuthError } from "@/server/auth/session";
 import { listAdminTraits, AdminDropError } from "@/server/admin/drops";
+import { syncActiveDropPeriodPool } from "@/server/drops/auto-replenish";
 
 /**
  * GET /api/admin/traits
@@ -96,6 +97,9 @@ export async function POST(request: Request): Promise<Response> {
       },
     });
 
+    // Auto-sync active drop period pool in real-time
+    await syncActiveDropPeriodPool(prisma);
+
     return Response.json({ success: true, trait });
   } catch (err: unknown) {
     console.error("POST /api/admin/traits error:", err);
@@ -173,6 +177,9 @@ export async function PUT(request: Request): Promise<Response> {
       },
     });
 
+    // Auto-sync active drop period pool in real-time
+    await syncActiveDropPeriodPool(prisma);
+
     return Response.json({ success: true, trait: updated });
   } catch (err: unknown) {
     console.error("PUT /api/admin/traits error:", err);
@@ -241,6 +248,9 @@ export async function DELETE(request: Request): Promise<Response> {
         data: { isActive: false },
       });
 
+      // Auto-sync active drop period pool in real-time
+      await syncActiveDropPeriodPool(prisma);
+
       return Response.json({
         success: true,
         mode: "deactivated",
@@ -260,6 +270,9 @@ export async function DELETE(request: Request): Promise<Response> {
         data: { isActive: false },
       });
 
+      // Auto-sync active drop period pool in real-time
+      await syncActiveDropPeriodPool(prisma);
+
       return Response.json({
         success: true,
         mode: "deactivated",
@@ -276,6 +289,9 @@ export async function DELETE(request: Request): Promise<Response> {
     await prisma.trait.delete({
       where: { id: traitId },
     });
+
+    // Auto-sync active drop period pool in real-time
+    await syncActiveDropPeriodPool(prisma);
 
     return Response.json({
       success: true,

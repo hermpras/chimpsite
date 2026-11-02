@@ -4,21 +4,33 @@ import {
   PUT as putTraitById,
   DELETE as deleteTraitById,
 } from "@/app/api/admin/traits/[id]/route";
+import { syncActiveDropPeriodPool } from "@/server/drops/auto-replenish";
 
 const { mockRequireAdminSession, mockPrisma } = vi.hoisted(() => ({
   mockRequireAdminSession: vi.fn(),
   mockPrisma: {
     trait: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
     inventoryItem: {
       count: vi.fn(),
     },
+    drop: {
+      findFirst: vi.fn(),
+    },
+    dropPeriod: {
+      findFirst: vi.fn(),
+      update: vi.fn(),
+    },
     dropPoolItem: {
       count: vi.fn(),
       deleteMany: vi.fn(),
+      delete: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
     },
     claim: {
       count: vi.fn(),
@@ -228,6 +240,57 @@ describe("Admin Traits Routes — Edit & Delete Suite", () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.mode).toBe("deleted");
+    });
+  });
+
+  describe("Real-Time Pool Synchronization (syncActiveDropPeriodPool)", () => {
+    it("returns null if no active drop is found", async () => {
+      mockPrisma.drop.findFirst.mockResolvedValue(null);
+      const result = await syncActiveDropPeriodPool(mockPrisma as any);
+      expect(result).toBeNull();
+    });
+
+    it("synchronizes active period pool when active traits exist", async () => {
+      mockPrisma.drop.findFirst.mockResolvedValue({ id: "drop-1", status: "ACTIVE" });
+      mockPrisma.dropPeriod.findFirst.mockResolvedValue({
+        id: "period-1",
+        dropId: "drop-1",
+        status: "ACTIVE",
+        poolItems: [
+          {
+            id: "pi-old",
+            periodId: "period-1",
+            traitId: "trait-inactive",
+            claimedStock: 0,
+            remainingStock: 10,
+          },
+        ],
+      });
+      mockPrisma.trait.findMany.mockResolvedValue([
+        {
+          id: "trait-new",
+          slug: "trait-new",
+          name: "Trait New",
+          category: "HEADWEAR",
+          rarity: "COMMON",
+          isActive: true,
+        },
+      ]);
+      mockPrisma.dropPoolItem.delete.mockResolvedValue({});
+      mockPrisma.dropPoolItem.create.mockResolvedValue({});
+      mockPrisma.dropPeriod.update.mockResolvedValue({});
+
+      const result = await syncActiveDropPeriodPool(mockPrisma as any);
+      expect(result).not.toBeNull();
+      expect(result?.periodId).toBe("period-1");
+      expect(mockPrisma.dropPoolItem.delete).toHaveBeenCalledWith({
+        where: { id: "pi-old" },
+      });
+      expect(mockPrisma.dropPoolItem.create).toHaveBeenCalled();
+      expect(mockPrisma.dropPeriod.update).toHaveBeenCalledWith({
+        where: { id: "period-1" },
+        data: { isStockConfigured: true },
+      });
     });
   });
 });
