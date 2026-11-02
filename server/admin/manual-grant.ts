@@ -374,3 +374,91 @@ export async function manualGrantGtdSlot(
     };
   });
 }
+
+/**
+ * Checks if a Prisma error is a unique constraint collision on userId.
+ */
+export function isUserIdCollision(err: unknown): boolean {
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "P2002"
+  ) {
+    const pErr = err as { meta?: { target?: unknown }; message?: string };
+    const target = pErr.meta?.target;
+    const targetStr = Array.isArray(target)
+      ? target.join(",")
+      : typeof target === "string"
+        ? target
+        : "";
+    const message = pErr.message || "";
+    if (targetStr.includes("userId") || message.includes("userId")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Determines whether a Prisma error is transient and safe to retry.
+ * Only P2034 (write conflict / deadlock) and definitively verified P2002
+ * on slotNumber or queueNumber are eligible.
+ */
+export function isRetryableManualGrantConflict(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+
+  if ("code" in err) {
+    const code = (err as { code?: unknown }).code;
+
+    // 1. Transaction write conflict / serialization failure / deadlock
+    if (code === "P2034" || code === "40001" || code === "40P01") {
+      return true;
+    }
+
+    // 2. Unique constraint collision
+    if (code === "P2002") {
+      const pErr = err as {
+        meta?: { target?: unknown; modelName?: string };
+        message?: string;
+      };
+      const target = pErr.meta?.target;
+      const targetStr = Array.isArray(target)
+        ? target.join(",")
+        : typeof target === "string"
+          ? target
+          : "";
+      const message = pErr.message || "";
+      const modelName = pErr.meta?.modelName || "";
+
+      // Terminal business conflict: NEVER retry on userId!
+      if (
+        targetStr.includes("userId") ||
+        (!targetStr && message.includes("userId"))
+      ) {
+        return false;
+      }
+
+      // Retry eligible ONLY if definitively verified as slotNumber or queueNumber collision
+      const isSlotCollision =
+        targetStr.includes("slotNumber") ||
+        message.includes("slotNumber") ||
+        (modelName === "WLSlot" && message.includes("slotNumber"));
+
+      const isQueueCollision =
+        targetStr.includes("queueNumber") ||
+        message.includes("queueNumber") ||
+        (modelName === "WLQueueEntry" && message.includes("queueNumber"));
+
+      if (isSlotCollision || isQueueCollision) {
+        return true;
+      }
+
+      // Ambiguous metadata -> fail-closed (DO NOT RETRY)
+      return false;
+    }
+  }
+
+  return false;
+}
+

@@ -3,14 +3,14 @@ import {
   manualGrantGtdSlot,
   validateManualGrantInput,
   AdminManualGrantError,
+  isRetryableManualGrantConflict,
+  isUserIdCollision,
 } from "@/server/admin/manual-grant";
 import {
   POST,
   GET,
   PUT,
   DELETE,
-  isRetryableManualGrantConflict,
-  isUserIdCollision,
 } from "@/app/api/admin/whitelist/slots/manual-grant/route";
 import type { PrismaClient } from "@prisma/client";
 

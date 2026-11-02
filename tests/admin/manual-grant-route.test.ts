@@ -35,7 +35,8 @@ vi.mock("@/server/auth/session", () => {
   };
 });
 
-vi.mock("@/server/admin/manual-grant", () => {
+vi.mock("@/server/admin/manual-grant", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/server/admin/manual-grant")>();
   class MockAdminManualGrantError extends Error {
     code: string;
     status: number;
@@ -48,6 +49,7 @@ vi.mock("@/server/admin/manual-grant", () => {
   }
 
   return {
+    ...actual,
     manualGrantGtdSlot: vi.fn(),
     AdminManualGrantError: MockAdminManualGrantError,
   };
