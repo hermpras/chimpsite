@@ -92,15 +92,25 @@ export async function POST(request: Request): Promise<Response> {
         .toBuffer();
     }
 
-    // Ensure storage directory exists
+    // Ensure storage directory exists and attempt to write file
     const traitsDir = path.join(process.cwd(), "public/traits");
-    await mkdir(traitsDir, { recursive: true });
-
     const fileName = `${slug}.png`;
-    const filePath = path.join(traitsDir, fileName);
-    await writeFile(filePath, processedBuffer);
+    let imageUrl = `/traits/${fileName}`;
 
-    const imageUrl = `/traits/${fileName}`;
+    try {
+      await mkdir(traitsDir, { recursive: true });
+      const filePath = path.join(traitsDir, fileName);
+      await writeFile(filePath, processedBuffer);
+    } catch (fsErr: unknown) {
+      const code = (fsErr as { code?: string })?.code;
+      if (code === "EROFS" || code === "EACCES") {
+        // Serverless environment fallback (e.g. AWS Lambda / Vercel):
+        // Filesystem is read-only, so store the optimized 240x240 pixel art as a data URI.
+        imageUrl = `data:image/png;base64,${processedBuffer.toString("base64")}`;
+      } else {
+        throw fsErr;
+      }
+    }
     const maxSupply = maxSupplyStr ? parseInt(maxSupplyStr, 10) : null;
 
     // Upsert trait in database
