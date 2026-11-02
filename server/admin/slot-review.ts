@@ -710,4 +710,3 @@ export async function getGtdSlotReviewDetail(
     })),
   };
 }
-

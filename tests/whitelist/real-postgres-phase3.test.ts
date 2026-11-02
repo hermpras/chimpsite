@@ -32,8 +32,8 @@ describe("PostgreSQL Real Database Verification — Phase 3", () => {
 
       // Ensure test admin exists
       await pool.query(
-        `INSERT INTO "User" (id, role, "createdAt", "updatedAt") 
-         VALUES ($1, 'ADMIN', NOW(), NOW()) 
+        `INSERT INTO "User" (id, role, "createdAt", "updatedAt")
+         VALUES ($1, 'ADMIN', NOW(), NOW())
          ON CONFLICT (id) DO NOTHING`,
         [adminUserId],
       );

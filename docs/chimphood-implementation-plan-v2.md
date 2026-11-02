@@ -1,17 +1,17 @@
 # ChimpHood Implementation Plan v2
 
-**Document Version**: 2.4.3  
-**Date**: November 1, 2026  
-**Status**: DEC-022 RECORDED — GTD REVOCATION FULL DISQUALIFICATION ENFORCED  
-**Author**: Engineering Team & System Architect  
-**Supersedes**: Stage 1–6 Planning in `docs/handoff.md` & Implementation Plan v2.0.0 / v2.1.0 / v2.2.0 / v2.3.0 / v2.3.1 / v2.3.2 / v2.3.3 / v2.3.4 / v2.3.5 / v2.3.6 / v2.3.7 / v2.3.8 / v2.3.9 / v2.4.0 / v2.4.1 / v2.4.2  
-**Target Workspace**: `/Users/hermawanprastiyanto/Desktop/ChimpHood Site`  
+**Document Version**: 2.4.3
+**Date**: November 1, 2026
+**Status**: DEC-022 RECORDED — GTD REVOCATION FULL DISQUALIFICATION ENFORCED
+**Author**: Engineering Team & System Architect
+**Supersedes**: Stage 1–6 Planning in `docs/handoff.md` & Implementation Plan v2.0.0 / v2.1.0 / v2.2.0 / v2.3.0 / v2.3.1 / v2.3.2 / v2.3.3 / v2.3.4 / v2.3.5 / v2.3.6 / v2.3.7 / v2.3.8 / v2.3.9 / v2.4.0 / v2.4.1 / v2.4.2
+**Target Workspace**: `/Users/hermawanprastiyanto/Desktop/ChimpHood Site`
 
 ---
 
 ## 1. Project Overview
 
-ChimpHood is a decentralized community engagement and NFT distribution platform built on Next.js 16 (React 19), PostgreSQL (via Prisma ORM v7 deployed on Supabase Seoul), and Wagmi v3. 
+ChimpHood is a decentralized community engagement and NFT distribution platform built on Next.js 16 (React 19), PostgreSQL (via Prisma ORM v7 deployed on Supabase Seoul), and Wagmi v3.
 
 The platform implements an off-chain gamified allowlist qualification system:
 1. **Trait Drops & Inventory**: Users collect trait items across five distinct categories (`BG`, `FUR`, `CLOTHING`, `HEADWEAR`, `EYEWEAR`) via periodic drop periods and peer-to-peer trait gifting.
@@ -715,7 +715,7 @@ flowchart TD
   - Two dedicated export cards:
     1. **Guaranteed Allowlist (GTD)**:
        - Displays total wallet count to export (e.g. `450 wallets`).
-       - If `FLAGGED` slots exist: displays an informational alert banner:  
+       - If `FLAGGED` slots exist: displays an informational alert banner:
          `"⚠️ Notice: 10 FLAGGED slots are included in this export because they have not been revoked. To exclude an account, revoke its slot with an official reason before exporting."`
        - One-click `Download GTD CSV` button.
     2. **FCFS Allowlist**:

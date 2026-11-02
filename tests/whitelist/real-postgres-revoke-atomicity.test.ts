@@ -23,14 +23,14 @@ describe("PostgreSQL Real Database Verification — Tahap 2 Revoke Atomicity", (
       [programId],
     );
     const histRes = await pool.query(
-      `SELECT id, "programId", "userId", "fromPhase", "toPhase", action, "createdAt" 
-       FROM "WLStatusHistory" 
+      `SELECT id, "programId", "userId", "fromPhase", "toPhase", action, "createdAt"
+       FROM "WLStatusHistory"
        WHERE "programId" = $1 AND "userId" = $2`,
       [programId, userId],
     );
     const auditRes = await pool.query(
-      `SELECT id, "actorId", action, "entityType", "entityId", "newValues", metadata 
-       FROM "AuditLog" 
+      `SELECT id, "actorId", action, "entityType", "entityId", "newValues", metadata
+       FROM "AuditLog"
        WHERE "entityId" = $1`,
       [slotId],
     );
@@ -61,8 +61,8 @@ describe("PostgreSQL Real Database Verification — Tahap 2 Revoke Atomicity", (
 
       // Ensure admin user exists in DB
       await pool.query(
-        `INSERT INTO "User" (id, role, "createdAt", "updatedAt") 
-         VALUES ($1, 'ADMIN', NOW(), NOW()) 
+        `INSERT INTO "User" (id, role, "createdAt", "updatedAt")
+         VALUES ($1, 'ADMIN', NOW(), NOW())
          ON CONFLICT (id) DO NOTHING`,
         [adminUserId],
       );
