@@ -1233,25 +1233,24 @@ export default function WhitelistPage() {
 
                                 {/* Right: Status badge & Action Buttons in a horizontal row */}
                                 <div className="flex flex-wrap items-center gap-2.5 shrink-0 pt-2 border-t border-gray-800/80 md:border-t-0 md:pt-0">
-                                  {/* Task Status Badge */}
-                                  <Badge
-                                    variant={taskStatus.badgeVariant}
-                                    className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}
-                                  >
-                                    {taskStatus.key === "APPROVED" && (
-                                      <CheckCircle2 className="mr-1 h-3.5 w-3.5 shrink-0" />
-                                    )}
-                                    {taskStatus.key === "PENDING" && (
-                                      <Clock className="mr-1 h-3.5 w-3.5 shrink-0" />
-                                    )}
-                                    {taskStatus.key === "REJECTED" && (
-                                      <XCircle className="mr-1 h-3.5 w-3.5 shrink-0" />
-                                    )}
-                                    {taskStatus.key === "NOT_SUBMITTED" && (
-                                      <AlertCircle className="mr-1 h-3.5 w-3.5 shrink-0" />
-                                    )}
-                                    {taskStatus.key === "APPROVED" ? "Done" : taskStatus.label}
-                                  </Badge>
+                                  {/* Task Status Badge: only shown if submitted (hide 'Not Submitted') */}
+                                  {taskStatus.key !== "NOT_SUBMITTED" && (
+                                    <Badge
+                                      variant={taskStatus.badgeVariant}
+                                      className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}
+                                    >
+                                      {taskStatus.key === "APPROVED" && (
+                                        <CheckCircle2 className="mr-1 h-3.5 w-3.5 shrink-0" />
+                                      )}
+                                      {taskStatus.key === "PENDING" && (
+                                        <Clock className="mr-1 h-3.5 w-3.5 shrink-0" />
+                                      )}
+                                      {taskStatus.key === "REJECTED" && (
+                                        <XCircle className="mr-1 h-3.5 w-3.5 shrink-0" />
+                                      )}
+                                      {taskStatus.key === "APPROVED" ? "Done" : taskStatus.label}
+                                    </Badge>
+                                  )}
 
                                   {/* 1. Target URL Button: OPEN X -> */}
                                   <a
