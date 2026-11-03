@@ -20,60 +20,68 @@ import {
   Terminal,
   Zap,
   Check,
-  Compass,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 
 export default function DocsPage() {
+  const sections = [
+    { id: "traits", num: "01", label: "Traits & Inventory", icon: Layers, color: "text-purple-400" },
+    { id: "drops", num: "02", label: "Drops & Lootbox", icon: Box, color: "text-amber-400" },
+    { id: "gifts", num: "03", label: "Syndicate Gifts", icon: Gift, color: "text-pink-400" },
+    { id: "whitelist", num: "04", label: "Allowlist & GTD", icon: ShieldCheck, color: "text-emerald-400" },
+    { id: "tasks", num: "05", label: "Quests & Review", icon: FileText, color: "text-cyan-400" },
+    { id: "security", num: "06", label: "Security & SIWE", icon: Lock, color: "text-rose-400" },
+  ];
+
   return (
-    <div className="relative mx-auto max-w-7xl px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
+    <div className="relative mx-auto max-w-7xl px-4 py-6 sm:py-12 sm:px-6 lg:px-8 overflow-hidden">
       {/* Background Ambient Glows */}
-      <div className="pointer-events-none absolute top-10 right-10 h-96 w-96 rounded-full bg-amber-500/10 blur-[130px]" />
-      <div className="pointer-events-none absolute top-96 left-10 h-80 w-80 rounded-full bg-cyan-500/10 blur-[140px]" />
+      <div className="pointer-events-none absolute top-10 right-10 h-72 w-72 sm:h-96 sm:w-96 rounded-full bg-amber-500/10 blur-[130px]" />
+      <div className="pointer-events-none absolute top-96 left-10 h-64 w-64 sm:h-80 sm:w-80 rounded-full bg-cyan-500/10 blur-[140px]" />
 
       {/* Hero Header - GTA 6 Brutalist Streetwear Style */}
-      <div className="mb-12 border-b-2 border-gray-800 pb-8 space-y-4">
+      <div className="mb-8 sm:mb-12 border-b-2 border-gray-800 pb-6 sm:pb-8 space-y-4">
         {/* Eyebrow Badges */}
-        <div className="flex flex-wrap items-center gap-2 font-mono-street text-[11px] uppercase tracking-wider">
-          <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 font-bold text-amber-300">
-            <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+        <div className="flex flex-wrap items-center gap-2 font-mono-street text-[10px] sm:text-[11px] uppercase tracking-wider">
+          <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2 sm:px-2.5 py-0.5 font-bold text-amber-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
             LEONIDA FIELD MANUAL
           </span>
-          <span className="border border-cyan-400/40 bg-cyan-400/10 px-2.5 py-0.5 font-bold text-cyan-300">
+          <span className="border border-cyan-400/40 bg-cyan-400/10 px-2 sm:px-2.5 py-0.5 font-bold text-cyan-300">
             Elysium L2 // Hyperliquid
           </span>
-          <span className="border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 font-bold text-emerald-300">
+          <span className="border border-emerald-400/40 bg-emerald-400/10 px-2 sm:px-2.5 py-0.5 font-bold text-emerald-300">
             Official Protocol Dossier
           </span>
         </div>
 
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl uppercase tracking-tight text-white leading-[0.9]">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
+            <h1 className="font-display text-3xl sm:text-5xl lg:text-7xl uppercase tracking-tight text-white leading-tight sm:leading-[0.9] break-words">
               Elychimp Community Guide
             </h1>
-            <p className="mt-3 max-w-3xl font-mono-street text-xs sm:text-sm text-gray-300 leading-relaxed uppercase tracking-wide">
+            <p className="max-w-3xl font-mono-street text-xs sm:text-sm text-gray-300 leading-relaxed uppercase tracking-wide">
               The definitive operational guide for contraband drops, trait assembly, syndicate gifting, guaranteed allowlist criteria, and non-custodial security.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <Link href="/drops">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full sm:w-auto">
+            <Link href="/drops" className="w-full sm:w-auto">
               <Button
                 variant="primary"
                 size="sm"
-                className="border border-black bg-amber-400 font-display uppercase tracking-wider text-black hover:bg-amber-300 shadow-brutal-sm text-xs px-4 py-2.5"
+                className="w-full sm:w-auto justify-center border border-black bg-amber-400 font-display uppercase tracking-wider text-black hover:bg-amber-300 shadow-brutal-sm text-xs px-4 py-2.5"
               >
                 <span>Claim Drops</span>
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Button>
             </Link>
-            <Link href="/whitelist">
+            <Link href="/whitelist" className="w-full sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
-                className="border-2 border-gray-700 bg-gray-900 font-mono-street uppercase text-xs text-gray-300 hover:border-amber-400 hover:text-white px-4 py-2.5"
+                className="w-full sm:w-auto justify-center border-2 border-gray-700 bg-gray-900 font-mono-street uppercase text-xs text-gray-300 hover:border-amber-400 hover:text-white px-4 py-2.5"
               >
                 <span>Check Allowlist</span>
                 <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
@@ -83,10 +91,29 @@ export default function DocsPage() {
         </div>
       </div>
 
-      {/* Main Grid: Sticky Sidebar Index + Content Panels */}
+      {/* Mobile Sticky Horizontal Jump Bar (Visible only on mobile < lg) */}
+      <div className="lg:hidden -mx-4 px-4 py-2.5 border-y border-gray-800 bg-[#08090d]/95 backdrop-blur-md sticky top-16 z-30 mb-8 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-2 min-w-max font-mono-street text-xs">
+          <span className="text-[10px] uppercase font-bold text-gray-500 mr-1 flex items-center gap-1">
+            <Terminal className="h-3 w-3 text-amber-400" /> Jump:
+          </span>
+          {sections.map((sec) => (
+            <a
+              key={sec.id}
+              href={`#${sec.id}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/80 px-2.5 py-1 text-[11px] font-bold text-gray-300 hover:border-amber-400 hover:text-white transition-colors"
+            >
+              <span className="text-amber-400 font-extrabold">{sec.num}</span>
+              <span>{sec.label}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Grid: Sticky Sidebar Index (Desktop) + Content Panels */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
-        {/* Left Sticky Directory / TOC (4 cols on lg) */}
-        <aside className="lg:col-span-4 sticky top-24 space-y-5">
+        {/* Desktop Sticky Sidebar Directory (Visible only on lg+) */}
+        <aside className="hidden lg:block lg:col-span-4 lg:sticky lg:top-24 space-y-5">
           <div className="rounded-2xl border-2 border-gray-800 bg-[#0c0d15] p-5 shadow-brutal-sm space-y-4">
             <div className="flex items-center justify-between border-b border-gray-800 pb-3">
               <div className="flex items-center gap-2">
@@ -101,14 +128,7 @@ export default function DocsPage() {
             </div>
 
             <nav className="space-y-1.5 font-mono-street text-xs uppercase">
-              {[
-                { id: "traits", num: "01", label: "Trait Collection & Inventory", icon: Layers, color: "text-purple-400 hover:text-purple-300" },
-                { id: "drops", num: "02", label: "Drops & Lootbox Engine", icon: Box, color: "text-amber-400 hover:text-amber-300" },
-                { id: "gifts", num: "03", label: "Gifts & Duplicate Sharing", icon: Gift, color: "text-pink-400 hover:text-pink-300" },
-                { id: "whitelist", num: "04", label: "Whitelist: GTD & FCFS", icon: ShieldCheck, color: "text-emerald-400 hover:text-emerald-300" },
-                { id: "tasks", num: "05", label: "Campaign Tasks & Review", icon: FileText, color: "text-cyan-400 hover:text-cyan-300" },
-                { id: "security", num: "06", label: "Wallet Security & SIWE", icon: Lock, color: "text-rose-400 hover:text-rose-300" },
-              ].map((item) => {
+              {sections.map((item) => {
                 const IconComponent = item.icon;
                 return (
                   <a
@@ -153,27 +173,27 @@ export default function DocsPage() {
           </div>
         </aside>
 
-        {/* Right Content Panels (8 cols on lg) */}
-        <div className="lg:col-span-8 space-y-12">
+        {/* Content Panels (12 cols on mobile, 8 cols on lg) */}
+        <div className="lg:col-span-8 space-y-10 sm:space-y-12">
           {/* =======================================================================
               SECTION 1: TRAIT COLLECTION & INVENTORY
           ======================================================================= */}
           <section id="traits" className="scroll-mt-24 space-y-5">
-            <div className="flex items-center justify-between border-b-2 border-gray-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-purple-400/40 bg-purple-400/10 text-purple-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-purple-400/40 bg-purple-400/10 text-purple-400">
                   <Layers className="h-5 w-5" />
                 </div>
                 <div>
                   <span className="font-mono-street text-[10px] font-bold text-purple-400 uppercase tracking-widest">
                     Section 01 // Wardrobe
                   </span>
-                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
                     1. Trait Collection &amp; Inventory
                   </h2>
                 </div>
               </div>
-              <Badge variant="outline" className="border-purple-400/40 bg-purple-400/10 text-purple-300 font-mono-street text-[10px] uppercase">
+              <Badge variant="outline" className="self-start sm:self-auto border-purple-400/40 bg-purple-400/10 text-purple-300 font-mono-street text-[10px] uppercase">
                 5 Pieces
               </Badge>
             </div>
@@ -227,7 +247,7 @@ export default function DocsPage() {
 
             {/* Key Mechanics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-3">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
                 <div className="flex items-center gap-2 text-purple-400">
                   <Sparkles className="h-4 w-4" />
                   <h4 className="font-display text-base uppercase tracking-wider text-white">
@@ -239,7 +259,7 @@ export default function DocsPage() {
                 </p>
               </div>
 
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-3">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
                 <div className="flex items-center gap-2 text-cyan-400">
                   <Layers className="h-4 w-4" />
                   <h4 className="font-display text-base uppercase tracking-wider text-white">
@@ -257,21 +277,21 @@ export default function DocsPage() {
               SECTION 2: DROPS & LOOTBOX
           ======================================================================= */}
           <section id="drops" className="scroll-mt-24 space-y-5">
-            <div className="flex items-center justify-between border-b-2 border-gray-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-amber-400/40 bg-amber-400/10 text-amber-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-amber-400/40 bg-amber-400/10 text-amber-400">
                   <Box className="h-5 w-5" />
                 </div>
                 <div>
                   <span className="font-mono-street text-[10px] font-bold text-amber-400 uppercase tracking-widest">
                     Section 02 // Contraband Engine
                   </span>
-                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
                     2. Drops &amp; Lootbox
                   </h2>
                 </div>
               </div>
-              <Badge variant="outline" className="border-amber-400/40 bg-amber-400/10 text-amber-300 font-mono-street text-[10px] uppercase">
+              <Badge variant="outline" className="self-start sm:self-auto border-amber-400/40 bg-amber-400/10 text-amber-300 font-mono-street text-[10px] uppercase">
                 Cycle Protocol
               </Badge>
             </div>
@@ -281,7 +301,7 @@ export default function DocsPage() {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-2.5">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
                 <div className="flex h-9 w-9 items-center justify-center border border-amber-400/30 bg-amber-400/10 text-amber-400 rounded-lg">
                   <Clock className="h-4 w-4" />
                 </div>
@@ -293,7 +313,7 @@ export default function DocsPage() {
                 </p>
               </div>
 
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-2.5">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
                 <div className="flex h-9 w-9 items-center justify-center border border-amber-400/30 bg-amber-400/10 text-amber-400 rounded-lg">
                   <Zap className="h-4 w-4" />
                 </div>
@@ -305,7 +325,7 @@ export default function DocsPage() {
                 </p>
               </div>
 
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-2.5">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
                 <div className="flex h-9 w-9 items-center justify-center border border-amber-400/30 bg-amber-400/10 text-amber-400 rounded-lg">
                   <ShieldCheck className="h-4 w-4" />
                 </div>
@@ -319,10 +339,10 @@ export default function DocsPage() {
             </div>
 
             {/* Key Drops Safeguards */}
-            <div className="border-2 border-amber-400/40 bg-amber-950/20 p-5 sm:p-6 rounded-2xl space-y-3">
+            <div className="border-2 border-amber-400/40 bg-amber-950/20 p-4 sm:p-6 rounded-2xl space-y-3">
               <div className="flex items-center gap-2 text-amber-400">
                 <AlertCircle className="h-5 w-5" />
-                <h4 className="font-display text-lg uppercase tracking-wider text-white">
+                <h4 className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
                   Drop Protection Rules
                 </h4>
               </div>
@@ -347,21 +367,21 @@ export default function DocsPage() {
               SECTION 3: GIFTS & DUPLICATE SHARING
           ======================================================================= */}
           <section id="gifts" className="scroll-mt-24 space-y-5">
-            <div className="flex items-center justify-between border-b-2 border-gray-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-pink-400/40 bg-pink-400/10 text-pink-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-pink-400/40 bg-pink-400/10 text-pink-400">
                   <Gift className="h-5 w-5" />
                 </div>
                 <div>
                   <span className="font-mono-street text-[10px] font-bold text-pink-400 uppercase tracking-widest">
                     Section 03 // Peer Transfer
                   </span>
-                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
                     3. Gifts &amp; Duplicate Sharing
                   </h2>
                 </div>
               </div>
-              <Badge variant="outline" className="border-pink-400/40 bg-pink-400/10 text-pink-300 font-mono-street text-[10px] uppercase">
+              <Badge variant="outline" className="self-start sm:self-auto border-pink-400/40 bg-pink-400/10 text-pink-300 font-mono-street text-[10px] uppercase">
                 Syndicate Gifting
               </Badge>
             </div>
@@ -372,7 +392,7 @@ export default function DocsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Category Retention Rule */}
-              <div className="border-2 border-pink-400/40 bg-pink-950/20 p-5 rounded-2xl space-y-3">
+              <div className="border-2 border-pink-400/40 bg-pink-950/20 p-4 sm:p-5 rounded-2xl space-y-3">
                 <div className="flex items-center gap-2 text-pink-400">
                   <Share2 className="h-5 w-5" />
                   <h4 className="font-display text-base uppercase tracking-wider text-white">
@@ -390,7 +410,7 @@ export default function DocsPage() {
               </div>
 
               {/* Gifting Lifecycle Rules */}
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-3">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
                 <div className="flex items-center gap-2 text-pink-400">
                   <Clock className="h-5 w-5" />
                   <h4 className="font-display text-base uppercase tracking-wider text-white">
@@ -423,21 +443,21 @@ export default function DocsPage() {
               SECTION 4: WHITELIST: GTD & FCFS
           ======================================================================= */}
           <section id="whitelist" className="scroll-mt-24 space-y-5">
-            <div className="flex items-center justify-between border-b-2 border-gray-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-emerald-400/40 bg-emerald-400/10 text-emerald-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-emerald-400/40 bg-emerald-400/10 text-emerald-400">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
                   <span className="font-mono-street text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
                     Section 04 // Allocation Tiers
                   </span>
-                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
                     4. Whitelist: GTD &amp; FCFS
                   </h2>
                 </div>
               </div>
-              <Badge variant="outline" className="border-emerald-400/40 bg-emerald-400/10 text-emerald-300 font-mono-street text-[10px] uppercase">
+              <Badge variant="outline" className="self-start sm:self-auto border-emerald-400/40 bg-emerald-400/10 text-emerald-300 font-mono-street text-[10px] uppercase">
                 Tier Allocation
               </Badge>
             </div>
@@ -447,7 +467,7 @@ export default function DocsPage() {
             </p>
 
             {/* 5 Qualification Criteria */}
-            <div className="border-2 border-emerald-400/40 bg-emerald-950/20 p-5 rounded-2xl space-y-4">
+            <div className="border-2 border-emerald-400/40 bg-emerald-950/20 p-4 sm:p-5 rounded-2xl space-y-4">
               <div className="flex items-center gap-2 text-emerald-400">
                 <CheckCircle2 className="h-5 w-5" />
                 <h4 className="font-display text-base uppercase tracking-wider text-white">
@@ -481,7 +501,7 @@ export default function DocsPage() {
 
             {/* GTD vs FCFS Comparison */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-2 border-emerald-500/50 bg-[#0c0d15] p-5 rounded-2xl space-y-3">
+              <div className="border-2 border-emerald-500/50 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                   <span className="border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 font-mono-street text-[10px] font-bold text-emerald-300 uppercase">
                     TIER 1 ALLOCATION
@@ -490,7 +510,7 @@ export default function DocsPage() {
                     Capped at 1,000 Slots
                   </span>
                 </div>
-                <h4 className="font-display text-lg uppercase tracking-wider text-white">
+                <h4 className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
                   Guaranteed Whitelist (GTD)
                 </h4>
                 <div className="space-y-2 font-mono-street text-xs text-gray-300 leading-relaxed">
@@ -503,7 +523,7 @@ export default function DocsPage() {
                 </div>
               </div>
 
-              <div className="border-2 border-cyan-500/50 bg-[#0c0d15] p-5 rounded-2xl space-y-3">
+              <div className="border-2 border-cyan-500/50 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                   <span className="border border-cyan-400/40 bg-cyan-400/10 px-2.5 py-0.5 font-mono-street text-[10px] font-bold text-cyan-300 uppercase">
                     TIER 2 DIRECTORY
@@ -512,7 +532,7 @@ export default function DocsPage() {
                     Phase 2 Allowlist
                   </span>
                 </div>
-                <h4 className="font-display text-lg uppercase tracking-wider text-white">
+                <h4 className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
                   FCFS Directory &amp; OpenSea Export
                 </h4>
                 <div className="space-y-2 font-mono-street text-xs text-gray-300 leading-relaxed">
@@ -531,21 +551,21 @@ export default function DocsPage() {
               SECTION 5: CAMPAIGN TASKS & EVIDENCE REVIEW
           ======================================================================= */}
           <section id="tasks" className="scroll-mt-24 space-y-5">
-            <div className="flex items-center justify-between border-b-2 border-gray-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-cyan-400/40 bg-cyan-400/10 text-cyan-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-cyan-400/40 bg-cyan-400/10 text-cyan-400">
                   <FileText className="h-5 w-5" />
                 </div>
                 <div>
                   <span className="font-mono-street text-[10px] font-bold text-cyan-400 uppercase tracking-widest">
                     Section 05 // Quest Protocol
                   </span>
-                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
                     5. Campaign Tasks &amp; Evidence Review
                   </h2>
                 </div>
               </div>
-              <Badge variant="outline" className="border-cyan-400/40 bg-cyan-400/10 text-cyan-300 font-mono-street text-[10px] uppercase">
+              <Badge variant="outline" className="self-start sm:self-auto border-cyan-400/40 bg-cyan-400/10 text-cyan-300 font-mono-street text-[10px] uppercase">
                 Quests &amp; Proof
               </Badge>
             </div>
@@ -555,7 +575,7 @@ export default function DocsPage() {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-2.5">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
                 <div className="flex h-8 w-8 items-center justify-center border border-amber-400/40 bg-amber-400/10 text-amber-400 rounded-lg">
                   <Clock className="h-4 w-4" />
                 </div>
@@ -567,7 +587,7 @@ export default function DocsPage() {
                 </p>
               </div>
 
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-2.5">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
                 <div className="flex h-8 w-8 items-center justify-center border border-emerald-400/40 bg-emerald-400/10 text-emerald-400 rounded-lg">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
@@ -579,7 +599,7 @@ export default function DocsPage() {
                 </p>
               </div>
 
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-2.5">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
                 <div className="flex h-8 w-8 items-center justify-center border border-rose-400/40 bg-rose-400/10 text-rose-400 rounded-lg">
                   <XCircle className="h-4 w-4" />
                 </div>
@@ -592,7 +612,7 @@ export default function DocsPage() {
               </div>
             </div>
 
-            <div className="border border-gray-800 bg-[#08090d] p-4 rounded-xl space-y-2 font-mono-street text-xs text-gray-300">
+            <div className="border border-gray-800 bg-[#08090d] p-4 rounded-xl space-y-2 font-mono-street text-xs text-gray-300 break-words">
               <span className="font-bold text-white uppercase tracking-wider">Submission Payload Specifications:</span>
               <p>• Accepted formats: Valid HTTP/HTTPS URLs (X/Twitter post links, verified screenshots) or concise text.</p>
               <p>• Maximum payload cap: 2,048 characters per task submission.</p>
@@ -604,21 +624,21 @@ export default function DocsPage() {
               SECTION 6: WALLET SECURITY & IDENTITY
           ======================================================================= */}
           <section id="security" className="scroll-mt-24 space-y-5">
-            <div className="flex items-center justify-between border-b-2 border-gray-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-rose-400/40 bg-rose-400/10 text-rose-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-rose-400/40 bg-rose-400/10 text-rose-400">
                   <Lock className="h-5 w-5" />
                 </div>
                 <div>
                   <span className="font-mono-street text-[10px] font-bold text-rose-400 uppercase tracking-widest">
                     Section 06 // Cyber Safeguards
                   </span>
-                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
                     6. Wallet Security &amp; Identity
                   </h2>
                 </div>
               </div>
-              <Badge variant="outline" className="border-rose-400/40 bg-rose-400/10 text-rose-300 font-mono-street text-[10px] uppercase">
+              <Badge variant="outline" className="self-start sm:self-auto border-rose-400/40 bg-rose-400/10 text-rose-300 font-mono-street text-[10px] uppercase">
                 Non-Custodial
               </Badge>
             </div>
@@ -628,7 +648,7 @@ export default function DocsPage() {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-3">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
                 <div className="flex items-center gap-2 text-rose-400">
                   <ShieldCheck className="h-5 w-5" />
                   <h4 className="font-display text-base uppercase tracking-wider text-white">
@@ -647,7 +667,7 @@ export default function DocsPage() {
                 </div>
               </div>
 
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-5 rounded-2xl space-y-3">
+              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
                 <div className="flex items-center gap-2 text-rose-400">
                   <Users className="h-5 w-5" />
                   <h4 className="font-display text-base uppercase tracking-wider text-white">
@@ -666,10 +686,10 @@ export default function DocsPage() {
             </div>
 
             {/* Critical Security Warning */}
-            <div className="border-2 border-rose-500/40 bg-rose-950/20 p-5 sm:p-6 rounded-2xl space-y-3">
+            <div className="border-2 border-rose-500/40 bg-rose-950/20 p-4 sm:p-6 rounded-2xl space-y-3">
               <div className="flex items-center gap-2 text-rose-400">
                 <ShieldAlert className="h-5 w-5" />
-                <h4 className="font-display text-lg uppercase tracking-wider text-white">
+                <h4 className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
                   Critical Non-Custodial Advisory
                 </h4>
               </div>
