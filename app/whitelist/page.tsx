@@ -109,24 +109,53 @@ export default function WhitelistPage() {
   const [taskErrors, setTaskErrors] = useState<Record<string, string | null>>({});
   const [taskSuccess, setTaskSuccess] = useState<Record<string, string | null>>({});
 
-  // Social Task UX: Open before verify & 10s countdown
-  const [openedTasks, setOpenedTasks] = useState<Record<string, boolean>>(() => {
-    if (typeof window === "undefined") return {};
-    try {
-      const saved = sessionStorage.getItem("chimphood_opened_tasks");
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
+  // Social Task UX: Open before verify & 10s countdown (scoped per wallet address)
+  const [openedTasks, setOpenedTasks] = useState<Record<string, boolean>>({});
   const [countdownTasks, setCountdownTasks] = useState<Record<string, number>>({});
+
+  // Reset or load wallet-scoped opened tasks whenever address changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        // Clear old global un-scoped key to prevent leakage across accounts
+        sessionStorage.removeItem("chimphood_opened_tasks");
+      } catch {}
+    }
+
+    setEvidenceInputs({});
+    setTaskErrors({});
+    setTaskSuccess({});
+    setCountdownTasks({});
+
+    if (!address) {
+      setOpenedTasks({});
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const key = `chimphood_opened_tasks_${address.toLowerCase()}`;
+        const saved = sessionStorage.getItem(key);
+        setOpenedTasks(saved ? JSON.parse(saved) : {});
+      } catch {
+        setOpenedTasks({});
+      }
+    } else {
+      setOpenedTasks({});
+    }
+  }, [address]);
 
   const markTaskOpened = (taskId: string) => {
     setOpenedTasks((prev) => {
       const next = { ...prev, [taskId]: true };
-      try {
-        sessionStorage.setItem("chimphood_opened_tasks", JSON.stringify(next));
-      } catch {}
+      if (typeof window !== "undefined" && address) {
+        try {
+          sessionStorage.setItem(
+            `chimphood_opened_tasks_${address.toLowerCase()}`,
+            JSON.stringify(next)
+          );
+        } catch {}
+      }
       return next;
     });
   };

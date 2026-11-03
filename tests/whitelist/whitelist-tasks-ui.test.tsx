@@ -836,4 +836,95 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
 
     vi.useRealTimers();
   });
+
+  // 13. Wallet switching resets opened tasks gating & hides proof inputs
+  it("resets opened task state and hides proof input when switching wallet address", async () => {
+    let mockAuth = {
+      status: "authenticated",
+      sessionAddress: "0x1111111111111111111111111111111111111111",
+      walletAddress: "0x1111111111111111111111111111111111111111",
+    };
+    vi.mocked(siweHook.useSiweAuth).mockImplementation(() => mockAuth as any);
+
+    const tasksList: tasksClient.ActiveCampaignItem[] = [
+      {
+        ...mockActiveCampaigns[0],
+        tasks: [
+          {
+            id: "task-social-follow",
+            versionId: "ver-1",
+            campaignId: "camp-1",
+            taskCode: "FOLLOW_X",
+            title: "Follow X Chimphood Official",
+            description: "Follow us",
+            taskType: "SOCIAL_X_FOLLOW",
+            points: 10,
+            isRequired: true,
+            sortOrder: 1,
+            progress: null,
+            latestSubmission: null,
+          },
+          {
+            id: "task-social-reply",
+            versionId: "ver-1",
+            campaignId: "camp-1",
+            taskCode: "REPLY_TWEET",
+            title: "Reply to Tweet",
+            description: "Reply to our post",
+            taskType: "SOCIAL_X_REPLY",
+            points: 10,
+            isRequired: true,
+            sortOrder: 2,
+            progress: null,
+            latestSubmission: null,
+          },
+        ],
+      },
+    ];
+
+    vi.mocked(tasksClient.fetchActiveTasks).mockResolvedValue({
+      configured: true,
+      campaigns: tasksList,
+    });
+
+    const { rerender } = render(<WhitelistPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Follow X Chimphood Official")).toBeInTheDocument();
+      expect(screen.getByText("Reply to Tweet")).toBeInTheDocument();
+    });
+
+    // On Wallet A: initially disabled
+    expect(screen.queryByPlaceholderText(/Paste reply or quote URL/i)).not.toBeInTheDocument();
+    const openXButtons = screen.getAllByText("OPEN X");
+
+    // Click OPEN X for both tasks on Wallet A
+    fireEvent.click(openXButtons[0].closest("a")!);
+    fireEvent.click(openXButtons[1].closest("a")!);
+
+    // Now on Wallet A, Follow verify is active and Reply proof input is shown
+    expect(await screen.findByRole("button", { name: /VERIFY TASK/i })).toBeEnabled();
+    expect(screen.getByPlaceholderText(/Paste reply or quote URL/i)).toBeInTheDocument();
+
+    // Now SWITCH to Wallet B
+    mockAuth = {
+      status: "authenticated",
+      sessionAddress: "0x2222222222222222222222222222222222222222",
+      walletAddress: "0x2222222222222222222222222222222222222222",
+    };
+    rerender(<WhitelistPage />);
+
+    // On Wallet B: opened tasks MUST be reset!
+    await waitFor(() => {
+      // Proof input must be HIDDEN again
+      expect(screen.queryByPlaceholderText(/Paste reply or quote URL/i)).not.toBeInTheDocument();
+      // Verify buttons must be disabled CLICK 'OPEN X' FIRST again
+      const disabledButtons = screen.getAllByRole("button", {
+        name: /CLICK 'OPEN X' FIRST/i,
+      });
+      expect(disabledButtons.length).toBe(2);
+      expect(disabledButtons[0]).toBeDisabled();
+      expect(disabledButtons[1]).toBeDisabled();
+    });
+  });
 });
