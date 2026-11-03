@@ -210,4 +210,135 @@ describe("AdminEvidenceReview Component Unit Tests", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("5. Menampilkan informasi X dan wallet user pada card submission", async () => {
+    const mockList = vi.mocked(adminClient.adminListEvidence);
+    mockList.mockResolvedValueOnce({
+      submissions: [
+        {
+          id: "sub-user-info",
+          taskId: "task-010",
+          userId: "user-alpha",
+          status: "APPROVED",
+          createdAt: "2026-11-03T10:00:00.000Z",
+          payload: "https://x.com/soikikip/status/2115819996813475159",
+          submissionType: "URL",
+          user: {
+            id: "user-alpha",
+            wallet: { address: "0xcf5168019e13b827ac46b9a84499e3a6cf513ae9" },
+            xIdentity: { username: "soikikip" },
+          },
+          task: {
+            id: "task-010",
+            taskCode: "QUOTE_TWEET_CAMPAIGN",
+            title: "Quote Announcement Tweet",
+            taskType: "SOCIAL_X_QUOTE",
+          },
+        } as any,
+      ],
+      total: 1,
+      limit: 50,
+      offset: 0,
+    });
+
+    render(<AdminEvidenceReview />);
+
+    await waitFor(() => {
+      expect(screen.getByText("ID: sub-user-info")).toBeInTheDocument();
+    });
+
+    // Verify X username and link
+    const xLink = screen.getByRole("link", { name: /@soikikip/i });
+    expect(xLink).toBeInTheDocument();
+    expect(xLink).toHaveAttribute("href", "https://x.com/soikikip");
+
+    // Verify shortened wallet address
+    expect(screen.getByText("0xcf51...3ae9")).toBeInTheDocument();
+
+    // Verify task title & task type
+    expect(screen.getByText("Quote Announcement Tweet")).toBeInTheDocument();
+    expect(screen.getByText("QUOTE")).toBeInTheDocument();
+
+    // Verify proof is shown for QUOTE task
+    expect(screen.getByText("Submitted Evidence Content:")).toBeInTheDocument();
+  });
+
+  it("6. Sembunyikan Submitted Evidence Content khusus FOLLOW, LIKE, REPOST dan tampilkan untuk Reply & Quote", async () => {
+    const mockList = vi.mocked(adminClient.adminListEvidence);
+    mockList.mockResolvedValue({
+      submissions: [
+        {
+          id: "sub-follow",
+          taskId: "task-follow",
+          userId: "user-beta",
+          status: "APPROVED",
+          createdAt: "2026-11-03T11:00:00.000Z",
+          payload: "https://x.com/soikikip",
+          submissionType: "URL",
+          reviewerNotes: "Auto-verified via social action",
+          user: {
+            id: "user-beta",
+            wallet: { address: "0x1234567890abcdef1234567890abcdef12345678" },
+            xIdentity: { username: "soikikip" },
+          },
+          task: {
+            id: "task-follow",
+            taskCode: "FOLLOW_TWITTER",
+            title: "Follow @ChimpHoodNFT",
+            taskType: "SOCIAL_X_FOLLOW",
+          },
+        } as any,
+        {
+          id: "sub-reply",
+          taskId: "task-reply",
+          userId: "user-beta",
+          status: "APPROVED",
+          createdAt: "2026-11-03T11:15:00.000Z",
+          payload: "https://x.com/soikikip/status/999888777",
+          submissionType: "URL",
+          user: {
+            id: "user-beta",
+            wallet: { address: "0x1234567890abcdef1234567890abcdef12345678" },
+            xIdentity: { username: "soikikip" },
+          },
+          task: {
+            id: "task-reply",
+            taskCode: "REPLY_CAMPAIGN",
+            title: "Reply to Post",
+            taskType: "SOCIAL_X_REPLY",
+          },
+        } as any,
+      ],
+      total: 2,
+      limit: 50,
+      offset: 0,
+    });
+
+    render(<AdminEvidenceReview />);
+
+    // All submissions show up without being removed from list
+    await waitFor(() => {
+      expect(screen.getByText("ID: sub-reply")).toBeInTheDocument();
+      expect(screen.getByText("ID: sub-follow")).toBeInTheDocument();
+    });
+
+    // The reply task should have "Submitted Evidence Content:"
+    expect(screen.getByText("Submitted Evidence Content:")).toBeInTheDocument();
+
+    // For FOLLOW task, "Submitted Evidence Content" should be HIDDEN, and auto-verified note shown instead
+    expect(
+      screen.getByText("Auto-verified social task — manual proof content hidden"),
+    ).toBeInTheDocument();
+
+    // Now switch filter to "Reply & Quote Only"
+    const replyQuoteBtn = screen.getByRole("button", { name: "Reply & Quote Only" });
+    fireEvent.click(replyQuoteBtn);
+
+    // Follow task should now be filtered out from the list in REPLY_QUOTE_ONLY mode
+    await waitFor(() => {
+      expect(screen.queryByText("ID: sub-follow")).not.toBeInTheDocument();
+      expect(screen.getByText("ID: sub-reply")).toBeInTheDocument();
+      expect(screen.getByText("(1 Follow/Like/Repost hidden)")).toBeInTheDocument();
+    });
+  });
 });

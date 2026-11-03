@@ -14,13 +14,13 @@ function getOrCreatePool(connectionString: string): Pool {
 
   const maxConnections = process.env.DATABASE_POOL_MAX
     ? parseInt(process.env.DATABASE_POOL_MAX, 10)
-    : 2;
+    : 10;
 
   const pool = new Pool({
     connectionString,
-    max: Number.isFinite(maxConnections) && maxConnections > 0 ? maxConnections : 2,
-    idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 5_000,
+    max: Number.isFinite(maxConnections) && maxConnections > 0 ? maxConnections : 10,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 20_000,
   });
 
   pool.on("error", (err) => {

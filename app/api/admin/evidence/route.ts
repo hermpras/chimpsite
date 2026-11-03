@@ -54,7 +54,10 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json(
       {
         error: "SERVER_ERROR",
-        message: "An unexpected error occurred while listing evidence submissions.",
+        message:
+          err instanceof Error
+            ? err.message
+            : "An unexpected error occurred while listing evidence submissions.",
       },
       { status: 500 },
     );
