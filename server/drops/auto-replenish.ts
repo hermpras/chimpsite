@@ -339,13 +339,15 @@ export async function ensureActiveCyclePeriod(
   return await prisma.$transaction(
     async (tx) => {
       // 0. Acquire PostgreSQL transaction-level advisory lock to serialize auto-replenish per drop.
-      // Must fail closed: if acquiring the advisory lock fails, times out, or $queryRaw is unavailable,
+      // Must fail closed: if acquiring the advisory lock fails, times out, or raw executor is unavailable,
       // throw immediately so the transaction aborts and rolls back cleanly without proceeding un-synchronized.
-      if (typeof (tx as any).$queryRaw !== "function") {
+      if (typeof (tx as any).$executeRaw === "function") {
+        await (tx as any).$executeRaw`SELECT pg_advisory_xact_lock(982341, hashtext(${drop.id}))`;
+      } else if (typeof (tx as any).$queryRaw === "function") {
+        await (tx as any).$queryRaw`SELECT pg_advisory_xact_lock(982341, hashtext(${drop.id}))::text`;
+      } else {
         throw new Error("PostgreSQL advisory lock is unavailable");
       }
-
-      await (tx as any).$queryRaw`SELECT pg_advisory_xact_lock(982341, hashtext(${drop.id}))`;
 
       const poolTraits = traits;
       const validTraitIds = poolTraits.map((t) => t.id);

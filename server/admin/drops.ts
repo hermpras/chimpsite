@@ -5,6 +5,7 @@ import {
   canConfigureStock,
 } from "../drops/schedule";
 import { recordAuditLog } from "../audit/audit";
+import { ensureActiveCyclePeriod } from "../drops/auto-replenish";
 
 export class AdminDropError extends Error {
   code: string;
@@ -217,6 +218,27 @@ export async function getAdminDrop(prisma: PrismaClient, dropIdOrSlug: string) {
 
   if (!drop) {
     throw new AdminDropError("DROP_NOT_FOUND", "Drop was not found.", 404);
+  }
+
+  // If drop is ACTIVE and perpetual, ensure the current 2-hour cycle period is active
+  if (drop.status === "ACTIVE") {
+    const now = new Date();
+    const hasActivePeriod = drop.periods.some(
+      (p) =>
+        p.status === "ACTIVE" &&
+        now >= new Date(p.startsAt) &&
+        now <= new Date(p.endsAt),
+    );
+    if (!hasActivePeriod && typeof ensureActiveCyclePeriod === "function") {
+      try {
+        const replenished = await ensureActiveCyclePeriod(prisma, drop as any, now);
+        if (replenished && !drop.periods.some((p) => p.id === replenished.id)) {
+          (drop.periods as any).push(replenished);
+        }
+      } catch (err) {
+        console.warn("Notice: auto-replenish in getAdminDrop:", err);
+      }
+    }
   }
 
   return drop;
