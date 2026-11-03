@@ -478,8 +478,8 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     expect(mockDismiss).toHaveBeenCalledTimes(1);
   });
 
-  // 12. Connect X on Profile link when X identity is required
-  it("renders Connect X on Profile button linking to /profile when X is not linked", async () => {
+  // 12. Direct Connect X Account button when X identity is required
+  it("renders direct Connect X Account button when X is not linked", async () => {
     vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
       configured: true,
       program: defaultProgram,
@@ -507,10 +507,8 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
       expect(screen.getByText("X (Twitter) Identity")).toBeInTheDocument();
     });
 
-    const connectXBtn = screen.getByRole("button", { name: /Connect X on Profile/i });
-    expect(connectXBtn).toBeInTheDocument();
-    const link = connectXBtn.closest("a");
-    expect(link).toHaveAttribute("href", "/profile");
+    const directConnectXBtn = screen.getByRole("button", { name: /^Connect X Account$/i });
+    expect(directConnectXBtn).toBeInTheDocument();
   });
 
   // 13. GTD Allocation capacity label format and color-themed trait category checklist

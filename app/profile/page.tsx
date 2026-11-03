@@ -506,6 +506,14 @@ function ProfileContent() {
               <p className="mt-0.5 text-sm text-gray-300">
                 Your X (Twitter) profile has been verified and connected to your account.
               </p>
+              <div className="mt-2.5">
+                <Link
+                  href="/whitelist"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+                >
+                  <span>Continue in Whitelist Portal &rarr;</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

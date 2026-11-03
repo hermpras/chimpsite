@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -19,22 +19,12 @@ import {
   MessageSquare,
   ArrowRight,
   Link2,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Palette,
 } from "lucide-react";
 
-function XLogo(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 23.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
@@ -49,35 +39,51 @@ import {
   type ActiveCampaignItem,
   type ActiveCampaignTask,
 } from "@/lib/tasks/client";
+import {
+  fetchUserInventory,
+  type InventoryItemData,
+} from "@/lib/inventory/client";
+import { UserAvatar } from "@/components/inventory/UserAvatar";
+import { shortenAddress } from "@/lib/auth/address";
+
+function XLogo(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 23.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+const TRAIT_CATEGORIES = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
 
 const CATEGORY_THEMES: Record<
   string,
   { heldClass: string; unheldClass: string; checkColor: string }
 > = {
   BG: {
-    heldClass: "border-sky-500/40 bg-sky-500/10 text-sky-300",
-    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
-    checkColor: "text-sky-400",
+    heldClass: "border-sky-300 bg-sky-50 text-sky-800",
+    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
+    checkColor: "text-sky-600",
   },
   FUR: {
-    heldClass: "border-amber-500/40 bg-amber-500/10 text-amber-300",
-    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
-    checkColor: "text-amber-400",
+    heldClass: "border-amber-300 bg-amber-50 text-amber-800",
+    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
+    checkColor: "text-amber-600",
   },
   CLOTHING: {
-    heldClass: "border-violet-500/40 bg-violet-500/10 text-violet-300",
-    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
-    checkColor: "text-violet-400",
+    heldClass: "border-violet-300 bg-violet-50 text-violet-800",
+    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
+    checkColor: "text-violet-600",
   },
   HEADWEAR: {
-    heldClass: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
-    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
-    checkColor: "text-emerald-400",
+    heldClass: "border-emerald-300 bg-emerald-50 text-emerald-800",
+    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
+    checkColor: "text-emerald-600",
   },
   EYEWEAR: {
-    heldClass: "border-teal-500/40 bg-teal-500/10 text-teal-300",
-    unheldClass: "border-gray-800 bg-gray-900/40 text-gray-500",
-    checkColor: "text-teal-400",
+    heldClass: "border-teal-300 bg-teal-50 text-teal-800",
+    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
+    checkColor: "text-teal-600",
   },
 };
 
@@ -92,14 +98,80 @@ export default function WhitelistPage() {
     dismissError,
   } = useSiweAuth();
   const address = sessionAddress || walletAddress;
+
+  const handleConnectWallet = () => {
+    login?.();
+  };
+
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusResult, setStatusResult] = useState<WhitelistStatusResponse | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
+
+  // X OAuth Connect direct state
+  const [isConnectingX, setIsConnectingX] = useState(false);
+  const [xConnectError, setXConnectError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const err = params.get("x_error") || params.get("error");
+        if (err) {
+          setXConnectError(
+            err === "access_denied"
+              ? "Authorization was denied on X. Please try connecting again."
+              : `Failed to link X account (${err}). Please try again.`,
+          );
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
+
+  const handleDirectConnectX = async () => {
+    if (status !== "authenticated") {
+      setXConnectError("Please connect and sign in with your Web3 wallet first.");
+      return;
+    }
+
+    try {
+      setIsConnectingX(true);
+      setXConnectError(null);
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("x_connect_source", "whitelist");
+        } catch {
+          // ignore
+        }
+      }
+
+      const res = await fetch("/api/social/x/connect");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to initiate X connection.");
+      }
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.message || "X OAuth is not configured in this environment.");
+      }
+    } catch (err: unknown) {
+      setIsConnectingX(false);
+      setXConnectError(
+        err instanceof Error ? err.message : "Failed to initiate X connection.",
+      );
+    }
+  };
 
   // Campaigns & Tasks state
   const [campaigns, setCampaigns] = useState<ActiveCampaignItem[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksError, setTasksError] = useState<string | null>(null);
+
+  // Inventory & Trait state
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemData[]>([]);
+  const [showTasksInViewB, setShowTasksInViewB] = useState(false);
 
   // Evidence submission state per task
   const [evidenceInputs, setEvidenceInputs] = useState<
@@ -117,7 +189,6 @@ export default function WhitelistPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        // Clear old global un-scoped key to prevent leakage across accounts
         sessionStorage.removeItem("chimphood_opened_tasks");
       } catch {}
     }
@@ -129,6 +200,7 @@ export default function WhitelistPage() {
 
     if (!address) {
       setOpenedTasks({});
+      setInventoryItems([]);
       return;
     }
 
@@ -145,6 +217,27 @@ export default function WhitelistPage() {
     }
   }, [address]);
 
+  // Load Inventory for Character & Wardrobe
+  useEffect(() => {
+    if (address && status === "authenticated") {
+      let active = true;
+      fetchUserInventory(address)
+        .then((res) => {
+          if (active && res.items) {
+            setInventoryItems(res.items);
+          }
+        })
+        .catch(() => {
+          if (active) setInventoryItems([]);
+        });
+      return () => {
+        active = false;
+      };
+    } else {
+      setInventoryItems([]);
+    }
+  }, [address, status]);
+
   const markTaskOpened = (taskId: string) => {
     setOpenedTasks((prev) => {
       const next = { ...prev, [taskId]: true };
@@ -152,7 +245,7 @@ export default function WhitelistPage() {
         try {
           sessionStorage.setItem(
             `chimphood_opened_tasks_${address.toLowerCase()}`,
-            JSON.stringify(next)
+            JSON.stringify(next),
           );
         } catch {}
       }
@@ -199,44 +292,43 @@ export default function WhitelistPage() {
     if (t === "SOCIAL_X_REPLY") {
       return {
         label: "REPLY / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+        icon: <MessageSquare className="h-4 w-4 text-sky-500" />,
       };
     }
     if (t === "SOCIAL_X_QUOTE") {
       return {
         label: "QUOTE / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
+        icon: <MessageSquare className="h-4 w-4 text-purple-500" />,
       };
     }
     if (t === "SOCIAL_X_LIKE") {
       return {
         label: "LIKE / ONCE",
-        icon: <Heart className="h-4 w-4 text-rose-400" />,
+        icon: <Heart className="h-4 w-4 text-rose-500" />,
       };
     }
     if (t === "SOCIAL_X_REPOST") {
       return {
         label: "REPOST / ONCE",
-        icon: <Repeat className="h-4 w-4 text-emerald-400" />,
+        icon: <Repeat className="h-4 w-4 text-emerald-500" />,
       };
     }
     if (t === "SOCIAL_X_FOLLOW") {
-      // If user typed REPLY / QUOTE in the title/code, respect that over default FOLLOW
       if (code.includes("REPLY") || title.includes("REPLY")) {
         return {
           label: "REPLY / ONCE",
-          icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+          icon: <MessageSquare className="h-4 w-4 text-sky-500" />,
         };
       }
       if (code.includes("QUOTE") || title.includes("QUOTE")) {
         return {
           label: "QUOTE / ONCE",
-          icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
+          icon: <MessageSquare className="h-4 w-4 text-purple-500" />,
         };
       }
       return {
         label: "FOLLOW / ONCE",
-        icon: <XLogo className="h-4 w-4 text-white" />,
+        icon: <XLogo className="h-4 w-4 text-slate-700" />,
       };
     }
 
@@ -244,43 +336,43 @@ export default function WhitelistPage() {
     if (code.includes("REPLY") || title.includes("REPLY")) {
       return {
         label: "REPLY / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+        icon: <MessageSquare className="h-4 w-4 text-sky-500" />,
       };
     }
     if (code.includes("QUOTE") || title.includes("QUOTE")) {
       return {
         label: "QUOTE / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
+        icon: <MessageSquare className="h-4 w-4 text-purple-500" />,
       };
     }
     if (code.includes("COMMENT") || title.includes("COMMENT")) {
       return {
         label: "COMMENT / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+        icon: <MessageSquare className="h-4 w-4 text-sky-500" />,
       };
     }
     if (code.includes("REPOST") || code.includes("RETWEET") || title.includes("REPOST")) {
       return {
         label: "REPOST / ONCE",
-        icon: <Repeat className="h-4 w-4 text-emerald-400" />,
+        icon: <Repeat className="h-4 w-4 text-emerald-500" />,
       };
     }
     if (code.includes("LIKE") || title.includes("LIKE")) {
       return {
         label: "LIKE / ONCE",
-        icon: <Heart className="h-4 w-4 text-rose-400" />,
+        icon: <Heart className="h-4 w-4 text-rose-500" />,
       };
     }
     if (code.includes("FOLLOW") || title.includes("FOLLOW")) {
       return {
         label: "FOLLOW / ONCE",
-        icon: <XLogo className="h-4 w-4 text-white" />,
+        icon: <XLogo className="h-4 w-4 text-slate-700" />,
       };
     }
 
     return {
       label: "SOCIAL / ONCE",
-      icon: <XLogo className="h-4 w-4 text-white" />,
+      icon: <XLogo className="h-4 w-4 text-slate-700" />,
     };
   }
 
@@ -310,7 +402,6 @@ export default function WhitelistPage() {
       }
     }
 
-    // Set countdown to 10s
     setCountdownTasks((prev) => ({ ...prev, [task.id]: 10 }));
     setTaskErrors((prev) => ({ ...prev, [task.id]: null }));
     setTaskSuccess((prev) => ({ ...prev, [task.id]: null }));
@@ -466,16 +557,13 @@ export default function WhitelistPage() {
         [task.id]: "Evidence submitted! Status is now Pending Review.",
       }));
 
-      // Clear payload input
       setEvidenceInputs((prev) => ({
         ...prev,
         [task.id]: { payload: "", submissionType: type },
       }));
 
-      // Reload tasks to reflect latest backend submission status
       await loadTasks();
 
-      // Refresh Whitelist status if user is signed in
       if (address) {
         fetchWhitelistStatus(address).then(setStatusResult).catch(console.error);
       }
@@ -496,7 +584,7 @@ export default function WhitelistPage() {
           label: "Verified",
           subtext: "Verified — All criteria confirmed by team.",
           badgeVariant: "default" as const,
-          colorClass: "border-emerald-500/30 bg-emerald-500/20 text-emerald-300",
+          colorClass: "border-emerald-300 bg-emerald-50 text-emerald-800",
           icon: CheckCircle2,
         };
       case "UNDER_REVIEW":
@@ -504,7 +592,7 @@ export default function WhitelistPage() {
           label: "Under Verification",
           subtext: "Under Verification — Account details being audited.",
           badgeVariant: "warning" as const,
-          colorClass: "border-amber-500/30 bg-amber-500/20 text-amber-300",
+          colorClass: "border-amber-300 bg-amber-50 text-amber-800",
           icon: Clock,
         };
       case "FLAGGED":
@@ -513,7 +601,7 @@ export default function WhitelistPage() {
           subtext:
             "Notice — Please review your linked accounts and task requirements. Slot remains active.",
           badgeVariant: "warning" as const,
-          colorClass: "border-rose-500/30 bg-rose-500/20 text-rose-300",
+          colorClass: "border-rose-300 bg-rose-50 text-rose-800",
           icon: AlertCircle,
         };
       case "NOT_REVIEWED":
@@ -522,7 +610,7 @@ export default function WhitelistPage() {
           label: "Pending Routine Review",
           subtext: "Slot Confirmed — Routine verification in progress.",
           badgeVariant: "outline" as const,
-          colorClass: "border-blue-500/30 bg-blue-500/10 text-blue-300",
+          colorClass: "border-blue-300 bg-blue-50 text-blue-800",
           icon: Info,
         };
     }
@@ -557,7 +645,7 @@ export default function WhitelistPage() {
         key: "APPROVED",
         label: "Approved",
         badgeVariant: "default",
-        colorClass: "border-emerald-500/30 bg-emerald-500/20 text-emerald-300",
+        colorClass: "border-emerald-300 bg-emerald-50 text-emerald-800 font-medium",
       };
     }
     if (
@@ -568,7 +656,7 @@ export default function WhitelistPage() {
         key: "PENDING",
         label: "Pending Review",
         badgeVariant: "warning",
-        colorClass: "border-amber-500/30 bg-amber-500/20 text-amber-300",
+        colorClass: "border-amber-300 bg-amber-50 text-amber-800 font-medium",
       };
     }
     if (
@@ -579,993 +667,1293 @@ export default function WhitelistPage() {
         key: "REJECTED",
         label: "Rejected",
         badgeVariant: "outline",
-        colorClass: "border-rose-500/30 bg-rose-500/20 text-rose-300",
+        colorClass: "border-rose-300 bg-rose-50 text-rose-800 font-medium",
       };
     }
     return {
       key: "NOT_SUBMITTED",
       label: "Not Submitted",
       badgeVariant: "outline",
-      colorClass: "border-gray-700 bg-gray-800/40 text-gray-400",
+      colorClass: "border-slate-300 bg-slate-100 text-slate-600 font-medium",
     };
   }
 
+  // --- Automatic View Transition Logic ---
+  const { allMandatoryTasks, areAllMandatoryApproved } = useMemo(() => {
+    const allMandatory = campaigns.flatMap((c) => (c.tasks || []).filter((t) => t.isRequired));
+
+    let approved = false;
+    if (status === "authenticated") {
+      // Disqualified / revoked users are never considered approved for active portal
+      if (statusResult?.status?.phase === "REVOKED") {
+        approved = false;
+      } else if (statusResult?.status?.phase === "SLOT_ALLOCATED") {
+        // GTD slot allocated users are verified and approved
+        approved = true;
+      } else if (
+        statusResult?.status?.details &&
+        statusResult.status.details.totalMandatoryTasksCount > 0
+      ) {
+        approved =
+          statusResult.status.details.completedMandatoryTasksCount >=
+          statusResult.status.details.totalMandatoryTasksCount;
+      } else if (allMandatory.length > 0) {
+        approved = allMandatory.every((t) => {
+          const st = getTaskStatus(t);
+          return st.key === "APPROVED";
+        });
+      }
+    }
+
+    return { allMandatoryTasks: allMandatory, areAllMandatoryApproved: approved };
+  }, [campaigns, status, statusResult]);
+
+  // Trait calculation from inventory and backend details
+  const { heldCategories, duplicateCount } = useMemo(() => {
+    const held = new Set<string>();
+    if (statusResult?.status?.details?.heldCategories) {
+      for (const cat of statusResult.status.details.heldCategories) {
+        held.add(cat);
+      }
+    }
+    for (const item of inventoryItems) {
+      if (item.trait?.category) {
+        held.add(item.trait.category);
+      }
+    }
+
+    const heldArr = Array.from(held);
+    const dupCount = Math.max(0, inventoryItems.length - heldArr.length);
+
+    return {
+      heldCategories: heldArr,
+      duplicateCount: dupCount,
+    };
+  }, [statusResult, inventoryItems]);
+
+  // Whitelist qualification status text mapped to the 4 strict requirements
+  const qualificationState = useMemo(() => {
+    const phase = statusResult?.status?.phase;
+    if (phase === "REVOKED") {
+      return {
+        key: "REVOKED" as const,
+        title: "REVOKED",
+        badgeClass: "bg-rose-100 text-rose-800 border-rose-300",
+      };
+    }
+    if (phase === "SLOT_ALLOCATED") {
+      return {
+        key: "Whitelisted" as const,
+        title: "Whitelisted",
+        badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-300",
+      };
+    }
+    if (phase === "IN_QUEUE") {
+      return {
+        key: "Queued" as const,
+        title: "Queued",
+        badgeClass: "bg-sky-100 text-sky-800 border-sky-300",
+      };
+    }
+    if (statusResult?.status?.isFullyQualified || phase === "QUALIFIED") {
+      return {
+        key: "Qualified" as const,
+        title: "Qualified",
+        badgeClass: "bg-teal-100 text-teal-800 border-teal-300",
+      };
+    }
+    return {
+      key: "Incomplete" as const,
+      title: "Incomplete",
+      badgeClass: "bg-amber-100 text-amber-800 border-amber-300",
+    };
+  }, [statusResult]);
+
+  // Stepper helper
+  const isWalletConnected =
+    status === "authenticated" || Boolean(statusResult?.status?.details?.hasVerifiedWallet);
+  const isXLinked = Boolean(statusResult?.status?.details?.hasLinkedX);
+  const isTasksComplete = areAllMandatoryApproved;
+  const isTraitsComplete = heldCategories.length === 5;
+  const isWhitelistSecured =
+    statusResult?.status?.phase === "SLOT_ALLOCATED" || Boolean(statusResult?.status?.isFullyQualified);
+
+  const isRevoked = statusResult?.status?.phase === "REVOKED";
+
+  const activeStepNumber = isRevoked
+    ? 5
+    : !isWalletConnected
+      ? 1
+      : !isXLinked
+        ? 2
+        : !isTasksComplete
+          ? 3
+          : !isTraitsComplete
+            ? 4
+            : 5;
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="mb-8 space-y-2">
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold tracking-tight text-white">
-            Whitelist Portal
-          </h1>
-          <Badge variant="default">Stage 3 Live</Badge>
-        </div>
-        <p className="text-gray-400">
-          Check allocation eligibility, registration status, and ChimpHood Whitelist
-          distribution details.
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        {/* Whitelist Status & Allocation */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-400">
-                <ShieldCheck className="h-5 w-5" />
+    <div className="min-h-screen bg-[#f7faf8] text-slate-800 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl space-y-6">
+        {/* =======================================================================
+            HEADER & 5-STEP HORIZONTAL PROGRESS INDICATOR
+        ======================================================================= */}
+        <header className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs space-y-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
+                  <Palette className="h-4 w-4" />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                  Whitelist Portal
+                </h1>
+                <Badge variant="default" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold">
+                  Stage 3 Live
+                </Badge>
               </div>
-              <div>
-                <CardTitle>Whitelist Status & Allocation</CardTitle>
-                <CardDescription>
-                  Real-time qualification status and allocation progress for your wallet
-                </CardDescription>
-              </div>
+              <p className="text-xs sm:text-sm text-slate-500">
+                Check allocation eligibility, registration status, and ChimpHood Whitelist distribution details.
+              </p>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {status !== "authenticated" ? (
-              <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-6 text-center text-sm text-gray-400 space-y-4">
-                <div>
-                  <p className="font-medium text-gray-300">Wallet Not Authenticated</p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Connect your Web3 wallet via Sign in with Ethereum (SIWE) above to view your real-time Whitelist allocation status and trait checklist.
-                  </p>
-                </div>
 
-                <div className="flex flex-col items-center justify-center gap-2">
-                  {status === "wallet-only" ? (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => void login?.()}
-                      className="w-full sm:w-auto"
+            {statusResult?.program && (
+              <div className="self-start sm:self-auto rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-1.5 text-right font-mono text-xs text-slate-600">
+                <span className="font-semibold text-slate-700">
+                  GTD Allocation: {statusResult.program.allocatedSlotsCount.toLocaleString()} /{" "}
+                  {statusResult.program.totalSlots.toLocaleString()} Slots
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Horizontal Five-Step Progress Indicator */}
+          <div className="border-t border-slate-100 pt-4">
+            <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-1 text-xs">
+              {[
+                { num: 1, label: "WALLET", done: isWalletConnected },
+                { num: 2, label: "X SYNC", done: isXLinked },
+                { num: 3, label: "TASKS", done: isTasksComplete },
+                { num: 4, label: "TRAITS", done: isTraitsComplete },
+                { num: 5, label: "STATUS", done: isWhitelistSecured },
+              ].map((step, idx) => {
+                const isActive = activeStepNumber === step.num;
+                return (
+                  <React.Fragment key={step.label}>
+                    <div
+                      className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-xl border transition-all ${
+                        step.done
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-800 font-semibold"
+                          : isActive
+                            ? "border-amber-300 bg-amber-50 text-amber-900 font-bold shadow-xs"
+                            : "border-slate-200 bg-slate-50/60 text-slate-400"
+                      }`}
                     >
-                      Sign In with Ethereum
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => void login?.()}
-                      disabled={status === "signing"}
-                      className="w-full sm:w-auto"
-                    >
-                      Connect Wallet
-                    </Button>
-                  )}
-
-                  {status === "signing" && (
-                    <div className="mt-1 flex items-center gap-2 text-xs text-emerald-400">
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      <span>{busyMessage ?? "Processing authentication…"}</span>
-                    </div>
-                  )}
-
-                  {authError && status !== "signing" && (
-                    <div className="mt-2 flex w-full max-w-md items-center justify-between gap-2 rounded border border-rose-500/20 bg-rose-500/10 p-2 text-xs text-rose-300">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
-                        <span className="truncate">{authError}</span>
-                      </div>
-                      {dismissError && (
-                        <button
-                          onClick={dismissError}
-                          className="shrink-0 text-[11px] text-rose-400 underline hover:text-rose-200"
-                        >
-                          Dismiss
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : statusLoading && !statusResult ? (
-              <div className="py-8 text-center text-sm text-gray-400">
-                Loading your Whitelist status...
-              </div>
-            ) : statusError ? (
-              <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-4 text-xs text-rose-400">
-                {statusError}
-              </div>
-            ) : statusResult?.status ? (
-              <div className="space-y-4 rounded-lg border border-gray-800 bg-gray-900/60 p-4">
-                {/* Header status bar */}
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-800/80 pb-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-gray-300">Phase:</span>
-
-                    {/* GTD Slot Holder */}
-                    {statusResult.status.phase === "SLOT_ALLOCATED" && (
-                      <>
-                        <Badge
-                          variant="default"
-                          className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
-                        >
-                          GTD SLOT ALLOCATED
-                        </Badge>
-                        <Badge
-                          variant="default"
-                          className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
-                        >
-                          Guaranteed Slot #{statusResult.status.slotNumber} (Active)
-                        </Badge>
-                      </>
-                    )}
-
-                    {/* FCFS Directory Participant */}
-                    {statusResult.status.phase === "FCFS_REGISTERED" && (
-                      <>
-                        {statusResult.status.isFullyQualified && (
-                          <Badge
-                            variant="default"
-                            className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
-                          >
-                            FCFS Qualified
-                          </Badge>
-                        )}
-                        <Badge
-                          variant="default"
-                          className="border-blue-500/30 bg-blue-500/20 text-blue-300 font-semibold"
-                        >
-                          FCFS Directory (Registered)
-                        </Badge>
-                      </>
-                    )}
-
-                    {/* Revoked User (Terminal Disqualification per DEC-022) */}
-                    {statusResult.status.phase === "REVOKED" && (
-                      <Badge
-                        variant="outline"
-                        className="border-rose-500/40 bg-rose-500/20 text-rose-300 font-semibold"
+                      <span
+                        className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${
+                          step.done
+                            ? "bg-emerald-600 text-white"
+                            : isActive
+                              ? "bg-amber-500 text-white"
+                              : "bg-slate-200 text-slate-600"
+                        }`}
                       >
-                        REVOKED
-                      </Badge>
-                    )}
-
-                    {/* Legacy QUALIFIED without slot (if any) */}
-                    {statusResult.status.phase === "QUALIFIED" && (
-                      <Badge
-                        variant="default"
-                        className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 font-semibold"
-                      >
-                        QUALIFIED
-                      </Badge>
-                    )}
-
-                    {/* Ineligible / Not Registered / Incomplete */}
-                    {statusResult.status.phase === "NONE" && (
-                      <>
-                        <Badge variant="outline" className="border-gray-700 text-gray-400">
-                          Incomplete
-                        </Badge>
-                        <Badge variant="outline" className="text-gray-400">
-                          Not Registered / Ineligible
-                        </Badge>
-                      </>
-                    )}
-                  </div>
-
-                  {statusResult.program && (
-                    <span className="text-xs text-gray-400 font-mono">
-                      GTD Allocation: {statusResult.program.allocatedSlotsCount.toLocaleString()} /{" "}
-                      {statusResult.program.totalSlots.toLocaleString()} Slots
-                    </span>
-                  )}
-                </div>
-
-                {/* 1. SLOT_ALLOCATED Details & GTD Review Sub-indicator (DEC-015) */}
-                {statusResult.status.phase === "SLOT_ALLOCATED" && (() => {
-                  const review = getGtdReviewDetails(statusResult.status.reviewStatus);
-                  const ReviewIcon = review.icon;
-                  return (
-                    <div className="space-y-3">
-                      <div className="flex flex-col gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                              Review Status:
-                            </span>
-                            <Badge
-                              variant={review.badgeVariant}
-                              className={`text-xs ${review.colorClass}`}
-                            >
-                              <ReviewIcon className="mr-1 h-3 w-3 shrink-0" />
-                              {review.label}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-gray-300">{review.subtext}</p>
-                        </div>
-                        {statusResult.status.allocatedAt && (
-                          <span className="text-[11px] text-gray-500">
-                            Secured on {formatRegistrationDate(statusResult.status.allocatedAt)}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-400">
-                        Your Guaranteed Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected.
-                      </p>
-                    </div>
-                  );
-                })()}
-
-                {/* 2. FCFS_REGISTERED Details (DEC-013, DEC-017, DEC-018) */}
-                {statusResult.status.phase === "FCFS_REGISTERED" && (
-                  <div className="space-y-3">
-                    {/* Registration sequence and timestamp */}
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-300">
-                      <span className="font-semibold text-white">
-                        Participant #{statusResult.status.queueNumber}
+                        {step.done ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : step.num}
                       </span>
-                      {statusResult.status.joinedAt && (
-                        <>
-                          <span className="text-gray-600">•</span>
-                          <span className="text-gray-400">
-                            Registered on {formatRegistrationDate(statusResult.status.joinedAt)}
-                          </span>
-                        </>
-                      )}
+                      <span className="tracking-wide">{step.label}</span>
                     </div>
-
-                    {/* OpenSea FCFS Allowlist Eligibility Banner */}
-                    {statusResult.status.isFullyQualified ? (
-                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-                        <div className="flex items-center gap-2 font-semibold text-emerald-200">
-                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                          Eligible for OpenSea FCFS Allowlist
-                        </div>
-                        <p className="mt-1 text-emerald-300/80">
-                          All 5 qualification requirements are satisfied! Your wallet will be included in the OpenSea FCFS allowlist export.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
-                        <div className="flex items-center gap-2 font-semibold text-amber-200">
-                          <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
-                          Action Required — Incomplete Requirements
-                        </div>
-                        <p className="mt-1 text-amber-300/80">
-                          You are registered in the directory, but must satisfy all 5 requirements below to be included in the OpenSea FCFS allowlist export.
-                        </p>
-                      </div>
+                    {idx < 4 && (
+                      <div
+                        className={`hidden sm:block flex-1 h-0.5 min-w-3 ${
+                          step.done ? "bg-emerald-300" : "bg-slate-200"
+                        }`}
+                      />
                     )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </header>
 
-                    {/* Clear Explanatory Notice (DEC-018) */}
-                    <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-xs text-gray-400">
-                      <p className="font-medium text-gray-300">FCFS Directory Notice</p>
-                      <p className="mt-0.5 text-gray-400">
-                        Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed (GTD) slot or an allocation. GTD slots are never automatically filled.
-                      </p>
-                    </div>
-                  </div>
+        {/* =======================================================================
+            STRICTLY SEQUENTIAL FIVE-STEP VIEWS
+            - STEP 1 (WALLET): Only EVM Wallet connection active
+            - STEP 2 (X SYNC): Only X account connection active
+            - STEP 3 (TASKS): Campaign tasks active until all mandatory approved
+            - STEPS 4 & 5: Main Whitelist Layout (Left: Traits, Right: Status)
+        ======================================================================= */}
+
+        {/* =======================================================================
+            STEP 1 ACTIVE VIEW — CONNECT EVM WALLET
+            Visible when activeStepNumber === 1
+        ======================================================================= */}
+        <div className={activeStepNumber === 1 ? "block" : "hidden"}>
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs max-w-2xl mx-auto space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 font-mono">
+                    Step 1 of 5
+                  </span>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Connect EVM Wallet
+                  </h2>
+                </div>
+              </div>
+              <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold">
+                Active Step
+              </Badge>
+            </div>
+
+            {/* Notice / Instructions */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-slate-800">
+                <AlertCircle className="h-4 w-4 text-slate-500" />
+                <span>Wallet Not Authenticated</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed">
+                Connect your Web3 wallet via Sign in with Ethereum (SIWE) above to view your real-time Whitelist allocation status and trait checklist.
+              </p>
+            </div>
+
+            {authError && (
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+                <span className="truncate">{authError}</span>
+                {dismissError && (
+                  <button
+                    onClick={dismissError}
+                    className="shrink-0 text-[11px] font-semibold underline text-rose-800 hover:text-rose-900"
+                  >
+                    Dismiss
+                  </button>
                 )}
+              </div>
+            )}
 
-                {/* 3. REVOKED Full Disqualification Alert (DEC-022) */}
-                {statusResult.status.phase === "REVOKED" && (
-                  <div className="space-y-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-200">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-rose-300">
-                      <XCircle className="h-4 w-4 shrink-0 text-rose-400" />
-                      Whitelist Status Revoked
-                    </div>
-                    <p className="text-rose-200/90 font-medium">
-                      {statusResult.status.missingRequirements[0] ||
-                        "Whitelist qualification has been revoked by an administrator."}
-                    </p>
-                    <div className="border-t border-rose-500/20 pt-2 text-rose-300/80 space-y-1">
-                      <p>
-                        In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program.
-                      </p>
-                      <p className="text-rose-400/90">
-                        Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the OpenSea FCFS allowlist export.
-                      </p>
-                    </div>
+            {/* Connection Actions */}
+            <div className="pt-2">
+              {status === "wallet-only" ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-slate-500 font-mono">
+                    Connected address: {address ? shortenAddress(address) : "—"}
+                  </p>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => void login?.()}
+                    className="w-full rounded-xl font-bold py-3 text-sm shadow-sm"
+                  >
+                    Sign In with Ethereum
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={handleConnectWallet}
+                  className="w-full rounded-xl font-bold py-3 text-sm shadow-sm"
+                >
+                  Connect Wallet
+                </Button>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 pt-3 text-center">
+              <p className="text-xs text-slate-400">
+                Step 2 (X Account Sync) and Step 3 (Campaign Tasks) will become accessible immediately after your wallet is authenticated.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* =======================================================================
+            STEP 2 ACTIVE VIEW — SYNC X (TWITTER) ACCOUNT
+            Visible when activeStepNumber === 2
+        ======================================================================= */}
+        <div className={activeStepNumber === 2 ? "block" : "hidden"}>
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs max-w-2xl mx-auto space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600 border border-sky-200">
+                  <XLogo className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-sky-600 font-mono">
+                    Step 2 of 5
+                  </span>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    X (Twitter) Identity
+                  </h2>
+                </div>
+              </div>
+              <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700 text-xs font-semibold">
+                Active Step
+              </Badge>
+            </div>
+
+            {/* Completed Step 1 Chip */}
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-800">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>
+                Step 1 Completed: EVM Wallet <strong className="font-mono">{address ? shortenAddress(address) : "—"}</strong> verified via SIWE.
+              </span>
+            </div>
+
+            {/* Notice & Instructions */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs space-y-2">
+              <p className="font-bold text-slate-800">
+                Connect X (Twitter) Account
+              </p>
+              <p className="text-slate-600 leading-relaxed">
+                Link your X (Twitter) profile to establish your social identity and unlock campaign tasks.
+              </p>
+            </div>
+
+            {/* Direct Connect X Action */}
+            <div className="pt-2 space-y-3">
+              {xConnectError && (
+                <div
+                  role="alert"
+                  className="rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-700 flex items-start gap-2"
+                >
+                  <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold">Failed to connect X</p>
+                    <p className="text-[11px] text-rose-600 mt-0.5">{xConnectError}</p>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* 4. NONE (Ineligible / Not Registered) */}
-                {statusResult.status.phase === "NONE" && (
-                  <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-xs text-gray-400">
-                    <p className="font-medium text-gray-300">Not Registered</p>
-                    <p className="mt-0.5 text-gray-400">
-                      Connect your EVM wallet and X (Twitter) account to automatically register in the FCFS Directory, and complete the 5 trait categories and mandatory tasks to qualify.
-                    </p>
-                  </div>
-                )}
-
-                {/* Checklist & Verification Section (Hidden when REVOKED) */}
-                {statusResult.status.phase !== "REVOKED" && (
+              <Button
+                size="lg"
+                disabled={isConnectingX}
+                onClick={handleDirectConnectX}
+                className="w-full rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-bold py-3 text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                {isConnectingX ? (
                   <>
-                    {/* Linked Identities Status */}
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 text-xs">
-                      <div
-                        className={`flex items-center justify-between rounded border p-2.5 ${
-                          statusResult.status.details?.hasVerifiedWallet
-                            ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
-                            : "border-gray-800 bg-gray-800/20 text-gray-500"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {statusResult.status.details?.hasVerifiedWallet ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5 shrink-0 text-gray-600" />
-                          )}
-                          <span>EVM Wallet</span>
-                        </div>
-                        <span className="font-mono text-[11px] text-gray-400">
-                          {statusResult.status.details?.hasVerifiedWallet
-                            ? "Verified"
-                            : "Required"}
-                        </span>
-                      </div>
-
-                      <div
-                        className={`flex flex-col gap-2 rounded border p-2.5 sm:flex-row sm:items-center sm:justify-between ${
-                          statusResult.status.details?.hasLinkedX
-                            ? "border-emerald-800/40 bg-emerald-950/20 text-emerald-300"
-                            : "border-gray-800 bg-gray-800/20 text-gray-500"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {statusResult.status.details?.hasLinkedX ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5 shrink-0 text-gray-600" />
-                          )}
-                          <span>X (Twitter) Identity</span>
-                        </div>
-                        {statusResult.status.details?.hasLinkedX ? (
-                          <span className="font-mono text-[11px] text-gray-400">
-                            {statusResult.status.details.xUsername
-                              ? `@${statusResult.status.details.xUsername}`
-                              : "Linked"}
-                          </span>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-[11px] text-gray-400">Required</span>
-                            <Link href="/profile">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 px-2 text-[10px] border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
-                              >
-                                Connect X on Profile
-                                <ExternalLink className="ml-1 h-2.5 w-2.5" />
-                              </Button>
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 5-Category Trait Checklist */}
-                    <div>
-                      <div className="mb-2 flex items-center justify-between">
-                        <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                          Required Trait Categories (5 of 5)
-                        </h4>
-                        <span className="text-[11px] text-gray-500">
-                          {statusResult.status.details?.heldCategories?.length ?? 0} / 5 Collected
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
-                        {["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"].map((cat, idx) => {
-                          const isHeld =
-                            statusResult.status?.details?.heldCategories?.includes(cat);
-                          const theme = CATEGORY_THEMES[cat];
-                          return (
-                            <div
-                              key={cat}
-                              className={`flex items-center gap-1.5 rounded border p-2 transition-colors ${
-                                idx === 4 ? "col-span-2 sm:col-span-1" : ""
-                              } ${
-                                isHeld ? theme.heldClass : theme.unheldClass
-                              }`}
-                            >
-                              {isHeld ? (
-                                <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${theme.checkColor}`} />
-                              ) : (
-                                <XCircle className="h-3.5 w-3.5 shrink-0 text-gray-600" />
-                              )}
-                              <span className="font-semibold">{cat}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Mandatory Tasks Progress */}
-                    {statusResult.status.details && (
-                      <div className="flex items-center justify-between rounded border border-gray-800 bg-gray-900/40 p-2.5 text-xs">
-                        <span className="text-gray-400">Mandatory Whitelist Tasks:</span>
-                        <span
-                          className={`font-semibold ${
-                            statusResult.status.details.completedMandatoryTasksCount >=
-                            statusResult.status.details.totalMandatoryTasksCount
-                              ? "text-emerald-400"
-                              : "text-amber-400"
-                          }`}
-                        >
-                          {statusResult.status.details.completedMandatoryTasksCount} /{" "}
-                          {statusResult.status.details.totalMandatoryTasksCount} Completed
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Missing requirements summary */}
-                    {statusResult.status.missingRequirements.length > 0 &&
-                      !statusResult.status.isFullyQualified &&
-                      statusResult.status.phase !== "SLOT_ALLOCATED" && (
-                        <div className="space-y-1 rounded border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-300">
-                          <p className="font-semibold">Missing Requirements:</p>
-                          <ul className="list-inside list-disc space-y-0.5 text-amber-200/80">
-                            {statusResult.status.missingRequirements.map((req, i) => (
-                              <li key={i}>{req}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                    <RefreshCw className="h-4 w-4 animate-spin text-slate-300" />
+                    <span>Connecting to X...</span>
+                  </>
+                ) : (
+                  <>
+                    <XLogo className="h-4 w-4 fill-current" />
+                    <span>Connect X Account</span>
                   </>
                 )}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        {/* Campaigns & Quests Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-amber-500/10 p-2 text-amber-400">
-                  <Flame className="h-5 w-5" />
-                </div>
-                <div>
-                  <CardTitle>Campaigns & Quests</CardTitle>
-                  <CardDescription>
-                    Community missions to earn Whitelist allocation
-                  </CardDescription>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadTasks}
-                disabled={tasksLoading}
-                className="self-start sm:self-auto"
-              >
-                <RefreshCw
-                  className={`mr-1.5 h-3.5 w-3.5 ${tasksLoading ? "animate-spin" : ""}`}
-                />
-                {tasksLoading ? "Refreshing..." : "Refresh Tasks"}
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {tasksLoading && campaigns.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-400">
-                Loading campaigns & tasks...
+
+            <div className="border-t border-slate-100 pt-3 text-center">
+              <p className="text-xs text-slate-400">
+                Step 3 (Campaign Tasks) will unlock immediately once your X account is connected.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* =======================================================================
+            STEP 3 ACTIVE VIEW — CAMPAIGN TASKS
+            Visible when activeStepNumber === 3
+        ======================================================================= */}
+        <div className={activeStepNumber === 3 ? "block" : "hidden"}>
+          <div className="space-y-6">
+            {/* Step 1 & 2 Completed Summary Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs text-xs">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>Wallet: <strong className="font-mono text-slate-800">{address ? shortenAddress(address) : "—"}</strong></span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sky-700 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-sky-600" />
+                  <span>X Sync: <strong className="font-mono text-slate-800">{statusResult?.status?.details?.xUsername ? `x/${statusResult.status.details.xUsername}` : "Linked"}</strong></span>
+                </div>
               </div>
-            ) : tasksError ? (
-              <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-400">
-                <p className="font-medium">Failed to load campaigns:</p>
-                <p className="text-xs">{tasksError}</p>
-                <Button variant="outline" size="sm" className="mt-3" onClick={loadTasks}>
-                  Retry
+              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 text-[11px] font-bold">
+                Step 3 of 5 — Campaign Tasks Active
+              </Badge>
+            </div>
+
+            {/* Campaign Tasks Section */}
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+                    <Flame className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">
+                      Campaigns & Quests
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Community missions to earn Whitelist allocation
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadTasks}
+                  disabled={tasksLoading}
+                  className="rounded-xl self-start sm:self-auto text-xs text-slate-600 border-slate-200"
+                >
+                  <RefreshCw
+                    className={`mr-1.5 h-3 w-3 ${tasksLoading ? "animate-spin text-slate-500" : ""}`}
+                  />
+                  {tasksLoading ? "Refreshing..." : "Refresh Tasks"}
                 </Button>
               </div>
-            ) : campaigns.length === 0 ? (
-              <p className="text-sm text-gray-400">
-                No active campaigns currently open for Whitelist.
-              </p>
-            ) : (
-              campaigns.map((campaign) => (
-                <div
-                  key={campaign.id}
-                  className="space-y-4 rounded-lg border border-gray-800 bg-gray-900/40 p-4"
-                >
-                  {/* Campaign Header */}
-                  <div className="flex flex-col gap-2 border-b border-gray-800 pb-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
+
+              {/* Tasks List */}
+              {tasksLoading && campaigns.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  Loading campaigns & tasks...
+                </div>
+              ) : tasksError ? (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700 space-y-2">
+                  <p className="font-semibold">Failed to load campaigns:</p>
+                  <p>{tasksError}</p>
+                  <Button variant="outline" size="sm" className="rounded-xl text-xs" onClick={loadTasks}>
+                    Retry
+                  </Button>
+                </div>
+              ) : campaigns.length === 0 ? (
+                <p className="text-xs text-slate-400 py-4">
+                  No active campaigns currently open for Whitelist.
+                </p>
+              ) : (
+                campaigns.map((campaign) => (
+                  <div key={campaign.id} className="space-y-4">
+                    {/* Campaign Title & Instructions */}
+                    <div className="rounded-xl bg-slate-50/80 border border-slate-200/70 p-3.5 space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white">{campaign.title}</h3>
-                        <Badge variant="default" className="text-xs">
+                        <h3 className="font-bold text-sm text-slate-800">
+                          {campaign.title}
+                        </h3>
+                        <Badge variant="default" className="text-[10px] bg-slate-100 text-slate-600 border-slate-200">
                           {campaign.status}
                         </Badge>
-                        <Badge
-                          variant="outline"
-                          className="border-amber-500/30 text-xs text-amber-400"
-                        >
+                        <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 font-semibold">
                           Mandatory for WL
                         </Badge>
                       </div>
                       {campaign.description && (
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="text-xs text-slate-500">
                           {campaign.description}
                         </p>
                       )}
                     </div>
-                  </div>
 
-                  {/* Task List */}
-                  <div>
-                    {campaign.tasks.length === 0 ? (
-                      <p className="text-xs text-gray-500">
-                        No tasks configured for this campaign.
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {campaign.tasks.map((task) => {
-                          const taskStatus = getTaskStatus(task);
-                          const isSubmitting = submittingTaskId === task.id;
-                          const isSocial = isSocialTask(task);
-                          const destinationUrl = getTaskDestinationUrl(task);
-                          const taskMeta = getTaskTypeMeta(task);
-                          const taskInput = evidenceInputs[task.id] || {
-                            payload: "",
-                            submissionType:
-                              task.taskType === "IMAGE_URL" ||
-                              task.taskType === "TEXT_PROOF" ||
-                              task.taskType === "OAUTH_VERIFICATION"
-                                ? task.taskType
-                                : "URL",
-                          };
-                          const errorMsg = taskErrors[task.id];
-                          const successMsg = taskSuccess[task.id];
+                    {/* Compact Task List */}
+                    <div className="space-y-3">
+                      {campaign.tasks.map((task) => {
+                        const taskStatus = getTaskStatus(task);
+                        const isSubmitting = submittingTaskId === task.id;
+                        const isSocial = isSocialTask(task);
+                        const destinationUrl = getTaskDestinationUrl(task);
+                        const taskMeta = getTaskTypeMeta(task);
+                        const taskInput = evidenceInputs[task.id] || {
+                          payload: "",
+                          submissionType:
+                            task.taskType === "IMAGE_URL" ||
+                            task.taskType === "TEXT_PROOF" ||
+                            task.taskType === "OAUTH_VERIFICATION"
+                              ? task.taskType
+                              : "URL",
+                        };
+                        const errorMsg = taskErrors[task.id];
+                        const successMsg = taskSuccess[task.id];
 
-                          if (isSocial) {
-                            const isProofRequired = isSocialProofTask(task);
-                            const isTaskOpened = Boolean(openedTasks[task.id]);
-                            const countdownSeconds = countdownTasks[task.id];
-                            const isCountingDown =
-                              typeof countdownSeconds === "number" && countdownSeconds > 0;
-
-                            return (
-                              <div
-                                key={task.id}
-                                className="flex flex-col justify-between gap-4 rounded-xl border border-gray-800 bg-[#0c0e17] p-4 sm:p-5 transition-all hover:border-gray-700/80 hover:shadow-lg hover:shadow-emerald-950/20 md:flex-row md:items-center"
-                              >
-                                {/* Left: Icon + Type & Badges + Title & Description */}
-                                <div className="flex min-w-0 flex-1 items-start gap-3.5">
-                                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 mt-0.5">
-                                    {taskMeta.icon}
-                                  </div>
-                                  <div className="min-w-0 flex-1 space-y-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <h4 className="text-sm font-bold text-white sm:text-base">
-                                        {task.title}
-                                      </h4>
-                                      <span className="font-mono text-[10px] font-bold tracking-wider text-gray-400 uppercase">
-                                        {taskMeta.label}
-                                      </span>
-                                      {task.isRequired ? (
-                                        <Badge
-                                          variant="default"
-                                          className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
-                                        >
-                                          Mandatory
-                                        </Badge>
-                                      ) : (
-                                        <Badge variant="outline" className="text-[10px] text-gray-400">
-                                          Optional
-                                        </Badge>
-                                      )}
-                                      <span className="font-mono text-xs font-bold text-emerald-400">
-                                        +{task.points} PTS
-                                      </span>
-                                    </div>
-                                    {task.description && (
-                                      <p className="text-xs text-gray-400 line-clamp-2 md:line-clamp-1">
-                                        {task.description}
-                                      </p>
-                                    )}
-
-                                    {/* Proof Link Input: Shown for Reply / Quote tasks once opened */}
-                                    {isProofRequired && isTaskOpened && taskStatus.key !== "APPROVED" && (
-                                      <div className="pt-2 max-w-md">
-                                        <div className="relative">
-                                          <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500 pointer-events-none" />
-                                          <input
-                                            type="url"
-                                            placeholder="Paste reply or quote URL (https://x.com/...)"
-                                            value={taskInput.payload}
-                                            onChange={(e) =>
-                                              setEvidenceInputs((prev) => ({
-                                                ...prev,
-                                                [task.id]: {
-                                                  ...taskInput,
-                                                  payload: e.target.value,
-                                                },
-                                              }))
-                                            }
-                                            disabled={isCountingDown || isSubmitting}
-                                            className="w-full rounded-lg border border-gray-700 bg-gray-900/90 pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                                          />
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Submitted Proof Display for Approved Tasks */}
-                                    {isProofRequired && taskStatus.key === "APPROVED" && task.latestSubmission?.payload && (
-                                      <p className="pt-1 text-[11px] text-gray-400 font-mono truncate">
-                                        Proof: <span className="text-gray-300">{task.latestSubmission.payload}</span>
-                                      </p>
-                                    )}
-
-                                    {/* Rejection alert box */}
-                                    {taskStatus.key === "REJECTED" && (
-                                      <div className="mt-2 rounded border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-300">
-                                        <span className="font-semibold text-rose-400">Rejected: </span>
-                                        <span className="text-rose-200">
-                                          {task.latestSubmission?.reviewerNotes ||
-                                            "Submission was not approved. You can retry."}
-                                        </span>
-                                      </div>
-                                    )}
-
-                                    {errorMsg && (
-                                      <p className="pt-1 text-[11px] text-rose-400">{errorMsg}</p>
-                                    )}
-                                    {successMsg && (
-                                      <p className="pt-1 text-[11px] text-emerald-400">{successMsg}</p>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Right: Status badge & Action Buttons in a horizontal row */}
-                                <div className="flex flex-wrap items-center gap-2.5 shrink-0 pt-2 border-t border-gray-800/80 md:border-t-0 md:pt-0">
-                                  {/* Task Status Badge: only shown if submitted (hide 'Not Submitted') */}
-                                  {taskStatus.key !== "NOT_SUBMITTED" && (
-                                    <Badge
-                                      variant={taskStatus.badgeVariant}
-                                      className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}
-                                    >
-                                      {taskStatus.key === "APPROVED" && (
-                                        <CheckCircle2 className="mr-1 h-3.5 w-3.5 shrink-0" />
-                                      )}
-                                      {taskStatus.key === "PENDING" && (
-                                        <Clock className="mr-1 h-3.5 w-3.5 shrink-0" />
-                                      )}
-                                      {taskStatus.key === "REJECTED" && (
-                                        <XCircle className="mr-1 h-3.5 w-3.5 shrink-0" />
-                                      )}
-                                      {taskStatus.key === "APPROVED" ? "Done" : taskStatus.label}
-                                    </Badge>
-                                  )}
-
-                                  {/* 1. Target URL Button: OPEN X -> */}
-                                  <a
-                                    href={destinationUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={() => markTaskOpened(task.id)}
-                                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-700 bg-gray-800/80 px-3.5 py-1.5 text-xs font-semibold text-white transition-all hover:border-gray-500 hover:bg-gray-700 active:scale-[0.98]"
-                                  >
-                                    <span>OPEN X</span>
-                                    <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
-                                  </a>
-
-                                  {/* 2. Verification Action Button */}
-                                  {taskStatus.key === "APPROVED" ? (
-                                    <button
-                                      disabled
-                                      className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-300"
-                                    >
-                                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                                      <span>DONE</span>
-                                    </button>
-                                  ) : isCountingDown ? (
-                                    <button
-                                      disabled
-                                      className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/20 px-3.5 py-1.5 text-xs font-semibold text-amber-300 animate-pulse"
-                                    >
-                                      <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-400" />
-                                      <span>VERIFYING ({countdownSeconds}s)...</span>
-                                    </button>
-                                  ) : !isTaskOpened ? (
-                                    <button
-                                      disabled
-                                      title="Please click 'OPEN X' first"
-                                      className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/40 px-3.5 py-1.5 text-xs font-semibold text-gray-500 opacity-60"
-                                    >
-                                      <span>VERIFY TASK</span>
-                                      <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
-                                    </button>
-                                  ) : isProofRequired && !taskInput.payload.trim() ? (
-                                    <button
-                                      disabled
-                                      title="Paste your reply or quote link first"
-                                      className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/40 px-3.5 py-1.5 text-xs font-semibold text-gray-500 opacity-60"
-                                    >
-                                      <span>VERIFY TASK</span>
-                                      <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
-                                    </button>
-                                  ) : status !== "authenticated" ? (
-                                    <Button
-                                      variant="primary"
-                                      size="sm"
-                                      className="gap-1.5 px-3.5 py-1.5 text-xs font-semibold"
-                                      onClick={() => login()}
-                                    >
-                                      <span>CONNECT WALLET TO VERIFY</span>
-                                      <ArrowRight className="h-3.5 w-3.5" />
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      variant="primary"
-                                      size="sm"
-                                      className="gap-1.5 px-3.5 py-1.5 text-xs font-semibold"
-                                      onClick={() => handleSocialVerify(task)}
-                                      disabled={isSubmitting || isCountingDown}
-                                    >
-                                      {isSubmitting ? (
-                                        <>
-                                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                                          <span>COMPLETING...</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <span>
-                                            {taskStatus.key === "REJECTED" ? "RETRY VERIFY" : "VERIFY TASK"}
-                                          </span>
-                                          <ArrowRight className="h-3.5 w-3.5" />
-                                        </>
-                                      )}
-                                    </Button>
-                                  )}
-                                </div>
-</div>
-                            );
-                          }
+                        if (isSocial) {
+                          const isProofRequired = isSocialProofTask(task);
+                          const isTaskOpened = Boolean(openedTasks[task.id]);
+                          const countdownSeconds = countdownTasks[task.id];
+                          const isCountingDown =
+                            typeof countdownSeconds === "number" && countdownSeconds > 0;
 
                           return (
                             <div
                               key={task.id}
-                              className="space-y-3 rounded-xl border border-gray-800 bg-gray-900/60 p-4 sm:p-5"
+                              className="flex flex-col justify-between gap-3.5 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs hover:border-slate-300 md:flex-row md:items-center"
                             >
+                              <div className="flex min-w-0 flex-1 items-start gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 mt-0.5">
+                                  {taskMeta.icon}
+                                </div>
+                                <div className="min-w-0 flex-1 space-y-1">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                                      {task.title}
+                                    </h4>
+                                    <span className="font-mono text-[10px] font-semibold text-slate-400 uppercase">
+                                      {taskMeta.label}
+                                    </span>
+                                    {task.isRequired ? (
+                                      <Badge variant="default" className="border-amber-200 bg-amber-50 text-[10px] text-amber-700 font-semibold">
+                                        Mandatory
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="text-[10px] text-slate-500">
+                                        Optional
+                                      </Badge>
+                                    )}
+                                    <span className="font-mono text-xs font-bold text-emerald-600">
+                                      +{task.points} Pts
+                                    </span>
+                                  </div>
+                                  {task.description && (
+                                    <p className="text-xs text-slate-500 line-clamp-1">
+                                      {task.description}
+                                    </p>
+                                  )}
+
+                                  {/* Proof input for Quote/Reply tasks */}
+                                  {isProofRequired && isTaskOpened && taskStatus.key !== "APPROVED" && (
+                                    <div className="pt-2 max-w-md">
+                                      <div className="relative">
+                                        <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                                        <input
+                                          type="url"
+                                          placeholder="Paste reply or quote URL (https://x.com/...)"
+                                          value={taskInput.payload}
+                                          onChange={(e) =>
+                                            setEvidenceInputs((prev) => ({
+                                              ...prev,
+                                              [task.id]: {
+                                                ...taskInput,
+                                                payload: e.target.value,
+                                              },
+                                            }))
+                                          }
+                                          disabled={isCountingDown || isSubmitting}
+                                          className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none"
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Submitted Proof Display for Approved Tasks */}
+                                  {isProofRequired && taskStatus.key === "APPROVED" && task.latestSubmission?.payload && (
+                                    <p className="pt-1 text-[11px] text-slate-500 font-mono truncate">
+                                      Proof: <span className="text-slate-700">{task.latestSubmission.payload}</span>
+                                    </p>
+                                  )}
+
+                                  {/* Rejection Note */}
+                                  {taskStatus.key === "REJECTED" && (
+                                    <div className="mt-1.5 rounded-xl border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700 space-y-0.5">
+                                      <span className="font-bold">Rejected: </span>
+                                      <span>
+                                        {task.latestSubmission?.reviewerNotes ||
+                                          "Submission was not approved."}
+                                      </span>
+                                      <p className="text-slate-500">
+                                        You can correct and resubmit your evidence below.
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {errorMsg && <p className="pt-1 text-[11px] text-rose-600">{errorMsg}</p>}
+                                  {successMsg && <p className="pt-1 text-[11px] text-emerald-600">{successMsg}</p>}
+                                </div>
+                              </div>
+
+                              {/* Action Buttons & Status */}
+                              <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 border-t border-slate-100 md:border-t-0 md:pt-0">
+                                {taskStatus.key !== "NOT_SUBMITTED" && (
+                                  <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}>
+                                    {taskStatus.key === "APPROVED" && <CheckCircle2 className="mr-1 h-3 w-3 shrink-0" />}
+                                    {taskStatus.key === "PENDING" && <Clock className="mr-1 h-3 w-3 shrink-0" />}
+                                    {taskStatus.key === "REJECTED" && <XCircle className="mr-1 h-3 w-3 shrink-0" />}
+                                    {taskStatus.key === "APPROVED" ? "Done" : taskStatus.label}
+                                  </Badge>
+                                )}
+
+                                <a
+                                  href={destinationUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={() => markTaskOpened(task.id)}
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                >
+                                  <span>OPEN X</span>
+                                  <ExternalLink className="h-3 w-3 text-slate-400" />
+                                </a>
+
+                                {taskStatus.key === "APPROVED" ? (
+                                  <button
+                                    disabled
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700"
+                                  >
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                    <span>DONE</span>
+                                  </button>
+                                ) : isCountingDown ? (
+                                  <button
+                                    disabled
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 animate-pulse"
+                                  >
+                                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-600" />
+                                    <span>VERIFYING ({countdownSeconds}s)...</span>
+                                  </button>
+                                ) : !isTaskOpened ? (
+                                  <button
+                                    disabled
+                                    title="Please click 'OPEN X' first"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400 opacity-60"
+                                  >
+                                    <span>VERIFY TASK</span>
+                                    <ArrowRight className="h-3 w-3 text-slate-400" />
+                                  </button>
+                                ) : isProofRequired && !taskInput.payload.trim() ? (
+                                  <button
+                                    disabled
+                                    title="Paste your reply or quote link first"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400 opacity-60"
+                                  >
+                                    <span>VERIFY TASK</span>
+                                    <ArrowRight className="h-3 w-3 text-slate-400" />
+                                  </button>
+                                ) : status !== "authenticated" ? (
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    className="gap-1 rounded-xl text-xs font-semibold"
+                                    onClick={() => login()}
+                                  >
+                                    <span>CONNECT WALLET TO VERIFY</span>
+                                    <ArrowRight className="h-3 w-3" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    className="gap-1 rounded-xl text-xs font-semibold"
+                                    onClick={() => handleSocialVerify(task)}
+                                    disabled={isSubmitting || isCountingDown}
+                                  >
+                                    {isSubmitting ? (
+                                      <>
+                                        <RefreshCw className="h-3 w-3 animate-spin" />
+                                        <span>COMPLETING...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span>
+                                          {taskStatus.key === "REJECTED" ? "RETRY VERIFY" : "VERIFY TASK"}
+                                        </span>
+                                        <ArrowRight className="h-3 w-3" />
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // Standard Evidence Submission Task
+                        return (
+                          <div
+                            key={task.id}
+                            className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs"
+                          >
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                               <div className="space-y-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <h4 className="text-sm font-medium text-gray-200">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <h4 className="text-xs sm:text-sm font-bold text-slate-800">
                                     {task.title}
                                   </h4>
                                   {task.isRequired ? (
-                                    <Badge
-                                      variant="default"
-                                      className="border-amber-500/30 bg-amber-500/20 text-xs text-amber-300"
-                                    >
+                                    <Badge variant="default" className="border-amber-200 bg-amber-50 text-[10px] text-amber-700 font-semibold">
                                       Mandatory
                                     </Badge>
                                   ) : (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs text-gray-400"
-                                    >
+                                    <Badge variant="outline" className="text-[10px] text-slate-500">
                                       Optional
                                     </Badge>
                                   )}
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs text-gray-400"
-                                  >
+                                  <Badge variant="outline" className="text-[10px] text-slate-600 font-mono">
                                     +{task.points} Pts
                                   </Badge>
-                                  <span className="text-[10px] text-gray-500 uppercase">
+                                  <span className="text-[10px] text-slate-400 uppercase font-mono">
                                     {task.taskType}
                                   </span>
                                 </div>
                                 {task.description && (
-                                  <p className="text-xs text-gray-400">
-                                    {task.description}
-                                  </p>
+                                  <p className="text-xs text-slate-500">{task.description}</p>
                                 )}
                               </div>
 
-                              {/* Task Status Badge */}
-                              <div className="flex shrink-0 items-center gap-1.5">
-                                <Badge
-                                  variant={taskStatus.badgeVariant}
-                                  className={`text-xs ${taskStatus.colorClass}`}
-                                >
-                                  {taskStatus.key === "APPROVED" && (
-                                    <CheckCircle2 className="mr-1 h-3 w-3 shrink-0" />
-                                  )}
-                                  {taskStatus.key === "PENDING" && (
-                                    <Clock className="mr-1 h-3 w-3 shrink-0" />
-                                  )}
-                                  {taskStatus.key === "REJECTED" && (
-                                    <XCircle className="mr-1 h-3 w-3 shrink-0" />
-                                  )}
-                                  {taskStatus.key === "NOT_SUBMITTED" && (
-                                    <AlertCircle className="mr-1 h-3 w-3 shrink-0" />
-                                  )}
+                              <div className="flex shrink-0 items-center gap-1">
+                                <Badge variant={taskStatus.badgeVariant} className={`text-xs ${taskStatus.colorClass}`}>
+                                  {taskStatus.key === "APPROVED" && <CheckCircle2 className="mr-1 h-3 w-3 shrink-0" />}
+                                  {taskStatus.key === "PENDING" && <Clock className="mr-1 h-3 w-3 shrink-0" />}
+                                  {taskStatus.key === "REJECTED" && <XCircle className="mr-1 h-3 w-3 shrink-0" />}
                                   {taskStatus.label}
                                 </Badge>
                               </div>
                             </div>
 
-                            {/* Rejection alert box */}
-                            {taskStatus.key === "REJECTED" && (
-                              <div className="space-y-1 rounded border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-                                <p className="flex items-center gap-1.5 font-semibold">
-                                  <XCircle className="h-3.5 w-3.5 text-rose-400" />
-                                  Evidence Rejected
-                                </p>
-                                <p className="text-rose-200">
-                                  {task.latestSubmission?.reviewerNotes ||
-                                    "Your submission was rejected by the moderator."}
-                                </p>
-                                <p className="text-rose-300/70">
-                                  You can correct and resubmit your evidence below.
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Pending review info box */}
+                            {/* Pending Moderator Review info */}
                             {taskStatus.key === "PENDING" && (
-                              <div className="space-y-1 rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
-                                <p className="flex items-center gap-1.5 font-semibold">
-                                  <Clock className="h-3.5 w-3.5 text-amber-400" />
+                              <div className="space-y-1 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-800">
+                                <p className="flex items-center gap-1.5 font-bold">
+                                  <Clock className="h-3.5 w-3.5 text-amber-600" />
                                   Pending Moderator Review
                                 </p>
-                                <p className="truncate font-mono text-[11px] text-amber-200">
+                                <p className="font-mono text-[11px] truncate">
                                   Submitted Proof: {task.latestSubmission?.payload}
                                 </p>
-                                <p className="text-amber-300/70">
-                                  Your submission has been recorded and is awaiting
-                                  review. Tasks are only counted as completed once
-                                  approved.
+                                <p className="text-slate-600 text-[11px]">
+                                  Your submission has been recorded and is awaiting review. Tasks are only counted as completed once approved.
                                 </p>
                               </div>
                             )}
 
-                            {/* Approved info box */}
+                            {/* Approved Info */}
                             {taskStatus.key === "APPROVED" && (
-                              <div className="rounded border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-                                <p className="flex items-center gap-1.5 font-semibold">
-                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-800">
+                                <p className="flex items-center gap-1.5 font-bold">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                                   Verified & Approved
                                 </p>
                                 {task.latestSubmission?.payload && (
-                                  <p className="mt-1 truncate font-mono text-[11px] text-emerald-200">
+                                  <p className="mt-1 font-mono text-[11px] truncate text-emerald-900">
                                     Approved Proof: {task.latestSubmission.payload}
                                   </p>
                                 )}
                               </div>
                             )}
 
-                            {/* Evidence Submission / Resubmission Form */}
-                            {(taskStatus.key === "NOT_SUBMITTED" ||
-                              taskStatus.key === "REJECTED") && (
-                              <div className="space-y-2 pt-1">
+                            {/* Rejected Info */}
+                            {taskStatus.key === "REJECTED" && (
+                              <div className="space-y-1 rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-xs text-rose-800">
+                                <p className="flex items-center gap-1.5 font-bold">
+                                  <XCircle className="h-3.5 w-3.5 text-rose-600" />
+                                  Evidence Rejected
+                                </p>
+                                <p className="text-rose-900 font-medium">
+                                  {task.latestSubmission?.reviewerNotes ||
+                                    "Your submission was rejected by the moderator."}
+                                </p>
+                                <p className="text-slate-600 text-[11px]">
+                                  You can correct and resubmit your evidence below.
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Evidence Input Form (Not Submitted or Rejected) */}
+                            {(taskStatus.key === "NOT_SUBMITTED" || taskStatus.key === "REJECTED") && (
+                              <div className="pt-1">
                                 {status !== "authenticated" ? (
-                                  <p className="text-xs text-gray-500 italic">
-                                    Sign in with Ethereum to submit evidence for this
-                                    task.
+                                  <p className="text-xs text-slate-400 italic">
+                                    Sign in with Ethereum to submit evidence for this task.
                                   </p>
                                 ) : (
-                                  <div className="space-y-2">
-                                    <div className="flex flex-col gap-2 sm:flex-row">
-                                      <input
-                                        type="text"
-                                        placeholder={
-                                          task.taskType === "TEXT_PROOF"
-                                            ? "Enter proof text or details..."
-                                            : "https://x.com/your_post_url..."
-                                        }
-                                        value={taskInput.payload}
-                                        onChange={(e) =>
-                                          setEvidenceInputs((prev) => ({
-                                            ...prev,
-                                            [task.id]: {
-                                              ...taskInput,
-                                              payload: e.target.value,
-                                            },
-                                          }))
-                                        }
-                                        className="flex-1 rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-gray-200 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                                      />
-                                      <select
-                                        value={taskInput.submissionType}
-                                        onChange={(e) =>
-                                          setEvidenceInputs((prev) => ({
-                                            ...prev,
-                                            [task.id]: {
-                                              ...taskInput,
-                                              submissionType: e.target.value,
-                                            },
-                                          }))
-                                        }
-                                        className="rounded border border-gray-700 bg-gray-900 px-2 py-1.5 text-xs text-gray-300 focus:border-emerald-500 focus:outline-none"
-                                      >
-                                        <option value="URL">URL</option>
-                                        <option value="IMAGE_URL">IMAGE_URL</option>
-                                        <option value="TEXT_PROOF">TEXT_PROOF</option>
-                                      </select>
-                                      <Button
-                                        variant="primary"
-                                        size="sm"
-                                        onClick={() => handleEvidenceSubmit(task)}
-                                        disabled={
-                                          isSubmitting || !taskInput.payload.trim()
-                                        }
-                                      >
-                                        <Send className="mr-1 h-3 w-3" />
-                                        {isSubmitting
-                                          ? "Submitting..."
-                                          : taskStatus.key === "REJECTED"
-                                            ? "Resubmit Evidence"
-                                            : "Submit Evidence"}
-                                      </Button>
-                                    </div>
-
-                                    {errorMsg && (
-                                      <p className="text-xs text-rose-400">{errorMsg}</p>
-                                    )}
-                                    {successMsg && (
-                                      <p className="text-xs text-emerald-400">
-                                        {successMsg}
-                                      </p>
-                                    )}
+                                  <div className="flex flex-col gap-2 sm:flex-row">
+                                    <input
+                                      type="text"
+                                      placeholder={
+                                        task.taskType === "TEXT_PROOF"
+                                          ? "Enter proof text or details..."
+                                          : "https://x.com/your_post_url..."
+                                      }
+                                      value={taskInput.payload}
+                                      onChange={(e) =>
+                                        setEvidenceInputs((prev) => ({
+                                          ...prev,
+                                          [task.id]: {
+                                            ...taskInput,
+                                            payload: e.target.value,
+                                          },
+                                        }))
+                                      }
+                                      className="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none"
+                                    />
+                                    <select
+                                      value={taskInput.submissionType}
+                                      onChange={(e) =>
+                                        setEvidenceInputs((prev) => ({
+                                          ...prev,
+                                          [task.id]: {
+                                            ...taskInput,
+                                            submissionType: e.target.value,
+                                          },
+                                        }))
+                                      }
+                                      className="rounded-xl border border-slate-300 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 focus:border-emerald-500 focus:bg-white focus:outline-none"
+                                    >
+                                      <option value="URL">URL</option>
+                                      <option value="IMAGE_URL">IMAGE_URL</option>
+                                      <option value="TEXT_PROOF">TEXT_PROOF</option>
+                                    </select>
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      onClick={() => handleEvidenceSubmit(task)}
+                                      disabled={isSubmitting || !taskInput.payload.trim()}
+                                      className="rounded-xl text-xs font-semibold"
+                                    >
+                                      <Send className="mr-1 h-3 w-3" />
+                                      {isSubmitting
+                                        ? "Submitting..."
+                                        : taskStatus.key === "REJECTED"
+                                          ? "Resubmit Evidence"
+                                          : "Submit Evidence"}
+                                    </Button>
                                   </div>
                                 )}
+                                {errorMsg && <p className="text-xs text-rose-600 mt-1">{errorMsg}</p>}
+                                {successMsg && <p className="text-xs text-emerald-600 mt-1">{successMsg}</p>}
                               </div>
                             )}
                           </div>
                         );
                       })}
                     </div>
-                  )}
-                </div>
-              </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Trait Lootbox Drops CTA */}
-        <Card className="border-emerald-500/20 bg-gradient-to-r from-emerald-950/20 via-gray-900/40 to-[#0c0e17]">
-          <CardHeader>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-400">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <div>
-                  <CardTitle>Trait Lootbox Drops</CardTitle>
-                  <CardDescription>
-                    Collect trait items across all 5 categories in our periodic drops to qualify for Whitelist
-                  </CardDescription>
-                </div>
-              </div>
-              <Link href="/drops">
-                <Button variant="primary" className="w-full sm:w-auto">
-                  Go to Drops
-                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-                </Button>
-              </Link>
+                  </div>
+                ))
+              )}
             </div>
-          </CardHeader>
-        </Card>
+          </div>
+        </div>
+
+        {/* =======================================================================
+            STEPS 4 & 5 ACTIVE VIEW — MAIN WHITELIST LAYOUT
+            Visible when activeStepNumber >= 4
+            - Left Column (Step 4): Character Pixel-Art Preview & 5 Trait Categories
+            - Right Column (Step 5): Whitelist Status & Allocation Panel
+        ======================================================================= */}
+        <div className={activeStepNumber >= 4 ? "block" : "hidden"}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* ===================================================================
+                LEFT COLUMN: CHARACTER AND INVENTORY (5 Cols on LG)
+            =================================================================== */}
+            <div className="lg:col-span-5 space-y-5">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
+                {/* Character Preview Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <h3 className="font-bold text-sm text-slate-900">
+                      Character & Wardrobe
+                    </h3>
+                  </div>
+                  <Badge
+                    variant={isTraitsComplete ? "default" : "outline"}
+                    className={`text-[10px] font-bold ${
+                      isTraitsComplete
+                        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                        : "bg-slate-100 text-slate-600 border-slate-200"
+                    }`}
+                  >
+                    {isTraitsComplete ? "Full Color ✨" : "In Progress"}
+                  </Badge>
+                </div>
+
+                {/* Character Pixel-Art Preview Frame */}
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-gradient-to-b from-[#f0fdf4] to-white p-6 shadow-inner relative overflow-hidden">
+                  <div className="relative">
+                    <UserAvatar
+                      identifier={address}
+                      hasInventory={inventoryItems.length > 0}
+                      size="xl"
+                      className="border-2 border-emerald-200 rounded-2xl shadow-sm [image-rendering:pixelated]"
+                    />
+                    {isTraitsComplete && (
+                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-white shadow-xs">
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-3 font-mono text-xs font-bold text-slate-700">
+                    {isTraitsComplete ? "ChimpHood Outfit Complete!" : "ChimpHood In-Progress Avatar"}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    {heldCategories.length} / 5 Categories Completed
+                  </p>
+                </div>
+
+                {/* Five Trait Categories (Owned in Color, Missing in Grayscale) */}
+                {statusResult?.status?.phase !== "REVOKED" && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold uppercase tracking-wider text-slate-500">
+                        Required Trait Categories (5 of 5)
+                      </span>
+                      <span className="font-semibold text-slate-600">
+                        {heldCategories.length} / 5 Collected
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                      {TRAIT_CATEGORIES.map((cat) => {
+                        const isHeld = heldCategories.includes(cat);
+                        const theme = CATEGORY_THEMES[cat];
+                        return (
+                          <div
+                            key={cat}
+                            className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all ${
+                              isHeld
+                                ? `${theme.heldClass} shadow-2xs font-bold`
+                                : "border-slate-200 bg-slate-50 text-slate-400 grayscale opacity-50"
+                            }`}
+                          >
+                            <div className="mb-1">
+                              {isHeld ? (
+                                <CheckCircle2 className={`h-4 w-4 ${theme.checkColor}`} />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-slate-400" />
+                              )}
+                            </div>
+                            <span className="text-[11px]">{cat}</span>
+                            <span className="text-[9px] font-mono mt-0.5">
+                              {isHeld ? "Owned ✓" : "Missing"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Inventory Summary (Total items and duplicates) */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 font-medium">Total Inventory Items:</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {inventoryItems.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 font-medium">Extra / Duplicate Copies:</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {duplicateCount}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+                    Duplicates remain in your backpack. Qualification requires 1 item in each of the 5 distinct categories.
+                  </p>
+                </div>
+
+                {/* Trait Lootbox Drops CTA */}
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex items-center justify-between gap-2 text-xs">
+                  <div>
+                    <p className="font-bold text-slate-800">Trait Lootbox Drops</p>
+                    <p className="text-[11px] text-slate-500">Need more traits to complete your collection?</p>
+                  </div>
+                  <Link href="/drops">
+                    <Button variant="primary" size="sm" className="rounded-xl text-xs font-semibold shrink-0">
+                      Go to Drops
+                      <ExternalLink className="ml-1 h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* ===================================================================
+                RIGHT COLUMN: ACTIVE STEP PANEL (7 Cols on LG)
+                Compact information panel: Step 1-5
+            =================================================================== */}
+            <div className="lg:col-span-7 space-y-5">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                      <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <h3 className="font-bold text-sm text-slate-900">
+                      Whitelist Status & Allocation
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Phase Badges */}
+                    {statusResult?.status?.phase === "SLOT_ALLOCATED" && (
+                      <Badge variant="default" className="border-emerald-300 bg-emerald-100 text-emerald-800 font-bold text-xs">
+                        GTD SLOT ALLOCATED
+                      </Badge>
+                    )}
+                    {statusResult?.status?.phase === "FCFS_REGISTERED" && (
+                      <Badge variant="default" className="border-sky-300 bg-sky-100 text-sky-800 font-bold text-xs">
+                        FCFS Directory (Registered)
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className={`text-xs font-bold ${qualificationState.badgeClass}`}>
+                      {qualificationState.title}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Steps 1 to 5 Status Overview */}
+                <div className="space-y-3">
+                  {/* Step 1: Wallet Connection */}
+                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                        1
+                      </div>
+                      <div>
+                        <span className="font-semibold text-slate-700">EVM Wallet</span>
+                        <span className="ml-2 font-mono text-slate-800 font-bold">
+                          {address ? shortenAddress(address) : "—"}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant="default" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-[10px] font-semibold">
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                      Verified
+                    </Badge>
+                  </div>
+
+                  {/* Step 2: X Account Sync */}
+                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-sky-700 font-bold text-[10px]">
+                        2
+                      </div>
+                      <div>
+                        <span className="font-semibold text-slate-700">X Social Identity</span>
+                        <span className="ml-2 font-mono text-slate-800 font-bold">
+                          {statusResult?.status?.details?.xUsername
+                            ? `@${statusResult.status.details.xUsername}`
+                            : "Linked"}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant="default" className="border-sky-200 bg-sky-50 text-sky-700 text-[10px] font-semibold">
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                      Connected
+                    </Badge>
+                  </div>
+
+                  {/* Step 3: Campaign Tasks Completion */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-700 font-bold text-[10px]">
+                          3
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-700">Campaign Tasks:</span>
+                          <span className="ml-2 font-bold text-emerald-700">
+                            {statusResult?.status?.details?.completedMandatoryTasksCount ?? 0} /{" "}
+                            {statusResult?.status?.details?.totalMandatoryTasksCount ?? 0} Completed
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="default" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-[10px] font-semibold">
+                          <CheckCircle2 className="mr-1 h-3 w-3" />
+                          Verified ✓
+                        </Badge>
+                        <button
+                          onClick={() => setShowTasksInViewB((prev) => !prev)}
+                          className="flex items-center text-[10px] font-semibold text-slate-500 hover:text-slate-800"
+                        >
+                          {showTasksInViewB ? (
+                            <>
+                              <span>Hide</span>
+                              <ChevronUp className="h-3 w-3 ml-0.5" />
+                            </>
+                          ) : (
+                            <>
+                              <span>View</span>
+                              <ChevronDown className="h-3 w-3 ml-0.5" />
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Toggleable Task Proof Checklist in View B */}
+                    {showTasksInViewB && (
+                      <div className="mt-2 pt-2 border-t border-slate-200/60 space-y-2">
+                        {campaigns.flatMap((c) => c.tasks).map((t) => {
+                          const st = getTaskStatus(t);
+                          return (
+                            <div
+                              key={t.id}
+                              className="flex items-center justify-between text-[11px] bg-white p-2 rounded-lg border border-slate-200"
+                            >
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className="font-semibold text-slate-800 truncate">{t.title}</span>
+                                {t.isRequired && (
+                                  <span className="text-[9px] text-amber-700 bg-amber-50 px-1 py-0.5 rounded border border-amber-200">
+                                    Mandatory
+                                  </span>
+                                )}
+                              </div>
+                              <span className="font-semibold text-emerald-600 shrink-0">
+                                {st.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 4: Trait Collection Progress */}
+                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-violet-700 font-bold text-[10px]">
+                        4
+                      </div>
+                      <div>
+                        <span className="font-semibold text-slate-700">Trait Categories</span>
+                        <span className="ml-2 font-mono text-slate-800 font-bold">
+                          {heldCategories.length} Categories Complete
+                        </span>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={isTraitsComplete ? "default" : "outline"}
+                      className={`text-[10px] font-semibold ${
+                        isTraitsComplete
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-slate-300 bg-white text-slate-600"
+                      }`}
+                    >
+                      {isTraitsComplete ? "All 5 Complete ✓" : "In Progress"}
+                    </Badge>
+                  </div>
+
+                  {/* Step 5: Whitelist Qualification & Real Allocation Status */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 text-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-[10px]">
+                          5
+                        </div>
+                        <span className="font-semibold text-slate-800 text-xs">
+                          Whitelist Allocation
+                        </span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-semibold text-slate-600 border-slate-200 bg-white">
+                        Allocation Details
+                      </Badge>
+                    </div>
+
+                    {/* Detailed Backend Qualification Results */}
+                    {statusResult?.status?.phase === "SLOT_ALLOCATED" && (() => {
+                      const review = getGtdReviewDetails(statusResult.status.reviewStatus);
+                      const ReviewIcon = review.icon;
+                      return (
+                        <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs text-emerald-900">
+                          <div className="flex flex-wrap items-center justify-between gap-1">
+                            <span className="font-bold text-emerald-800">
+                              Guaranteed Slot #{statusResult.status.slotNumber} (Active)
+                            </span>
+                            {statusResult.status.allocatedAt && (
+                              <span className="text-[11px] text-emerald-700">
+                                Secured on {formatRegistrationDate(statusResult.status.allocatedAt)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 pt-1">
+                            <Badge variant={review.badgeVariant} className={`text-[10px] ${review.colorClass}`}>
+                              <ReviewIcon className="mr-1 h-3 w-3 shrink-0" />
+                              {review.label}
+                            </Badge>
+                            <span className="text-[11px] text-slate-600">{review.subtext}</span>
+                          </div>
+                          <p className="text-xs text-slate-500">
+                            Your Guaranteed Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected.
+                          </p>
+                        </div>
+                      );
+                    })()}
+
+                    {statusResult?.status?.phase === "FCFS_REGISTERED" && (
+                      <div className="space-y-2 rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-xs text-sky-900">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-800">
+                            Participant #{statusResult.status.queueNumber}
+                          </span>
+                          {statusResult.status.joinedAt && (
+                            <span className="text-slate-500">
+                              • Registered on {formatRegistrationDate(statusResult.status.joinedAt)}
+                            </span>
+                          )}
+                        </div>
+                        {statusResult.status.isFullyQualified ? (
+                          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800">
+                            <p className="font-bold">Eligible for OpenSea FCFS Allowlist</p>
+                            <p className="mt-1">
+                              All 5 qualification requirements are satisfied! Your wallet will be included in the OpenSea FCFS allowlist export.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-800">
+                            <p className="font-bold">Action Required — Incomplete Requirements</p>
+                            <p className="mt-1">
+                              You are registered in the directory, but must satisfy all 5 requirements below to be included in the OpenSea FCFS allowlist export.
+                            </p>
+                          </div>
+                        )}
+                        <div className="text-[11px] text-slate-500 pt-1">
+                          <p className="font-medium text-gray-300">FCFS Directory Notice</p>
+                          <p className="mt-0.5 text-gray-400">
+                            Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed (GTD) slot or an allocation.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {statusResult?.status?.phase === "REVOKED" && (
+                      <div className="space-y-1.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                        <div className="flex items-center gap-1.5 font-bold text-rose-900">
+                          <XCircle className="h-4 w-4 text-rose-600" />
+                          Whitelist Status Revoked
+                        </div>
+                        <p className="text-rose-900 font-medium text-[11px]">
+                          {statusResult.status.missingRequirements[0] || "Whitelist qualification has been revoked."}
+                        </p>
+                        <p className="text-slate-600 text-[11px]">
+                          In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program. Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the OpenSea FCFS allowlist export.
+                        </p>
+                      </div>
+                    )}
+
+                    {statusResult?.status?.phase === "NONE" && (
+                      <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 space-y-1">
+                        <span className="font-bold text-slate-800">Not Registered / Ineligible</span>
+                        <p className="text-[11px] text-slate-500">
+                          Connect your EVM wallet and X (Twitter) account to automatically register in the FCFS Directory, and complete the 5 trait categories and mandatory tasks to qualify for the OpenSea FCFS allowlist.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Missing requirements listing if incomplete */}
+                    {statusResult?.status?.missingRequirements &&
+                      statusResult.status.missingRequirements.length > 0 &&
+                      !statusResult.status.isFullyQualified &&
+                      statusResult.status.phase !== "SLOT_ALLOCATED" &&
+                      statusResult.status.phase !== "REVOKED" && (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 space-y-0.5">
+                          <span className="font-bold">Missing Requirements:</span>
+                          <ul className="list-inside list-disc text-[11px] text-amber-900 space-y-0.5">
+                            {statusResult.status.missingRequirements.map((r, i) => (
+                              <li key={i}>{r}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
