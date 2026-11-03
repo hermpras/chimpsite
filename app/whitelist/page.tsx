@@ -14,7 +14,19 @@ import {
   RefreshCw,
   ExternalLink,
   Info,
+  Heart,
+  Repeat,
+  MessageSquare,
+  ArrowRight,
 } from "lucide-react";
+
+function XLogo(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 23.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 import {
   Card,
   CardHeader,
@@ -95,6 +107,114 @@ export default function WhitelistPage() {
   const [submittingTaskId, setSubmittingTaskId] = useState<string | null>(null);
   const [taskErrors, setTaskErrors] = useState<Record<string, string | null>>({});
   const [taskSuccess, setTaskSuccess] = useState<Record<string, string | null>>({});
+  const [showManualInput, setShowManualInput] = useState<Record<string, boolean>>({});
+
+  function isSocialTask(task: ActiveCampaignTask): boolean {
+    const t = (task.taskType || "").toUpperCase();
+    return t.startsWith("SOCIAL_X_");
+  }
+
+  function getTaskDestinationUrl(task: ActiveCampaignTask): string {
+    const metaUrl = (task.requirementMetadata?.tweetUrl as string)?.trim();
+    if (metaUrl && (metaUrl.startsWith("http://") || metaUrl.startsWith("https://"))) {
+      return metaUrl;
+    }
+    return "https://x.com/chimphoodNFT";
+  }
+
+  function getTaskTypeMeta(task: ActiveCampaignTask): { label: string; icon: React.ReactNode } {
+    const t = (task.taskType || "").toUpperCase();
+    const code = (task.taskCode || "").toUpperCase();
+    const title = (task.title || "").toUpperCase();
+
+    if (t === "SOCIAL_X_FOLLOW") {
+      return {
+        label: "FOLLOW / ONCE",
+        icon: <XLogo className="h-4 w-4 text-white" />,
+      };
+    }
+    if (t === "SOCIAL_X_REPOST") {
+      return {
+        label: "REPOST / ONCE",
+        icon: <Repeat className="h-4 w-4 text-emerald-400" />,
+      };
+    }
+    if (t === "SOCIAL_X_REPLY" || t === "SOCIAL_X_QUOTE") {
+      return {
+        label: "COMMENT / ONCE",
+        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+      };
+    }
+
+    if (code.includes("FOLLOW") || title.includes("FOLLOW")) {
+      return {
+        label: "FOLLOW / ONCE",
+        icon: <XLogo className="h-4 w-4 text-white" />,
+      };
+    }
+    if (code.includes("REPOST") || code.includes("RETWEET") || title.includes("REPOST")) {
+      return {
+        label: "REPOST / ONCE",
+        icon: <Repeat className="h-4 w-4 text-emerald-400" />,
+      };
+    }
+    if (code.includes("LIKE") || title.includes("LIKE")) {
+      return {
+        label: "LIKE / ONCE",
+        icon: <Heart className="h-4 w-4 text-rose-400" />,
+      };
+    }
+    if (code.includes("COMMENT") || title.includes("COMMENT") || title.includes("REPLY")) {
+      return {
+        label: "COMMENT / ONCE",
+        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+      };
+    }
+    return {
+      label: "SOCIAL / ONCE",
+      icon: <XLogo className="h-4 w-4 text-white" />,
+    };
+  }
+
+  async function handleSocialVerify(task: ActiveCampaignTask) {
+    if (status !== "authenticated") {
+      login();
+      return;
+    }
+
+    const destinationUrl = getTaskDestinationUrl(task);
+    const userHandle = statusResult?.status?.details?.xUsername;
+    const payload = userHandle ? `https://x.com/${userHandle}` : destinationUrl;
+
+    setSubmittingTaskId(task.id);
+    setTaskErrors((prev) => ({ ...prev, [task.id]: null }));
+    setTaskSuccess((prev) => ({ ...prev, [task.id]: null }));
+
+    try {
+      await submitTaskEvidence(task.id, {
+        submissionType: "URL",
+        payload,
+      });
+
+      setTaskSuccess((prev) => ({
+        ...prev,
+        [task.id]: "Verification submitted! Status is now Pending Review.",
+      }));
+
+      await loadTasks();
+
+      if (address) {
+        fetchWhitelistStatus(address).then(setStatusResult).catch(console.error);
+      }
+    } catch (err: unknown) {
+      setTaskErrors((prev) => ({
+        ...prev,
+        [task.id]: (err as Error).message || "Failed to submit verification.",
+      }));
+    } finally {
+      setSubmittingTaskId(null);
+    }
+  }
 
   // Fetch active campaigns and tasks
   const loadTasks = useCallback(async () => {
@@ -840,32 +960,239 @@ export default function WhitelistPage() {
                   </div>
 
                   {/* Task List */}
-                  <div className="space-y-4">
+                  <div>
                     {campaign.tasks.length === 0 ? (
                       <p className="text-xs text-gray-500">
                         No tasks configured for this campaign.
                       </p>
                     ) : (
-                      campaign.tasks.map((task) => {
-                        const taskStatus = getTaskStatus(task);
-                        const isSubmitting = submittingTaskId === task.id;
-                        const taskInput = evidenceInputs[task.id] || {
-                          payload: "",
-                          submissionType:
-                            task.taskType === "IMAGE_URL" ||
-                            task.taskType === "TEXT_PROOF" ||
-                            task.taskType === "OAUTH_VERIFICATION"
-                              ? task.taskType
-                              : "URL",
-                        };
-                        const errorMsg = taskErrors[task.id];
-                        const successMsg = taskSuccess[task.id];
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {campaign.tasks.map((task) => {
+                          const taskStatus = getTaskStatus(task);
+                          const isSubmitting = submittingTaskId === task.id;
+                          const isSocial = isSocialTask(task);
+                          const destinationUrl = getTaskDestinationUrl(task);
+                          const taskMeta = getTaskTypeMeta(task);
+                          const showManual = showManualInput[task.id] || false;
+                          const taskInput = evidenceInputs[task.id] || {
+                            payload: "",
+                            submissionType:
+                              task.taskType === "IMAGE_URL" ||
+                              task.taskType === "TEXT_PROOF" ||
+                              task.taskType === "OAUTH_VERIFICATION"
+                                ? task.taskType
+                                : "URL",
+                          };
+                          const errorMsg = taskErrors[task.id];
+                          const successMsg = taskSuccess[task.id];
 
-                        return (
-                          <div
-                            key={task.id}
-                            className="space-y-3 rounded-lg border border-gray-800 bg-gray-900/60 p-4"
-                          >
+                          if (isSocial) {
+                            return (
+                              <div
+                                key={task.id}
+                                className="flex flex-col justify-between space-y-4 rounded-xl border border-gray-800 bg-[#0c0e17] p-5 transition-all hover:border-gray-700/80 hover:shadow-lg hover:shadow-emerald-950/20"
+                              >
+                                {/* Top: Icon + Type Tag + Status Badge */}
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                                      {taskMeta.icon}
+                                    </div>
+                                    <div>
+                                      <span className="font-mono text-[11px] font-bold tracking-wider text-gray-400 uppercase">
+                                        {taskMeta.label}
+                                      </span>
+                                      <div className="flex items-center gap-1.5 pt-0.5">
+                                        {task.isRequired ? (
+                                          <Badge
+                                            variant="default"
+                                            className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
+                                          >
+                                            Mandatory
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-[10px] text-gray-400">
+                                            Optional
+                                          </Badge>
+                                        )}
+                                        <span className="font-mono text-[11px] font-bold text-emerald-400">
+                                          +{task.points} PTS
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Task Status Badge */}
+                                  <Badge
+                                    variant={taskStatus.badgeVariant}
+                                    className={`text-xs ${taskStatus.colorClass}`}
+                                  >
+                                    {taskStatus.key === "APPROVED" && (
+                                      <CheckCircle2 className="mr-1 h-3 w-3 shrink-0" />
+                                    )}
+                                    {taskStatus.key === "PENDING" && (
+                                      <Clock className="mr-1 h-3 w-3 shrink-0" />
+                                    )}
+                                    {taskStatus.key === "REJECTED" && (
+                                      <XCircle className="mr-1 h-3 w-3 shrink-0" />
+                                    )}
+                                    {taskStatus.key === "NOT_SUBMITTED" && (
+                                      <AlertCircle className="mr-1 h-3 w-3 shrink-0" />
+                                    )}
+                                    {taskStatus.label}
+                                  </Badge>
+                                </div>
+
+                                {/* Middle: Title & Description */}
+                                <div className="space-y-1">
+                                  <h4 className="text-sm font-bold text-white sm:text-base">
+                                    {task.title}
+                                  </h4>
+                                  {task.description && (
+                                    <p className="text-xs text-gray-400 line-clamp-2">
+                                      {task.description}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Rejection alert box */}
+                                {taskStatus.key === "REJECTED" && (
+                                  <div className="rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
+                                    <p className="font-semibold text-rose-400">Rejected by Reviewer</p>
+                                    <p className="mt-0.5 text-rose-200">
+                                      {task.latestSubmission?.reviewerNotes ||
+                                        "Submission was not approved. You can retry."}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Action Buttons: OPEN X -> and VERIFY TASK -> */}
+                                <div className="space-y-2 pt-2 border-t border-gray-800/80">
+                                  {/* 1. Target URL Button: OPEN X -> */}
+                                  <a
+                                    href={destinationUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-800/80 px-3 py-2 text-xs font-semibold text-white transition-all hover:border-gray-500 hover:bg-gray-700"
+                                  >
+                                    <span>OPEN X</span>
+                                    <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
+                                  </a>
+
+                                  {/* 2. Verification Action Button */}
+                                  {taskStatus.key === "APPROVED" ? (
+                                    <button
+                                      disabled
+                                      className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300"
+                                    >
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                                      <span>COMPLETED</span>
+                                    </button>
+                                  ) : taskStatus.key === "PENDING" ? (
+                                    <button
+                                      disabled
+                                      className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300"
+                                    >
+                                      <Clock className="h-3.5 w-3.5 text-amber-400" />
+                                      <span>PENDING REVIEW</span>
+                                    </button>
+                                  ) : status !== "authenticated" ? (
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      className="w-full gap-1.5 text-xs font-semibold"
+                                      onClick={() => login()}
+                                    >
+                                      <span>CONNECT WALLET TO VERIFY</span>
+                                      <ArrowRight className="h-3.5 w-3.5" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      className="w-full gap-1.5 text-xs font-semibold"
+                                      onClick={() => handleSocialVerify(task)}
+                                      disabled={isSubmitting}
+                                    >
+                                      {isSubmitting ? (
+                                        <>
+                                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                          <span>VERIFYING...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>
+                                            {taskStatus.key === "REJECTED" ? "RETRY VERIFY" : "VERIFY TASK"}
+                                          </span>
+                                          <ArrowRight className="h-3.5 w-3.5" />
+                                        </>
+                                      )}
+                                    </Button>
+                                  )}
+
+                                  {/* Option to toggle manual input if user prefers to paste URL */}
+                                  <div className="pt-1 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setShowManualInput((prev) => ({
+                                          ...prev,
+                                          [task.id]: !prev[task.id],
+                                        }))
+                                      }
+                                      className="text-[11px] text-gray-500 hover:text-gray-300 underline"
+                                    >
+                                      {showManual ? "Hide custom proof link" : "Paste custom proof link"}
+                                    </button>
+                                  </div>
+
+                                  {showManual && (
+                                    <div className="space-y-2 pt-2 border-t border-gray-800/60">
+                                      <div className="flex flex-col gap-2">
+                                        <input
+                                          type="text"
+                                          placeholder="https://x.com/your_post_url..."
+                                          value={taskInput.payload}
+                                          onChange={(e) =>
+                                            setEvidenceInputs((prev) => ({
+                                              ...prev,
+                                              [task.id]: {
+                                                ...taskInput,
+                                                payload: e.target.value,
+                                              },
+                                            }))
+                                          }
+                                          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-gray-200 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                                        />
+                                        <Button
+                                          variant="primary"
+                                          size="sm"
+                                          onClick={() => handleEvidenceSubmit(task)}
+                                          disabled={isSubmitting || !taskInput.payload.trim()}
+                                        >
+                                          <Send className="mr-1 h-3 w-3" />
+                                          Submit Evidence
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {errorMsg && (
+                                    <p className="text-[11px] text-rose-400">{errorMsg}</p>
+                                  )}
+                                  {successMsg && (
+                                    <p className="text-[11px] text-emerald-400">{successMsg}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              key={task.id}
+                              className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4 space-y-3 rounded-lg border border-gray-800 bg-gray-900/60 p-4"
+                            >
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                               <div className="space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
@@ -1056,10 +1383,11 @@ export default function WhitelistPage() {
                             )}
                           </div>
                         );
-                      })
-                    )}
-                  </div>
+                      })}
+                    </div>
+                  )}
                 </div>
+              </div>
               ))
             )}
           </CardContent>

@@ -596,4 +596,104 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
       screen.getByText(/Submitted Proof: https:\/\/x\.com\/chimphood\/status\/999/),
     ).toBeInTheDocument();
   });
+
+  // 11. Social X Tasks (Follow, Repost) render destination button and 1-click verify
+  it("renders social tasks with direct OPEN X button and allows 1-click VERIFY TASK without typing", async () => {
+    vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+      status: "authenticated",
+      sessionAddress: "0x1111111111111111111111111111111111111111",
+      walletAddress: "0x1111111111111111111111111111111111111111",
+    } as any);
+
+    const socialCampaign: tasksClient.ActiveCampaignItem[] = [
+      {
+        ...mockActiveCampaigns[0],
+        tasks: [
+          {
+            id: "task-social-follow",
+            versionId: "ver-1",
+            campaignId: "camp-1",
+            taskCode: "FOLLOW_X_CHIMPHOOD",
+            title: "Follow X Chimphood Official",
+            description: "Follow @chimphoodNFT on X.",
+            taskType: "SOCIAL_X_FOLLOW",
+            points: 10,
+            isRequired: true,
+            sortOrder: 1,
+            progress: null,
+            latestSubmission: null,
+            requirementMetadata: null,
+          },
+          {
+            id: "task-social-repost",
+            versionId: "ver-1",
+            campaignId: "camp-1",
+            taskCode: "REPOST_ANNOUNCEMENT",
+            title: "Like & Repost Genesis",
+            description: "Like and repost our announcement.",
+            taskType: "SOCIAL_X_REPOST",
+            points: 15,
+            isRequired: true,
+            sortOrder: 2,
+            progress: null,
+            latestSubmission: null,
+            requirementMetadata: {
+              tweetUrl: "https://x.com/chimphoodNFT/status/1234567890",
+            },
+          },
+        ],
+      },
+    ];
+
+    vi.mocked(tasksClient.fetchActiveTasks).mockResolvedValueOnce({
+      configured: true,
+      campaigns: socialCampaign,
+    });
+
+    vi.mocked(tasksClient.submitTaskEvidence).mockResolvedValueOnce({
+      success: true,
+      submission: { id: "sub-1", status: "PENDING_REVIEW" },
+      taskProgress: { status: "SUBMITTED" },
+    } as any);
+
+    render(<WhitelistPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Follow X Chimphood Official")).toBeInTheDocument();
+      expect(screen.getByText("Like & Repost Genesis")).toBeInTheDocument();
+    });
+
+    // Check action tags
+    expect(screen.getByText("FOLLOW / ONCE")).toBeInTheDocument();
+    expect(screen.getByText("REPOST / ONCE")).toBeInTheDocument();
+
+    // Check OPEN X links
+    const openXButtons = screen.getAllByText("OPEN X");
+    expect(openXButtons.length).toBe(2);
+
+    const followAnchor = openXButtons[0].closest("a");
+    expect(followAnchor).toHaveAttribute("href", "https://x.com/chimphoodNFT");
+
+    const repostAnchor = openXButtons[1].closest("a");
+    expect(repostAnchor).toHaveAttribute(
+      "href",
+      "https://x.com/chimphoodNFT/status/1234567890",
+    );
+
+    // Click VERIFY TASK for follow
+    const verifyButtons = screen.getAllByRole("button", { name: /VERIFY TASK/i });
+    expect(verifyButtons.length).toBe(2);
+
+    fireEvent.click(verifyButtons[0]);
+
+    await waitFor(() => {
+      expect(tasksClient.submitTaskEvidence).toHaveBeenCalledWith(
+        "task-social-follow",
+        {
+          submissionType: "URL",
+          payload: "https://x.com/chimphoodNFT",
+        },
+      );
+    });
+  });
 });
