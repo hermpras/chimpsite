@@ -18,6 +18,7 @@ import {
   Repeat,
   MessageSquare,
   ArrowRight,
+  Link2,
 } from "lucide-react";
 
 function XLogo(props: React.SVGProps<SVGSVGElement>) {
@@ -130,9 +131,26 @@ export default function WhitelistPage() {
     });
   };
 
+  function isSocialProofTask(task: ActiveCampaignTask): boolean {
+    const t = (task.taskType || "").toUpperCase();
+    const code = (task.taskCode || "").toUpperCase();
+    const title = (task.title || "").toUpperCase();
+
+    return (
+      t === "SOCIAL_X_REPLY" ||
+      t === "SOCIAL_X_QUOTE" ||
+      code.includes("REPLY") ||
+      code.includes("QUOTE") ||
+      code.includes("COMMENT") ||
+      title.includes("REPLY") ||
+      title.includes("QUOTE") ||
+      title.includes("COMMENT")
+    );
+  }
+
   function isSocialTask(task: ActiveCampaignTask): boolean {
     const t = (task.taskType || "").toUpperCase();
-    return t.startsWith("SOCIAL_X_");
+    return t.startsWith("SOCIAL_X_") || isSocialProofTask(task);
   }
 
   function getTaskDestinationUrl(task: ActiveCampaignTask): string {
@@ -148,10 +166,17 @@ export default function WhitelistPage() {
     const code = (task.taskCode || "").toUpperCase();
     const title = (task.title || "").toUpperCase();
 
-    if (t === "SOCIAL_X_FOLLOW") {
+    // 1. Exact taskType matches first
+    if (t === "SOCIAL_X_REPLY") {
       return {
-        label: "FOLLOW / ONCE",
-        icon: <XLogo className="h-4 w-4 text-white" />,
+        label: "REPLY / ONCE",
+        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+      };
+    }
+    if (t === "SOCIAL_X_QUOTE") {
+      return {
+        label: "QUOTE / ONCE",
+        icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
       };
     }
     if (t === "SOCIAL_X_LIKE") {
@@ -166,17 +191,43 @@ export default function WhitelistPage() {
         icon: <Repeat className="h-4 w-4 text-emerald-400" />,
       };
     }
-    if (t === "SOCIAL_X_REPLY" || t === "SOCIAL_X_QUOTE") {
-      return {
-        label: "COMMENT / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
-      };
-    }
-
-    if (code.includes("FOLLOW") || title.includes("FOLLOW")) {
+    if (t === "SOCIAL_X_FOLLOW") {
+      // If user typed REPLY / QUOTE in the title/code, respect that over default FOLLOW
+      if (code.includes("REPLY") || title.includes("REPLY")) {
+        return {
+          label: "REPLY / ONCE",
+          icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+        };
+      }
+      if (code.includes("QUOTE") || title.includes("QUOTE")) {
+        return {
+          label: "QUOTE / ONCE",
+          icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
+        };
+      }
       return {
         label: "FOLLOW / ONCE",
         icon: <XLogo className="h-4 w-4 text-white" />,
+      };
+    }
+
+    // 2. Fallbacks based on code or title
+    if (code.includes("REPLY") || title.includes("REPLY")) {
+      return {
+        label: "REPLY / ONCE",
+        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+      };
+    }
+    if (code.includes("QUOTE") || title.includes("QUOTE")) {
+      return {
+        label: "QUOTE / ONCE",
+        icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
+      };
+    }
+    if (code.includes("COMMENT") || title.includes("COMMENT")) {
+      return {
+        label: "COMMENT / ONCE",
+        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
       };
     }
     if (code.includes("REPOST") || code.includes("RETWEET") || title.includes("REPOST")) {
@@ -191,12 +242,13 @@ export default function WhitelistPage() {
         icon: <Heart className="h-4 w-4 text-rose-400" />,
       };
     }
-    if (code.includes("COMMENT") || title.includes("COMMENT") || title.includes("REPLY")) {
+    if (code.includes("FOLLOW") || title.includes("FOLLOW")) {
       return {
-        label: "COMMENT / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
+        label: "FOLLOW / ONCE",
+        icon: <XLogo className="h-4 w-4 text-white" />,
       };
     }
+
     return {
       label: "SOCIAL / ONCE",
       icon: <XLogo className="h-4 w-4 text-white" />,
@@ -207,6 +259,26 @@ export default function WhitelistPage() {
     if (status !== "authenticated") {
       login();
       return;
+    }
+
+    const isProofRequired = isSocialProofTask(task);
+    const enteredUrl = (evidenceInputs[task.id]?.payload || "").trim();
+
+    if (isProofRequired) {
+      if (!enteredUrl) {
+        setTaskErrors((prev) => ({
+          ...prev,
+          [task.id]: "Please paste your reply or quote link first.",
+        }));
+        return;
+      }
+      if (!enteredUrl.startsWith("http://") && !enteredUrl.startsWith("https://")) {
+        setTaskErrors((prev) => ({
+          ...prev,
+          [task.id]: "URL must start with http:// or https://",
+        }));
+        return;
+      }
     }
 
     // Set countdown to 10s
@@ -231,7 +303,8 @@ export default function WhitelistPage() {
         try {
           const destinationUrl = getTaskDestinationUrl(task);
           const userHandle = statusResult?.status?.details?.xUsername;
-          const payload = userHandle ? `https://x.com/${userHandle}` : destinationUrl;
+          const defaultPayload = userHandle ? `https://x.com/${userHandle}` : destinationUrl;
+          const payload = isProofRequired ? enteredUrl : defaultPayload;
 
           await submitTaskEvidence(task.id, {
             submissionType: "URL",
@@ -1031,6 +1104,7 @@ export default function WhitelistPage() {
                           const successMsg = taskSuccess[task.id];
 
                           if (isSocial) {
+                            const isProofRequired = isSocialProofTask(task);
                             const isTaskOpened = Boolean(openedTasks[task.id]);
                             const countdownSeconds = countdownTasks[task.id];
                             const isCountingDown =
@@ -1073,6 +1147,38 @@ export default function WhitelistPage() {
                                     {task.description && (
                                       <p className="text-xs text-gray-400 line-clamp-2 md:line-clamp-1">
                                         {task.description}
+                                      </p>
+                                    )}
+
+                                    {/* Proof Link Input: Shown for Reply / Quote tasks once opened */}
+                                    {isProofRequired && isTaskOpened && taskStatus.key !== "APPROVED" && (
+                                      <div className="pt-2 max-w-md">
+                                        <div className="relative">
+                                          <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500 pointer-events-none" />
+                                          <input
+                                            type="url"
+                                            placeholder="Paste reply or quote URL (https://x.com/...)"
+                                            value={taskInput.payload}
+                                            onChange={(e) =>
+                                              setEvidenceInputs((prev) => ({
+                                                ...prev,
+                                                [task.id]: {
+                                                  ...taskInput,
+                                                  payload: e.target.value,
+                                                },
+                                              }))
+                                            }
+                                            disabled={isCountingDown || isSubmitting}
+                                            className="w-full rounded-lg border border-gray-700 bg-gray-900/90 pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Submitted Proof Display for Approved Tasks */}
+                                    {isProofRequired && taskStatus.key === "APPROVED" && task.latestSubmission?.payload && (
+                                      <p className="pt-1 text-[11px] text-gray-400 font-mono truncate">
+                                        Proof: <span className="text-gray-300">{task.latestSubmission.payload}</span>
                                       </p>
                                     )}
 
@@ -1154,6 +1260,15 @@ export default function WhitelistPage() {
                                       className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/40 px-3.5 py-1.5 text-xs font-semibold text-gray-500 opacity-60"
                                     >
                                       <span>CLICK &apos;OPEN X&apos; FIRST</span>
+                                      <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
+                                    </button>
+                                  ) : isProofRequired && !taskInput.payload.trim() ? (
+                                    <button
+                                      disabled
+                                      title="Paste your reply or quote link first"
+                                      className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/40 px-3.5 py-1.5 text-xs font-semibold text-gray-500 opacity-60"
+                                    >
+                                      <span>PASTE LINK FIRST</span>
                                       <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
                                     </button>
                                   ) : status !== "authenticated" ? (

@@ -726,4 +726,114 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
 
     vi.useRealTimers();
   });
+
+  // 12. Social Proof Tasks (Reply, Quote) require OPEN X, then paste link input, then 10s countdown & instant Done
+  it("renders reply/quote tasks requiring proof link input after clicking OPEN X and verifies with entered payload", async () => {
+    vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+      status: "authenticated",
+      sessionAddress: "0x1111111111111111111111111111111111111111",
+      walletAddress: "0x1111111111111111111111111111111111111111",
+    } as any);
+
+    const replyCampaign: tasksClient.ActiveCampaignItem[] = [
+      {
+        ...mockActiveCampaigns[0],
+        tasks: [
+          {
+            id: "task-social-reply",
+            versionId: "ver-1",
+            campaignId: "camp-1",
+            taskCode: "REPLY_TWEET",
+            title: "Reply to Announcement",
+            description: "Reply to our genesis announcement with your excitement.",
+            taskType: "SOCIAL_X_REPLY",
+            points: 15,
+            isRequired: true,
+            sortOrder: 1,
+            progress: null,
+            latestSubmission: null,
+            requirementMetadata: {
+              tweetUrl: "https://x.com/chimphoodNFT/status/987654321",
+            },
+          },
+        ],
+      },
+    ];
+
+    vi.mocked(tasksClient.fetchActiveTasks).mockResolvedValueOnce({
+      configured: true,
+      campaigns: replyCampaign,
+    });
+
+    vi.mocked(tasksClient.submitTaskEvidence).mockResolvedValueOnce({
+      success: true,
+      submission: {
+        id: "sub-reply",
+        status: "APPROVED",
+        payload: "https://x.com/user/status/111222333",
+      },
+      taskProgress: { status: "VERIFIED" },
+    } as any);
+
+    render(<WhitelistPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Reply to Announcement")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("REPLY / ONCE")).toBeInTheDocument();
+
+    // Initially proof input is not visible until OPEN X is clicked
+    expect(screen.queryByPlaceholderText(/Paste reply or quote URL/i)).not.toBeInTheDocument();
+
+    // Verify button is disabled
+    const disabledBtn = screen.getByRole("button", { name: /CLICK 'OPEN X' FIRST/i });
+    expect(disabledBtn).toBeDisabled();
+
+    // Click OPEN X
+    const openXBtn = screen.getByText("OPEN X");
+    fireEvent.click(openXBtn.closest("a")!);
+
+    // Now proof input appears!
+    const input = await screen.findByPlaceholderText(/Paste reply or quote URL/i);
+    expect(input).toBeInTheDocument();
+
+    // Before typing, verify button indicates pasting link is required
+    const pasteFirstBtn = screen.getByRole("button", { name: /PASTE LINK FIRST/i });
+    expect(pasteFirstBtn).toBeDisabled();
+
+    // Enter proof URL
+    fireEvent.change(input, {
+      target: { value: "https://x.com/user/status/111222333" },
+    });
+
+    // Now verify button becomes active
+    const verifyBtn = screen.getByRole("button", { name: /VERIFY TASK/i });
+    expect(verifyBtn).toBeEnabled();
+
+    // Setup fake timers
+    vi.useFakeTimers();
+
+    act(() => {
+      fireEvent.click(verifyBtn);
+    });
+
+    expect(screen.getByText(/VERIFYING \(10s\)\.\.\./i)).toBeInTheDocument();
+
+    // Advance 10 seconds
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+
+    expect(tasksClient.submitTaskEvidence).toHaveBeenCalledWith(
+      "task-social-reply",
+      {
+        submissionType: "URL",
+        payload: "https://x.com/user/status/111222333",
+        autoApprove: true,
+      },
+    );
+
+    vi.useRealTimers();
+  });
 });
