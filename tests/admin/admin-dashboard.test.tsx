@@ -6,6 +6,10 @@ import { AdminDashboardClient } from "@/components/admin/AdminDashboardClient";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { Providers } from "@/components/providers";
 
+const mockNotFound = vi.fn(() => {
+  throw new Error("NEXT_NOT_FOUND");
+});
+
 // Mock next/navigation
 vi.mock("next/navigation", () => ({
   usePathname: () => "/admin",
@@ -13,6 +17,7 @@ vi.mock("next/navigation", () => ({
     push: vi.fn(),
     refresh: vi.fn(),
   }),
+  notFound: () => mockNotFound(),
 }));
 
 vi.mock("@/server/db", () => ({
@@ -124,7 +129,7 @@ describe("Admin Dashboard Route Protection & Access Control", () => {
     vi.clearAllMocks();
   });
 
-  it("denies access with 401 when request is unauthenticated", async () => {
+  it("denies access with notFound (stealth 404) when request is unauthenticated", async () => {
     mockCheckAdminSession.mockResolvedValueOnce({
       ok: false,
       error: "UNAUTHORIZED",
@@ -132,27 +137,11 @@ describe("Admin Dashboard Route Protection & Access Control", () => {
       message: "Authentication required to access admin resources.",
     });
 
-    const pageElement = await AdminPage();
-    const { container } = render(<Providers>{pageElement}</Providers>);
-
-    // Verify 401 Unauthorized UI rendered
-    expect(screen.getByText("Admin Authentication Required")).toBeInTheDocument();
-    expect(screen.getByText("401 Access Restricted")).toBeInTheDocument();
-    expect(
-      screen.getByText("Authentication required to access admin resources."),
-    ).toBeInTheDocument();
-
-    // Verify admin navigation sidebar is NOT rendered
-    expect(screen.queryByText("Overview")).not.toBeInTheDocument();
-    expect(screen.queryByText("Evidence Review")).not.toBeInTheDocument();
-    expect(screen.queryByText("Campaigns")).not.toBeInTheDocument();
-
-    for (const pattern of INDONESIAN_UI_WORDS) {
-      expect(container.textContent).not.toMatch(pattern);
-    }
+    await expect(AdminPage()).rejects.toThrow("NEXT_NOT_FOUND");
+    expect(mockNotFound).toHaveBeenCalled();
   });
 
-  it("denies access with 403 when authenticated user has no admin role", async () => {
+  it("denies access with notFound (stealth 404) when authenticated user has no admin role", async () => {
     mockCheckAdminSession.mockResolvedValueOnce({
       ok: false,
       error: "FORBIDDEN",
@@ -160,22 +149,24 @@ describe("Admin Dashboard Route Protection & Access Control", () => {
       message: "Admin access required. No admin role assigned to this account.",
     });
 
-    const pageElement = await AdminPage();
-    const { container } = render(<Providers>{pageElement}</Providers>);
+    await expect(AdminPage()).rejects.toThrow("NEXT_NOT_FOUND");
+    expect(mockNotFound).toHaveBeenCalled();
+  });
 
-    // Verify 403 Forbidden UI rendered
-    expect(
-      screen.getByText("Access Forbidden: Insufficient Admin Privileges"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("403 Access Restricted")).toBeInTheDocument();
-    expect(
-      screen.getByText("Admin access required. No admin role assigned to this account."),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Role Verification Failed")).toBeInTheDocument();
+  it("renders AdminAccessDenied fallback component correctly when rendered directly", () => {
+    const errorData = {
+      error: "UNAUTHORIZED" as const,
+      status: 401 as const,
+      message: "Authentication required to access admin resources.",
+    };
+    const { container } = render(
+      <Providers>
+        <AdminAccessDenied error={errorData} />
+      </Providers>,
+    );
 
-    // Verify admin navigation sidebar is NOT rendered
-    expect(screen.queryByText("Evidence Review")).not.toBeInTheDocument();
-    expect(screen.queryByText("Users & Bans")).not.toBeInTheDocument();
+    expect(screen.getByText("Admin Authentication Required")).toBeInTheDocument();
+    expect(screen.getByText("401 Access Restricted")).toBeInTheDocument();
 
     for (const pattern of INDONESIAN_UI_WORDS) {
       expect(container.textContent).not.toMatch(pattern);

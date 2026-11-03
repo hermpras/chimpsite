@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ShieldAlert, Lock, ArrowLeft, ShieldX, Zap } from "lucide-react";
+import { ShieldAlert, Lock, ArrowLeft, ShieldX } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -14,7 +13,6 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { WalletConnectCard } from "@/components/auth/WalletConnectCard";
-import { devPromoteToAdmin } from "@/server/admin/dev-promote";
 
 export interface AdminAccessDeniedProps {
   error: {
@@ -25,31 +23,7 @@ export interface AdminAccessDeniedProps {
 }
 
 export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
-  const router = useRouter();
-  const [isPromoting, setIsPromoting] = useState(false);
-  const [promoteError, setPromoteError] = useState<string | null>(null);
-
   const isUnauthorized = error.status === 401 || error.error === "UNAUTHORIZED";
-
-  const handleDevPromote = async () => {
-    setIsPromoting(true);
-    setPromoteError(null);
-    try {
-      const res = await devPromoteToAdmin();
-      if (res.ok) {
-        router.refresh();
-        window.location.reload();
-      } else {
-        setPromoteError(res.error || "Failed to activate admin role.");
-      }
-    } catch (err: unknown) {
-      setPromoteError(
-        err instanceof Error ? err.message : "Failed to activate admin role.",
-      );
-    } finally {
-      setIsPromoting(false);
-    }
-  };
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
@@ -115,16 +89,6 @@ export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-4 pt-2">
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleDevPromote}
-                disabled={isPromoting}
-                className="gap-2 bg-gradient-to-r from-amber-500 to-emerald-500 font-semibold text-black hover:from-amber-400 hover:to-emerald-400"
-              >
-                <Zap className="h-4 w-4" />
-                {isPromoting ? "Activating Role..." : "Activate Super Admin (Dev)"}
-              </Button>
               <Link href="/profile">
                 <Button variant="secondary" size="md">
                   View Profile
@@ -136,7 +100,6 @@ export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
                 </Button>
               </Link>
             </div>
-            {promoteError && <p className="mt-2 text-xs text-rose-400">{promoteError}</p>}
           </CardContent>
         </Card>
       )}

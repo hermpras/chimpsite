@@ -1,11 +1,11 @@
 import React from "react";
+import { notFound } from "next/navigation";
 import { prisma } from "@/server/db";
 import { checkAdminSession } from "@/server/auth/session";
 import {
   AdminDashboardClient,
   type SerializedAdminSession,
 } from "@/components/admin/AdminDashboardClient";
-import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ export default async function AdminPage() {
   const authResult = await checkAdminSession(prisma);
 
   if (!authResult.ok) {
-    return <AdminAccessDenied error={authResult} />;
+    notFound();
   }
 
   const serializedSession: SerializedAdminSession = {

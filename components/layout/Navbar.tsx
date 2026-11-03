@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShieldAlert, Menu, X } from "lucide-react";
+import { Shield, Menu, X } from "lucide-react";
 import { WalletButton } from "@/components/auth/WalletButton";
+import { useSiweAuth } from "@/hooks/useSiweAuth";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -17,6 +18,29 @@ const navLinks = [
 export function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { status, sessionAddress } = useSiweAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (status === "authenticated") {
+      fetch("/api/admin/check")
+        .then((res) => (res.ok ? res.json() : { isAdmin: false }))
+        .then((data) => {
+          if (!cancelled) {
+            setIsAdmin(Boolean(data?.isAdmin));
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setIsAdmin(false);
+        });
+    } else {
+      setIsAdmin(false);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [status, sessionAddress]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-[#090a0f]/90 backdrop-blur">
@@ -50,6 +74,21 @@ export function Navbar() {
                 </Link>
               );
             })}
+
+            {/* Exclusive Admin Portal Link for verified Admins */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${
+                  pathname.startsWith("/admin")
+                    ? "border border-amber-500/30 bg-amber-500/20 text-amber-400"
+                    : "text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                }`}
+              >
+                <Shield className="h-4 w-4" />
+                Admin Portal
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -89,6 +128,22 @@ export function Navbar() {
                 </Link>
               );
             })}
+
+            {/* Mobile Admin Link */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+                  pathname.startsWith("/admin")
+                    ? "bg-amber-500/20 text-amber-400"
+                    : "text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                }`}
+              >
+                <Shield className="h-4 w-4" />
+                Admin Portal
+              </Link>
+            )}
           </nav>
           <div className="mt-4 border-t border-gray-800 pt-3">
             <div className="flex w-full justify-center">

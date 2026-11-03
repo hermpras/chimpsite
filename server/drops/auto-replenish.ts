@@ -342,9 +342,9 @@ export async function ensureActiveCyclePeriod(
       // Must fail closed: if acquiring the advisory lock fails, times out, or raw executor is unavailable,
       // throw immediately so the transaction aborts and rolls back cleanly without proceeding un-synchronized.
       if (typeof (tx as any).$executeRaw === "function") {
-        await (tx as any).$executeRaw`SELECT pg_advisory_xact_lock(982341, hashtext(${drop.id}))`;
+        await (tx as any).$executeRaw`SELECT 1 FROM (SELECT pg_advisory_xact_lock(982341, hashtext(${drop.id}))) AS _lock`;
       } else if (typeof (tx as any).$queryRaw === "function") {
-        await (tx as any).$queryRaw`SELECT pg_advisory_xact_lock(982341, hashtext(${drop.id}))::text`;
+        await (tx as any).$queryRaw`SELECT 1 AS locked FROM (SELECT pg_advisory_xact_lock(982341, hashtext(${drop.id}))) AS _lock`;
       } else {
         throw new Error("PostgreSQL advisory lock is unavailable");
       }

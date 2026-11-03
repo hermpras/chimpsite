@@ -8,15 +8,15 @@ test.describe("D. Protected Routes and Server Authority", () => {
     // Navigate directly to /admin without any session
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
 
-    // Must render AdminAccessDenied component
+    // In stealth mode, visitor receives 404 Page Not Found
     await expect(
       page
         .getByText(
-          /Access Denied|Authentication Required|Admin Portal Access Restricted/i,
+          /404|Page Not Found|Access Denied|Authentication Required|Admin Portal Access Restricted/i,
         )
         .first(),
     ).toBeVisible({ timeout: 25_000 });
-    await expect(page.getByRole("link", { name: /Back to Home/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Back to Home|Return to Home/i })).toBeVisible();
 
     // Admin dashboard elements must NOT be visible
     await expect(page.getByText("Super Admin Dashboard")).not.toBeVisible();
@@ -69,9 +69,13 @@ test.describe("D. Protected Routes and Server Authority", () => {
     // 2. Direct navigation to /admin with regular user session
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
 
-    // Must still be denied access because regular user is not SUPER_ADMIN
+    // Must still be denied access because regular user is not SUPER_ADMIN (404 in stealth mode)
     await expect(
-      page.getByText(/Access Denied|Forbidden|Admin Portal Access Restricted/i).first(),
+      page
+        .getByText(
+          /404|Page Not Found|Access Denied|Forbidden|Admin Portal Access Restricted/i,
+        )
+        .first(),
     ).toBeVisible({ timeout: 25_000 });
 
     // API check also confirms 403 Forbidden for regular user
