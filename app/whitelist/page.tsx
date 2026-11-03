@@ -1288,7 +1288,7 @@ export default function WhitelistPage() {
                                       title="Please click 'OPEN X' first"
                                       className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/40 px-3.5 py-1.5 text-xs font-semibold text-gray-500 opacity-60"
                                     >
-                                      <span>CLICK &apos;OPEN X&apos; FIRST</span>
+                                      <span>VERIFY TASK</span>
                                       <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
                                     </button>
                                   ) : isProofRequired && !taskInput.payload.trim() ? (
@@ -1297,7 +1297,7 @@ export default function WhitelistPage() {
                                       title="Paste your reply or quote link first"
                                       className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/40 px-3.5 py-1.5 text-xs font-semibold text-gray-500 opacity-60"
                                     >
-                                      <span>PASTE LINK FIRST</span>
+                                      <span>VERIFY TASK</span>
                                       <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
                                     </button>
                                   ) : status !== "authenticated" ? (

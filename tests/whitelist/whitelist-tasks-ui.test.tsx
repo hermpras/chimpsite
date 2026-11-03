@@ -684,9 +684,9 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
       "https://x.com/chimphoodNFT/status/1234567890",
     );
 
-    // Gating check: Before clicking OPEN X, verify buttons are disabled
+    // Gating check: Before clicking OPEN X, verify buttons are disabled VERIFY TASK
     const disabledButtons = screen.getAllByRole("button", {
-      name: /CLICK 'OPEN X' FIRST/i,
+      name: /VERIFY TASK/i,
     });
     expect(disabledButtons.length).toBe(2);
     expect(disabledButtons[0]).toBeDisabled();
@@ -695,9 +695,9 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     fireEvent.click(followAnchor!);
 
     // Now the follow verify button is unlocked and enabled
-    const verifyButton = await screen.findByRole("button", {
+    const verifyButton = (await screen.findAllByRole("button", {
       name: /VERIFY TASK/i,
-    });
+    }))[0];
     expect(verifyButton).toBeEnabled();
 
     // Setup fake timers for 10s countdown
@@ -786,8 +786,8 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     // Initially proof input is not visible until OPEN X is clicked
     expect(screen.queryByPlaceholderText(/Paste reply or quote URL/i)).not.toBeInTheDocument();
 
-    // Verify button is disabled
-    const disabledBtn = screen.getByRole("button", { name: /CLICK 'OPEN X' FIRST/i });
+    // Verify button is disabled initially
+    const disabledBtn = screen.getByRole("button", { name: /VERIFY TASK/i });
     expect(disabledBtn).toBeDisabled();
 
     // Click OPEN X
@@ -798,8 +798,8 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     const input = await screen.findByPlaceholderText(/Paste reply or quote URL/i);
     expect(input).toBeInTheDocument();
 
-    // Before typing, verify button indicates pasting link is required
-    const pasteFirstBtn = screen.getByRole("button", { name: /PASTE LINK FIRST/i });
+    // Before typing, verify button is still disabled
+    const pasteFirstBtn = screen.getByRole("button", { name: /VERIFY TASK/i });
     expect(pasteFirstBtn).toBeDisabled();
 
     // Enter proof URL
@@ -902,8 +902,11 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     fireEvent.click(openXButtons[0].closest("a")!);
     fireEvent.click(openXButtons[1].closest("a")!);
 
-    // Now on Wallet A, Follow verify is active and Reply proof input is shown
-    expect(await screen.findByRole("button", { name: /VERIFY TASK/i })).toBeEnabled();
+    // Now on Wallet A, Follow verify is active and Reply proof input is shown (Reply verify is still disabled until proof is pasted)
+    const verifyButtonsOnWalletA = await screen.findAllByRole("button", { name: /VERIFY TASK/i });
+    expect(verifyButtonsOnWalletA.length).toBe(2);
+    expect(verifyButtonsOnWalletA[0]).toBeEnabled();
+    expect(verifyButtonsOnWalletA[1]).toBeDisabled();
     expect(screen.getByPlaceholderText(/Paste reply or quote URL/i)).toBeInTheDocument();
 
     // Now SWITCH to Wallet B
@@ -918,9 +921,9 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     await waitFor(() => {
       // Proof input must be HIDDEN again
       expect(screen.queryByPlaceholderText(/Paste reply or quote URL/i)).not.toBeInTheDocument();
-      // Verify buttons must be disabled CLICK 'OPEN X' FIRST again
+      // Verify buttons must be disabled VERIFY TASK again
       const disabledButtons = screen.getAllByRole("button", {
-        name: /CLICK 'OPEN X' FIRST/i,
+        name: /VERIFY TASK/i,
       });
       expect(disabledButtons.length).toBe(2);
       expect(disabledButtons[0]).toBeDisabled();
