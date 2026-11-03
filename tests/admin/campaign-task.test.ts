@@ -786,17 +786,20 @@ describe("listCampaignTasks and getCampaignTask", () => {
 // ---------------------------------------------------------------------------
 
 describe("VALID_TASK_TYPES", () => {
-  it("includes all 5 schema task types", () => {
+  it("includes all schema task types including social X actions", () => {
     expect(VALID_TASK_TYPES).toEqual(
       expect.arrayContaining([
         "SOCIAL_X_FOLLOW",
+        "SOCIAL_X_LIKE",
         "SOCIAL_X_REPOST",
+        "SOCIAL_X_QUOTE",
+        "SOCIAL_X_REPLY",
         "INVENTORY_HOLD",
         "MANUAL_EVIDENCE",
         "CUSTOM",
       ]),
     );
-    expect(VALID_TASK_TYPES).toHaveLength(5);
+    expect(VALID_TASK_TYPES).toHaveLength(8);
   });
 });
 

@@ -1537,6 +1537,7 @@ export function AdminCampaigns() {
                     className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   >
                     <option value="SOCIAL_X_FOLLOW">SOCIAL_X_FOLLOW (Follow)</option>
+                    <option value="SOCIAL_X_LIKE">SOCIAL_X_LIKE (Like)</option>
                     <option value="SOCIAL_X_REPOST">SOCIAL_X_REPOST (Repost)</option>
                     <option value="SOCIAL_X_QUOTE">SOCIAL_X_QUOTE (Quote)</option>
                     <option value="SOCIAL_X_REPLY">SOCIAL_X_REPLY (Reply)</option>

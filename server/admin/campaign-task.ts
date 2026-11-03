@@ -22,7 +22,10 @@ export class AdminCampaignTaskError extends Error {
 
 export const VALID_TASK_TYPES: TaskType[] = [
   "SOCIAL_X_FOLLOW",
+  "SOCIAL_X_LIKE",
   "SOCIAL_X_REPOST",
+  "SOCIAL_X_QUOTE",
+  "SOCIAL_X_REPLY",
   "INVENTORY_HOLD",
   "MANUAL_EVIDENCE",
   "CUSTOM",

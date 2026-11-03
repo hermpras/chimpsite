@@ -154,6 +154,12 @@ export default function WhitelistPage() {
         icon: <XLogo className="h-4 w-4 text-white" />,
       };
     }
+    if (t === "SOCIAL_X_LIKE") {
+      return {
+        label: "LIKE / ONCE",
+        icon: <Heart className="h-4 w-4 text-rose-400" />,
+      };
+    }
     if (t === "SOCIAL_X_REPOST") {
       return {
         label: "REPOST / ONCE",
