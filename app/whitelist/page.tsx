@@ -1011,7 +1011,7 @@ export default function WhitelistPage() {
                         No tasks configured for this campaign.
                       </p>
                     ) : (
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      <div className="space-y-3">
                         {campaign.tasks.map((task) => {
                           const taskStatus = getTaskStatus(task);
                           const isSubmitting = submittingTaskId === task.id;
@@ -1039,91 +1039,92 @@ export default function WhitelistPage() {
                             return (
                               <div
                                 key={task.id}
-                                className="flex flex-col justify-between space-y-4 rounded-xl border border-gray-800 bg-[#0c0e17] p-5 transition-all hover:border-gray-700/80 hover:shadow-lg hover:shadow-emerald-950/20"
+                                className="flex flex-col justify-between gap-4 rounded-xl border border-gray-800 bg-[#0c0e17] p-4 sm:p-5 transition-all hover:border-gray-700/80 hover:shadow-lg hover:shadow-emerald-950/20 md:flex-row md:items-center"
                               >
-                                {/* Top: Icon + Type Tag + Status Badge */}
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5">
-                                      {taskMeta.icon}
-                                    </div>
-                                    <div>
-                                      <span className="font-mono text-[11px] font-bold tracking-wider text-gray-400 uppercase">
+                                {/* Left: Icon + Type & Badges + Title & Description */}
+                                <div className="flex min-w-0 flex-1 items-start gap-3.5">
+                                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 mt-0.5">
+                                    {taskMeta.icon}
+                                  </div>
+                                  <div className="min-w-0 flex-1 space-y-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <h4 className="text-sm font-bold text-white sm:text-base">
+                                        {task.title}
+                                      </h4>
+                                      <span className="font-mono text-[10px] font-bold tracking-wider text-gray-400 uppercase">
                                         {taskMeta.label}
                                       </span>
-                                      <div className="flex items-center gap-1.5 pt-0.5">
-                                        {task.isRequired ? (
-                                          <Badge
-                                            variant="default"
-                                            className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
-                                          >
-                                            Mandatory
-                                          </Badge>
-                                        ) : (
-                                          <Badge variant="outline" className="text-[10px] text-gray-400">
-                                            Optional
-                                          </Badge>
-                                        )}
-                                        <span className="font-mono text-[11px] font-bold text-emerald-400">
-                                          +{task.points} PTS
+                                      {task.isRequired ? (
+                                        <Badge
+                                          variant="default"
+                                          className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300"
+                                        >
+                                          Mandatory
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="text-[10px] text-gray-400">
+                                          Optional
+                                        </Badge>
+                                      )}
+                                      <span className="font-mono text-xs font-bold text-emerald-400">
+                                        +{task.points} PTS
+                                      </span>
+                                    </div>
+                                    {task.description && (
+                                      <p className="text-xs text-gray-400 line-clamp-2 md:line-clamp-1">
+                                        {task.description}
+                                      </p>
+                                    )}
+
+                                    {/* Rejection alert box */}
+                                    {taskStatus.key === "REJECTED" && (
+                                      <div className="mt-2 rounded border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-300">
+                                        <span className="font-semibold text-rose-400">Rejected: </span>
+                                        <span className="text-rose-200">
+                                          {task.latestSubmission?.reviewerNotes ||
+                                            "Submission was not approved. You can retry."}
                                         </span>
                                       </div>
-                                    </div>
-                                  </div>
+                                    )}
 
+                                    {errorMsg && (
+                                      <p className="pt-1 text-[11px] text-rose-400">{errorMsg}</p>
+                                    )}
+                                    {successMsg && (
+                                      <p className="pt-1 text-[11px] text-emerald-400">{successMsg}</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Right: Status badge & Action Buttons in a horizontal row */}
+                                <div className="flex flex-wrap items-center gap-2.5 shrink-0 pt-2 border-t border-gray-800/80 md:border-t-0 md:pt-0">
                                   {/* Task Status Badge */}
                                   <Badge
                                     variant={taskStatus.badgeVariant}
-                                    className={`text-xs ${taskStatus.colorClass}`}
+                                    className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}
                                   >
                                     {taskStatus.key === "APPROVED" && (
-                                      <CheckCircle2 className="mr-1 h-3 w-3 shrink-0" />
+                                      <CheckCircle2 className="mr-1 h-3.5 w-3.5 shrink-0" />
                                     )}
                                     {taskStatus.key === "PENDING" && (
-                                      <Clock className="mr-1 h-3 w-3 shrink-0" />
+                                      <Clock className="mr-1 h-3.5 w-3.5 shrink-0" />
                                     )}
                                     {taskStatus.key === "REJECTED" && (
-                                      <XCircle className="mr-1 h-3 w-3 shrink-0" />
+                                      <XCircle className="mr-1 h-3.5 w-3.5 shrink-0" />
                                     )}
                                     {taskStatus.key === "NOT_SUBMITTED" && (
-                                      <AlertCircle className="mr-1 h-3 w-3 shrink-0" />
+                                      <AlertCircle className="mr-1 h-3.5 w-3.5 shrink-0" />
                                     )}
                                     {taskStatus.key === "APPROVED" ? "Done" : taskStatus.label}
                                   </Badge>
-                                </div>
 
-                                {/* Middle: Title & Description */}
-                                <div className="space-y-1">
-                                  <h4 className="text-sm font-bold text-white sm:text-base">
-                                    {task.title}
-                                  </h4>
-                                  {task.description && (
-                                    <p className="text-xs text-gray-400 line-clamp-2">
-                                      {task.description}
-                                    </p>
-                                  )}
-                                </div>
-
-                                {/* Rejection alert box */}
-                                {taskStatus.key === "REJECTED" && (
-                                  <div className="rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-                                    <p className="font-semibold text-rose-400">Rejected by Reviewer</p>
-                                    <p className="mt-0.5 text-rose-200">
-                                      {task.latestSubmission?.reviewerNotes ||
-                                        "Submission was not approved. You can retry."}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Action Buttons: OPEN X -> and VERIFY TASK -> */}
-                                <div className="space-y-2 pt-2 border-t border-gray-800/80">
                                   {/* 1. Target URL Button: OPEN X -> */}
                                   <a
                                     href={destinationUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={() => markTaskOpened(task.id)}
-                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-800/80 px-3 py-2 text-xs font-semibold text-white transition-all hover:border-gray-500 hover:bg-gray-700 active:scale-[0.98]"
+                                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-700 bg-gray-800/80 px-3.5 py-1.5 text-xs font-semibold text-white transition-all hover:border-gray-500 hover:bg-gray-700 active:scale-[0.98]"
                                   >
                                     <span>OPEN X</span>
                                     <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
@@ -1133,7 +1134,7 @@ export default function WhitelistPage() {
                                   {taskStatus.key === "APPROVED" ? (
                                     <button
                                       disabled
-                                      className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300"
+                                      className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-300"
                                     >
                                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                                       <span>DONE</span>
@@ -1141,7 +1142,7 @@ export default function WhitelistPage() {
                                   ) : isCountingDown ? (
                                     <button
                                       disabled
-                                      className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold text-amber-300 animate-pulse"
+                                      className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/20 px-3.5 py-1.5 text-xs font-semibold text-amber-300 animate-pulse"
                                     >
                                       <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-400" />
                                       <span>VERIFYING ({countdownSeconds}s)...</span>
@@ -1150,7 +1151,7 @@ export default function WhitelistPage() {
                                     <button
                                       disabled
                                       title="Please click 'OPEN X' first"
-                                      className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2 text-xs font-semibold text-gray-500 opacity-60"
+                                      className="inline-flex cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/40 px-3.5 py-1.5 text-xs font-semibold text-gray-500 opacity-60"
                                     >
                                       <span>CLICK &apos;OPEN X&apos; FIRST</span>
                                       <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
@@ -1159,7 +1160,7 @@ export default function WhitelistPage() {
                                     <Button
                                       variant="primary"
                                       size="sm"
-                                      className="w-full gap-1.5 text-xs font-semibold"
+                                      className="gap-1.5 px-3.5 py-1.5 text-xs font-semibold"
                                       onClick={() => login()}
                                     >
                                       <span>CONNECT WALLET TO VERIFY</span>
@@ -1169,7 +1170,7 @@ export default function WhitelistPage() {
                                     <Button
                                       variant="primary"
                                       size="sm"
-                                      className="w-full gap-1.5 text-xs font-semibold"
+                                      className="gap-1.5 px-3.5 py-1.5 text-xs font-semibold"
                                       onClick={() => handleSocialVerify(task)}
                                       disabled={isSubmitting || isCountingDown}
                                     >
@@ -1188,22 +1189,15 @@ export default function WhitelistPage() {
                                       )}
                                     </Button>
                                   )}
-
-                                  {errorMsg && (
-                                    <p className="text-[11px] text-rose-400">{errorMsg}</p>
-                                  )}
-                                  {successMsg && (
-                                    <p className="text-[11px] text-emerald-400">{successMsg}</p>
-                                  )}
                                 </div>
-                              </div>
+</div>
                             );
                           }
 
                           return (
                             <div
                               key={task.id}
-                              className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4 space-y-3 rounded-lg border border-gray-800 bg-gray-900/60 p-4"
+                              className="space-y-3 rounded-xl border border-gray-800 bg-gray-900/60 p-4 sm:p-5"
                             >
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                               <div className="space-y-1">
