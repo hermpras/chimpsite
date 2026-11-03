@@ -288,10 +288,10 @@ export function ClaimLootboxModal({
   // Share on X (Twitter) URL
   const tweetText = wonTrait
     ? encodeURIComponent(
-        `I just unlocked ${wonTrait.name} (${wonRarity}) in the @ChimpHood Drop! 🐒🔥 Edition #${claimedItem?.edition} • Verified on-chain.\n\nJoin the Hood:`,
+        `Just pulled ${wonTrait.name} (${wonRarity}) in the @Elychimp Drop! 🐒🔥 Edition #${claimedItem?.edition} • Deployed on @Enter_elysium (Hyperliquid L2).\n\nRule the streets:`,
       )
     : "";
-  const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://chimphood.com";
+  const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
   const tweetHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(
     shareUrl,
   )}`;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { AdminSidebar, type AdminTab, ADMIN_NAV_ITEMS } from "./AdminSidebar";
 import { AdminOverview } from "./AdminOverview";
@@ -15,6 +15,7 @@ import { AdminAuditLog } from "./AdminAuditLog";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ShieldAlert, ArrowLeft, ExternalLink } from "lucide-react";
+import { adminListEvidence } from "@/lib/admin/client";
 
 export interface SerializedAdminRole {
   id: string;
@@ -38,6 +39,15 @@ interface AdminDashboardClientProps {
 export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [pendingEvidenceCount, setPendingEvidenceCount] = useState<number>(0);
+
+  useEffect(() => {
+    adminListEvidence({ status: "PENDING_REVIEW", limit: 1 })
+      .then((res) => {
+        setPendingEvidenceCount(res.total ?? res.submissions?.length ?? 0);
+      })
+      .catch(() => {});
+  }, []);
 
   const { roleType, permissions } = adminSession.adminRole;
   const isSuperAdmin = roleType === "SUPER_ADMIN";
@@ -63,6 +73,7 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
         roleType={roleType}
         address={adminSession.address}
         permissions={permissions}
+        pendingEvidenceCount={pendingEvidenceCount}
         mobileOpen={mobileOpen}
         onToggleMobile={() => setMobileOpen(!mobileOpen)}
       />
@@ -72,27 +83,27 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
         <div className="mx-auto max-w-6xl space-y-6">
           {/* Top Breadcrumb & Actions Bar */}
           <div className="flex flex-col gap-2 border-b border-gray-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <Link href="/" className="transition-colors hover:text-emerald-400">
-                ChimpHood
+            <div className="flex items-center gap-2 text-xs text-gray-400 font-mono-street">
+              <Link href="/" className="transition-colors hover:text-amber-400 font-bold">
+                Elychimp
               </Link>
               <span>/</span>
               <span className="text-gray-300">Admin</span>
               <span>/</span>
-              <span className="font-semibold text-emerald-400">
+              <span className="font-semibold text-amber-400">
                 {currentNav?.label ?? "Overview"}
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 font-mono-street">
               <Link href="/whitelist">
-                <Button variant="ghost" size="sm" className="gap-1 text-xs">
+                <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-gray-300 hover:text-white">
                   Public Portal <ExternalLink className="h-3 w-3" />
                 </Button>
               </Link>
               <Link href="/">
-                <Button variant="outline" size="sm" className="gap-1 text-xs">
-                  <ArrowLeft className="h-3 w-3" /> Home
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs border-gray-700 bg-gray-900 text-gray-300 hover:border-amber-400 hover:text-white">
+                  <ArrowLeft className="h-3 w-3" /> Site Home
                 </Button>
               </Link>
             </div>

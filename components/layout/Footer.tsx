@@ -3,42 +3,46 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t border-gray-800 bg-[#07080c] py-8 text-sm text-gray-400">
+    <footer className="border-t border-gray-800/80 bg-[#06070a] py-6 text-sm text-gray-400">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
-        <div className="text-center sm:text-left">
-          <Link href="/" className="inline-block">
-            <span className="text-lg font-black tracking-tight text-emerald-400">
-              CHIMP<span className="text-gray-100">HOOD</span>
-            </span>
+        <div className="flex items-center gap-3 text-center sm:text-left">
+          <Link href="/" className="inline-flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/elychimp-logo.png"
+              alt="Elychimp Logo"
+              className="h-6 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+            />
           </Link>
-          <p className="text-xs text-gray-500">
-            Web3 Collectible Ecosystem — Identity, Drops & Whitelist.
+          <span className="text-gray-700 hidden sm:inline">•</span>
+          <p className="font-mono-street text-[11px] text-gray-400 uppercase tracking-wider">
+            Leonida Syndicate on Elysium
           </p>
         </div>
 
         <nav
           aria-label="Footer navigation"
-          className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-400"
+          className="flex flex-wrap items-center justify-center gap-6 font-mono-street text-xs uppercase tracking-wider text-gray-400"
         >
-          <Link href="/" className="transition-colors hover:text-emerald-400">
+          <Link href="/" className="transition-colors hover:text-amber-400">
             Home
           </Link>
-          <Link href="/drops" className="transition-colors hover:text-emerald-400">
+          <Link href="/drops" className="transition-colors hover:text-amber-400">
             Drops
           </Link>
-          <Link href="/whitelist" className="transition-colors hover:text-emerald-400">
+          <Link href="/whitelist" className="transition-colors hover:text-amber-400">
             Whitelist
           </Link>
-          <Link href="/profile" className="transition-colors hover:text-emerald-400">
+          <Link href="/profile" className="transition-colors hover:text-amber-400">
             Profile
           </Link>
-          <Link href="/docs" className="transition-colors hover:text-emerald-400">
+          <Link href="/docs" className="transition-colors hover:text-amber-400">
             Docs
           </Link>
         </nav>
 
-        <p className="text-center text-xs text-gray-600 sm:text-right">
-          &copy; {new Date().getFullYear()} ChimpHood. All rights reserved.
+        <p className="font-mono-street text-center text-[11px] text-gray-400 sm:text-right uppercase">
+          &copy; {new Date().getFullYear()} Elychimp.
         </p>
       </div>
     </footer>

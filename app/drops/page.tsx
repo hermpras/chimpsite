@@ -296,94 +296,82 @@ export default function DropsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Hero Banner */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-              Trait Drops & Lootbox Engine
-            </h1>
-            <Badge variant="default" className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300">
-              Stage 1 Live
-            </Badge>
-          </div>
-          <p className="max-w-2xl text-sm text-gray-400">
-            Claim periodic lootbox mystery pods to collect trait items across all 5 categories
-            (Background, Fur, Clothing, Headwear, Eyewear) required for ChimpHood Whitelist qualification.
-          </p>
-        </div>
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
+      {/* Background Ambient Glow */}
+      <div className="pointer-events-none absolute top-20 right-10 h-96 w-96 rounded-full bg-amber-500/10 blur-[130px]" />
+      <div className="pointer-events-none absolute top-96 left-10 h-80 w-80 rounded-full bg-cyan-500/10 blur-[140px]" />
 
-        {/* Quick Links */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Link href="/whitelist">
-            <Button variant="outline" size="sm" className="gap-1.5 border-gray-700 text-xs">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              Whitelist Status
-            </Button>
-          </Link>
-          <Link href="/profile">
-            <Button variant="outline" size="sm" className="gap-1.5 border-gray-700 text-xs">
-              <Layers className="h-3.5 w-3.5 text-sky-400" />
-              My Inventory
-            </Button>
-          </Link>
+      {/* Hero Banner - Brutalist Streetwear Style */}
+      <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between border-b-2 border-gray-800 pb-8">
+        <div className="space-y-3">
+          {/* Eyebrow Status Badges */}
+          <div className="flex flex-wrap items-center gap-2 font-mono-street text-[11px] uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 font-bold text-amber-300">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+              CYCLE ACTIVE
+            </span>
+            <span className="border border-cyan-400/40 bg-cyan-400/10 px-2.5 py-0.5 font-bold text-cyan-300">
+              Elysium L2 // Hyperliquid
+            </span>
+          </div>
+
+          <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl uppercase tracking-tight text-white leading-[0.9]">
+            Trait Drops &amp; Lootbox Engine
+          </h1>
+
+          <p className="max-w-2xl text-sm sm:text-base leading-relaxed text-gray-300">
+            Claim periodic lootbox mystery pods to collect trait items across all 5 categories
+            (Background, Fur, Clothing, Headwear, Eyewear) required for Whitelist qualification on Elysium.
+          </p>
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Drops Cycle Status Card */}
-        <Card className="border-emerald-500/30 bg-[#090b12]">
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-emerald-500/10 p-2.5 text-emerald-400">
-                  <Sparkles className="h-6 w-6" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Periodic Drop Cycle</CardTitle>
-                  <CardDescription>
-                    {dropData?.drop?.cycleDurationHours === 5
-                      ? "5-hour hype control cycle with a 30-minute claim window"
-                      : "2-hour drop cycles with a 30-minute claim window"}
-                  </CardDescription>
-                </div>
+        <div className="relative border-2 border-gray-800 bg-gradient-to-b from-[#11131c] via-[#0c0d15] to-[#08090d] p-6 sm:p-8 shadow-brutal transition-all">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-800 pb-5">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-12 w-12 items-center justify-center border-2 border-amber-400/40 bg-amber-400/10 text-amber-400">
+                <Sparkles className="h-6 w-6" />
               </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadDropData}
-                  disabled={isLoading}
-                  className="border-gray-800 text-xs text-gray-400 hover:text-white"
-                  title="Refresh Drop Status"
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                </Button>
-
-                {isWindowActive ? (
-                  <Badge
-                    variant="default"
-                    className="flex items-center gap-1.5 border-emerald-500/30 bg-emerald-500/20 font-mono text-xs text-emerald-300"
-                  >
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                    Claim Window Open ({formatRemaining(claimRemainingMs)})
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="flex items-center gap-1.5 border-amber-500/40 bg-amber-500/10 font-mono text-xs text-amber-300"
-                  >
-                    <Clock className="h-3.5 w-3.5 text-amber-400" />
-                    Next Drop in {formatRemaining(nextDropRemainingMs)}
-                  </Badge>
-                )}
+              <div>
+                <h2 className="font-display text-2xl uppercase tracking-wider text-white">
+                  Periodic Drop Cycle
+                </h2>
+                <p className="font-mono-street text-xs text-gray-400 uppercase tracking-wide mt-0.5">
+                  {dropData?.drop?.cycleDurationHours === 5
+                    ? "5-hour hype control cycle with a 30-minute claim window"
+                    : "2-hour drop cycles with a 30-minute claim window"}
+                </p>
               </div>
             </div>
-          </CardHeader>
 
-          <CardContent className="space-y-6">
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={loadDropData}
+                disabled={isLoading}
+                className="flex items-center justify-center border-2 border-gray-800 bg-gray-900 p-2.5 text-gray-400 hover:border-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50"
+                title="Refresh Drop Status"
+                aria-label="Refresh Drop Status"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-400" : ""}`} />
+              </button>
+
+              {isWindowActive ? (
+                <div className="border-2 border-amber-400 bg-amber-400/15 px-3.5 py-1.5 font-mono-street text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                  <span className="h-2 w-2 animate-ping rounded-full bg-amber-400" />
+                  Claim Window Open ({formatRemaining(claimRemainingMs)})
+                </div>
+              ) : (
+                <div className="border-2 border-gray-700 bg-gray-900 px-3.5 py-1.5 font-mono-street text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-400" />
+                  Next Drop in {formatRemaining(nextDropRemainingMs)}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-6 mt-6">
             {fetchError && dropData && (
               <div
                 role="alert"
@@ -437,32 +425,32 @@ export default function DropsPage() {
             ) : dropData?.active && dropData.period ? (
               <div className="space-y-6">
                 {/* 3 Metric Cards */}
-                <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-                  <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-4">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm">
+                    <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
                       Period Cycle
                     </span>
-                    <p className="mt-1 text-xl font-bold text-gray-100">
+                    <p className="mt-2 font-display text-3xl font-black text-amber-400">
                       #{dropData.period.periodIndex}
                     </p>
-                    <span className="mt-1 block text-[11px] text-gray-500">
-                      Standard UTC interval
+                    <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
+                      UTC Interval Synchronized
                     </span>
                   </div>
 
-                  <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-4">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm">
+                    <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
                       Remaining Stock
                     </span>
-                    <p className="mt-1 text-xl font-bold text-emerald-400">
+                    <p className="mt-2 font-mono-street text-2xl font-black text-cyan-300">
                       {dropData.stock?.totalRemaining ?? 0}{" "}
-                      <span className="text-xs font-normal text-gray-500">
+                      <span className="text-xs font-normal text-gray-400">
                         / {dropData.stock?.totalAllocated ?? 0} Units
                       </span>
                     </p>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-gray-950 overflow-hidden border border-gray-800">
+                    <div className="mt-3 h-2 w-full bg-black overflow-hidden border border-gray-800">
                       <div
-                        className="h-full bg-emerald-400 transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-cyan-500 to-amber-400 transition-all duration-500"
                         style={{
                           width: `${Math.min(
                             100,
@@ -477,13 +465,13 @@ export default function DropsPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-4">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm">
+                    <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
                       {isWindowActive ? "Claim Window Status" : "Next Drop Window"}
                     </span>
                     <p
-                      className={`mt-1 font-mono text-xl font-bold ${
-                        isWindowActive ? "text-emerald-400" : "text-amber-300"
+                      className={`mt-2 font-mono-street text-2xl font-black ${
+                        isWindowActive ? "text-amber-400" : "text-amber-300"
                       }`}
                     >
                       {isWindowActive
@@ -491,27 +479,30 @@ export default function DropsPage() {
                         : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
                     </p>
                     {isWindowActive && dropData.claimWindow?.endsAt && (
-                      <span className="mt-1 block text-[11px] text-gray-400">
+                      <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
                         Closes at {formatTimeWithUtc(dropData.claimWindow.endsAt)}
                       </span>
                     )}
                     {!isWindowActive && periodEndsMs > 0 && (
-                      <span className="mt-1 block text-[11px] text-gray-400">
+                      <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
                         Cycle starts at {formatTimeWithUtc(periodEndsMs)}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Drop Action & Status */}
-                <div className="rounded-xl border border-gray-800/80 bg-gradient-to-r from-gray-900/80 via-[#0c0f18] to-gray-900/80 p-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {/* Drop Action & Status Console */}
+                <div className="border-2 border-amber-400/50 bg-[#0e1019] p-6 shadow-brutal-amber">
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="space-y-1">
-                      <h4 className="text-sm font-bold text-white">
-                        Lootbox Mystery Pod Claim
-                      </h4>
-                      <p className="text-xs text-gray-400">
-                        1 claim per EVM wallet per period cycle. Items are distributed with provable off-chain RNG and unique serial editions.
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+                        <h3 className="font-display text-xl uppercase tracking-wider text-white">
+                          Lootbox Mystery Pod Claim
+                        </h3>
+                      </div>
+                      <p className="font-mono-street text-xs text-gray-300 uppercase leading-relaxed">
+                        1 claim per EVM wallet per period cycle. Distributed with provable off-chain RNG and unique serial editions.
                       </p>
                     </div>
 
@@ -520,7 +511,7 @@ export default function DropsPage() {
                         <Button
                           variant="primary"
                           size="lg"
-                          className="w-full font-semibold sm:w-auto"
+                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal sm:w-auto px-8 py-5"
                           disabled
                         >
                           <span className="flex items-center gap-2">
@@ -532,7 +523,7 @@ export default function DropsPage() {
                         <Button
                           variant="primary"
                           size="lg"
-                          className="w-full font-semibold sm:w-auto"
+                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal sm:w-auto px-8 py-5"
                           disabled
                         >
                           <span className="flex items-center gap-2">
@@ -544,7 +535,7 @@ export default function DropsPage() {
                         <Button
                           variant="primary"
                           size="lg"
-                          className="w-full font-semibold sm:w-auto"
+                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal hover:bg-amber-300 active:translate-x-1 active:translate-y-1 sm:w-auto px-8 py-5"
                           onClick={() => void login()}
                         >
                           Sign In with Ethereum
@@ -553,7 +544,7 @@ export default function DropsPage() {
                         <Button
                           variant="primary"
                           size="lg"
-                          className="w-full font-semibold sm:w-auto"
+                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal hover:bg-amber-300 active:translate-x-1 active:translate-y-1 sm:w-auto px-8 py-5"
                           onClick={() => void login()}
                         >
                           Connect Wallet
@@ -562,19 +553,17 @@ export default function DropsPage() {
                         <Button
                           variant="outline"
                           size="lg"
-                          className="w-full font-semibold sm:w-auto border-gray-800 bg-gray-900/60 text-gray-400 opacity-60 cursor-not-allowed hover:bg-gray-900/60"
+                          className="w-full border-2 border-gray-800 bg-gray-900/80 px-6 py-4 font-mono-street text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 cursor-not-allowed opacity-70 sm:w-auto"
                           disabled
                         >
-                          <span className="flex items-center gap-1.5">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                            Claimed for Period #{dropData.period.periodIndex} (1/1)
-                          </span>
+                          <CheckCircle2 className="h-4 w-4 text-amber-400" />
+                          Claimed for Period #{dropData.period.periodIndex} (1/1)
                         </Button>
                       ) : isStockExhausted ? (
                         <Button
                           variant="outline"
                           size="lg"
-                          className="w-full font-semibold sm:w-auto border-gray-800 bg-gray-900/60 text-gray-400 opacity-60 cursor-not-allowed hover:bg-gray-900/60"
+                          className="w-full border-2 border-red-500/30 bg-red-500/10 px-6 py-4 font-mono-street text-xs font-bold text-red-300 uppercase tracking-wider cursor-not-allowed opacity-70 sm:w-auto"
                           disabled
                         >
                           Period Stock Exhausted
@@ -583,20 +572,16 @@ export default function DropsPage() {
                         <Button
                           variant="primary"
                           size="lg"
-                          className="w-full font-semibold sm:w-auto"
+                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal hover:bg-amber-300 active:translate-x-1 active:translate-y-1 sm:w-auto px-8 py-5 cursor-pointer"
                           onClick={handleClaim}
                         >
                           Claim Trait Now ({formatRemaining(claimRemainingMs)})
                         </Button>
                       ) : (
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className="w-full font-semibold sm:w-auto border-gray-800 bg-gray-900/60 text-gray-400 opacity-60 cursor-not-allowed"
-                          disabled
-                        >
+                        <div className="border-2 border-gray-800 bg-gray-900/60 px-6 py-4 font-mono-street text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-amber-400" />
                           Next Drop in {formatRemaining(nextDropRemainingMs)}
-                        </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -832,44 +817,42 @@ export default function DropsPage() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-gray-400">
+              <p className="font-mono-street text-sm text-gray-400 uppercase">
                 No active drop event currently in progress. Cycles renew on UTC schedule.
               </p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Duplicate Trait Gifting Card */}
-        <Card className="border-gray-800 bg-[#090b12]">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-teal-500/10 p-2.5 text-teal-400">
-                <Gift className="h-5 w-5" />
-              </div>
-              <div>
-                <CardTitle className="text-base">Gifts & Duplicate Trait Exchange</CardTitle>
-                <CardDescription>
-                  Help fellow community members complete their 5 required trait categories
-                </CardDescription>
-              </div>
+        <div className="border-2 border-gray-800 bg-[#0b0d14] p-6 shadow-brutal">
+          <div className="flex items-center gap-3.5 border-b border-gray-800 pb-4">
+            <div className="flex h-10 w-10 items-center justify-center border border-cyan-400/30 bg-cyan-400/10 text-cyan-400">
+              <Gift className="h-5 w-5" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900/40 p-4 text-sm text-gray-400">
-              <p>
-                Hold duplicate traits? You can gift them to peers directly from your{" "}
-                <Link href="/profile" className="text-emerald-400 underline hover:text-emerald-300">
-                  User Inventory
-                </Link>
-                . Senders must retain at least 1 trait in the category; limited to 1 gift per wallet per UTC day.
+            <div>
+              <h3 className="font-display text-lg uppercase tracking-wider text-white">
+                Gifts &amp; Duplicate Trait Exchange
+              </h3>
+              <p className="font-mono-street text-[11px] text-gray-400 uppercase">
+                Help fellow community members complete their 5 required trait categories
               </p>
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Gift Resolution Window</span>
-                <span>24 Hours UTC (Lazy validation upon acceptance)</span>
-              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-4 space-y-3 border border-gray-800/80 bg-black/60 p-4 text-xs font-mono-street text-gray-300">
+            <p className="leading-relaxed">
+              Hold duplicate traits? You can gift them to peers directly from your{" "}
+              <Link href="/profile" className="text-amber-400 underline hover:text-amber-300 font-bold">
+                User Inventory
+              </Link>
+              . Senders must retain at least 1 trait in the category; limited to 1 gift per wallet per UTC day.
+            </p>
+            <div className="flex items-center justify-between border-t border-gray-800/80 pt-2 text-[10px] text-gray-400 uppercase">
+              <span>Gift Resolution Window</span>
+              <span>24 Hours UTC (Lazy validation upon acceptance)</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Claim Mystery Pod / Lootbox Reveal Modal */}

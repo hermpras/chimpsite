@@ -1,21 +1,65 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090a0f;
-  --foreground: #f3f4f6;
-  --muted: #1e2230;
-  --muted-foreground: #9ca3af;
-  --accent: #10b981;
-  --accent-hover: #059669;
-  --card: #111420;
-  --card-border: #1f293d;
+  --background: #08090d;
+  --foreground: #f4f4f5;
+  --muted: #151821;
+  --muted-foreground: #a1a1aa;
+  --accent: #f59e0b;
+  --accent-hover: #d97706;
+  --card: #0f1118;
+  --card-border: #222634;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
-    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   min-height: 100vh;
+}
+
+/* Typography Utility Classes */
+.font-display {
+  font-family: "Anton", "Syne", impact, sans-serif;
+}
+
+.font-syne {
+  font-family: "Syne", sans-serif;
+}
+
+.font-mono-street {
+  font-family: "Space Mono", monospace;
+}
+
+/* Brutalist Shadows & Street Aesthetics */
+.shadow-brutal-sm {
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.shadow-brutal {
+  box-shadow: 5px 5px 0px #000000;
+}
+
+.shadow-brutal-amber {
+  box-shadow: 6px 6px 0px rgba(245, 158, 11, 0.9);
+}
+
+.shadow-brutal-cyan {
+  box-shadow: 6px 6px 0px rgba(6, 182, 212, 0.9);
+}
+
+/* Marquee Animation */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: marquee 20s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }

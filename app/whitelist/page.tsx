@@ -61,29 +61,29 @@ const CATEGORY_THEMES: Record<
   { heldClass: string; unheldClass: string; checkColor: string }
 > = {
   BG: {
-    heldClass: "border-sky-300 bg-sky-50 text-sky-800",
-    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
-    checkColor: "text-sky-600",
+    heldClass: "border-cyan-400/40 bg-cyan-950/40 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.15)]",
+    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    checkColor: "text-cyan-400",
   },
   FUR: {
-    heldClass: "border-amber-300 bg-amber-50 text-amber-800",
-    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
-    checkColor: "text-amber-600",
+    heldClass: "border-amber-400/40 bg-amber-950/40 text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.15)]",
+    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    checkColor: "text-amber-400",
   },
   CLOTHING: {
-    heldClass: "border-violet-300 bg-violet-50 text-violet-800",
-    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
-    checkColor: "text-violet-600",
+    heldClass: "border-purple-400/40 bg-purple-950/40 text-purple-300 shadow-[0_0_12px_rgba(192,132,252,0.15)]",
+    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    checkColor: "text-purple-400",
   },
   HEADWEAR: {
-    heldClass: "border-emerald-300 bg-emerald-50 text-emerald-800",
-    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
-    checkColor: "text-emerald-600",
+    heldClass: "border-emerald-400/40 bg-emerald-950/40 text-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.15)]",
+    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    checkColor: "text-emerald-400",
   },
   EYEWEAR: {
-    heldClass: "border-teal-300 bg-teal-50 text-teal-800",
-    unheldClass: "border-slate-200 bg-slate-50 text-slate-400",
-    checkColor: "text-teal-600",
+    heldClass: "border-pink-400/40 bg-pink-950/40 text-pink-300 shadow-[0_0_12px_rgba(244,114,182,0.15)]",
+    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    checkColor: "text-pink-400",
   },
 };
 
@@ -104,7 +104,39 @@ export default function WhitelistPage() {
   };
 
   const [statusLoading, setStatusLoading] = useState(false);
-  const [statusResult, setStatusResult] = useState<WhitelistStatusResponse | null>(null);
+
+  // Restore cached Whitelist status immediately to eliminate initial render step jump / flicker
+  const [statusResult, setStatusResult] = useState<WhitelistStatusResponse | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("elychimp_wl_status_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.status) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return null;
+  });
+
+  // Cached active step fallback to prevent flash of Step 1 during background SIWE / status resolution
+  const [cachedActiveStep, setCachedActiveStep] = useState<number | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("elychimp_wl_active_step");
+        if (saved) {
+          const n = parseInt(saved, 10);
+          if (n >= 1 && n <= 5) return n;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return null;
+  });
+
   const [statusError, setStatusError] = useState<string | null>(null);
 
   // X OAuth Connect direct state
@@ -138,6 +170,7 @@ export default function WhitelistPage() {
     try {
       setIsConnectingX(true);
       setXConnectError(null);
+
       if (typeof window !== "undefined") {
         try {
           sessionStorage.setItem("x_connect_source", "whitelist");
@@ -219,7 +252,7 @@ export default function WhitelistPage() {
 
   // Load Inventory for Character & Wardrobe
   useEffect(() => {
-    if (address && status === "authenticated") {
+    if (address && (status === "authenticated" || status === "wallet-only")) {
       let active = true;
       fetchUserInventory(address)
         .then((res) => {
@@ -233,7 +266,7 @@ export default function WhitelistPage() {
       return () => {
         active = false;
       };
-    } else {
+    } else if (status === "signed-out") {
       setInventoryItems([]);
     }
   }, [address, status]);
@@ -288,93 +321,107 @@ export default function WhitelistPage() {
     const code = (task.taskCode || "").toUpperCase();
     const title = (task.title || "").toUpperCase();
 
-    // 1. Exact taskType matches first
     if (t === "SOCIAL_X_REPLY") {
       return {
         label: "REPLY / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-sky-500" />,
+        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
       };
     }
     if (t === "SOCIAL_X_QUOTE") {
       return {
         label: "QUOTE / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-purple-500" />,
+        icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
       };
     }
     if (t === "SOCIAL_X_LIKE") {
       return {
         label: "LIKE / ONCE",
-        icon: <Heart className="h-4 w-4 text-rose-500" />,
+        icon: <Heart className="h-4 w-4 text-rose-400" />,
       };
     }
     if (t === "SOCIAL_X_REPOST") {
       return {
         label: "REPOST / ONCE",
-        icon: <Repeat className="h-4 w-4 text-emerald-500" />,
+        icon: <Repeat className="h-4 w-4 text-emerald-400" />,
       };
     }
     if (t === "SOCIAL_X_FOLLOW") {
       if (code.includes("REPLY") || title.includes("REPLY")) {
         return {
           label: "REPLY / ONCE",
-          icon: <MessageSquare className="h-4 w-4 text-sky-500" />,
+          icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
         };
       }
       if (code.includes("QUOTE") || title.includes("QUOTE")) {
         return {
           label: "QUOTE / ONCE",
-          icon: <MessageSquare className="h-4 w-4 text-purple-500" />,
+          icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
         };
       }
       return {
         label: "FOLLOW / ONCE",
-        icon: <XLogo className="h-4 w-4 text-slate-700" />,
+        icon: <XLogo className="h-4 w-4 text-zinc-300" />,
       };
     }
 
-    // 2. Fallbacks based on code or title
     if (code.includes("REPLY") || title.includes("REPLY")) {
       return {
         label: "REPLY / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-sky-500" />,
+        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
       };
     }
     if (code.includes("QUOTE") || title.includes("QUOTE")) {
       return {
         label: "QUOTE / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-purple-500" />,
+        icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
       };
     }
     if (code.includes("COMMENT") || title.includes("COMMENT")) {
       return {
         label: "COMMENT / ONCE",
-        icon: <MessageSquare className="h-4 w-4 text-sky-500" />,
+        icon: <MessageSquare className="h-4 w-4 text-sky-400" />,
       };
     }
     if (code.includes("REPOST") || code.includes("RETWEET") || title.includes("REPOST")) {
       return {
         label: "REPOST / ONCE",
-        icon: <Repeat className="h-4 w-4 text-emerald-500" />,
+        icon: <Repeat className="h-4 w-4 text-emerald-400" />,
       };
     }
     if (code.includes("LIKE") || title.includes("LIKE")) {
       return {
         label: "LIKE / ONCE",
-        icon: <Heart className="h-4 w-4 text-rose-500" />,
+        icon: <Heart className="h-4 w-4 text-rose-400" />,
       };
     }
     if (code.includes("FOLLOW") || title.includes("FOLLOW")) {
       return {
         label: "FOLLOW / ONCE",
-        icon: <XLogo className="h-4 w-4 text-slate-700" />,
+        icon: <XLogo className="h-4 w-4 text-zinc-300" />,
       };
     }
 
     return {
       label: "SOCIAL / ONCE",
-      icon: <XLogo className="h-4 w-4 text-slate-700" />,
+      icon: <XLogo className="h-4 w-4 text-zinc-300" />,
     };
   }
+
+  const updateStatusResult = useCallback((data: WhitelistStatusResponse | null) => {
+    setStatusResult(data);
+    if (typeof window !== "undefined") {
+      try {
+        if (data) {
+          sessionStorage.setItem("elychimp_wl_status_cache", JSON.stringify(data));
+          if (data.address) {
+            sessionStorage.setItem("elychimp_wl_address_cache", data.address.toLowerCase());
+          }
+        } else {
+          sessionStorage.removeItem("elychimp_wl_status_cache");
+        }
+      } catch {}
+    }
+  }, []);
 
   async function handleSocialVerify(task: ActiveCampaignTask) {
     if (status !== "authenticated") {
@@ -440,7 +487,7 @@ export default function WhitelistPage() {
           await loadTasks();
 
           if (address) {
-            fetchWhitelistStatus(address).then(setStatusResult).catch(console.error);
+            fetchWhitelistStatus(address).then(updateStatusResult).catch(console.error);
           }
         } catch (err: unknown) {
           setTaskErrors((prev) => ({
@@ -472,15 +519,21 @@ export default function WhitelistPage() {
     loadTasks();
   }, [loadTasks, status]);
 
-  // Auto-fetch Whitelist status if user is authenticated
+  // Fast auto-fetch: Query status immediately whenever an address is available (do not wait for sequential SIWE check)
   useEffect(() => {
-    if (status === "authenticated" && address) {
+    const targetAddress =
+      address ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("elychimp_wl_address_cache")
+        : null);
+
+    if (targetAddress && (status === "authenticated" || status === "wallet-only")) {
       let isMounted = true;
       setStatusLoading(true);
       setStatusError(null);
-      fetchWhitelistStatus(address)
+      fetchWhitelistStatus(targetAddress)
         .then((data) => {
-          if (isMounted) setStatusResult(data);
+          if (isMounted) updateStatusResult(data);
         })
         .catch((err) => {
           if (isMounted)
@@ -492,11 +545,18 @@ export default function WhitelistPage() {
       return () => {
         isMounted = false;
       };
-    } else {
-      setStatusResult(null);
+    } else if (status === "signed-out") {
+      updateStatusResult(null);
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem("elychimp_wl_status_cache");
+          sessionStorage.removeItem("elychimp_wl_active_step");
+          sessionStorage.removeItem("elychimp_wl_address_cache");
+        } catch {}
+      }
       setStatusLoading(false);
     }
-  }, [status, address]);
+  }, [status, address, updateStatusResult]);
 
   async function handleEvidenceSubmit(task: ActiveCampaignTask) {
     const inputState = evidenceInputs[task.id] || {
@@ -565,7 +625,7 @@ export default function WhitelistPage() {
       await loadTasks();
 
       if (address) {
-        fetchWhitelistStatus(address).then(setStatusResult).catch(console.error);
+        fetchWhitelistStatus(address).then(updateStatusResult).catch(console.error);
       }
     } catch (err: unknown) {
       setTaskErrors((prev) => ({
@@ -584,7 +644,7 @@ export default function WhitelistPage() {
           label: "Verified",
           subtext: "Verified — All criteria confirmed by team.",
           badgeVariant: "default" as const,
-          colorClass: "border-emerald-300 bg-emerald-50 text-emerald-800",
+          colorClass: "border-emerald-500/40 bg-emerald-950/50 text-emerald-300",
           icon: CheckCircle2,
         };
       case "UNDER_REVIEW":
@@ -592,7 +652,7 @@ export default function WhitelistPage() {
           label: "Under Verification",
           subtext: "Under Verification — Account details being audited.",
           badgeVariant: "warning" as const,
-          colorClass: "border-amber-300 bg-amber-50 text-amber-800",
+          colorClass: "border-amber-500/40 bg-amber-950/50 text-amber-300",
           icon: Clock,
         };
       case "FLAGGED":
@@ -601,7 +661,7 @@ export default function WhitelistPage() {
           subtext:
             "Notice — Please review your linked accounts and task requirements. Slot remains active.",
           badgeVariant: "warning" as const,
-          colorClass: "border-rose-300 bg-rose-50 text-rose-800",
+          colorClass: "border-rose-500/40 bg-rose-950/50 text-rose-300",
           icon: AlertCircle,
         };
       case "NOT_REVIEWED":
@@ -610,7 +670,7 @@ export default function WhitelistPage() {
           label: "Pending Routine Review",
           subtext: "Slot Confirmed — Routine verification in progress.",
           badgeVariant: "outline" as const,
-          colorClass: "border-blue-300 bg-blue-50 text-blue-800",
+          colorClass: "border-cyan-500/40 bg-cyan-950/50 text-cyan-300",
           icon: Info,
         };
     }
@@ -645,7 +705,7 @@ export default function WhitelistPage() {
         key: "APPROVED",
         label: "Approved",
         badgeVariant: "default",
-        colorClass: "border-emerald-300 bg-emerald-50 text-emerald-800 font-medium",
+        colorClass: "border-emerald-500/40 bg-emerald-950/50 text-emerald-300 font-medium",
       };
     }
     if (
@@ -656,7 +716,7 @@ export default function WhitelistPage() {
         key: "PENDING",
         label: "Pending Review",
         badgeVariant: "warning",
-        colorClass: "border-amber-300 bg-amber-50 text-amber-800 font-medium",
+        colorClass: "border-amber-500/40 bg-amber-950/50 text-amber-300 font-medium",
       };
     }
     if (
@@ -667,14 +727,14 @@ export default function WhitelistPage() {
         key: "REJECTED",
         label: "Rejected",
         badgeVariant: "outline",
-        colorClass: "border-rose-300 bg-rose-50 text-rose-800 font-medium",
+        colorClass: "border-rose-500/40 bg-rose-950/50 text-rose-300 font-medium",
       };
     }
     return {
       key: "NOT_SUBMITTED",
       label: "Not Submitted",
       badgeVariant: "outline",
-      colorClass: "border-slate-300 bg-slate-100 text-slate-600 font-medium",
+      colorClass: "border-zinc-700 bg-zinc-800/60 text-zinc-400 font-medium",
     };
   }
 
@@ -683,12 +743,10 @@ export default function WhitelistPage() {
     const allMandatory = campaigns.flatMap((c) => (c.tasks || []).filter((t) => t.isRequired));
 
     let approved = false;
-    if (status === "authenticated") {
-      // Disqualified / revoked users are never considered approved for active portal
+    if (status === "authenticated" || statusResult?.status) {
       if (statusResult?.status?.phase === "REVOKED") {
         approved = false;
       } else if (statusResult?.status?.phase === "SLOT_ALLOCATED") {
-        // GTD slot allocated users are verified and approved
         approved = true;
       } else if (
         statusResult?.status?.details &&
@@ -738,40 +796,44 @@ export default function WhitelistPage() {
       return {
         key: "REVOKED" as const,
         title: "REVOKED",
-        badgeClass: "bg-rose-100 text-rose-800 border-rose-300",
+        badgeClass: "bg-rose-950/60 text-rose-300 border-rose-500/40",
       };
     }
     if (phase === "SLOT_ALLOCATED") {
       return {
         key: "Whitelisted" as const,
         title: "Whitelisted",
-        badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-300",
+        badgeClass: "bg-emerald-950/60 text-emerald-300 border-emerald-500/40",
       };
     }
     if (phase === "IN_QUEUE") {
       return {
         key: "Queued" as const,
         title: "Queued",
-        badgeClass: "bg-sky-100 text-sky-800 border-sky-300",
+        badgeClass: "bg-cyan-950/60 text-cyan-300 border-cyan-500/40",
       };
     }
     if (statusResult?.status?.isFullyQualified || phase === "QUALIFIED") {
       return {
         key: "Qualified" as const,
         title: "Qualified",
-        badgeClass: "bg-teal-100 text-teal-800 border-teal-300",
+        badgeClass: "bg-teal-950/60 text-teal-300 border-teal-500/40",
       };
     }
     return {
       key: "Incomplete" as const,
       title: "Incomplete",
-      badgeClass: "bg-amber-100 text-amber-800 border-amber-300",
+      badgeClass: "bg-amber-950/60 text-amber-300 border-amber-500/40",
     };
   }, [statusResult]);
 
-  // Stepper helper
+  // Robust connection checks
   const isWalletConnected =
-    status === "authenticated" || Boolean(statusResult?.status?.details?.hasVerifiedWallet);
+    status === "authenticated" ||
+    status === "wallet-only" ||
+    Boolean(address) ||
+    Boolean(statusResult?.status?.details?.hasVerifiedWallet);
+
   const isXLinked = Boolean(statusResult?.status?.details?.hasLinkedX);
   const isTasksComplete = areAllMandatoryApproved;
   const isTraitsComplete = heldCategories.length === 5;
@@ -780,7 +842,8 @@ export default function WhitelistPage() {
 
   const isRevoked = statusResult?.status?.phase === "REVOKED";
 
-  const activeStepNumber = isRevoked
+  // Calculate immediate step from live states
+  const calculatedStep = isRevoked
     ? 5
     : !isWalletConnected
       ? 1
@@ -792,34 +855,52 @@ export default function WhitelistPage() {
             ? 4
             : 5;
 
+  // Active step computation:
+  // If we have an existing connected wallet or session in progress and cached step is available,
+  // do not flash step 1 while background SIWE/status is resolving.
+  const activeStepNumber =
+    (status === "checking" || (isWalletConnected && !statusResult)) && cachedActiveStep
+      ? cachedActiveStep
+      : calculatedStep;
+
+  // Persist the verified active step once determined
+  useEffect(() => {
+    if (typeof window !== "undefined" && status !== "checking" && calculatedStep) {
+      try {
+        sessionStorage.setItem("elychimp_wl_active_step", String(calculatedStep));
+        setCachedActiveStep(calculatedStep);
+      } catch {}
+    }
+  }, [calculatedStep, status]);
+
   return (
-    <div className="min-h-screen bg-[#f7faf8] text-slate-800 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#08090d] text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
         {/* =======================================================================
             HEADER & 5-STEP HORIZONTAL PROGRESS INDICATOR
         ======================================================================= */}
-        <header className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs space-y-5">
+        <header className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/30">
                   <Palette className="h-4 w-4" />
                 </div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                <h1 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
                   Whitelist Portal
                 </h1>
-                <Badge variant="default" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold">
-                  Stage 3 Live
+                <Badge variant="outline" className="border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-mono-street text-[11px] font-bold tracking-wider">
+                  ALLOWLIST LIVE
                 </Badge>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500">
-                Check allocation eligibility, registration status, and ChimpHood Whitelist distribution details.
+              <p className="text-xs sm:text-sm text-zinc-400 font-mono-street">
+                Check allocation eligibility, registration status, and Elychimp Whitelist distribution details.
               </p>
             </div>
 
             {statusResult?.program && (
-              <div className="self-start sm:self-auto rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-1.5 text-right font-mono text-xs text-slate-600">
-                <span className="font-semibold text-slate-700">
+              <div className="self-start sm:self-auto rounded-xl border border-zinc-800 bg-zinc-900/80 px-3.5 py-1.5 text-right font-mono-street text-xs text-zinc-300">
+                <span className="font-bold text-amber-400">
                   GTD Allocation: {statusResult.program.allocatedSlotsCount.toLocaleString()} /{" "}
                   {statusResult.program.totalSlots.toLocaleString()} Slots
                 </span>
@@ -828,7 +909,7 @@ export default function WhitelistPage() {
           </div>
 
           {/* Horizontal Five-Step Progress Indicator */}
-          <div className="border-t border-slate-100 pt-4">
+          <div className="border-t border-zinc-800/80 pt-4">
             <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-1 text-xs">
               {[
                 { num: 1, label: "WALLET", done: isWalletConnected },
@@ -841,31 +922,31 @@ export default function WhitelistPage() {
                 return (
                   <React.Fragment key={step.label}>
                     <div
-                      className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-xl border transition-all ${
+                      className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl border transition-all font-mono-street text-xs ${
                         step.done
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-800 font-semibold"
+                          ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-semibold"
                           : isActive
-                            ? "border-amber-300 bg-amber-50 text-amber-900 font-bold shadow-xs"
-                            : "border-slate-200 bg-slate-50/60 text-slate-400"
+                            ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-bold shadow-[0_0_12px_rgba(251,191,36,0.2)]"
+                            : "border-zinc-800 bg-zinc-900/40 text-zinc-500"
                       }`}
                     >
                       <span
                         className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${
                           step.done
-                            ? "bg-emerald-600 text-white"
+                            ? "bg-emerald-500 text-black font-extrabold"
                             : isActive
-                              ? "bg-amber-500 text-white"
-                              : "bg-slate-200 text-slate-600"
+                              ? "bg-amber-400 text-black font-extrabold"
+                              : "bg-zinc-800 text-zinc-400"
                         }`}
                       >
                         {step.done ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : step.num}
                       </span>
-                      <span className="tracking-wide">{step.label}</span>
+                      <span className="tracking-wide uppercase">{step.label}</span>
                     </div>
                     {idx < 4 && (
                       <div
                         className={`hidden sm:block flex-1 h-0.5 min-w-3 ${
-                          step.done ? "bg-emerald-300" : "bg-slate-200"
+                          step.done ? "bg-emerald-500/40" : "bg-zinc-800"
                         }`}
                       />
                     )}
@@ -889,44 +970,44 @@ export default function WhitelistPage() {
             Visible when activeStepNumber === 1
         ======================================================================= */}
         <div className={activeStepNumber === 1 ? "block" : "hidden"}>
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-6 sm:p-8 shadow-brutal-sm max-w-2xl mx-auto space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/30">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 font-mono">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 font-mono-street">
                     Step 1 of 5
                   </span>
-                  <h2 className="text-lg font-bold text-slate-900">
+                  <h2 className="font-display text-xl uppercase tracking-wider text-white">
                     Connect EVM Wallet
                   </h2>
                 </div>
               </div>
-              <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold">
+              <Badge variant="outline" className="border-amber-400/40 bg-amber-950/40 text-amber-300 font-mono-street text-xs font-bold uppercase">
                 Active Step
               </Badge>
             </div>
 
             {/* Notice / Instructions */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs space-y-2">
-              <div className="flex items-center gap-2 font-bold text-slate-800">
-                <AlertCircle className="h-4 w-4 text-slate-500" />
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-zinc-200 font-mono-street">
+                <AlertCircle className="h-4 w-4 text-amber-400" />
                 <span>Wallet Not Authenticated</span>
               </div>
-              <p className="text-slate-600 leading-relaxed">
+              <p className="text-zinc-400 leading-relaxed font-mono-street text-[13px]">
                 Connect your Web3 wallet via Sign in with Ethereum (SIWE) above to view your real-time Whitelist allocation status and trait checklist.
               </p>
             </div>
 
             {authError && (
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-xs text-rose-300 font-mono-street">
                 <span className="truncate">{authError}</span>
                 {dismissError && (
                   <button
                     onClick={dismissError}
-                    className="shrink-0 text-[11px] font-semibold underline text-rose-800 hover:text-rose-900"
+                    className="shrink-0 text-[11px] font-semibold underline text-rose-400 hover:text-rose-300"
                   >
                     Dismiss
                   </button>
@@ -938,14 +1019,14 @@ export default function WhitelistPage() {
             <div className="pt-2">
               {status === "wallet-only" ? (
                 <div className="space-y-3">
-                  <p className="text-xs text-slate-500 font-mono">
+                  <p className="text-xs text-zinc-400 font-mono-street">
                     Connected address: {address ? shortenAddress(address) : "—"}
                   </p>
                   <Button
                     variant="primary"
                     size="lg"
                     onClick={() => void login?.()}
-                    className="w-full rounded-xl font-bold py-3 text-sm shadow-sm"
+                    className="w-full rounded-xl font-display uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
                   >
                     Sign In with Ethereum
                   </Button>
@@ -955,15 +1036,15 @@ export default function WhitelistPage() {
                   variant="primary"
                   size="lg"
                   onClick={handleConnectWallet}
-                  className="w-full rounded-xl font-bold py-3 text-sm shadow-sm"
+                  className="w-full rounded-xl font-display uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
                 >
                   Connect Wallet
                 </Button>
               )}
             </div>
 
-            <div className="border-t border-slate-100 pt-3 text-center">
-              <p className="text-xs text-slate-400">
+            <div className="border-t border-zinc-800/80 pt-3 text-center">
+              <p className="text-xs text-zinc-500 font-mono-street">
                 Step 2 (X Account Sync) and Step 3 (Campaign Tasks) will become accessible immediately after your wallet is authenticated.
               </p>
             </div>
@@ -975,40 +1056,40 @@ export default function WhitelistPage() {
             Visible when activeStepNumber === 2
         ======================================================================= */}
         <div className={activeStepNumber === 2 ? "block" : "hidden"}>
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-6 sm:p-8 shadow-brutal-sm max-w-2xl mx-auto space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600 border border-sky-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-400 border border-cyan-400/30">
                   <XLogo className="h-5 w-5" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-sky-600 font-mono">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 font-mono-street">
                     Step 2 of 5
                   </span>
-                  <h2 className="text-lg font-bold text-slate-900">
+                  <h2 className="font-display text-xl uppercase tracking-wider text-white">
                     X (Twitter) Identity
                   </h2>
                 </div>
               </div>
-              <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700 text-xs font-semibold">
+              <Badge variant="outline" className="border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-mono-street text-xs font-bold uppercase">
                 Active Step
               </Badge>
             </div>
 
             {/* Completed Step 1 Chip */}
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-800">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3 text-xs text-emerald-300 font-mono-street">
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
               <span>
-                Step 1 Completed: EVM Wallet <strong className="font-mono">{address ? shortenAddress(address) : "—"}</strong> verified via SIWE.
+                Step 1 Completed: EVM Wallet <strong className="font-mono text-white">{address ? shortenAddress(address) : "—"}</strong> verified via SIWE.
               </span>
             </div>
 
             {/* Notice & Instructions */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs space-y-2">
-              <p className="font-bold text-slate-800">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs space-y-2">
+              <p className="font-bold text-white font-mono-street text-sm">
                 Connect X (Twitter) Account
               </p>
-              <p className="text-slate-600 leading-relaxed">
+              <p className="text-zinc-400 leading-relaxed font-mono-street text-[13px]">
                 Link your X (Twitter) profile to establish your social identity and unlock campaign tasks.
               </p>
             </div>
@@ -1018,12 +1099,12 @@ export default function WhitelistPage() {
               {xConnectError && (
                 <div
                   role="alert"
-                  className="rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-700 flex items-start gap-2"
+                  className="rounded-xl border border-rose-500/40 bg-rose-950/50 p-3 text-xs text-rose-300 flex items-start gap-2 font-mono-street"
                 >
-                  <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+                  <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-semibold">Failed to connect X</p>
-                    <p className="text-[11px] text-rose-600 mt-0.5">{xConnectError}</p>
+                    <p className="font-semibold text-rose-200">Failed to connect X</p>
+                    <p className="text-[11px] text-rose-400 mt-0.5">{xConnectError}</p>
                   </div>
                 </div>
               )}
@@ -1032,11 +1113,11 @@ export default function WhitelistPage() {
                 size="lg"
                 disabled={isConnectingX}
                 onClick={handleDirectConnectX}
-                className="w-full rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-bold py-3 text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full rounded-xl bg-white text-black hover:bg-zinc-200 font-display uppercase tracking-wider py-3.5 text-base shadow-brutal-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 {isConnectingX ? (
                   <>
-                    <RefreshCw className="h-4 w-4 animate-spin text-slate-300" />
+                    <RefreshCw className="h-4 w-4 animate-spin text-zinc-600" />
                     <span>Connecting to X...</span>
                   </>
                 ) : (
@@ -1048,8 +1129,8 @@ export default function WhitelistPage() {
               </Button>
             </div>
 
-            <div className="border-t border-slate-100 pt-3 text-center">
-              <p className="text-xs text-slate-400">
+            <div className="border-t border-zinc-800/80 pt-3 text-center">
+              <p className="text-xs text-zinc-500 font-mono-street">
                 Step 3 (Campaign Tasks) will unlock immediately once your X account is connected.
               </p>
             </div>
@@ -1063,34 +1144,34 @@ export default function WhitelistPage() {
         <div className={activeStepNumber === 3 ? "block" : "hidden"}>
           <div className="space-y-6">
             {/* Step 1 & 2 Completed Summary Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-[#0c0d15] p-4 shadow-brutal-sm text-xs font-mono-street">
               <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span>Wallet: <strong className="font-mono text-slate-800">{address ? shortenAddress(address) : "—"}</strong></span>
+                <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Wallet: <strong className="font-mono text-white">{address ? shortenAddress(address) : "—"}</strong></span>
                 </div>
-                <div className="flex items-center gap-1.5 text-sky-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-sky-600" />
-                  <span>X Sync: <strong className="font-mono text-slate-800">{statusResult?.status?.details?.xUsername ? `x/${statusResult.status.details.xUsername}` : "Linked"}</strong></span>
+                <div className="flex items-center gap-1.5 text-cyan-400 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-cyan-400" />
+                  <span>X Sync: <strong className="font-mono text-white">{statusResult?.status?.details?.xUsername ? `x/${statusResult.status.details.xUsername}` : "Linked"}</strong></span>
                 </div>
               </div>
-              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 text-[11px] font-bold">
+              <Badge variant="outline" className="border-amber-400/40 bg-amber-950/40 text-amber-300 text-[11px] font-bold font-mono-street uppercase">
                 Step 3 of 5 — Campaign Tasks Active
               </Badge>
             </div>
 
             {/* Campaign Tasks Section */}
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-5">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
+            <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800/80 pb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/30">
                     <Flame className="h-4 w-4" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-slate-900">
+                    <h2 className="font-display text-xl uppercase tracking-wider text-white">
                       Campaigns & Quests
                     </h2>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-zinc-400 font-mono-street">
                       Community missions to earn Whitelist allocation
                     </p>
                   </div>
@@ -1100,10 +1181,10 @@ export default function WhitelistPage() {
                   size="sm"
                   onClick={loadTasks}
                   disabled={tasksLoading}
-                  className="rounded-xl self-start sm:self-auto text-xs text-slate-600 border-slate-200"
+                  className="rounded-xl self-start sm:self-auto text-xs font-mono-street text-zinc-300 border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 hover:text-white"
                 >
                   <RefreshCw
-                    className={`mr-1.5 h-3 w-3 ${tasksLoading ? "animate-spin text-slate-500" : ""}`}
+                    className={`mr-1.5 h-3 w-3 ${tasksLoading ? "animate-spin text-zinc-400" : ""}`}
                   />
                   {tasksLoading ? "Refreshing..." : "Refresh Tasks"}
                 </Button>
@@ -1111,39 +1192,39 @@ export default function WhitelistPage() {
 
               {/* Tasks List */}
               {tasksLoading && campaigns.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400">
+                <div className="py-8 text-center text-xs font-mono-street text-zinc-500">
                   Loading campaigns & tasks...
                 </div>
               ) : tasksError ? (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700 space-y-2">
-                  <p className="font-semibold">Failed to load campaigns:</p>
+                <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-xs text-rose-300 font-mono-street space-y-2">
+                  <p className="font-semibold text-rose-200">Failed to load campaigns:</p>
                   <p>{tasksError}</p>
-                  <Button variant="outline" size="sm" className="rounded-xl text-xs" onClick={loadTasks}>
+                  <Button variant="outline" size="sm" className="rounded-xl text-xs font-mono-street border-rose-500/40 bg-rose-950/60 text-rose-200" onClick={loadTasks}>
                     Retry
                   </Button>
                 </div>
               ) : campaigns.length === 0 ? (
-                <p className="text-xs text-slate-400 py-4">
+                <p className="text-xs font-mono-street text-zinc-500 py-4">
                   No active campaigns currently open for Whitelist.
                 </p>
               ) : (
                 campaigns.map((campaign) => (
                   <div key={campaign.id} className="space-y-4">
                     {/* Campaign Title & Instructions */}
-                    <div className="rounded-xl bg-slate-50/80 border border-slate-200/70 p-3.5 space-y-1">
+                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3.5 space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-sm text-slate-800">
+                        <h3 className="font-display text-sm tracking-wide uppercase text-white">
                           {campaign.title}
                         </h3>
-                        <Badge variant="default" className="text-[10px] bg-slate-100 text-slate-600 border-slate-200">
+                        <Badge variant="default" className="text-[10px] bg-zinc-800 text-zinc-300 border-zinc-700 font-mono-street">
                           {campaign.status}
                         </Badge>
-                        <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 font-semibold">
+                        <Badge variant="outline" className="text-[10px] bg-amber-950/40 text-amber-300 border-amber-500/40 font-mono-street font-semibold">
                           Mandatory for WL
                         </Badge>
                       </div>
                       {campaign.description && (
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-zinc-400 font-mono-street">
                           {campaign.description}
                         </p>
                       )}
@@ -1179,35 +1260,35 @@ export default function WhitelistPage() {
                           return (
                             <div
                               key={task.id}
-                              className="flex flex-col justify-between gap-3.5 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs hover:border-slate-300 md:flex-row md:items-center"
+                              className="flex flex-col justify-between gap-3.5 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 hover:border-zinc-700 md:flex-row md:items-center transition-all"
                             >
                               <div className="flex min-w-0 flex-1 items-start gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 mt-0.5">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 mt-0.5">
                                   {taskMeta.icon}
                                 </div>
                                 <div className="min-w-0 flex-1 space-y-1">
                                   <div className="flex flex-wrap items-center gap-1.5">
-                                    <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                                    <h4 className="text-xs sm:text-sm font-bold text-white font-mono-street">
                                       {task.title}
                                     </h4>
-                                    <span className="font-mono text-[10px] font-semibold text-slate-400 uppercase">
+                                    <span className="font-mono-street text-[10px] font-semibold text-zinc-500 uppercase">
                                       {taskMeta.label}
                                     </span>
                                     {task.isRequired ? (
-                                      <Badge variant="default" className="border-amber-200 bg-amber-50 text-[10px] text-amber-700 font-semibold">
+                                      <Badge variant="default" className="border-amber-500/40 bg-amber-950/40 text-[10px] text-amber-300 font-mono-street font-semibold">
                                         Mandatory
                                       </Badge>
                                     ) : (
-                                      <Badge variant="outline" className="text-[10px] text-slate-500">
+                                      <Badge variant="outline" className="text-[10px] text-zinc-400 border-zinc-700 bg-zinc-800/40 font-mono-street">
                                         Optional
                                       </Badge>
                                     )}
-                                    <span className="font-mono text-xs font-bold text-emerald-600">
+                                    <span className="font-mono-street text-xs font-bold text-emerald-400">
                                       +{task.points} Pts
                                     </span>
                                   </div>
                                   {task.description && (
-                                    <p className="text-xs text-slate-500 line-clamp-1">
+                                    <p className="text-xs text-zinc-400 font-mono-street line-clamp-1">
                                       {task.description}
                                     </p>
                                   )}
@@ -1216,7 +1297,7 @@ export default function WhitelistPage() {
                                   {isProofRequired && isTaskOpened && taskStatus.key !== "APPROVED" && (
                                     <div className="pt-2 max-w-md">
                                       <div className="relative">
-                                        <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                                        <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500 pointer-events-none" />
                                         <input
                                           type="url"
                                           placeholder="Paste reply or quote URL (https://x.com/...)"
@@ -1231,7 +1312,7 @@ export default function WhitelistPage() {
                                             }))
                                           }
                                           disabled={isCountingDown || isSubmitting}
-                                          className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none"
+                                          className="w-full rounded-xl border border-zinc-700 bg-black/60 pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-amber-400 focus:outline-none font-mono-street"
                                         />
                                       </div>
                                     </div>
@@ -1239,34 +1320,34 @@ export default function WhitelistPage() {
 
                                   {/* Submitted Proof Display for Approved Tasks */}
                                   {isProofRequired && taskStatus.key === "APPROVED" && task.latestSubmission?.payload && (
-                                    <p className="pt-1 text-[11px] text-slate-500 font-mono truncate">
-                                      Proof: <span className="text-slate-700">{task.latestSubmission.payload}</span>
+                                    <p className="pt-1 text-[11px] text-zinc-400 font-mono truncate">
+                                      Proof: <span className="text-zinc-200">{task.latestSubmission.payload}</span>
                                     </p>
                                   )}
 
                                   {/* Rejection Note */}
                                   {taskStatus.key === "REJECTED" && (
-                                    <div className="mt-1.5 rounded-xl border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700 space-y-0.5">
-                                      <span className="font-bold">Rejected: </span>
+                                    <div className="mt-1.5 rounded-xl border border-rose-500/40 bg-rose-950/40 p-2 text-xs text-rose-300 font-mono-street space-y-0.5">
+                                      <span className="font-bold text-rose-200">Rejected: </span>
                                       <span>
                                         {task.latestSubmission?.reviewerNotes ||
                                           "Submission was not approved."}
                                       </span>
-                                      <p className="text-slate-500">
+                                      <p className="text-zinc-400">
                                         You can correct and resubmit your evidence below.
                                       </p>
                                     </div>
                                   )}
 
-                                  {errorMsg && <p className="pt-1 text-[11px] text-rose-600">{errorMsg}</p>}
-                                  {successMsg && <p className="pt-1 text-[11px] text-emerald-600">{successMsg}</p>}
+                                  {errorMsg && <p className="pt-1 text-[11px] text-rose-400 font-mono-street">{errorMsg}</p>}
+                                  {successMsg && <p className="pt-1 text-[11px] text-emerald-400 font-mono-street">{successMsg}</p>}
                                 </div>
                               </div>
 
                               {/* Action Buttons & Status */}
-                              <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 border-t border-slate-100 md:border-t-0 md:pt-0">
+                              <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 border-t border-zinc-800 md:border-t-0 md:pt-0">
                                 {taskStatus.key !== "NOT_SUBMITTED" && (
-                                  <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}>
+                                  <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 font-mono-street ${taskStatus.colorClass}`}>
                                     {taskStatus.key === "APPROVED" && <CheckCircle2 className="mr-1 h-3 w-3 shrink-0" />}
                                     {taskStatus.key === "PENDING" && <Clock className="mr-1 h-3 w-3 shrink-0" />}
                                     {taskStatus.key === "REJECTED" && <XCircle className="mr-1 h-3 w-3 shrink-0" />}
@@ -1279,51 +1360,51 @@ export default function WhitelistPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={() => markTaskOpened(task.id)}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-mono-street font-bold text-zinc-200 hover:bg-zinc-700 transition-colors"
                                 >
                                   <span>OPEN X</span>
-                                  <ExternalLink className="h-3 w-3 text-slate-400" />
+                                  <ExternalLink className="h-3 w-3 text-zinc-400" />
                                 </a>
 
                                 {taskStatus.key === "APPROVED" ? (
                                   <button
                                     disabled
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-3 py-1.5 text-xs font-mono-street font-bold text-emerald-300"
                                   >
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                                     <span>DONE</span>
                                   </button>
                                 ) : isCountingDown ? (
                                   <button
                                     disabled
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 animate-pulse"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-amber-500/50 bg-amber-950/50 px-3 py-1.5 text-xs font-mono-street font-bold text-amber-300 animate-pulse"
                                   >
-                                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-600" />
+                                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-400" />
                                     <span>VERIFYING ({countdownSeconds}s)...</span>
                                   </button>
                                 ) : !isTaskOpened ? (
                                   <button
                                     disabled
                                     title="Please click 'OPEN X' first"
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400 opacity-60"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-mono-street font-bold text-zinc-600 opacity-60"
                                   >
                                     <span>VERIFY TASK</span>
-                                    <ArrowRight className="h-3 w-3 text-slate-400" />
+                                    <ArrowRight className="h-3 w-3 text-zinc-600" />
                                   </button>
                                 ) : isProofRequired && !taskInput.payload.trim() ? (
                                   <button
                                     disabled
                                     title="Paste your reply or quote link first"
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400 opacity-60"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-mono-street font-bold text-zinc-600 opacity-60"
                                   >
                                     <span>VERIFY TASK</span>
-                                    <ArrowRight className="h-3 w-3 text-slate-400" />
+                                    <ArrowRight className="h-3 w-3 text-zinc-600" />
                                   </button>
                                 ) : status !== "authenticated" ? (
                                   <Button
                                     variant="primary"
                                     size="sm"
-                                    className="gap-1 rounded-xl text-xs font-semibold"
+                                    className="gap-1 rounded-xl text-xs font-mono-street font-bold bg-amber-400 text-black hover:bg-amber-300"
                                     onClick={() => login()}
                                   >
                                     <span>CONNECT WALLET TO VERIFY</span>
@@ -1333,7 +1414,7 @@ export default function WhitelistPage() {
                                   <Button
                                     variant="primary"
                                     size="sm"
-                                    className="gap-1 rounded-xl text-xs font-semibold"
+                                    className="gap-1 rounded-xl text-xs font-mono-street font-bold bg-amber-400 text-black hover:bg-amber-300"
                                     onClick={() => handleSocialVerify(task)}
                                     disabled={isSubmitting || isCountingDown}
                                   >
@@ -1361,37 +1442,37 @@ export default function WhitelistPage() {
                         return (
                           <div
                             key={task.id}
-                            className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs"
+                            className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
                           >
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                               <div className="space-y-1">
                                 <div className="flex flex-wrap items-center gap-1.5">
-                                  <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                                  <h4 className="text-xs sm:text-sm font-bold text-white font-mono-street">
                                     {task.title}
                                   </h4>
                                   {task.isRequired ? (
-                                    <Badge variant="default" className="border-amber-200 bg-amber-50 text-[10px] text-amber-700 font-semibold">
+                                    <Badge variant="default" className="border-amber-500/40 bg-amber-950/40 text-[10px] text-amber-300 font-mono-street font-semibold">
                                       Mandatory
                                     </Badge>
                                   ) : (
-                                    <Badge variant="outline" className="text-[10px] text-slate-500">
+                                    <Badge variant="outline" className="text-[10px] text-zinc-400 border-zinc-700 bg-zinc-800/40 font-mono-street">
                                       Optional
                                     </Badge>
                                   )}
-                                  <Badge variant="outline" className="text-[10px] text-slate-600 font-mono">
+                                  <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/40 bg-emerald-950/30 font-mono-street">
                                     +{task.points} Pts
                                   </Badge>
-                                  <span className="text-[10px] text-slate-400 uppercase font-mono">
+                                  <span className="text-[10px] text-zinc-500 uppercase font-mono-street">
                                     {task.taskType}
                                   </span>
                                 </div>
                                 {task.description && (
-                                  <p className="text-xs text-slate-500">{task.description}</p>
+                                  <p className="text-xs text-zinc-400 font-mono-street">{task.description}</p>
                                 )}
                               </div>
 
                               <div className="flex shrink-0 items-center gap-1">
-                                <Badge variant={taskStatus.badgeVariant} className={`text-xs ${taskStatus.colorClass}`}>
+                                <Badge variant={taskStatus.badgeVariant} className={`text-xs font-mono-street ${taskStatus.colorClass}`}>
                                   {taskStatus.key === "APPROVED" && <CheckCircle2 className="mr-1 h-3 w-3 shrink-0" />}
                                   {taskStatus.key === "PENDING" && <Clock className="mr-1 h-3 w-3 shrink-0" />}
                                   {taskStatus.key === "REJECTED" && <XCircle className="mr-1 h-3 w-3 shrink-0" />}
@@ -1402,15 +1483,15 @@ export default function WhitelistPage() {
 
                             {/* Pending Moderator Review info */}
                             {taskStatus.key === "PENDING" && (
-                              <div className="space-y-1 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-800">
-                                <p className="flex items-center gap-1.5 font-bold">
-                                  <Clock className="h-3.5 w-3.5 text-amber-600" />
+                              <div className="space-y-1 rounded-xl border border-amber-500/40 bg-amber-950/40 p-3 text-xs text-amber-300 font-mono-street">
+                                <p className="flex items-center gap-1.5 font-bold text-amber-200">
+                                  <Clock className="h-3.5 w-3.5 text-amber-400" />
                                   Pending Moderator Review
                                 </p>
-                                <p className="font-mono text-[11px] truncate">
+                                <p className="font-mono text-[11px] truncate text-zinc-300">
                                   Submitted Proof: {task.latestSubmission?.payload}
                                 </p>
-                                <p className="text-slate-600 text-[11px]">
+                                <p className="text-zinc-400 text-[11px]">
                                   Your submission has been recorded and is awaiting review. Tasks are only counted as completed once approved.
                                 </p>
                               </div>
@@ -1418,13 +1499,13 @@ export default function WhitelistPage() {
 
                             {/* Approved Info */}
                             {taskStatus.key === "APPROVED" && (
-                              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-800">
-                                <p className="flex items-center gap-1.5 font-bold">
-                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                              <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3 text-xs text-emerald-300 font-mono-street">
+                                <p className="flex items-center gap-1.5 font-bold text-emerald-200">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                                   Verified & Approved
                                 </p>
                                 {task.latestSubmission?.payload && (
-                                  <p className="mt-1 font-mono text-[11px] truncate text-emerald-900">
+                                  <p className="mt-1 font-mono text-[11px] truncate text-emerald-200">
                                     Approved Proof: {task.latestSubmission.payload}
                                   </p>
                                 )}
@@ -1433,16 +1514,16 @@ export default function WhitelistPage() {
 
                             {/* Rejected Info */}
                             {taskStatus.key === "REJECTED" && (
-                              <div className="space-y-1 rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-xs text-rose-800">
-                                <p className="flex items-center gap-1.5 font-bold">
-                                  <XCircle className="h-3.5 w-3.5 text-rose-600" />
+                              <div className="space-y-1 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-xs text-rose-300 font-mono-street">
+                                <p className="flex items-center gap-1.5 font-bold text-rose-200">
+                                  <XCircle className="h-3.5 w-3.5 text-rose-400" />
                                   Evidence Rejected
                                 </p>
-                                <p className="text-rose-900 font-medium">
+                                <p className="text-rose-200 font-medium">
                                   {task.latestSubmission?.reviewerNotes ||
                                     "Your submission was rejected by the moderator."}
                                 </p>
-                                <p className="text-slate-600 text-[11px]">
+                                <p className="text-zinc-400 text-[11px]">
                                   You can correct and resubmit your evidence below.
                                 </p>
                               </div>
@@ -1452,7 +1533,7 @@ export default function WhitelistPage() {
                             {(taskStatus.key === "NOT_SUBMITTED" || taskStatus.key === "REJECTED") && (
                               <div className="pt-1">
                                 {status !== "authenticated" ? (
-                                  <p className="text-xs text-slate-400 italic">
+                                  <p className="text-xs text-zinc-500 italic font-mono-street">
                                     Sign in with Ethereum to submit evidence for this task.
                                   </p>
                                 ) : (
@@ -1474,7 +1555,7 @@ export default function WhitelistPage() {
                                           },
                                         }))
                                       }
-                                      className="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none"
+                                      className="flex-1 rounded-xl border border-zinc-700 bg-black/60 px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-amber-400 focus:outline-none font-mono-street"
                                     />
                                     <select
                                       value={taskInput.submissionType}
@@ -1487,7 +1568,7 @@ export default function WhitelistPage() {
                                           },
                                         }))
                                       }
-                                      className="rounded-xl border border-slate-300 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 focus:border-emerald-500 focus:bg-white focus:outline-none"
+                                      className="rounded-xl border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-200 focus:border-amber-400 focus:outline-none font-mono-street"
                                     >
                                       <option value="URL">URL</option>
                                       <option value="IMAGE_URL">IMAGE_URL</option>
@@ -1498,7 +1579,7 @@ export default function WhitelistPage() {
                                       size="sm"
                                       onClick={() => handleEvidenceSubmit(task)}
                                       disabled={isSubmitting || !taskInput.payload.trim()}
-                                      className="rounded-xl text-xs font-semibold"
+                                      className="rounded-xl text-xs font-mono-street font-bold bg-amber-400 text-black hover:bg-amber-300"
                                     >
                                       <Send className="mr-1 h-3 w-3" />
                                       {isSubmitting
@@ -1509,8 +1590,8 @@ export default function WhitelistPage() {
                                     </Button>
                                   </div>
                                 )}
-                                {errorMsg && <p className="text-xs text-rose-600 mt-1">{errorMsg}</p>}
-                                {successMsg && <p className="text-xs text-emerald-600 mt-1">{successMsg}</p>}
+                                {errorMsg && <p className="text-xs text-rose-400 mt-1 font-mono-street">{errorMsg}</p>}
+                                {successMsg && <p className="text-xs text-emerald-400 mt-1 font-mono-street">{successMsg}</p>}
                               </div>
                             )}
                           </div>
@@ -1536,23 +1617,23 @@ export default function WhitelistPage() {
                 LEFT COLUMN: CHARACTER AND INVENTORY (5 Cols on LG)
             =================================================================== */}
             <div className="lg:col-span-5 space-y-5">
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-5">
+              <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 shadow-brutal-sm space-y-5">
                 {/* Character Preview Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-400/10 text-amber-400 border border-amber-400/30">
                       <Sparkles className="h-4 w-4" />
                     </div>
-                    <h3 className="font-bold text-sm text-slate-900">
+                    <h3 className="font-display text-sm tracking-wide uppercase text-white">
                       Character & Wardrobe
                     </h3>
                   </div>
                   <Badge
                     variant={isTraitsComplete ? "default" : "outline"}
-                    className={`text-[10px] font-bold ${
+                    className={`text-[10px] font-mono-street font-bold ${
                       isTraitsComplete
-                        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                        : "bg-slate-100 text-slate-600 border-slate-200"
+                        ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/40"
+                        : "bg-zinc-800 text-zinc-300 border-zinc-700"
                     }`}
                   >
                     {isTraitsComplete ? "Full Color ✨" : "In Progress"}
@@ -1560,24 +1641,24 @@ export default function WhitelistPage() {
                 </div>
 
                 {/* Character Pixel-Art Preview Frame */}
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-gradient-to-b from-[#f0fdf4] to-white p-6 shadow-inner relative overflow-hidden">
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-radial from-zinc-900 to-[#08090d] p-6 shadow-inner relative overflow-hidden">
                   <div className="relative">
                     <UserAvatar
                       identifier={address}
                       hasInventory={inventoryItems.length > 0}
                       size="xl"
-                      className="border-2 border-emerald-200 rounded-2xl shadow-sm [image-rendering:pixelated]"
+                      className="border-2 border-amber-400/50 rounded-2xl shadow-brutal-sm [image-rendering:pixelated]"
                     />
                     {isTraitsComplete && (
-                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-white shadow-xs">
+                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-black shadow-xs">
                         <Sparkles className="h-3.5 w-3.5" />
                       </div>
                     )}
                   </div>
-                  <p className="mt-3 font-mono text-xs font-bold text-slate-700">
-                    {isTraitsComplete ? "ChimpHood Outfit Complete!" : "ChimpHood In-Progress Avatar"}
+                  <p className="mt-3 font-mono-street text-xs font-bold text-white uppercase tracking-wider">
+                    {isTraitsComplete ? "Elychimp Outfit Complete!" : "Elychimp In-Progress Avatar"}
                   </p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-zinc-400 font-mono-street">
                     {heldCategories.length} / 5 Categories Completed
                   </p>
                 </div>
@@ -1585,11 +1666,11 @@ export default function WhitelistPage() {
                 {/* Five Trait Categories (Owned in Color, Missing in Grayscale) */}
                 {statusResult?.status?.phase !== "REVOKED" && (
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold uppercase tracking-wider text-slate-500">
+                    <div className="flex items-center justify-between text-xs font-mono-street">
+                      <span className="font-bold uppercase tracking-wider text-zinc-400">
                         Required Trait Categories (5 of 5)
                       </span>
-                      <span className="font-semibold text-slate-600">
+                      <span className="font-bold text-amber-400">
                         {heldCategories.length} / 5 Collected
                       </span>
                     </div>
@@ -1601,21 +1682,21 @@ export default function WhitelistPage() {
                         return (
                           <div
                             key={cat}
-                            className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all ${
+                            className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
                               isHeld
-                                ? `${theme.heldClass} shadow-2xs font-bold`
-                                : "border-slate-200 bg-slate-50 text-slate-400 grayscale opacity-50"
+                                ? `${theme.heldClass} font-bold`
+                                : "border-zinc-800 bg-zinc-900/40 text-zinc-600 grayscale opacity-40"
                             }`}
                           >
                             <div className="mb-1">
                               {isHeld ? (
                                 <CheckCircle2 className={`h-4 w-4 ${theme.checkColor}`} />
                               ) : (
-                                <XCircle className="h-4 w-4 text-slate-400" />
+                                <XCircle className="h-4 w-4 text-zinc-600" />
                               )}
                             </div>
-                            <span className="text-[11px]">{cat}</span>
-                            <span className="text-[9px] font-mono mt-0.5">
+                            <span className="text-[11px] font-mono-street font-bold">{cat}</span>
+                            <span className="text-[9px] font-mono-street mt-0.5">
                               {isHeld ? "Owned ✓" : "Missing"}
                             </span>
                           </div>
@@ -1626,32 +1707,32 @@ export default function WhitelistPage() {
                 )}
 
                 {/* Inventory Summary (Total items and duplicates) */}
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 space-y-1.5 text-xs">
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3.5 space-y-1.5 text-xs font-mono-street">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-600 font-medium">Total Inventory Items:</span>
-                    <span className="font-mono font-bold text-slate-800">
+                    <span className="text-zinc-400 font-medium">Total Inventory Items:</span>
+                    <span className="font-mono font-bold text-white">
                       {inventoryItems.length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-600 font-medium">Extra / Duplicate Copies:</span>
-                    <span className="font-mono font-bold text-slate-800">
+                    <span className="text-zinc-400 font-medium">Extra / Duplicate Copies:</span>
+                    <span className="font-mono font-bold text-white">
                       {duplicateCount}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+                  <p className="text-[11px] text-zinc-500 pt-1 border-t border-zinc-800">
                     Duplicates remain in your backpack. Qualification requires 1 item in each of the 5 distinct categories.
                   </p>
                 </div>
 
                 {/* Trait Lootbox Drops CTA */}
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex items-center justify-between gap-2 text-xs">
+                <div className="rounded-xl border border-amber-400/30 bg-amber-950/20 p-3.5 flex items-center justify-between gap-2 text-xs font-mono-street">
                   <div>
-                    <p className="font-bold text-slate-800">Trait Lootbox Drops</p>
-                    <p className="text-[11px] text-slate-500">Need more traits to complete your collection?</p>
+                    <p className="font-bold text-white">Trait Lootbox Drops</p>
+                    <p className="text-[11px] text-zinc-400">Need more traits to complete your collection?</p>
                   </div>
                   <Link href="/drops">
-                    <Button variant="primary" size="sm" className="rounded-xl text-xs font-semibold shrink-0">
+                    <Button variant="primary" size="sm" className="rounded-xl text-xs font-display uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 shrink-0">
                       Go to Drops
                       <ExternalLink className="ml-1 h-3 w-3" />
                     </Button>
@@ -1665,99 +1746,99 @@ export default function WhitelistPage() {
                 Compact information panel: Step 1-5
             =================================================================== */}
             <div className="lg:col-span-7 space-y-5">
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-400 border border-emerald-400/30">
                       <ShieldCheck className="h-4 w-4" />
                     </div>
-                    <h3 className="font-bold text-sm text-slate-900">
+                    <h3 className="font-display text-sm tracking-wide uppercase text-white">
                       Whitelist Status & Allocation
                     </h3>
                   </div>
                   <div className="flex items-center gap-2">
                     {/* Phase Badges */}
                     {statusResult?.status?.phase === "SLOT_ALLOCATED" && (
-                      <Badge variant="default" className="border-emerald-300 bg-emerald-100 text-emerald-800 font-bold text-xs">
+                      <Badge variant="default" className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-mono-street font-bold text-xs uppercase">
                         GTD SLOT ALLOCATED
                       </Badge>
                     )}
                     {statusResult?.status?.phase === "FCFS_REGISTERED" && (
-                      <Badge variant="default" className="border-sky-300 bg-sky-100 text-sky-800 font-bold text-xs">
+                      <Badge variant="default" className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-mono-street font-bold text-xs">
                         FCFS Directory (Registered)
                       </Badge>
                     )}
-                    <Badge variant="outline" className={`text-xs font-bold ${qualificationState.badgeClass}`}>
+                    <Badge variant="outline" className={`text-xs font-mono-street font-bold ${qualificationState.badgeClass}`}>
                       {qualificationState.title}
                     </Badge>
                   </div>
                 </div>
 
                 {/* Steps 1 to 5 Status Overview */}
-                <div className="space-y-3">
+                <div className="space-y-3 font-mono-street">
                   {/* Step 1: Wallet Connection */}
-                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs">
+                  <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-black font-extrabold text-[10px]">
                         1
                       </div>
                       <div>
-                        <span className="font-semibold text-slate-700">EVM Wallet</span>
-                        <span className="ml-2 font-mono text-slate-800 font-bold">
+                        <span className="font-semibold text-zinc-400">EVM Wallet</span>
+                        <span className="ml-2 font-mono text-white font-bold">
                           {address ? shortenAddress(address) : "—"}
                         </span>
                       </div>
                     </div>
-                    <Badge variant="default" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-[10px] font-semibold">
+                    <Badge variant="default" className="border-emerald-500/40 bg-emerald-950/50 text-emerald-300 text-[10px] font-semibold">
                       <CheckCircle2 className="mr-1 h-3 w-3" />
                       Verified
                     </Badge>
                   </div>
 
                   {/* Step 2: X Account Sync */}
-                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs">
+                  <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-sky-700 font-bold text-[10px]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-400 text-black font-extrabold text-[10px]">
                         2
                       </div>
                       <div>
-                        <span className="font-semibold text-slate-700">X Social Identity</span>
-                        <span className="ml-2 font-mono text-slate-800 font-bold">
+                        <span className="font-semibold text-zinc-400">X Social Identity</span>
+                        <span className="ml-2 font-mono text-white font-bold">
                           {statusResult?.status?.details?.xUsername
                             ? `@${statusResult.status.details.xUsername}`
                             : "Linked"}
                         </span>
                       </div>
                     </div>
-                    <Badge variant="default" className="border-sky-200 bg-sky-50 text-sky-700 text-[10px] font-semibold">
+                    <Badge variant="default" className="border-cyan-500/40 bg-cyan-950/50 text-cyan-300 text-[10px] font-semibold">
                       <CheckCircle2 className="mr-1 h-3 w-3" />
                       Connected
                     </Badge>
                   </div>
 
                   {/* Step 3: Campaign Tasks Completion */}
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs space-y-2">
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-700 font-bold text-[10px]">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-black font-extrabold text-[10px]">
                           3
                         </div>
                         <div>
-                          <span className="font-semibold text-slate-700">Campaign Tasks:</span>
-                          <span className="ml-2 font-bold text-emerald-700">
+                          <span className="font-semibold text-zinc-400">Campaign Tasks:</span>
+                          <span className="ml-2 font-bold text-amber-400">
                             {statusResult?.status?.details?.completedMandatoryTasksCount ?? 0} /{" "}
                             {statusResult?.status?.details?.totalMandatoryTasksCount ?? 0} Completed
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="default" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-[10px] font-semibold">
+                        <Badge variant="default" className="border-emerald-500/40 bg-emerald-950/50 text-emerald-300 text-[10px] font-semibold">
                           <CheckCircle2 className="mr-1 h-3 w-3" />
                           Verified ✓
                         </Badge>
                         <button
                           onClick={() => setShowTasksInViewB((prev) => !prev)}
-                          className="flex items-center text-[10px] font-semibold text-slate-500 hover:text-slate-800"
+                          className="flex items-center text-[10px] font-semibold text-zinc-400 hover:text-white"
                         >
                           {showTasksInViewB ? (
                             <>
@@ -1776,23 +1857,23 @@ export default function WhitelistPage() {
 
                     {/* Toggleable Task Proof Checklist in View B */}
                     {showTasksInViewB && (
-                      <div className="mt-2 pt-2 border-t border-slate-200/60 space-y-2">
+                      <div className="mt-2 pt-2 border-t border-zinc-800 space-y-2">
                         {campaigns.flatMap((c) => c.tasks).map((t) => {
                           const st = getTaskStatus(t);
                           return (
                             <div
                               key={t.id}
-                              className="flex items-center justify-between text-[11px] bg-white p-2 rounded-lg border border-slate-200"
+                              className="flex items-center justify-between text-[11px] bg-black/40 p-2 rounded-lg border border-zinc-800"
                             >
                               <div className="flex items-center gap-1.5 truncate">
-                                <span className="font-semibold text-slate-800 truncate">{t.title}</span>
+                                <span className="font-semibold text-zinc-200 truncate">{t.title}</span>
                                 {t.isRequired && (
-                                  <span className="text-[9px] text-amber-700 bg-amber-50 px-1 py-0.5 rounded border border-amber-200">
+                                  <span className="text-[9px] text-amber-300 bg-amber-950/40 px-1 py-0.5 rounded border border-amber-500/40">
                                     Mandatory
                                   </span>
                                 )}
                               </div>
-                              <span className="font-semibold text-emerald-600 shrink-0">
+                              <span className="font-semibold text-emerald-400 shrink-0">
                                 {st.label}
                               </span>
                             </div>
@@ -1803,14 +1884,14 @@ export default function WhitelistPage() {
                   </div>
 
                   {/* Step 4: Trait Collection Progress */}
-                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-xs">
+                  <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-violet-700 font-bold text-[10px]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-400 text-black font-extrabold text-[10px]">
                         4
                       </div>
                       <div>
-                        <span className="font-semibold text-slate-700">Trait Categories</span>
-                        <span className="ml-2 font-mono text-slate-800 font-bold">
+                        <span className="font-semibold text-zinc-400">Trait Categories</span>
+                        <span className="ml-2 font-mono text-white font-bold">
                           {heldCategories.length} Categories Complete
                         </span>
                       </div>
@@ -1819,8 +1900,8 @@ export default function WhitelistPage() {
                       variant={isTraitsComplete ? "default" : "outline"}
                       className={`text-[10px] font-semibold ${
                         isTraitsComplete
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-slate-300 bg-white text-slate-600"
+                          ? "border-emerald-500/40 bg-emerald-950/50 text-emerald-300"
+                          : "border-zinc-700 bg-zinc-800/40 text-zinc-400"
                       }`}
                     >
                       {isTraitsComplete ? "All 5 Complete ✓" : "In Progress"}
@@ -1828,17 +1909,17 @@ export default function WhitelistPage() {
                   </div>
 
                   {/* Step 5: Whitelist Qualification & Real Allocation Status */}
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 text-xs space-y-3">
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 text-xs space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-[10px]">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-black font-extrabold text-[10px]">
                           5
                         </div>
-                        <span className="font-semibold text-slate-800 text-xs">
+                        <span className="font-semibold text-white text-xs">
                           Whitelist Allocation
                         </span>
                       </div>
-                      <Badge variant="outline" className="text-[10px] font-semibold text-slate-600 border-slate-200 bg-white">
+                      <Badge variant="outline" className="text-[10px] font-semibold text-zinc-400 border-zinc-700 bg-zinc-800/40">
                         Allocation Details
                       </Badge>
                     </div>
@@ -1848,13 +1929,13 @@ export default function WhitelistPage() {
                       const review = getGtdReviewDetails(statusResult.status.reviewStatus);
                       const ReviewIcon = review.icon;
                       return (
-                        <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs text-emerald-900">
+                        <div className="space-y-2 rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3 text-xs text-emerald-200">
                           <div className="flex flex-wrap items-center justify-between gap-1">
-                            <span className="font-bold text-emerald-800">
+                            <span className="font-bold text-emerald-300">
                               Guaranteed Slot #{statusResult.status.slotNumber} (Active)
                             </span>
                             {statusResult.status.allocatedAt && (
-                              <span className="text-[11px] text-emerald-700">
+                              <span className="text-[11px] text-emerald-400">
                                 Secured on {formatRegistrationDate(statusResult.status.allocatedAt)}
                               </span>
                             )}
@@ -1864,9 +1945,9 @@ export default function WhitelistPage() {
                               <ReviewIcon className="mr-1 h-3 w-3 shrink-0" />
                               {review.label}
                             </Badge>
-                            <span className="text-[11px] text-slate-600">{review.subtext}</span>
+                            <span className="text-[11px] text-zinc-400">{review.subtext}</span>
                           </div>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-zinc-400">
                             Your Guaranteed Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected.
                           </p>
                         </div>
@@ -1874,35 +1955,35 @@ export default function WhitelistPage() {
                     })()}
 
                     {statusResult?.status?.phase === "FCFS_REGISTERED" && (
-                      <div className="space-y-2 rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-xs text-sky-900">
+                      <div className="space-y-2 rounded-xl border border-cyan-500/40 bg-cyan-950/40 p-3 text-xs text-cyan-200">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-800">
+                          <span className="font-bold text-white">
                             Participant #{statusResult.status.queueNumber}
                           </span>
                           {statusResult.status.joinedAt && (
-                            <span className="text-slate-500">
+                            <span className="text-zinc-400">
                               • Registered on {formatRegistrationDate(statusResult.status.joinedAt)}
                             </span>
                           )}
                         </div>
                         {statusResult.status.isFullyQualified ? (
-                          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800">
-                            <p className="font-bold">Eligible for OpenSea FCFS Allowlist</p>
-                            <p className="mt-1">
+                          <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/50 p-2 text-[11px] text-emerald-200">
+                            <p className="font-bold text-emerald-300">Eligible for OpenSea FCFS Allowlist</p>
+                            <p className="mt-1 text-zinc-300">
                               All 5 qualification requirements are satisfied! Your wallet will be included in the OpenSea FCFS allowlist export.
                             </p>
                           </div>
                         ) : (
-                          <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-800">
-                            <p className="font-bold">Action Required — Incomplete Requirements</p>
-                            <p className="mt-1">
+                          <div className="rounded-lg border border-amber-500/40 bg-amber-950/50 p-2 text-[11px] text-amber-200">
+                            <p className="font-bold text-amber-300">Action Required — Incomplete Requirements</p>
+                            <p className="mt-1 text-zinc-300">
                               You are registered in the directory, but must satisfy all 5 requirements below to be included in the OpenSea FCFS allowlist export.
                             </p>
                           </div>
                         )}
-                        <div className="text-[11px] text-slate-500 pt-1">
-                          <p className="font-medium text-gray-300">FCFS Directory Notice</p>
-                          <p className="mt-0.5 text-gray-400">
+                        <div className="text-[11px] text-zinc-400 pt-1">
+                          <p className="font-medium text-zinc-300">FCFS Directory Notice</p>
+                          <p className="mt-0.5 text-zinc-500">
                             Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed (GTD) slot or an allocation.
                           </p>
                         </div>
@@ -1910,24 +1991,24 @@ export default function WhitelistPage() {
                     )}
 
                     {statusResult?.status?.phase === "REVOKED" && (
-                      <div className="space-y-1.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
-                        <div className="flex items-center gap-1.5 font-bold text-rose-900">
-                          <XCircle className="h-4 w-4 text-rose-600" />
+                      <div className="space-y-1.5 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-xs text-rose-200">
+                        <div className="flex items-center gap-1.5 font-bold text-rose-300">
+                          <XCircle className="h-4 w-4 text-rose-400" />
                           Whitelist Status Revoked
                         </div>
-                        <p className="text-rose-900 font-medium text-[11px]">
+                        <p className="text-rose-200 font-medium text-[11px]">
                           {statusResult.status.missingRequirements[0] || "Whitelist qualification has been revoked."}
                         </p>
-                        <p className="text-slate-600 text-[11px]">
+                        <p className="text-zinc-400 text-[11px]">
                           In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program. Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the OpenSea FCFS allowlist export.
                         </p>
                       </div>
                     )}
 
                     {statusResult?.status?.phase === "NONE" && (
-                      <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 space-y-1">
-                        <span className="font-bold text-slate-800">Not Registered / Ineligible</span>
-                        <p className="text-[11px] text-slate-500">
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 text-xs text-zinc-400 space-y-1">
+                        <span className="font-bold text-white">Not Registered / Ineligible</span>
+                        <p className="text-[11px] text-zinc-400">
                           Connect your EVM wallet and X (Twitter) account to automatically register in the FCFS Directory, and complete the 5 trait categories and mandatory tasks to qualify for the OpenSea FCFS allowlist.
                         </p>
                       </div>
@@ -1939,9 +2020,9 @@ export default function WhitelistPage() {
                       !statusResult.status.isFullyQualified &&
                       statusResult.status.phase !== "SLOT_ALLOCATED" &&
                       statusResult.status.phase !== "REVOKED" && (
-                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 space-y-0.5">
-                          <span className="font-bold">Missing Requirements:</span>
-                          <ul className="list-inside list-disc text-[11px] text-amber-900 space-y-0.5">
+                        <div className="rounded-xl border border-amber-500/40 bg-amber-950/40 p-2.5 text-xs text-amber-200 space-y-0.5">
+                          <span className="font-bold text-amber-300">Missing Requirements:</span>
+                          <ul className="list-inside list-disc text-[11px] text-amber-200 space-y-0.5">
                             {statusResult.status.missingRequirements.map((r, i) => (
                               <li key={i}>{r}</li>
                             ))}

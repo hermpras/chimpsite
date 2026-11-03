@@ -5,9 +5,13 @@ import { Footer } from "@/components/layout/Footer";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "ChimpHood — Web3 Collectible Ecosystem",
+  title: "Elychimp — Rule the Streets of Elysium | Hyperliquid L2",
   description:
-    "Decentralized Web3 community platform for Whitelist allocation, identity verification, and ecosystem rewards.",
+    "Leonida grit meets high-speed on-chain culture. Assemble your 5-piece fit, claim limited drop crates, and lock your syndicate pass on Elysium L2.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -17,7 +21,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col bg-[#090a0f] text-gray-100 antialiased">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@500;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="flex min-h-screen flex-col bg-[#08090d] text-gray-100 antialiased selection:bg-amber-400 selection:text-black">
         <Providers>
           <Navbar />
           <main className="flex-1">{children}</main>

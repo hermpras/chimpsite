@@ -7,14 +7,15 @@ import { useSiweAuth } from "@/hooks/useSiweAuth";
 import { Button } from "@/components/ui/Button";
 import { shortenAddress } from "@/lib/auth/address";
 import { UserAvatar } from "@/components/inventory/UserAvatar";
+import { WalletModal } from "./WalletModal";
+import { Wallet } from "lucide-react";
 
 /**
  * Navbar wallet control.
  *
- * - No wallet: "Connect Wallet" opens a connector picker.
+ * - No wallet: "Connect Wallet" opens the rich WalletModal with logos.
  * - Wallet connected, no session: "Sign In" runs the SIWE flow.
  * - Authenticated: address chip with a small menu (Profile / Sign out).
- * The server session (HttpOnly cookie) is the source of truth.
  */
 export function WalletButton() {
   const {
@@ -28,13 +29,14 @@ export function WalletButton() {
     dismissError,
   } = useSiweAuth();
   const connectors = useConnectors();
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   if (status === "checking") {
     return (
-      <Button variant="outline" size="sm" disabled>
-        Loading…
+      <Button variant="outline" size="sm" disabled className="font-mono-street text-xs">
+        Checking…
       </Button>
     );
   }
@@ -42,39 +44,39 @@ export function WalletButton() {
   if (status === "authenticated" && sessionAddress) {
     return (
       <div className="relative">
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-900/90 px-3 py-1.5 font-mono-street text-xs font-bold text-gray-200 transition-all hover:border-amber-400 hover:text-white shadow-sm"
         >
           <UserAvatar identifier={sessionAddress} size="sm" />
-          <span className="font-mono">{shortenAddress(sessionAddress)}</span>
-        </Button>
+          <span>{shortenAddress(sessionAddress)}</span>
+        </button>
         {menuOpen && (
-          <div className="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-gray-800 bg-[#0c0e17] p-1.5 shadow-xl">
-            <div className="mb-1 flex items-center gap-2 border-b border-gray-800/80 px-2 py-2">
+          <div className="absolute right-0 z-50 mt-2 w-48 rounded-xl border-2 border-gray-800 bg-[#0c0e17] p-1.5 shadow-2xl">
+            <div className="mb-1 flex items-center gap-2 border-b border-gray-800/80 px-2.5 py-2">
               <UserAvatar identifier={sessionAddress} size="md" />
               <div className="overflow-hidden">
-                <p className="truncate font-mono text-xs font-semibold text-white">
+                <p className="truncate font-mono-street text-xs font-bold text-white">
                   {shortenAddress(sessionAddress)}
                 </p>
-                <p className="text-[10px] text-emerald-400">Connected</p>
+                <p className="font-mono-street text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+                  Active
+                </p>
               </div>
             </div>
             <Link
               href="/profile"
               onClick={() => setMenuOpen(false)}
-              className="block rounded-md px-3 py-2 text-sm text-gray-300 hover:bg-gray-800/60 hover:text-white"
+              className="block rounded-lg px-3 py-2 font-mono-street text-xs text-gray-300 hover:bg-gray-800 hover:text-white uppercase font-bold"
             >
-              Profile
+              My Gear & Profile
             </Link>
             <button
               onClick={() => {
                 setMenuOpen(false);
                 void logout();
               }}
-              className="block w-full rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-800/60 hover:text-white"
+              className="block w-full rounded-lg px-3 py-2 text-left font-mono-street text-xs text-gray-400 hover:bg-red-500/10 hover:text-red-300 uppercase font-bold"
             >
               Sign out
             </button>
@@ -86,8 +88,8 @@ export function WalletButton() {
 
   if (status === "signing") {
     return (
-      <Button variant="outline" size="sm" disabled>
-        {busyMessage ?? "Working…"}
+      <Button variant="outline" size="sm" disabled className="font-mono-street text-xs border-amber-400/40 text-amber-400">
+        {busyMessage ?? "Signing…"}
       </Button>
     );
   }
@@ -95,13 +97,18 @@ export function WalletButton() {
   if (status === "wallet-only" && walletAddress) {
     return (
       <div className="flex flex-col items-end gap-1">
-        <Button variant="primary" size="sm" onClick={() => void login()}>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => void login()}
+          className="border border-black bg-amber-400 font-display uppercase tracking-wider text-black hover:bg-amber-300 shadow-brutal-sm text-xs px-4 py-2"
+        >
           Sign In with Ethereum
         </Button>
         {error && (
           <button
             onClick={dismissError}
-            className="max-w-56 text-right text-[11px] text-red-400 hover:text-red-300"
+            className="max-w-56 text-right text-[11px] text-red-400 hover:text-red-300 font-mono-street"
             title="Dismiss"
           >
             {error}
@@ -111,44 +118,49 @@ export function WalletButton() {
     );
   }
 
-  // signed-out (or error after a failed attempt): connector picker.
   return (
-    <div className="relative">
+    <>
       <div className="flex flex-col items-end gap-1">
-        <Button variant="outline" size="sm" onClick={() => setPickerOpen((v) => !v)}>
-          Connect Wallet
-        </Button>
+        <button
+          onClick={() => setModalOpen(true)}
+          className="flex items-center gap-2 border-2 border-amber-400 bg-amber-400/10 px-4 py-2 font-mono-street text-xs font-black uppercase tracking-wider text-amber-300 shadow-brutal-sm transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-amber-400 hover:text-black active:translate-x-0.5 active:translate-y-0.5"
+        >
+          <Wallet className="h-4 w-4" />
+          <span>Connect Wallet</span>
+        </button>
         {error && (
           <button
             onClick={dismissError}
-            className="max-w-56 text-right text-[11px] text-red-400 hover:text-red-300"
+            className="max-w-56 text-right text-[11px] text-red-400 hover:text-red-300 font-mono-street"
             title="Dismiss"
           >
             {error}
           </button>
         )}
       </div>
-      {pickerOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-52 rounded-lg border border-gray-800 bg-[#0c0e17] p-1 shadow-xl">
-          {connectors.length === 0 && (
-            <p className="px-3 py-2 text-xs text-gray-500">
-              No wallet connectors available.
-            </p>
-          )}
-          {connectors.map((connector) => (
-            <button
-              key={connector.uid}
-              onClick={() => {
-                setPickerOpen(false);
-                void login(connector);
-              }}
-              className="block w-full rounded-md px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-800/60 hover:text-white"
-            >
-              {connector.name}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+
+      {/* Rich Modal with Wallet Logos */}
+      <WalletModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setConnecting(false);
+        }}
+        connectors={connectors}
+        onSelect={async (connector) => {
+          setConnecting(true);
+          try {
+            await login(connector);
+            setModalOpen(false);
+          } finally {
+            setConnecting(false);
+          }
+        }}
+        isConnecting={connecting}
+        busyMessage={busyMessage}
+        error={error}
+        onDismissError={dismissError}
+      />
+    </>
   );
 }

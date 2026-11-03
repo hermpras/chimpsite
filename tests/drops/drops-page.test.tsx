@@ -163,10 +163,8 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       render(<DropsPage />);
 
       expect(screen.getByText("Trait Drops & Lootbox Engine")).toBeInTheDocument();
-      expect(screen.getByText("Stage 1 Live")).toBeInTheDocument();
+      expect(screen.getByText("CYCLE ACTIVE")).toBeInTheDocument();
       expect(screen.getByText(/Claim periodic lootbox mystery pods/i)).toBeInTheDocument();
-      expect(screen.getByText("Whitelist Status")).toBeInTheDocument();
-      expect(screen.getByText("My Inventory")).toBeInTheDocument();
 
       await waitFor(() => {
         expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);

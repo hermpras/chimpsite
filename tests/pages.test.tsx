@@ -38,12 +38,10 @@ const INDONESIAN_UI_WORDS = [
 describe("Public Pages English Copy Rendering", () => {
   it("renders HomePage successfully with key English headings and terminology", () => {
     const { container } = render(<HomePage />);
-    expect(screen.getByText("Welcome to")).toBeInTheDocument();
-    expect(screen.getByText("ChimpHood")).toBeInTheDocument();
-    expect(screen.getByText("Whitelist Allocation")).toBeInTheDocument();
-    expect(screen.getByText("Explore Whitelist")).toBeInTheDocument();
-    expect(screen.getByText("Read Documentation")).toBeInTheDocument();
-    expect(screen.getByText("Current Implementation Status")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Rule the Streets/i);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/of Elysium/i);
+    expect(screen.getAllByText("GET ON THE LIST").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("OPEN CRATES").length).toBeGreaterThanOrEqual(1);
 
     for (const pattern of INDONESIAN_UI_WORDS) {
       expect(container.textContent).not.toMatch(pattern);
@@ -53,7 +51,7 @@ describe("Public Pages English Copy Rendering", () => {
   it("renders DocsPage with English community guide sections and terminology", () => {
     const { container } = render(<DocsPage />);
     expect(
-      screen.getByRole("heading", { name: "ChimpHood Community Guide" }),
+      screen.getByRole("heading", { name: /Community Guide/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "1. Trait Collection & Inventory" }),
@@ -87,9 +85,7 @@ describe("Public Pages English Copy Rendering", () => {
     );
     expect(screen.getByText("Trait Drops & Lootbox Engine")).toBeInTheDocument();
     expect(screen.getByText("Periodic Drop Cycle")).toBeInTheDocument();
-    expect(screen.getByText("Stage 1 Live")).toBeInTheDocument();
-    expect(screen.getByText("Whitelist Status")).toBeInTheDocument();
-    expect(screen.getByText("My Inventory")).toBeInTheDocument();
+    expect(screen.getByText("CYCLE ACTIVE")).toBeInTheDocument();
 
     for (const pattern of INDONESIAN_UI_WORDS) {
       expect(container.textContent).not.toMatch(pattern);
@@ -126,10 +122,8 @@ describe("Public Pages English Copy Rendering", () => {
     const { container } = render(<Footer />);
 
     // Brand link to "/"
-    const brandLink = screen.getByRole("link", { name: /CHIMPHOOD/i });
+    const brandLink = screen.getByRole("link", { name: /Elychimp/i });
     expect(brandLink).toHaveAttribute("href", "/");
-    expect(brandLink.textContent).toContain("CHIMP");
-    expect(brandLink.textContent).toContain("HOOD");
 
     // Footer navigation links in exact order
     const footerNav = screen.getByRole("navigation", { name: "Footer navigation" });
@@ -153,7 +147,7 @@ describe("Public Pages English Copy Rendering", () => {
 
     // Old scaffold text is gone
     expect(screen.queryByText(/Foundation & Data Architecture/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Identity, Drops & Whitelist/i)).toBeInTheDocument();
+    expect(screen.getByText(/Leonida Syndicate/i)).toBeInTheDocument();
 
     for (const pattern of INDONESIAN_UI_WORDS) {
       expect(container.textContent).not.toMatch(pattern);

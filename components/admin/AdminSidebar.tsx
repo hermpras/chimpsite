@@ -134,17 +134,17 @@ export function AdminSidebar({
               onSelectTab(item.id);
               if (mobileOpen) onToggleMobile();
             }}
-            className={`group flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+            className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all font-mono-street ${
               isActive
-                ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-400"
-                : "text-gray-300 hover:bg-gray-800/60 hover:text-white"
+                ? "border border-amber-400/60 bg-amber-400/10 text-amber-300 shadow-sm font-bold"
+                : "text-gray-300 hover:bg-gray-800/60 hover:text-white border border-transparent"
             }`}
           >
             <div className="flex items-center gap-3">
               <Icon
                 className={`h-5 w-5 transition-colors ${
                   isActive
-                    ? "text-emerald-400"
+                    ? "text-amber-400"
                     : "text-gray-400 group-hover:text-gray-200"
                 }`}
               />
@@ -177,10 +177,10 @@ export function AdminSidebar({
       {/* Mobile Top Bar */}
       <div className="flex items-center justify-between border-b border-gray-800 bg-[#0c0e17] px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
-          <span className="text-lg font-black tracking-tight text-emerald-400">
-            CHIMP<span className="text-white">HOOD</span>
+          <span className="font-display text-lg uppercase tracking-wider text-white">
+            ELY<span className="text-amber-400">CHIMP</span>
           </span>
-          <Badge variant="warning" className="text-[10px]">
+          <Badge variant="warning" className="text-[10px] font-mono-street">
             ADMIN
           </Badge>
         </div>
@@ -203,15 +203,17 @@ export function AdminSidebar({
           <div className="fixed inset-y-0 left-0 w-72 border-r border-gray-800 bg-[#0c0e17] shadow-xl">
             <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-white">ChimpHood Admin</span>
-                <Badge variant="default">{roleType}</Badge>
+                <span className="font-display font-bold text-white uppercase tracking-wider">
+                  ELY<span className="text-amber-400">CHIMP</span> Admin
+                </span>
+                <Badge variant="default" className="font-mono-street text-[10px]">{roleType}</Badge>
               </div>
               <button onClick={onToggleMobile} className="text-gray-400 hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
             {renderNavLinks()}
-            <div className="border-t border-gray-800 p-4 text-xs text-gray-400">
+            <div className="border-t border-gray-800 p-4 text-xs text-gray-400 font-mono-street">
               <p className="font-semibold text-gray-300">{shortAddress}</p>
               <p className="mt-1 text-[11px] text-gray-500">Role: {roleType}</p>
             </div>
@@ -226,14 +228,16 @@ export function AdminSidebar({
             {/* Header branding */}
             <div className="border-b border-gray-800 px-6 py-5">
               <div className="flex items-center gap-2">
-                <span className="text-xl font-black tracking-tight text-emerald-400">
-                  CHIMP<span className="text-white">HOOD</span>
+                <span className="font-display text-xl uppercase tracking-wider text-white">
+                  ELY<span className="text-amber-400">CHIMP</span>
                 </span>
-                <Badge variant="warning" className="text-[10px]">
+                <Badge variant="warning" className="text-[10px] font-mono-street">
                   ADMIN
                 </Badge>
               </div>
-              <p className="mt-1 text-xs text-gray-400">Administration & Operations</p>
+              <p className="mt-1 font-mono-street text-[11px] text-gray-400 uppercase tracking-wide">
+                Elysium L2 // Command
+              </p>
             </div>
 
             {/* Navigation links */}
