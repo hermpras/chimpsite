@@ -66,6 +66,7 @@ export interface SubmitTaskEvidenceInput {
   userId: string;
   submissionType?: EvidenceType | string;
   payload: string;
+  autoApprove?: boolean;
   ipAddress?: string | null;
   userAgent?: string | null;
   now?: Date;
@@ -363,20 +364,69 @@ export async function submitTaskEvidence(
     });
 
     if (pendingSubmission) {
-      throw new TaskEvidenceError(
-        "EVIDENCE_PENDING_REVIEW",
-        "An evidence submission for this task is already pending review.",
-        409,
-      );
+      if (input.autoApprove) {
+        // Upgrade existing pending submission to approved immediately
+        const submission = await tx.evidenceSubmission.update({
+          where: { id: pendingSubmission.id },
+          data: {
+            status: "APPROVED",
+            payload: trimmedPayload,
+            reviewedAt: now,
+            reviewerNotes: "Auto-verified via social action",
+          },
+        });
+        const progressRecord = await tx.taskProgress.update({
+          where: { id: pendingSubmission.taskProgressId },
+          data: {
+            status: "VERIFIED",
+            verifiedAt: now,
+            completedAt: now,
+          },
+        });
+        const audit = await recordAuditLog(tx, {
+          actorId: userId,
+          actorIp: input.ipAddress ?? null,
+          userAgent: input.userAgent ?? null,
+          action: "EVIDENCE_AUTO_APPROVED",
+          entityType: "EvidenceSubmission",
+          entityId: submission.id,
+          metadata: {
+            taskId: task.id,
+            taskCode: task.taskCode,
+            versionId: task.versionId,
+            submissionType,
+            taskProgressId: progressRecord.id,
+          },
+        });
+        return {
+          success: true,
+          submission: formatEvidenceSubmissionOutput(submission),
+          taskProgress: formatTaskProgressOutput(progressRecord),
+          auditLogId: audit.id,
+        };
+      } else {
+        throw new TaskEvidenceError(
+          "EVIDENCE_PENDING_REVIEW",
+          "An evidence submission for this task is already pending review.",
+          409,
+        );
+      }
     }
 
-    // 7. Upsert TaskProgress to SUBMITTED
+    // 7. Upsert TaskProgress
+    const targetProgressStatus = input.autoApprove ? "VERIFIED" : "SUBMITTED";
+    const targetSubmissionStatus = input.autoApprove ? "APPROVED" : "PENDING_REVIEW";
+    const verifiedTimestamp = input.autoApprove ? now : null;
+    const completedTimestamp = input.autoApprove ? now : null;
+
     let progressRecord;
     if (existingProgress) {
       progressRecord = await tx.taskProgress.update({
         where: { id: existingProgress.id },
         data: {
-          status: "SUBMITTED",
+          status: targetProgressStatus,
+          verifiedAt: verifiedTimestamp ?? existingProgress.verifiedAt,
+          completedAt: completedTimestamp ?? existingProgress.completedAt,
         },
       });
     } else {
@@ -385,7 +435,9 @@ export async function submitTaskEvidence(
           userId,
           versionId: task.versionId,
           taskId: task.id,
-          status: "SUBMITTED",
+          status: targetProgressStatus,
+          verifiedAt: verifiedTimestamp,
+          completedAt: completedTimestamp,
         },
       });
     }
@@ -398,7 +450,9 @@ export async function submitTaskEvidence(
         taskProgressId: progressRecord.id,
         submissionType,
         payload: trimmedPayload,
-        status: "PENDING_REVIEW",
+        status: targetSubmissionStatus,
+        reviewedAt: input.autoApprove ? now : null,
+        reviewerNotes: input.autoApprove ? "Auto-verified via social action" : null,
       },
     });
 

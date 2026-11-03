@@ -1,6 +1,7 @@
 export interface SubmitTaskEvidenceClientInput {
   submissionType?: "URL" | "IMAGE_URL" | "TEXT_PROOF" | "OAUTH_VERIFICATION";
   payload: string;
+  autoApprove?: boolean;
 }
 
 export async function submitTaskEvidence(

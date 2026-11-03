@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import React from "react";
 import WhitelistPage from "@/app/whitelist/page";
 import * as tasksClient from "@/lib/tasks/client";
@@ -85,6 +85,10 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
+    if (typeof window !== "undefined") {
+      sessionStorage.clear();
+    }
     vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockDrop as any);
     vi.mocked(tasksClient.fetchActiveTasks).mockResolvedValue({
       configured: true,
@@ -680,20 +684,46 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
       "https://x.com/chimphoodNFT/status/1234567890",
     );
 
-    // Click VERIFY TASK for follow
-    const verifyButtons = screen.getAllByRole("button", { name: /VERIFY TASK/i });
-    expect(verifyButtons.length).toBe(2);
-
-    fireEvent.click(verifyButtons[0]);
-
-    await waitFor(() => {
-      expect(tasksClient.submitTaskEvidence).toHaveBeenCalledWith(
-        "task-social-follow",
-        {
-          submissionType: "URL",
-          payload: "https://x.com/chimphoodNFT",
-        },
-      );
+    // Gating check: Before clicking OPEN X, verify buttons are disabled
+    const disabledButtons = screen.getAllByRole("button", {
+      name: /CLICK 'OPEN X' FIRST/i,
     });
+    expect(disabledButtons.length).toBe(2);
+    expect(disabledButtons[0]).toBeDisabled();
+
+    // Click OPEN X to open destination
+    fireEvent.click(followAnchor!);
+
+    // Now the follow verify button is unlocked and enabled
+    const verifyButton = await screen.findByRole("button", {
+      name: /VERIFY TASK/i,
+    });
+    expect(verifyButton).toBeEnabled();
+
+    // Setup fake timers for 10s countdown
+    vi.useFakeTimers();
+
+    act(() => {
+      fireEvent.click(verifyButton);
+    });
+
+    // Should enter countdown state
+    expect(screen.getByText(/VERIFYING \(10s\)\.\.\./i)).toBeInTheDocument();
+
+    // Advance 10 seconds to finish countdown and trigger auto-approval
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+
+    expect(tasksClient.submitTaskEvidence).toHaveBeenCalledWith(
+      "task-social-follow",
+      {
+        submissionType: "URL",
+        payload: "https://x.com/chimphoodNFT",
+        autoApprove: true,
+      },
+    );
+
+    vi.useRealTimers();
   });
 });

@@ -131,16 +131,24 @@ function createMockPrisma() {
         create: vi.fn(async ({ data }: any) => {
           const newEvidence = {
             id: `ev_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-            ...data,
             reviewerId: null,
             reviewerNotes: null,
             reviewedAt: null,
             createdAt: new Date(),
             updatedAt: new Date(),
+            ...data,
           };
           store.evidenceSubmissions.push(newEvidence);
           uncommittedEvidence.push(newEvidence);
           return newEvidence;
+        }),
+        update: vi.fn(async ({ where, data }: any) => {
+          const item = store.evidenceSubmissions.find((e) => e.id === where.id);
+          if (item) {
+            Object.assign(item, data, { updatedAt: new Date() });
+            return item;
+          }
+          return null;
         }),
       },
       auditLog: {
@@ -502,6 +510,38 @@ describe("Task 4-C Evidence Service (server/tasks/evidence.ts)", () => {
       });
     });
 
+    it("upgrades pending review submission to APPROVED when autoApprove is true", async () => {
+      mock.store.taskProgresses.push({
+        id: "tp_old",
+        userId: "user_1",
+        versionId: "ver_1",
+        taskId: "task_1",
+        status: "SUBMITTED",
+      });
+      mock.store.evidenceSubmissions.push({
+        id: "ev_existing",
+        userId: "user_1",
+        taskId: "task_1",
+        taskProgressId: "tp_old",
+        submissionType: "URL",
+        payload: "https://x.com/prev",
+        status: "PENDING_REVIEW",
+      });
+
+      const res = await submitTaskEvidence(mock.client as unknown as PrismaClient, {
+        taskId: "task_1",
+        userId: "user_1",
+        payload: "https://x.com/post/2",
+        autoApprove: true,
+        now: baseNow,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.submission.status).toBe("APPROVED");
+      expect(res.submission.reviewerNotes).toBe("Auto-verified via social action");
+      expect(res.taskProgress.status).toBe("VERIFIED");
+    });
+
     it("successfully creates new TaskProgress (SUBMITTED), creates EvidenceSubmission (PENDING_REVIEW), and records audit log", async () => {
       const result = await submitTaskEvidence(mock.client as unknown as PrismaClient, {
         taskId: "task_1",
@@ -539,6 +579,23 @@ describe("Task 4-C Evidence Service (server/tasks/evidence.ts)", () => {
       expect(audit.userAgent).toBe("VitestAgent/1.0");
       expect(audit.entityType).toBe("EvidenceSubmission");
       expect(audit.metadata.taskCode).toBe("FOLLOW_X");
+    });
+
+    it("successfully creates new TaskProgress (VERIFIED) and EvidenceSubmission (APPROVED) when autoApprove is true", async () => {
+      const result = await submitTaskEvidence(mock.client as unknown as PrismaClient, {
+        taskId: "task_1",
+        userId: "user_1",
+        submissionType: "URL",
+        payload: "https://x.com/chimphoodNFT",
+        autoApprove: true,
+        now: baseNow,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.submission.status).toBe("APPROVED");
+      expect(result.submission.reviewerNotes).toBe("Auto-verified via social action");
+      expect(result.taskProgress.status).toBe("VERIFIED");
+      expect(result.taskProgress.verifiedAt).toBe(baseNow.toISOString());
     });
 
     it("successfully updates existing TaskProgress from REJECTED to SUBMITTED", async () => {

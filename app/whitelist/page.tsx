@@ -107,7 +107,28 @@ export default function WhitelistPage() {
   const [submittingTaskId, setSubmittingTaskId] = useState<string | null>(null);
   const [taskErrors, setTaskErrors] = useState<Record<string, string | null>>({});
   const [taskSuccess, setTaskSuccess] = useState<Record<string, string | null>>({});
-  const [showManualInput, setShowManualInput] = useState<Record<string, boolean>>({});
+
+  // Social Task UX: Open before verify & 10s countdown
+  const [openedTasks, setOpenedTasks] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const saved = sessionStorage.getItem("chimphood_opened_tasks");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [countdownTasks, setCountdownTasks] = useState<Record<string, number>>({});
+
+  const markTaskOpened = (taskId: string) => {
+    setOpenedTasks((prev) => {
+      const next = { ...prev, [taskId]: true };
+      try {
+        sessionStorage.setItem("chimphood_opened_tasks", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
 
   function isSocialTask(task: ActiveCampaignTask): boolean {
     const t = (task.taskType || "").toUpperCase();
@@ -182,38 +203,56 @@ export default function WhitelistPage() {
       return;
     }
 
-    const destinationUrl = getTaskDestinationUrl(task);
-    const userHandle = statusResult?.status?.details?.xUsername;
-    const payload = userHandle ? `https://x.com/${userHandle}` : destinationUrl;
-
-    setSubmittingTaskId(task.id);
+    // Set countdown to 10s
+    setCountdownTasks((prev) => ({ ...prev, [task.id]: 10 }));
     setTaskErrors((prev) => ({ ...prev, [task.id]: null }));
     setTaskSuccess((prev) => ({ ...prev, [task.id]: null }));
 
-    try {
-      await submitTaskEvidence(task.id, {
-        submissionType: "URL",
-        payload,
-      });
+    let remaining = 10;
+    const interval = setInterval(async () => {
+      remaining -= 1;
+      if (remaining > 0) {
+        setCountdownTasks((prev) => ({ ...prev, [task.id]: remaining }));
+      } else {
+        clearInterval(interval);
+        setCountdownTasks((prev) => {
+          const next = { ...prev };
+          delete next[task.id];
+          return next;
+        });
 
-      setTaskSuccess((prev) => ({
-        ...prev,
-        [task.id]: "Verification submitted! Status is now Pending Review.",
-      }));
+        setSubmittingTaskId(task.id);
+        try {
+          const destinationUrl = getTaskDestinationUrl(task);
+          const userHandle = statusResult?.status?.details?.xUsername;
+          const payload = userHandle ? `https://x.com/${userHandle}` : destinationUrl;
 
-      await loadTasks();
+          await submitTaskEvidence(task.id, {
+            submissionType: "URL",
+            payload,
+            autoApprove: true,
+          });
 
-      if (address) {
-        fetchWhitelistStatus(address).then(setStatusResult).catch(console.error);
+          setTaskSuccess((prev) => ({
+            ...prev,
+            [task.id]: "Task verified & completed! +PTS awarded.",
+          }));
+
+          await loadTasks();
+
+          if (address) {
+            fetchWhitelistStatus(address).then(setStatusResult).catch(console.error);
+          }
+        } catch (err: unknown) {
+          setTaskErrors((prev) => ({
+            ...prev,
+            [task.id]: (err as Error).message || "Failed to verify task.",
+          }));
+        } finally {
+          setSubmittingTaskId(null);
+        }
       }
-    } catch (err: unknown) {
-      setTaskErrors((prev) => ({
-        ...prev,
-        [task.id]: (err as Error).message || "Failed to submit verification.",
-      }));
-    } finally {
-      setSubmittingTaskId(null);
-    }
+    }, 1000);
   }
 
   // Fetch active campaigns and tasks
@@ -973,7 +1012,6 @@ export default function WhitelistPage() {
                           const isSocial = isSocialTask(task);
                           const destinationUrl = getTaskDestinationUrl(task);
                           const taskMeta = getTaskTypeMeta(task);
-                          const showManual = showManualInput[task.id] || false;
                           const taskInput = evidenceInputs[task.id] || {
                             payload: "",
                             submissionType:
@@ -987,6 +1025,11 @@ export default function WhitelistPage() {
                           const successMsg = taskSuccess[task.id];
 
                           if (isSocial) {
+                            const isTaskOpened = Boolean(openedTasks[task.id]);
+                            const countdownSeconds = countdownTasks[task.id];
+                            const isCountingDown =
+                              typeof countdownSeconds === "number" && countdownSeconds > 0;
+
                             return (
                               <div
                                 key={task.id}
@@ -1039,7 +1082,7 @@ export default function WhitelistPage() {
                                     {taskStatus.key === "NOT_SUBMITTED" && (
                                       <AlertCircle className="mr-1 h-3 w-3 shrink-0" />
                                     )}
-                                    {taskStatus.label}
+                                    {taskStatus.key === "APPROVED" ? "Done" : taskStatus.label}
                                   </Badge>
                                 </div>
 
@@ -1073,7 +1116,8 @@ export default function WhitelistPage() {
                                     href={destinationUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-800/80 px-3 py-2 text-xs font-semibold text-white transition-all hover:border-gray-500 hover:bg-gray-700"
+                                    onClick={() => markTaskOpened(task.id)}
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-800/80 px-3 py-2 text-xs font-semibold text-white transition-all hover:border-gray-500 hover:bg-gray-700 active:scale-[0.98]"
                                   >
                                     <span>OPEN X</span>
                                     <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
@@ -1086,15 +1130,24 @@ export default function WhitelistPage() {
                                       className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300"
                                     >
                                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                                      <span>COMPLETED</span>
+                                      <span>DONE</span>
                                     </button>
-                                  ) : taskStatus.key === "PENDING" ? (
+                                  ) : isCountingDown ? (
                                     <button
                                       disabled
-                                      className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300"
+                                      className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold text-amber-300 animate-pulse"
                                     >
-                                      <Clock className="h-3.5 w-3.5 text-amber-400" />
-                                      <span>PENDING REVIEW</span>
+                                      <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-400" />
+                                      <span>VERIFYING ({countdownSeconds}s)...</span>
+                                    </button>
+                                  ) : !isTaskOpened ? (
+                                    <button
+                                      disabled
+                                      title="Please click 'OPEN X' first"
+                                      className="flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2 text-xs font-semibold text-gray-500 opacity-60"
+                                    >
+                                      <span>CLICK &apos;OPEN X&apos; FIRST</span>
+                                      <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
                                     </button>
                                   ) : status !== "authenticated" ? (
                                     <Button
@@ -1112,12 +1165,12 @@ export default function WhitelistPage() {
                                       size="sm"
                                       className="w-full gap-1.5 text-xs font-semibold"
                                       onClick={() => handleSocialVerify(task)}
-                                      disabled={isSubmitting}
+                                      disabled={isSubmitting || isCountingDown}
                                     >
                                       {isSubmitting ? (
                                         <>
                                           <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                                          <span>VERIFYING...</span>
+                                          <span>COMPLETING...</span>
                                         </>
                                       ) : (
                                         <>
@@ -1128,53 +1181,6 @@ export default function WhitelistPage() {
                                         </>
                                       )}
                                     </Button>
-                                  )}
-
-                                  {/* Option to toggle manual input if user prefers to paste URL */}
-                                  <div className="pt-1 text-center">
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setShowManualInput((prev) => ({
-                                          ...prev,
-                                          [task.id]: !prev[task.id],
-                                        }))
-                                      }
-                                      className="text-[11px] text-gray-500 hover:text-gray-300 underline"
-                                    >
-                                      {showManual ? "Hide custom proof link" : "Paste custom proof link"}
-                                    </button>
-                                  </div>
-
-                                  {showManual && (
-                                    <div className="space-y-2 pt-2 border-t border-gray-800/60">
-                                      <div className="flex flex-col gap-2">
-                                        <input
-                                          type="text"
-                                          placeholder="https://x.com/your_post_url..."
-                                          value={taskInput.payload}
-                                          onChange={(e) =>
-                                            setEvidenceInputs((prev) => ({
-                                              ...prev,
-                                              [task.id]: {
-                                                ...taskInput,
-                                                payload: e.target.value,
-                                              },
-                                            }))
-                                          }
-                                          className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-gray-200 placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                                        />
-                                        <Button
-                                          variant="primary"
-                                          size="sm"
-                                          onClick={() => handleEvidenceSubmit(task)}
-                                          disabled={isSubmitting || !taskInput.payload.trim()}
-                                        >
-                                          <Send className="mr-1 h-3 w-3" />
-                                          Submit Evidence
-                                        </Button>
-                                      </div>
-                                    </div>
                                   )}
 
                                   {errorMsg && (

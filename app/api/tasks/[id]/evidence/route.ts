@@ -99,6 +99,7 @@ export async function POST(
       userId: session.userId,
       submissionType: body.submissionType as any,
       payload: body.payload as string,
+      autoApprove: typeof body.autoApprove === "boolean" ? body.autoApprove : undefined,
       ipAddress: clientIp(request),
       userAgent: request.headers.get("user-agent") ?? undefined,
     });
