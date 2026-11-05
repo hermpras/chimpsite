@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useConnectors } from "wagmi";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
+import { useXIdentity } from "@/hooks/useXIdentity";
 import { Button } from "@/components/ui/Button";
 import { shortenAddress } from "@/lib/auth/address";
 import { UserAvatar } from "@/components/inventory/UserAvatar";
@@ -28,6 +29,7 @@ export function WalletButton() {
     logout,
     dismissError,
   } = useSiweAuth();
+  const { xUsername } = useXIdentity();
   const connectors = useConnectors();
   const [modalOpen, setModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,7 +51,7 @@ export function WalletButton() {
           className="flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-900/90 px-3 py-1.5 font-mono-street text-xs font-bold text-gray-200 transition-all hover:border-amber-400 hover:text-white shadow-sm"
         >
           <UserAvatar identifier={sessionAddress} size="sm" />
-          <span>{shortenAddress(sessionAddress)}</span>
+          <span>{xUsername ? `@${xUsername}` : shortenAddress(sessionAddress)}</span>
         </button>
         {menuOpen && (
           <div className="absolute right-0 z-50 mt-2 w-48 rounded-xl border-2 border-gray-800 bg-[#0c0e17] p-1.5 shadow-2xl">
@@ -57,8 +59,13 @@ export function WalletButton() {
               <UserAvatar identifier={sessionAddress} size="md" />
               <div className="overflow-hidden">
                 <p className="truncate font-mono-street text-xs font-bold text-white">
-                  {shortenAddress(sessionAddress)}
+                  {xUsername ? `@${xUsername}` : shortenAddress(sessionAddress)}
                 </p>
+                {xUsername && (
+                  <p className="truncate font-mono-street text-[10px] text-zinc-500">
+                    {shortenAddress(sessionAddress)}
+                  </p>
+                )}
                 <p className="font-mono-street text-[10px] text-amber-400 font-bold uppercase tracking-wider">
                   Active
                 </p>

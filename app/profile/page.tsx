@@ -459,7 +459,9 @@ function ProfileContent() {
           />
           <div className="space-y-2 flex-1">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-wider text-white">User Profile</h1>
+              <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-wider text-white">
+                {isXConnected && currentXUsername ? `@${currentXUsername}` : "User Profile"}
+              </h1>
               {getWhitelistSummaryBadge(wlData?.status, status === "authenticated")}
             </div>
             <p className="font-mono-street text-xs sm:text-sm text-zinc-400">
