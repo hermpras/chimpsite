@@ -2,6 +2,9 @@ import type { PrismaClient } from "@prisma/client";
 import { isWithinClaimWindow } from "./schedule";
 import { recordAuditLog } from "../audit/audit";
 import { triggerAutomaticEligibilityEvaluation } from "../whitelist/qualification";
+import { checkUserDropEligibility, type UserDropEligibilityResult } from "./eligibility";
+
+export { checkUserDropEligibility, type UserDropEligibilityResult };
 
 export const SYBIL_CLUSTER_IP_THRESHOLD = 5;
 
@@ -334,6 +337,39 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
             "Users holding an allocated Whitelist slot cannot claim drops.",
             403,
           );
+        }
+
+        // 2b. Invariant: User must be registered with linked X identity & have completed mandatory tasks
+        if (typeof tx.user?.findUnique === "function") {
+          const eligibility = await checkUserDropEligibility(tx, input.userId, now);
+          if (!eligibility.isEligible) {
+            if (!eligibility.hasLinkedX) {
+              throw new DropClaimError(
+                "X_IDENTITY_REQUIRED",
+                "You must link your X (Twitter) account before claiming drops.",
+                403,
+              );
+            }
+            if (!eligibility.areMandatoryTasksCompleted) {
+              throw new DropClaimError(
+                "MANDATORY_TASKS_INCOMPLETE",
+                `You must complete all mandatory campaign tasks (${eligibility.completedMandatoryTasksCount}/${eligibility.totalMandatoryTasksCount} completed) before claiming drops.`,
+                403,
+              );
+            }
+            if (eligibility.isBanned) {
+              throw new DropClaimError(
+                "USER_BANNED_FROM_CLAIMS",
+                "Your account is restricted from claiming drops.",
+                403,
+              );
+            }
+            throw new DropClaimError(
+              "DROP_ELIGIBILITY_REQUIREMENTS_NOT_MET",
+              eligibility.missingRequirements[0] || "You do not meet the requirements to claim drops.",
+              403,
+            );
+          }
         }
 
         // 3. Verify Drop and DropPeriod

@@ -1161,7 +1161,7 @@ export default function WhitelistPage() {
             </div>
 
             {/* Campaign Tasks Section */}
-            <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-5">
+            <div id="tasks" className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-5 scroll-mt-24">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800/80 pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/30">

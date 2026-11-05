@@ -4,7 +4,11 @@ import {
   getUtcCycleForTime,
   isWithinClaimWindow,
 } from "@/server/drops/schedule";
-import { calculateTransparentProbabilities } from "@/server/drops/claim";
+import {
+  calculateTransparentProbabilities,
+  checkUserDropEligibility,
+  type UserDropEligibilityResult,
+} from "@/server/drops/claim";
 import { ensureActiveCyclePeriod } from "@/server/drops/auto-replenish";
 
 export const dynamic = "force-dynamic";
@@ -122,17 +126,21 @@ export async function GET(request: Request): Promise<Response> {
   );
 
   let userHasClaimed = false;
+  let userEligibility: UserDropEligibilityResult | null = null;
   try {
     const session = await authenticateRequest(prisma);
-    if (session && activePeriod && prisma.claim?.findFirst) {
-      const existingClaim = await prisma.claim.findFirst({
-        where: {
-          userId: session.userId,
-          periodId: activePeriod.id,
-        },
-        select: { id: true },
-      });
-      userHasClaimed = Boolean(existingClaim);
+    if (session) {
+      userEligibility = await checkUserDropEligibility(prisma, session.userId, now);
+      if (activePeriod && prisma.claim?.findFirst) {
+        const existingClaim = await prisma.claim.findFirst({
+          where: {
+            userId: session.userId,
+            periodId: activePeriod.id,
+          },
+          select: { id: true },
+        });
+        userHasClaimed = Boolean(existingClaim);
+      }
     }
   } catch {
     // Non-blocking optional check
@@ -141,6 +149,7 @@ export async function GET(request: Request): Promise<Response> {
   return Response.json({
     active: true,
     userHasClaimed,
+    userEligibility: userEligibility ?? undefined,
     drop: {
       id: drop.id,
       slug: drop.slug,

@@ -2,6 +2,16 @@ export interface CurrentDropResponse {
   active: boolean;
   message?: string;
   userHasClaimed?: boolean;
+  userEligibility?: {
+    isEligible: boolean;
+    hasWallet: boolean;
+    hasLinkedX: boolean;
+    xUsername: string | null;
+    totalMandatoryTasksCount: number;
+    completedMandatoryTasksCount: number;
+    areMandatoryTasksCompleted: boolean;
+    missingRequirements: string[];
+  };
   drop?: {
     id: string;
     slug: string;

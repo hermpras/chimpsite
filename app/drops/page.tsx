@@ -12,6 +12,9 @@ import {
   Gift,
   ShieldCheck,
   Layers,
+  Flame,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import {
   Card,
@@ -33,6 +36,14 @@ import {
   ClaimLootboxModal,
   type WonTraitData,
 } from "@/components/drops/ClaimLootboxModal";
+
+function XLogo(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 23.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 
 const RARITY_THEME: Record<
   string,
@@ -114,7 +125,8 @@ const CATEGORY_BADGE_STYLES: Record<string, string> = {
 };
 
 export default function DropsPage() {
-  const { status, login, busyMessage } = useSiweAuth();
+  const { status, login, busyMessage, walletAddress, sessionAddress } = useSiweAuth();
+  const address = sessionAddress || walletAddress;
 
   // Drop status state
   const [dropData, setDropData] = useState<CurrentDropResponse | null>(null);
@@ -127,6 +139,37 @@ export default function DropsPage() {
   const [claimedLootboxItem, setClaimedLootboxItem] = useState<WonTraitData | null>(null);
   const [lootboxError, setLootboxError] = useState<string | null>(null);
   const [claimedPeriodId, setClaimedPeriodId] = useState<string | null>(null);
+
+  // X Connection State
+  const [isConnectingX, setIsConnectingX] = useState<boolean>(false);
+  const [connectXError, setConnectXError] = useState<string | null>(null);
+
+  const handleConnectX = async () => {
+    setIsConnectingX(true);
+    setConnectXError(null);
+    try {
+      const res = await fetch("/api/social/x/connect");
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setConnectXError(data.message || "Failed to initiate X connection.");
+        setIsConnectingX(false);
+      }
+    } catch (err: unknown) {
+      setConnectXError((err as Error).message || "Network error connecting X.");
+      setIsConnectingX(false);
+    }
+  };
+
+  // Eligibility & Registration derivations
+  const userEligibility = dropData?.userEligibility;
+  const hasLinkedX = userEligibility !== undefined ? Boolean(userEligibility.hasLinkedX) : true;
+  const areTasksDone =
+    userEligibility !== undefined ? Boolean(userEligibility.areMandatoryTasksCompleted) : true;
+  const totalTasks = userEligibility?.totalMandatoryTasksCount ?? 0;
+  const completedTasks = userEligibility?.completedMandatoryTasksCount ?? 0;
+  const isUserEligible = userEligibility !== undefined ? Boolean(userEligibility.isEligible) : true;
 
   // Fetch current drop data
   const loadDropData = useCallback(async () => {
@@ -304,25 +347,26 @@ export default function DropsPage() {
       {/* Hero Banner - Brutalist Streetwear Style */}
       <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between border-b-2 border-gray-800 pb-8">
         <div className="space-y-3">
-          {/* Eyebrow Status Badges */}
-          <div className="flex flex-wrap items-center gap-2 font-mono-street text-[11px] uppercase tracking-wider">
-            <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 font-bold text-amber-300">
-              <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
-              CYCLE ACTIVE
-            </span>
-            <span className="border border-cyan-400/40 bg-cyan-400/10 px-2.5 py-0.5 font-bold text-cyan-300">
-              Elysium L2 // Hyperliquid
-            </span>
-          </div>
-
           <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl uppercase tracking-tight text-white leading-[0.9]">
             Trait Drops &amp; Lootbox Engine
           </h1>
 
           <p className="max-w-2xl text-sm sm:text-base leading-relaxed text-gray-300">
-            Claim periodic lootbox mystery pods to collect trait items across all 5 categories
-            (Background, Fur, Clothing, Headwear, Eyewear) required for Whitelist qualification on Elysium.
+            Claim periodic lootbox mystery pods to collect traits across all 5 categories.
           </p>
+
+          <div className="flex flex-wrap items-center gap-2.5 pt-1 font-mono-street text-[11px] uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 font-bold text-amber-300">
+              <span className="text-amber-400">⚡</span>
+              {dropData?.drop?.cycleDurationHours === 5
+                ? "5-Hour Hype Control Cycle"
+                : "2-Hour Drop Cycles"}
+            </span>
+            <span className="inline-flex items-center gap-1.5 border border-gray-700 bg-gray-900/80 px-2.5 py-1 font-bold text-gray-300">
+              <Clock className="h-3.5 w-3.5 text-cyan-400" />
+              30-Minute Claim Window
+            </span>
+          </div>
         </div>
       </div>
 
@@ -330,20 +374,13 @@ export default function DropsPage() {
         {/* Drops Cycle Status Card */}
         <div className="relative border-2 border-gray-800 bg-gradient-to-b from-[#11131c] via-[#0c0d15] to-[#08090d] p-6 sm:p-8 shadow-brutal transition-all">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-800 pb-5">
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-12 w-12 items-center justify-center border-2 border-amber-400/40 bg-amber-400/10 text-amber-400">
-                <Sparkles className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="font-display text-2xl uppercase tracking-wider text-white">
-                  Periodic Drop Cycle
-                </h2>
-                <p className="font-mono-street text-xs text-gray-400 uppercase tracking-wide mt-0.5">
-                  {dropData?.drop?.cycleDurationHours === 5
-                    ? "5-hour hype control cycle with a 30-minute claim window"
-                    : "2-hour drop cycles with a 30-minute claim window"}
-                </p>
-              </div>
+            <div>
+              <h2 className="font-display text-2xl uppercase tracking-wider text-white">
+                Periodic Drop Cycle
+              </h2>
+              <p className="font-mono-street text-xs text-gray-400 uppercase tracking-wide mt-0.5">
+                1 claim per EVM wallet per period cycle. Distributed with provable off-chain RNG and unique serial editions.
+              </p>
             </div>
 
             <div className="flex items-center gap-2.5">
@@ -356,18 +393,6 @@ export default function DropsPage() {
               >
                 <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-400" : ""}`} />
               </button>
-
-              {isWindowActive ? (
-                <div className="border-2 border-amber-400 bg-amber-400/15 px-3.5 py-1.5 font-mono-street text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
-                  <span className="h-2 w-2 animate-ping rounded-full bg-amber-400" />
-                  Claim Window Open ({formatRemaining(claimRemainingMs)})
-                </div>
-              ) : (
-                <div className="border-2 border-gray-700 bg-gray-900 px-3.5 py-1.5 font-mono-street text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-amber-400" />
-                  Next Drop in {formatRemaining(nextDropRemainingMs)}
-                </div>
-              )}
             </div>
           </div>
 
@@ -465,185 +490,174 @@ export default function DropsPage() {
                     </div>
                   </div>
 
-                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm">
-                    <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
-                      {isWindowActive ? "Claim Window Status" : "Next Drop Window"}
-                    </span>
-                    <p
-                      className={`mt-2 font-mono-street text-2xl font-black ${
-                        isWindowActive ? "text-amber-400" : "text-amber-300"
-                      }`}
-                    >
-                      {isWindowActive
-                        ? `${formatRemaining(claimRemainingMs)} left`
-                        : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
-                    </p>
-                    {isWindowActive && dropData.claimWindow?.endsAt && (
-                      <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
-                        Closes at {formatTimeWithUtc(dropData.claimWindow.endsAt)}
+                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm flex flex-col justify-between">
+                    <div>
+                      <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        {isWindowActive ? "Claim Window Status" : "Next Drop Window"}
                       </span>
-                    )}
-                    {!isWindowActive && periodEndsMs > 0 && (
-                      <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
-                        Cycle starts at {formatTimeWithUtc(periodEndsMs)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Drop Action & Status Console */}
-                <div className="border-2 border-amber-400/50 bg-[#0e1019] p-6 shadow-brutal-amber">
-                  <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
-                        <h3 className="font-display text-xl uppercase tracking-wider text-white">
-                          Lootbox Mystery Pod Claim
-                        </h3>
-                      </div>
-                      <p className="font-mono-street text-xs text-gray-300 uppercase leading-relaxed">
-                        1 claim per EVM wallet per period cycle. Distributed with provable off-chain RNG and unique serial editions.
+                      <p
+                        className={`mt-2 font-mono-street text-2xl font-black ${
+                          isWindowActive ? "text-amber-400" : "text-amber-300"
+                        }`}
+                      >
+                        {isWindowActive
+                          ? `${formatRemaining(claimRemainingMs)} left`
+                          : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
                       </p>
-                    </div>
-
-                    <div className="shrink-0">
-                      {claimLoading ? (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal sm:w-auto px-8 py-5"
-                          disabled
-                        >
-                          <span className="flex items-center gap-2">
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                            Claiming...
-                          </span>
-                        </Button>
-                      ) : status === "signing" ? (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal sm:w-auto px-8 py-5"
-                          disabled
-                        >
-                          <span className="flex items-center gap-2">
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                            {busyMessage || "Authenticating..."}
-                          </span>
-                        </Button>
-                      ) : status === "wallet-only" ? (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal hover:bg-amber-300 active:translate-x-1 active:translate-y-1 sm:w-auto px-8 py-5"
-                          onClick={() => void login()}
-                        >
-                          Sign In with Ethereum
-                        </Button>
-                      ) : status !== "authenticated" ? (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal hover:bg-amber-300 active:translate-x-1 active:translate-y-1 sm:w-auto px-8 py-5"
-                          onClick={() => void login()}
-                        >
-                          Connect Wallet
-                        </Button>
-                      ) : isAlreadyClaimed ? (
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className="w-full border-2 border-gray-800 bg-gray-900/80 px-6 py-4 font-mono-street text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 cursor-not-allowed opacity-70 sm:w-auto"
-                          disabled
-                        >
-                          <CheckCircle2 className="h-4 w-4 text-amber-400" />
-                          Claimed for Period #{dropData.period.periodIndex} (1/1)
-                        </Button>
-                      ) : isStockExhausted ? (
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className="w-full border-2 border-red-500/30 bg-red-500/10 px-6 py-4 font-mono-street text-xs font-bold text-red-300 uppercase tracking-wider cursor-not-allowed opacity-70 sm:w-auto"
-                          disabled
-                        >
-                          Period Stock Exhausted
-                        </Button>
-                      ) : isWindowActive ? (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          className="w-full border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal hover:bg-amber-300 active:translate-x-1 active:translate-y-1 sm:w-auto px-8 py-5 cursor-pointer"
-                          onClick={handleClaim}
-                        >
-                          Claim Trait Now ({formatRemaining(claimRemainingMs)})
-                        </Button>
-                      ) : (
-                        <div className="border-2 border-gray-800 bg-gray-900/60 px-6 py-4 font-mono-street text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-amber-400" />
-                          Next Drop in {formatRemaining(nextDropRemainingMs)}
-                        </div>
+                      {isWindowActive && dropData.claimWindow?.endsAt && (
+                        <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
+                          Closes at {formatTimeWithUtc(dropData.claimWindow.endsAt)}
+                        </span>
+                      )}
+                      {!isWindowActive && periodEndsMs > 0 && (
+                        <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
+                          Cycle starts at {formatTimeWithUtc(periodEndsMs)}
+                        </span>
                       )}
                     </div>
-                  </div>
 
-                  {claimMessage && (
-                    <p className="mt-4 flex items-center gap-2 rounded-lg border border-emerald-800/40 bg-emerald-950/30 p-3 text-xs text-emerald-400">
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                      <span>{claimMessage}</span>
-                    </p>
-                  )}
-                  {claimError && !isAlreadyClaimed && (
-                    <p className="mt-4 flex items-center gap-2 rounded-lg border border-rose-800/40 bg-rose-950/30 p-3 text-xs text-rose-400">
-                      <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
-                      <span>{claimError}</span>
-                    </p>
-                  )}
-                  {isAlreadyClaimed && !claimMessage && (
-                    <div className="mt-4 flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/50 p-3 text-xs text-gray-400">
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                      <span>
-                        You have claimed your 1 trait allocation for Period #{dropData.period.periodIndex}. Next drop cycle begins in {formatRemaining(nextDropRemainingMs)}.
-                      </span>
-                    </div>
-                  )}
+                    {((!isWindowActive && status !== "authenticated") ||
+                      isWindowActive ||
+                      isAlreadyClaimed ||
+                      isStockExhausted ||
+                      !hasLinkedX ||
+                      !areTasksDone ||
+                      claimMessage ||
+                      claimError) && (
+                      <div className="mt-4 pt-3 border-t border-gray-800/80">
+                        {claimLoading ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm"
+                            disabled
+                          >
+                            <span className="flex items-center justify-center gap-2">
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              Claiming...
+                            </span>
+                          </Button>
+                        ) : status === "signing" ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm"
+                            disabled
+                          >
+                            <span className="flex items-center justify-center gap-2">
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              {busyMessage || "Authenticating..."}
+                            </span>
+                          </Button>
+                        ) : status === "wallet-only" ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300"
+                            onClick={() => void login()}
+                          >
+                            Sign In with Ethereum
+                          </Button>
+                        ) : status !== "authenticated" ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300"
+                            onClick={() => void login()}
+                          >
+                            Connect Wallet to Register
+                          </Button>
+                        ) : !hasLinkedX ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full border border-black bg-cyan-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-cyan-300 flex items-center justify-center gap-2"
+                            onClick={handleConnectX}
+                            disabled={isConnectingX}
+                          >
+                            <XLogo className="h-4 w-4 shrink-0" />
+                            <span>{isConnectingX ? "Connecting X..." : "Link X (Twitter) to Register"}</span>
+                          </Button>
+                        ) : !areTasksDone ? (
+                          <Link
+                            href="/whitelist#tasks"
+                            className="w-full inline-flex items-center justify-center gap-1.5 border border-black bg-amber-400 font-display text-xs uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300 py-2 px-3 text-center"
+                          >
+                            <Flame className="h-4 w-4 text-black shrink-0" />
+                            <span>Complete Quests on Whitelist ({completedTasks}/{totalTasks})</span>
+                          </Link>
+                        ) : isAlreadyClaimed ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full border border-gray-800 bg-gray-900/80 font-mono-street text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-not-allowed opacity-70"
+                            disabled
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
+                            Claimed for Period #{dropData.period.periodIndex} (1/1)
+                          </Button>
+                        ) : isStockExhausted ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full border border-red-500/30 bg-red-500/10 font-mono-street text-[11px] font-bold text-red-300 uppercase tracking-wider cursor-not-allowed opacity-70"
+                            disabled
+                          >
+                            Period Stock Exhausted
+                          </Button>
+                        ) : isWindowActive ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300 cursor-pointer"
+                            onClick={handleClaim}
+                          >
+                            Claim Trait Now
+                          </Button>
+                        ) : null}
+
+                        {connectXError && (
+                          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
+                            <span>{connectXError}</span>
+                          </p>
+                        )}
+                        {claimMessage && (
+                          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono-street">
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                            <span>{claimMessage}</span>
+                          </p>
+                        )}
+                        {claimError && !isAlreadyClaimed && (
+                          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
+                            <span>{claimError}</span>
+                          </p>
+                        )}
+                        {isAlreadyClaimed && !claimMessage && (
+                          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-gray-400 font-mono-street">
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                            <span>
+                              You have claimed your 1 trait allocation for Period #{dropData.period.periodIndex}. Next drop cycle begins in {formatRemaining(nextDropRemainingMs)}.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Trait Inventory Pool */}
                 <div className="space-y-4 pt-2">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h3 className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-white uppercase">
-                        <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+                      <h3 className="text-xs font-bold tracking-wider text-white uppercase">
                         Drop Pool Inventory ({dropData.stock?.poolItems?.length ?? 0} Available Traits)
                       </h3>
                       <p className="text-[11px] text-gray-400">
                         Real-time trait stock and distribution directly from drop service
                       </p>
                     </div>
-
-                    {dropData.stock && (
-                      <div className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-[11px] font-mono">
-                        <span className="text-gray-400">Pool Stock:</span>
-                        <span className="font-bold text-emerald-400">
-                          {dropData.stock.totalRemaining} / {dropData.stock.totalAllocated}
-                        </span>
-                        <div className="ml-1 h-1.5 w-16 overflow-hidden rounded-full border border-gray-800 bg-gray-950">
-                          <div
-                            className="h-full bg-emerald-400 transition-all duration-500"
-                            style={{
-                              width: `${Math.min(
-                                100,
-                                Math.round(
-                                  ((dropData.stock.totalRemaining ?? 0) /
-                                    Math.max(1, dropData.stock.totalAllocated ?? 1)) *
-                                    100
-                                )
-                              )}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 ? (

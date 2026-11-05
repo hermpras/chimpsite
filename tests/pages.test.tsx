@@ -85,7 +85,7 @@ describe("Public Pages English Copy Rendering", () => {
     );
     expect(screen.getByText("Trait Drops & Lootbox Engine")).toBeInTheDocument();
     expect(screen.getByText("Periodic Drop Cycle")).toBeInTheDocument();
-    expect(screen.getByText("CYCLE ACTIVE")).toBeInTheDocument();
+    expect(screen.getByText(/1 claim per EVM wallet per period cycle/i)).toBeInTheDocument();
 
     for (const pattern of INDONESIAN_UI_WORDS) {
       expect(container.textContent).not.toMatch(pattern);

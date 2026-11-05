@@ -163,7 +163,7 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       render(<DropsPage />);
 
       expect(screen.getByText("Trait Drops & Lootbox Engine")).toBeInTheDocument();
-      expect(screen.getByText("CYCLE ACTIVE")).toBeInTheDocument();
+      expect(screen.getByText(/1 claim per EVM wallet per period cycle/i)).toBeInTheDocument();
       expect(screen.getByText(/Claim periodic lootbox mystery pods/i)).toBeInTheDocument();
 
       await waitFor(() => {
@@ -180,7 +180,10 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         expect(screen.getAllByText(/150/).length).toBeGreaterThanOrEqual(1);
         expect(screen.getByText(/\/ 200 Units/)).toBeInTheDocument();
         expect(
-          screen.getByText("2-hour drop cycles with a 30-minute claim window"),
+          screen.getByText("2-Hour Drop Cycles"),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText("30-Minute Claim Window"),
         ).toBeInTheDocument();
       });
     });
@@ -199,7 +202,7 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("5-hour hype control cycle with a 30-minute claim window"),
+          screen.getByText("5-Hour Hype Control Cycle"),
         ).toBeInTheDocument();
       });
     });
@@ -752,6 +755,80 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       expect(poolGrid?.className).toContain("sm:grid-cols-2");
       expect(poolGrid?.className).toContain("md:grid-cols-3");
       expect(poolGrid?.className).toContain("lg:grid-cols-4");
+    });
+  });
+
+  describe("16. Drop Eligibility: X Identity & Mandatory Quest Prerequisites", () => {
+    it("renders 'Link X (Twitter) to Register' button when user has not linked Twitter", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
+        ...mockActiveDrop,
+        userEligibility: {
+          isEligible: false,
+          hasWallet: true,
+          hasLinkedX: false,
+          xUsername: null,
+          totalMandatoryTasksCount: 2,
+          completedMandatoryTasksCount: 0,
+          areMandatoryTasksCompleted: false,
+          missingRequirements: ["Linked X (Twitter) account required."],
+        },
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        const linkBtn = screen.getByRole("button", { name: /Link X \(Twitter\) to Register/i });
+        expect(linkBtn).toBeInTheDocument();
+        expect(linkBtn).not.toBeDisabled();
+      });
+    });
+
+    it("renders 'Complete Quests on Whitelist' button linking to /whitelist#tasks when mandatory tasks are incomplete", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
+        ...mockActiveDrop,
+        userEligibility: {
+          isEligible: false,
+          hasWallet: true,
+          hasLinkedX: true,
+          xUsername: "chimphood_user",
+          totalMandatoryTasksCount: 2,
+          completedMandatoryTasksCount: 1,
+          areMandatoryTasksCompleted: false,
+          missingRequirements: ["Complete all mandatory campaign tasks (1/2 completed)."],
+        },
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        const questLink = screen.getByRole("link", { name: /Complete Quests on Whitelist \(1\/2\)/i });
+        expect(questLink).toBeInTheDocument();
+        expect(questLink).toHaveAttribute("href", "/whitelist#tasks");
+      });
+    });
+
+    it("renders 'Claim Trait Now' when user satisfies all eligibility prerequisites and window is active", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
+        ...mockActiveDrop,
+        userEligibility: {
+          isEligible: true,
+          hasWallet: true,
+          hasLinkedX: true,
+          xUsername: "chimphood_user",
+          totalMandatoryTasksCount: 2,
+          completedMandatoryTasksCount: 2,
+          areMandatoryTasksCompleted: true,
+          missingRequirements: [],
+        },
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        const claimBtn = screen.getByRole("button", { name: /Claim Trait Now/i });
+        expect(claimBtn).toBeInTheDocument();
+        expect(claimBtn).not.toBeDisabled();
+      });
     });
   });
 });
