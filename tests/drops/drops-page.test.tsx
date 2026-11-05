@@ -47,6 +47,16 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
 
   const mockActiveDrop: dropsClient.CurrentDropResponse = {
     active: true,
+    userEligibility: {
+      isEligible: true,
+      hasWallet: true,
+      hasLinkedX: true,
+      xUsername: "elychimp",
+      totalMandatoryTasksCount: 3,
+      completedMandatoryTasksCount: 3,
+      areMandatoryTasksCompleted: true,
+      missingRequirements: [],
+    },
     drop: {
       id: "drop-test-1",
       slug: "genesis-drops",
@@ -828,6 +838,20 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         const claimBtn = screen.getByRole("button", { name: /Claim Trait Now/i });
         expect(claimBtn).toBeInTheDocument();
         expect(claimBtn).not.toBeDisabled();
+      });
+    });
+
+    it("renders 'Verifying Registration...' and prevents flash of 'Claim Trait Now' while eligibility is being fetched", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
+        ...mockActiveDrop,
+        userEligibility: undefined,
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Verifying Registration.../i })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Claim Trait Now/i })).not.toBeInTheDocument();
       });
     });
   });

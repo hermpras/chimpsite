@@ -164,12 +164,12 @@ export default function DropsPage() {
 
   // Eligibility & Registration derivations
   const userEligibility = dropData?.userEligibility;
-  const hasLinkedX = userEligibility !== undefined ? Boolean(userEligibility.hasLinkedX) : true;
-  const areTasksDone =
-    userEligibility !== undefined ? Boolean(userEligibility.areMandatoryTasksCompleted) : true;
+  const isCheckingEligibility = status === "authenticated" && (isLoading || !userEligibility);
+  const hasLinkedX = Boolean(userEligibility?.hasLinkedX);
+  const areTasksDone = Boolean(userEligibility?.areMandatoryTasksCompleted);
   const totalTasks = userEligibility?.totalMandatoryTasksCount ?? 0;
   const completedTasks = userEligibility?.completedMandatoryTasksCount ?? 0;
-  const isUserEligible = userEligibility !== undefined ? Boolean(userEligibility.isEligible) : true;
+  const isUserEligible = Boolean(userEligibility?.isEligible);
 
   // Fetch current drop data
   const loadDropData = useCallback(async () => {
@@ -198,6 +198,9 @@ export default function DropsPage() {
     let isMounted = true;
     setIsLoading(true);
     setFetchError(null);
+    if (status === "authenticated") {
+      setDropData((prev) => (prev ? { ...prev, userEligibility: undefined } : null));
+    }
     fetchCurrentDrop()
       .then((data) => {
         if (isMounted) {
@@ -451,29 +454,29 @@ export default function DropsPage() {
               <div className="space-y-6">
                 {/* 3 Metric Cards */}
                 <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
-                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm">
+                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm flex flex-col justify-center items-center text-center">
                     <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
                       Period Cycle
                     </span>
-                    <p className="mt-2 font-display text-3xl font-black text-amber-400">
+                    <p className="my-1.5 font-display text-4xl font-black text-amber-400">
                       #{dropData.period.periodIndex}
                     </p>
-                    <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
+                    <span className="block font-mono-street text-[10px] text-gray-400 uppercase">
                       UTC Interval Synchronized
                     </span>
                   </div>
 
-                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm">
+                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm flex flex-col justify-center items-center text-center">
                     <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
                       Remaining Stock
                     </span>
-                    <p className="mt-2 font-mono-street text-2xl font-black text-cyan-300">
+                    <p className="my-1.5 font-mono-street text-2xl sm:text-3xl font-black text-cyan-300">
                       {dropData.stock?.totalRemaining ?? 0}{" "}
                       <span className="text-xs font-normal text-gray-400">
                         / {dropData.stock?.totalAllocated ?? 0} Units
                       </span>
                     </p>
-                    <div className="mt-3 h-2 w-full bg-black overflow-hidden border border-gray-800">
+                    <div className="mt-2 h-2 w-full max-w-[220px] bg-black overflow-hidden border border-gray-800">
                       <div
                         className="h-full bg-gradient-to-r from-cyan-500 to-amber-400 transition-all duration-500"
                         style={{
@@ -490,13 +493,13 @@ export default function DropsPage() {
                     </div>
                   </div>
 
-                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm flex flex-col justify-between">
+                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm flex flex-col justify-between text-center">
                     <div>
                       <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
                         {isWindowActive ? "Claim Window Status" : "Next Drop Window"}
                       </span>
                       <p
-                        className={`mt-2 font-mono-street text-2xl font-black ${
+                        className={`my-1.5 font-mono-street text-2xl sm:text-3xl font-black ${
                           isWindowActive ? "text-amber-400" : "text-amber-300"
                         }`}
                       >
@@ -505,12 +508,12 @@ export default function DropsPage() {
                           : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
                       </p>
                       {isWindowActive && dropData.claimWindow?.endsAt && (
-                        <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
+                        <span className="block font-mono-street text-[10px] text-gray-400 uppercase">
                           Closes at {formatTimeWithUtc(dropData.claimWindow.endsAt)}
                         </span>
                       )}
                       {!isWindowActive && periodEndsMs > 0 && (
-                        <span className="mt-1 block font-mono-street text-[10px] text-gray-400 uppercase">
+                        <span className="block font-mono-street text-[10px] text-gray-400 uppercase">
                           Cycle starts at {formatTimeWithUtc(periodEndsMs)}
                         </span>
                       )}
@@ -567,6 +570,18 @@ export default function DropsPage() {
                           >
                             Connect Wallet to Register
                           </Button>
+                        ) : isCheckingEligibility ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm cursor-wait"
+                            disabled
+                          >
+                            <span className="flex items-center justify-center gap-2">
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin text-black" />
+                              Verifying Registration...
+                            </span>
+                          </Button>
                         ) : !hasLinkedX ? (
                           <Button
                             variant="primary"
@@ -590,10 +605,10 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full border border-gray-800 bg-gray-900/80 font-mono-street text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-not-allowed opacity-70"
+                            className="w-full border border-emerald-500/40 bg-emerald-950/30 font-mono-street text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-90 py-2.5"
                             disabled
                           >
-                            <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
+                            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                             Claimed for Period #{dropData.period.periodIndex} (1/1)
                           </Button>
                         ) : isStockExhausted ? (
@@ -617,27 +632,27 @@ export default function DropsPage() {
                         ) : null}
 
                         {connectXError && (
-                          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
+                          <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
                             <span>{connectXError}</span>
                           </p>
                         )}
                         {claimMessage && (
-                          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono-street">
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                            <span>{claimMessage}</span>
-                          </p>
+                          <div className="mt-2.5 rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-center">
+                            <p className="font-mono-street text-xs font-semibold text-emerald-300">
+                              {claimMessage}
+                            </p>
+                          </div>
                         )}
                         {claimError && !isAlreadyClaimed && (
-                          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
+                          <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
                             <span>{claimError}</span>
                           </p>
                         )}
                         {isAlreadyClaimed && !claimMessage && (
-                          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-gray-400 font-mono-street">
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                            <span>
+                          <div className="mt-2.5 rounded border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-center">
+                            <span className="font-mono-street text-[10px] text-gray-400 uppercase">
                               You have claimed your 1 trait allocation for Period #{dropData.period.periodIndex}. Next drop cycle begins in {formatRemaining(nextDropRemainingMs)}.
                             </span>
                           </div>
