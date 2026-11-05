@@ -238,7 +238,7 @@ export default function DropsPage() {
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   };
 
-  // Helper to format timestamp with UTC and local timezone
+  // Helper to format timestamp with UTC (pure UTC standard, no local timezone leak)
   const formatTimeWithUtc = (dateInput?: string | Date | number | null): string => {
     if (!dateInput) return "";
     try {
@@ -247,15 +247,7 @@ export default function DropsPage() {
 
       const utcHours = String(d.getUTCHours()).padStart(2, "0");
       const utcMinutes = String(d.getUTCMinutes()).padStart(2, "0");
-      const utcStr = `${utcHours}:${utcMinutes} UTC`;
-
-      const localStr = d.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZoneName: "short",
-      });
-
-      return `${utcStr} (${localStr})`;
+      return `${utcHours}:${utcMinutes} UTC`;
     } catch {
       return "";
     }
@@ -276,10 +268,27 @@ export default function DropsPage() {
   const claimRemainingMs = Math.max(0, claimWindowEndsMs - currentTime);
   const nextDropRemainingMs = Math.max(0, periodEndsMs - currentTime);
 
+  // Active vs Upcoming period index & stock
+  const currentPeriodIndex = dropData?.period?.periodIndex ?? 1;
+  const displayPeriodIndex = isWindowActive ? currentPeriodIndex : currentPeriodIndex + 1;
+
+  const totalAllocated = dropData?.stock?.totalAllocated ?? 250;
+  const totalRemaining = dropData?.stock?.totalRemaining ?? 0;
+
+  // When window is active, show actual remaining stock from current period.
+  // When window has ended / cooldown, reset remaining stock to full allocated pool for upcoming cycle.
+  const displayRemainingStock = isWindowActive ? totalRemaining : totalAllocated;
+  const displayAllocatedStock = totalAllocated;
+  const displayStockPercentage = Math.min(
+    100,
+    Math.round((displayRemainingStock / Math.max(1, displayAllocatedStock)) * 100)
+  );
+
   // Period stock status
   const isStockExhausted = Boolean(
-    dropData?.stock?.isExhausted ||
-    (dropData?.stock && dropData.stock.totalRemaining <= 0)
+    isWindowActive &&
+      (dropData?.stock?.isExhausted ||
+        (dropData?.stock && dropData.stock.totalRemaining <= 0))
   );
 
   // Reset claim feedback & state whenever drop period rolls over
@@ -294,23 +303,25 @@ export default function DropsPage() {
   }, [dropData?.period?.id, claimedPeriodId]);
 
   const isAlreadyClaimed =
-    Boolean(dropData?.userHasClaimed) ||
-    Boolean(claimedPeriodId && claimedPeriodId === dropData?.period?.id) ||
-    Boolean(claimMessage && claimedPeriodId === dropData?.period?.id);
+    isWindowActive &&
+    (Boolean(dropData?.userHasClaimed) ||
+      Boolean(claimedPeriodId && claimedPeriodId === dropData?.period?.id) ||
+      Boolean(claimMessage && claimedPeriodId === dropData?.period?.id));
 
-  // Auto-refresh when a timer reaches 0 (throttled to avoid rapid repeated requests)
-  const lastAutoRefreshRef = React.useRef<number>(0);
+  // Auto-refresh when a timer reaches 0 (triggers rollover when next drop starts)
   useEffect(() => {
     if (!dropData?.active) return;
-    const now = Date.now();
-    if (now - lastAutoRefreshRef.current < 5000) return;
 
     if (isWindowActive && claimRemainingMs === 0 && claimWindowEndsMs > 0) {
-      lastAutoRefreshRef.current = now;
-      loadDropData();
+      const timer = setTimeout(() => {
+        void loadDropData();
+      }, 1000);
+      return () => clearTimeout(timer);
     } else if (!isWindowActive && nextDropRemainingMs === 0 && periodEndsMs > 0) {
-      lastAutoRefreshRef.current = now;
-      loadDropData();
+      const timer = setTimeout(() => {
+        void loadDropData();
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [claimRemainingMs, nextDropRemainingMs, isWindowActive, dropData?.active, claimWindowEndsMs, periodEndsMs, loadDropData]);
 
@@ -459,7 +470,7 @@ export default function DropsPage() {
                       Period Cycle
                     </span>
                     <p className="my-1.5 font-display text-4xl font-black text-amber-400">
-                      #{dropData.period.periodIndex}
+                      #{displayPeriodIndex}
                     </p>
                     <span className="block font-mono-street text-[10px] text-gray-400 uppercase">
                       UTC Interval Synchronized
@@ -471,23 +482,16 @@ export default function DropsPage() {
                       Remaining Stock
                     </span>
                     <p className="my-1.5 font-mono-street text-2xl sm:text-3xl font-black text-cyan-300">
-                      {dropData.stock?.totalRemaining ?? 0}{" "}
+                      {displayRemainingStock}{" "}
                       <span className="text-xs font-normal text-gray-400">
-                        / {dropData.stock?.totalAllocated ?? 0} Units
+                        / {displayAllocatedStock} Units
                       </span>
                     </p>
                     <div className="mt-2 h-2 w-full max-w-[220px] bg-black overflow-hidden border border-gray-800">
                       <div
                         className="h-full bg-gradient-to-r from-cyan-500 to-amber-400 transition-all duration-500"
                         style={{
-                          width: `${Math.min(
-                            100,
-                            Math.round(
-                              ((dropData.stock?.totalRemaining ?? 0) /
-                                Math.max(1, dropData.stock?.totalAllocated ?? 1)) *
-                                100
-                            )
-                          )}%`,
+                          width: `${displayStockPercentage}%`,
                         }}
                       />
                     </div>
@@ -520,6 +524,7 @@ export default function DropsPage() {
                     </div>
 
                     {((!isWindowActive && status !== "authenticated") ||
+                      !isWindowActive ||
                       isWindowActive ||
                       isAlreadyClaimed ||
                       isStockExhausted ||
@@ -629,7 +634,17 @@ export default function DropsPage() {
                           >
                             Claim Trait Now
                           </Button>
-                        ) : null}
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full border border-gray-800 bg-gray-900/60 font-mono-street text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed py-2.5"
+                            disabled
+                          >
+                            <Clock className="h-4 w-4 text-amber-400 shrink-0" />
+                            <span>Opens in {formatRemaining(nextDropRemainingMs)}</span>
+                          </Button>
+                        )}
 
                         {connectXError && (
                           <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
@@ -654,6 +669,13 @@ export default function DropsPage() {
                           <div className="mt-2.5 rounded border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-center">
                             <span className="font-mono-street text-[10px] text-gray-400 uppercase">
                               You have claimed your 1 trait allocation for Period #{dropData.period.periodIndex}. Next drop cycle begins in {formatRemaining(nextDropRemainingMs)}.
+                            </span>
+                          </div>
+                        )}
+                        {!isWindowActive && isUserEligible && (
+                          <div className="mt-2.5 rounded border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-center">
+                            <span className="font-mono-street text-[10px] text-gray-400 uppercase">
+                              Registered &amp; Ready for Period #{displayPeriodIndex}
                             </span>
                           </div>
                         )}
@@ -684,7 +706,7 @@ export default function DropsPage() {
                         const categoryStyle =
                           CATEGORY_BADGE_STYLES[item.category?.toUpperCase()] ||
                           "border-gray-800 bg-gray-900/80 text-gray-400";
-                        const isSoldOut = item.remainingStock <= 0;
+                        const isSoldOut = isWindowActive && item.remainingStock <= 0;
 
                         return (
                           <div
@@ -763,16 +785,17 @@ export default function DropsPage() {
                                 item.allocatedStock && item.allocatedStock > 0
                                   ? item.allocatedStock
                                   : Math.max(10, item.remainingStock);
+                              const currentRemaining = isWindowActive ? item.remainingStock : allocated;
                               const stockPercent = Math.max(
                                 0,
                                 Math.min(
                                   100,
-                                  Math.round((item.remainingStock / allocated) * 100)
+                                  Math.round((currentRemaining / allocated) * 100)
                                 )
                               );
                               const isLowStock =
                                 !isSoldOut &&
-                                (stockPercent <= 20 || item.remainingStock <= 2);
+                                (stockPercent <= 20 || currentRemaining <= 2);
 
                               return (
                                 <div className="mt-2.5 border-t border-gray-800/60 pt-1.5">
@@ -803,7 +826,7 @@ export default function DropsPage() {
                                               : "text-gray-200"
                                         }`}
                                       >
-                                        {item.remainingStock}
+                                        {currentRemaining}
                                       </span>
                                       <span className="text-gray-500">
                                         /{allocated} left

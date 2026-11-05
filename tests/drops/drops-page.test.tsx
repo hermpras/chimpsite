@@ -489,21 +489,36 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       });
     });
 
-    it("displays cycle start time with UTC in metric card when claim window is closed", async () => {
+    it("displays cycle start time with UTC in metric card and resets period/stock when claim window is closed", async () => {
       vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
         ...mockActiveDrop,
+        period: {
+          ...mockActiveDrop.period!,
+          periodIndex: 3686,
+        },
+        stock: {
+          totalRemaining: 248,
+          totalAllocated: 250,
+          isExhausted: false,
+          poolItems: mockActiveDrop.stock!.poolItems,
+        },
         claimWindow: {
           isActive: false,
           startsAt: pastDate,
           endsAt: pastDate,
           timeRemainingMs: 0,
         },
+        userHasClaimed: true,
       });
 
       render(<DropsPage />);
 
       await waitFor(() => {
         expect(screen.getByText(/Cycle starts at.*UTC/i)).toBeInTheDocument();
+        expect(screen.queryByText(/GMT\+/i)).not.toBeInTheDocument();
+        expect(screen.getByText("#3687")).toBeInTheDocument();
+        expect(screen.getByText("250")).toBeInTheDocument();
+        expect(screen.queryByText(/Claimed for Period/i)).not.toBeInTheDocument();
       });
     });
   });
