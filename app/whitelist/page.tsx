@@ -920,29 +920,14 @@ export default function WhitelistPage() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/30">
-                  <Palette className="h-4 w-4" />
-                </div>
                 <h1 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
                   Whitelist Portal
                 </h1>
-                <Badge variant="outline" className="border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-mono-street text-[11px] font-bold tracking-wider">
-                  ALLOWLIST LIVE
-                </Badge>
               </div>
               <p className="text-xs sm:text-sm text-zinc-400 font-mono-street">
                 Check allocation eligibility, registration status, and Elychimp Whitelist distribution details.
               </p>
             </div>
-
-            {statusResult?.program && (
-              <div className="self-start sm:self-auto rounded-xl border border-zinc-800 bg-zinc-900/80 px-3.5 py-1.5 text-right font-mono-street text-xs text-zinc-300">
-                <span className="font-bold text-amber-400">
-                  GTD Allocation: {statusResult.program.allocatedSlotsCount.toLocaleString()} /{" "}
-                  {statusResult.program.totalSlots.toLocaleString()} Slots
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Horizontal Five-Step Progress Indicator */}
@@ -1273,9 +1258,6 @@ export default function WhitelistPage() {
                         <Badge variant="default" className="text-[10px] bg-zinc-800 text-zinc-300 border-zinc-700 font-mono-street">
                           {campaign.status}
                         </Badge>
-                        <Badge variant="outline" className="text-[10px] bg-amber-950/40 text-amber-300 border-amber-500/40 font-mono-street font-semibold">
-                          Mandatory for WL
-                        </Badge>
                       </div>
                       {campaign.description && (
                         <p className="text-xs text-zinc-400 font-mono-street">
@@ -1328,15 +1310,6 @@ export default function WhitelistPage() {
                                     <span className="font-mono-street text-[10px] font-semibold text-zinc-500 uppercase">
                                       {taskMeta.label}
                                     </span>
-                                    {task.isRequired ? (
-                                      <Badge variant="default" className="border-amber-500/40 bg-amber-950/40 text-[10px] text-amber-300 font-mono-street font-semibold">
-                                        Mandatory
-                                      </Badge>
-                                    ) : (
-                                      <Badge variant="outline" className="text-[10px] text-zinc-400 border-zinc-700 bg-zinc-800/40 font-mono-street">
-                                        Optional
-                                      </Badge>
-                                    )}
                                     <span className="font-mono-street text-xs font-bold text-emerald-400">
                                       +{task.points} Pts
                                     </span>
@@ -1504,15 +1477,6 @@ export default function WhitelistPage() {
                                   <h4 className="text-xs sm:text-sm font-bold text-white font-mono-street">
                                     {task.title}
                                   </h4>
-                                  {task.isRequired ? (
-                                    <Badge variant="default" className="border-amber-500/40 bg-amber-950/40 text-[10px] text-amber-300 font-mono-street font-semibold">
-                                      Mandatory
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-[10px] text-zinc-400 border-zinc-700 bg-zinc-800/40 font-mono-street">
-                                      Optional
-                                    </Badge>
-                                  )}
                                   <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/40 bg-emerald-950/30 font-mono-street">
                                     +{task.points} Pts
                                   </Badge>
@@ -1675,9 +1639,6 @@ export default function WhitelistPage() {
                 {/* Character Preview Header */}
                 <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-400/10 text-amber-400 border border-amber-400/30">
-                      <Sparkles className="h-4 w-4" />
-                    </div>
                     <h3 className="font-display text-sm tracking-wide uppercase text-white">
                       Character & Wardrobe
                     </h3>
@@ -1803,9 +1764,6 @@ export default function WhitelistPage() {
               <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-5">
                 <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-400 border border-emerald-400/30">
-                      <ShieldCheck className="h-4 w-4" />
-                    </div>
                     <h3 className="font-display text-sm tracking-wide uppercase text-white">
                       Whitelist Status & Allocation
                     </h3>
@@ -1921,11 +1879,6 @@ export default function WhitelistPage() {
                             >
                               <div className="flex items-center gap-1.5 truncate">
                                 <span className="font-semibold text-zinc-200 truncate">{t.title}</span>
-                                {t.isRequired && (
-                                  <span className="text-[9px] text-amber-300 bg-amber-950/40 px-1 py-0.5 rounded border border-amber-500/40">
-                                    Mandatory
-                                  </span>
-                                )}
                               </div>
                               <span className="font-semibold text-emerald-400 shrink-0">
                                 {st.label}

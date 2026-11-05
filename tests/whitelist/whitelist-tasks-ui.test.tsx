@@ -124,8 +124,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
 
     expect(screen.getByText("Follow Official X Handle")).toBeInTheDocument();
     expect(screen.getByText("Community Art Contest")).toBeInTheDocument();
-    expect(screen.getByText("Mandatory")).toBeInTheDocument();
-    expect(screen.getByText("Optional")).toBeInTheDocument();
+    expect(screen.queryByText("Mandatory")).not.toBeInTheDocument();
     expect(screen.getByText("+50 Pts")).toBeInTheDocument();
     expect(screen.getByText("+100 Pts")).toBeInTheDocument();
 

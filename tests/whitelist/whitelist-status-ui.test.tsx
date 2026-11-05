@@ -511,8 +511,8 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     expect(directConnectXBtn).toBeInTheDocument();
   });
 
-  // 13. GTD Allocation capacity label format and color-themed trait category checklist
-  it("renders GTD Allocation capacity label and trait category checklist with responsive grid classes", async () => {
+  // 13. Whitelist portal header and color-themed trait category checklist
+  it("renders Whitelist portal header and trait category checklist with responsive grid classes", async () => {
     vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
       configured: true,
       program: {
@@ -541,7 +541,8 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("GTD Allocation: 450 / 1,000 Slots")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /Whitelist Portal/i })).toBeInTheDocument();
+      expect(screen.queryByText(/GTD Allocation/i)).not.toBeInTheDocument();
     });
 
     expect(screen.getByText("BG")).toBeInTheDocument();
