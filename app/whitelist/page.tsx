@@ -121,6 +121,30 @@ export default function WhitelistPage() {
     return null;
   });
 
+  // Check if URL hash explicitly targets a specific step (e.g., #tasks from the Drops page)
+  const getHashStep = (): number | null => {
+    if (typeof window === "undefined") return null;
+    const h = (window.location.hash || "").toLowerCase();
+    if (h === "#tasks" || h === "#task") return 3;
+    if (h === "#traits" || h === "#trait") return 4;
+    if (h === "#status") return 5;
+    if (h === "#wallet") return 1;
+    if (h === "#x" || h === "#x-sync") return 2;
+    return null;
+  };
+
+  const [selectedStep, setSelectedStep] = useState<number | null>(() => getHashStep());
+
+  useEffect(() => {
+    const handleHash = () => {
+      const step = getHashStep();
+      setSelectedStep(step);
+    };
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
+
   // Cached active step fallback to prevent flash of Step 1 during background SIWE / status resolution
   const [cachedActiveStep, setCachedActiveStep] = useState<number | null>(() => {
     if (typeof window !== "undefined") {
@@ -856,22 +880,35 @@ export default function WhitelistPage() {
             : 5;
 
   // Active step computation:
-  // If we have an existing connected wallet or session in progress and cached step is available,
-  // do not flash step 1 while background SIWE/status is resolving.
+  // 1. If explicit hash/step is targeted (e.g. #tasks from Drops page), honor it directly from frame 0.
+  // 2. If session in progress and cached step is available, do not flash step 1 while background SIWE/status is resolving.
+  // 3. Otherwise, use calculatedStep.
   const activeStepNumber =
-    (status === "checking" || (isWalletConnected && !statusResult)) && cachedActiveStep
-      ? cachedActiveStep
-      : calculatedStep;
+    selectedStep !== null
+      ? selectedStep
+      : (status === "checking" || (isWalletConnected && !statusResult)) && cachedActiveStep
+        ? cachedActiveStep
+        : calculatedStep;
 
   // Persist the verified active step once determined
   useEffect(() => {
-    if (typeof window !== "undefined" && status !== "checking" && calculatedStep) {
+    if (typeof window !== "undefined" && status !== "checking" && calculatedStep && selectedStep === null) {
       try {
         sessionStorage.setItem("elychimp_wl_active_step", String(calculatedStep));
         setCachedActiveStep(calculatedStep);
       } catch {}
     }
-  }, [calculatedStep, status]);
+  }, [calculatedStep, status, selectedStep]);
+
+  // Smooth scroll to target hash section if explicitly requested (e.g. #tasks)
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#tasks") {
+      const el = document.getElementById("tasks");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }, [activeStepNumber]);
 
   return (
     <div className="min-h-screen bg-[#08090d] text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -921,13 +958,30 @@ export default function WhitelistPage() {
                 const isActive = activeStepNumber === step.num;
                 return (
                   <React.Fragment key={step.label}>
-                    <div
-                      className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl border transition-all font-mono-street text-xs ${
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedStep(step.num);
+                        const targetHash =
+                          step.num === 3
+                            ? "#tasks"
+                            : step.num === 4
+                              ? "#traits"
+                              : step.num === 5
+                                ? "#status"
+                                : step.num === 2
+                                  ? "#x"
+                                  : "#wallet";
+                        if (typeof window !== "undefined") {
+                          window.history.replaceState(null, "", targetHash);
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl border transition-all font-mono-street text-xs cursor-pointer hover:border-amber-400/80 ${
                         step.done
                           ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-semibold"
                           : isActive
                             ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-bold shadow-[0_0_12px_rgba(251,191,36,0.2)]"
-                            : "border-zinc-800 bg-zinc-900/40 text-zinc-500"
+                            : "border-zinc-800 bg-zinc-900/40 text-zinc-500 hover:text-zinc-300"
                       }`}
                     >
                       <span
@@ -942,7 +996,7 @@ export default function WhitelistPage() {
                         {step.done ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : step.num}
                       </span>
                       <span className="tracking-wide uppercase">{step.label}</span>
-                    </div>
+                    </button>
                     {idx < 4 && (
                       <div
                         className={`hidden sm:block flex-1 h-0.5 min-w-3 ${
