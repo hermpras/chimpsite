@@ -122,14 +122,6 @@ export function SyndicateShareCardModal({
         year: "numeric",
       });
 
-  // Machine Readable Zone sanitization
-  const safeName = (xName || xUsername || "MEMBER")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
-  const mrzName = (safeName + "<<<<<<<<<<<<<<<<<<<<<<").slice(0, 18);
-  const cleanAddr = (address || "0X0000").toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const mrzWallet = (cleanAddr + "<<<<<<<<<<<<<<<<<<<<<<").slice(0, 10);
-
   const tweetText = isGtd
     ? `Verified by the @Elychimp Syndicate! 🐒🔥\n\nOfficial Clearance Pass secured on @Enter_elysium (Hyperliquid L2).\n\nRule the streets:`
     : `Registered with the @Elychimp Syndicate! 🐒💨 Verified clearance on @Enter_elysium (Hyperliquid L2).\n\nRule the streets:`;
@@ -581,33 +573,25 @@ export function SyndicateShareCardModal({
       ctx.textAlign = "center";
       ctx.fillText("elychimp.xyz", pillUrlX + pillUrlW / 2, pillUrlY + 22);
 
-      // 8. Bottom Machine Readable Zone (MRZ)
-      const mrzY = cardY + cardH - 58;
-      const mrzH = 58;
+      // 8. Bottom Serial Strip
+      const bottomBarY = cardY + cardH - 50;
+      const bottomBarH = 50;
 
       ctx.fillStyle = "#edeef2";
-      ctx.fillRect(cardX, mrzY, cardW, mrzH);
+      ctx.fillRect(cardX, bottomBarY, cardW, bottomBarH);
 
       ctx.strokeStyle = "rgba(0, 0, 0, 0.1)";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(cardX, mrzY);
-      ctx.lineTo(cardX + cardW, mrzY);
+      ctx.moveTo(cardX, bottomBarY);
+      ctx.lineTo(cardX + cardW, bottomBarY);
       ctx.stroke();
 
-      ctx.fillStyle = "#4b5563";
+      ctx.fillStyle = "#374151";
       ctx.font = "bold 13px 'Space Mono', monospace";
-      ctx.textAlign = "left";
-      ctx.fillText(
-        `DOF<${isGtd ? "GTD" : "FCFS"}<<${mrzName}<<<<<<<<<<<<<<<<<<<<<<<<<`,
-        cardX + 22,
-        mrzY + 24
-      );
-      ctx.fillText(
-        `P<${paddedNum}<${mrzWallet}<ELYCHIMP<HYPERLIQUID<<<<<<<<<<`,
-        cardX + 22,
-        mrzY + 44
-      );
+      ctx.textAlign = "center";
+      const serialText = `SERIAL: ELY-${isGtd ? "GTD" : "FCFS"}-${paddedNum}  •  elychimp.xyz`;
+      ctx.fillText(serialText, cardX + cardW / 2, bottomBarY + 30);
 
       ctx.restore(); // restore card clipping
 
@@ -654,8 +638,6 @@ export function SyndicateShareCardModal({
     address,
     avatarUrl,
     formattedDate,
-    mrzName,
-    mrzWallet,
   ]);
 
   const handleCopyLink = () => {
@@ -833,14 +815,9 @@ export function SyndicateShareCardModal({
                 </div>
               </div>
 
-              {/* Bottom Machine Readable Zone (MRZ) */}
-              <div className="border-t border-zinc-200 bg-[#edeef2] px-3 sm:px-4 py-1.5 sm:py-2 font-mono text-[8px] sm:text-[10px] tracking-[0.18em] text-zinc-600 select-all uppercase leading-relaxed">
-                <p className="truncate">
-                  DOF&lt;{isGtd ? "GTD" : "FCFS"}&lt;&lt;{mrzName}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
-                </p>
-                <p className="truncate">
-                  P&lt;{paddedNum}&lt;{mrzWallet}&lt;ELYCHIMP&lt;HYPERLIQUID&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
-                </p>
+              {/* Bottom Serial Strip */}
+              <div className="border-t border-zinc-200 bg-[#edeef2] px-3 sm:px-4 py-2 text-center font-mono-street text-[9px] sm:text-[11px] font-bold tracking-wider text-zinc-700 select-all uppercase">
+                SERIAL: ELY-{isGtd ? "GTD" : "FCFS"}-{paddedNum} &bull; elychimp.xyz
               </div>
             </div>
 

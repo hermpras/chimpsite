@@ -2063,7 +2063,7 @@ export default function WhitelistPage() {
                                    ))}
                                  </div>
                                  <span className="font-mono-street text-[9px] text-amber-400/60 uppercase tracking-widest">
-                                   SERIAL: ELY-GTD-{paddedSlot}-HYPERL2
+                                   SERIAL: ELY-GTD-{paddedSlot}
                                  </span>
                                  <div className="flex items-center gap-1 opacity-50">
                                    {[1,3,2,4,1,5,2,3,1,4,2].map((h, i) => (
@@ -2166,7 +2166,7 @@ export default function WhitelistPage() {
                                  <div className="space-y-0.5">
                                    <p className="font-mono-street text-[10px] font-bold text-emerald-300 uppercase tracking-wider">All 5 Requirements Satisfied ✓</p>
                                    <p className="font-mono-street text-zinc-500 text-[10px] leading-relaxed">
-                                     Your wallet is eligible for inclusion in the FCFS allowlist export.
+                                     Your wallet is eligible for inclusion in the OpenSea FCFS allowlist export.
                                    </p>
                                  </div>
                                </div>
@@ -2219,7 +2219,7 @@ export default function WhitelistPage() {
                                    ))}
                                  </div>
                                  <span className="font-mono-street text-[9px] text-cyan-400/60 uppercase tracking-widest">
-                                   SERIAL: ELY-FCFS-{paddedQueue}-HYPERL2
+                                   SERIAL: ELY-FCFS-{paddedQueue}
                                  </span>
                                  <div className="flex items-center gap-1 opacity-50">
                                    {[1,3,2,4,1,5,2,3,1,4,2].map((h, i) => (
