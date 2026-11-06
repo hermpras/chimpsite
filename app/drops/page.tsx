@@ -36,14 +36,7 @@ import {
   ClaimLootboxModal,
   type WonTraitData,
 } from "@/components/drops/ClaimLootboxModal";
-
-function XLogo(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 23.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
+import { XLogo } from "@/components/icons/XLogo";
 
 const RARITY_THEME: Record<
   string,
@@ -523,17 +516,8 @@ export default function DropsPage() {
                       )}
                     </div>
 
-                    {((!isWindowActive && status !== "authenticated") ||
-                      !isWindowActive ||
-                      isWindowActive ||
-                      isAlreadyClaimed ||
-                      isStockExhausted ||
-                      !hasLinkedX ||
-                      !areTasksDone ||
-                      claimMessage ||
-                      claimError) && (
-                      <div className="mt-4 pt-3 border-t border-gray-800/80">
-                        {claimLoading ? (
+                    <div className="mt-4 pt-3 border-t border-gray-800/80">
+                      {claimLoading ? (
                           <Button
                             variant="primary"
                             size="sm"
@@ -680,7 +664,6 @@ export default function DropsPage() {
                           </div>
                         )}
                       </div>
-                    )}
                   </div>
                 </div>
 

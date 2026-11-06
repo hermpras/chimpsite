@@ -28,7 +28,7 @@ body {
 }
 
 .font-mono-street {
-  font-family: "Space Mono", monospace;
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 /* Brutalist Shadows & Street Aesthetics */
@@ -62,4 +62,12 @@ body {
 
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+    width: 100%;
+    overflow-x: auto;
+  }
 }

@@ -202,10 +202,53 @@ export function ClaimLootboxModal({
   const [messageIndex, setMessageIndex] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [minRollingDone, setMinRollingDone] = useState(false);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
   const soundEnabledRef = useRef(soundEnabled);
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
   }, [soundEnabled]);
+
+  // Focus trap & Escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (phase !== "ROLLING") {
+          onClose();
+        }
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const container = modalContainerRef.current;
+        if (!container) return;
+
+        const focusable = container.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const firstElement = focusable[0];
+        const lastElement = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, phase, onClose]);
 
   // Reset or initialize when modal opens
   useEffect(() => {
@@ -298,6 +341,7 @@ export function ClaimLootboxModal({
 
   return (
     <div
+      ref={modalContainerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="lootbox-title"

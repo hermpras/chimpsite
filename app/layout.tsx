@@ -30,9 +30,15 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-screen flex-col bg-[#08090d] text-gray-100 antialiased selection:bg-amber-400 selection:text-black">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:border-2 focus:border-black focus:bg-amber-400 focus:px-4 focus:py-2 focus:font-mono-street focus:text-xs focus:font-bold focus:text-black focus:shadow-brutal focus:outline-none"
+        >
+          Skip to main content
+        </a>
         <Providers>
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1">{children}</main>
           <Footer />
         </Providers>
       </body>
