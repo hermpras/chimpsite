@@ -164,21 +164,28 @@ export function SyndicateShareCardModal({
       ctx.fillStyle = primaryColor;
       ctx.font = "bold 14px 'Space Mono', monospace";
       ctx.textAlign = "left";
-      ctx.fillText(isGtd ? "ELYCHIMP SYNDICATE // GUARANTEED ALLOCATION" : "ELYCHIMP SYNDICATE // FCFS DIRECTORY", 60, 80);
+      ctx.fillText(isGtd ? "ELYCHIMP SYNDICATE • GUARANTEED ALLOCATION" : "ELYCHIMP SYNDICATE • FCFS DIRECTORY", 60, 80);
 
       ctx.fillStyle = "#ffffff";
       ctx.font = "900 36px 'Anton', impact, sans-serif";
       ctx.fillText(isGtd ? "GTD MINTER PASS" : "FCFS CLEARANCE PASS", 60, 125);
 
-      // Large Slot Number on Right
-      ctx.textAlign = "right";
-      ctx.fillStyle = primaryColor;
-      ctx.font = "900 48px 'Anton', impact, sans-serif";
-      ctx.fillText(`#${paddedNum}`, width - 60, 125);
+      // Load and draw Elychimp Brand Logo on Right (replacing slot #)
+      const logoImg = new Image();
+      logoImg.crossOrigin = "anonymous";
+      logoImg.src = "/images/elychimp-logo.png";
+      await new Promise<void>((resolve) => {
+        logoImg.onload = () => resolve();
+        logoImg.onerror = () => resolve();
+      });
 
-      ctx.font = "bold 12px 'Space Mono', monospace";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-      ctx.fillText(isGtd ? "SLOT INDEX" : "QUEUE INDEX", width - 60, 80);
+      if (logoImg.naturalWidth > 0 && logoImg.naturalHeight > 0) {
+        const logoHeight = 58;
+        const logoWidth = logoHeight * (logoImg.naturalWidth / logoImg.naturalHeight);
+        const logoX = width - 60 - logoWidth;
+        const logoY = 70;
+        ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+      }
 
       // Header divider line
       ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
@@ -380,17 +387,18 @@ export function SyndicateShareCardModal({
               <span className={`font-mono-street text-[10px] font-bold uppercase tracking-widest ${isGtd ? "text-amber-400" : "text-cyan-400"}`}>
                 ELYCHIMP SYNDICATE
               </span>
-              <p className="font-display text-lg uppercase tracking-wider text-white">
+              <p className="font-display text-lg sm:text-xl uppercase tracking-wider text-white">
                 {isGtd ? "GTD Minter Pass" : "FCFS Clearance Pass"}
               </p>
             </div>
-            <div className="text-right">
-              <span className="font-mono-street text-[9px] uppercase tracking-wider text-zinc-400">
-                {isGtd ? "Slot #" : "Queue #"}
-              </span>
-              <p className={`font-display text-2xl leading-none ${isGtd ? "text-amber-300" : "text-cyan-300"}`}>
-                #{paddedNum}
-              </p>
+            {/* Brand Logo replacing Slot # */}
+            <div className="flex items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/elychimp-logo.png"
+                alt="Elychimp Logo"
+                className="h-8 sm:h-9 w-auto object-contain drop-shadow-[0_2px_10px_rgba(255,255,255,0.15)]"
+              />
             </div>
           </div>
 

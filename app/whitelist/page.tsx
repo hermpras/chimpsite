@@ -1957,7 +1957,7 @@ export default function WhitelistPage() {
                               <div className="flex items-center gap-2">
                                 <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
                                 <span className="font-mono-street text-[10px] font-bold text-amber-400 uppercase tracking-widest">
-                                  ELYCHIMP SYNDICATE // CLEARANCE PASS
+                                  ELYCHIMP SYNDICATE • CLEARANCE PASS
                                 </span>
                               </div>
                               <h4 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
@@ -2099,7 +2099,7 @@ export default function WhitelistPage() {
                               <div className="flex items-center gap-2">
                                 <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
                                 <span className="font-mono-street text-[10px] font-bold text-cyan-400 uppercase tracking-widest">
-                                  FCFS DIRECTORY // PARTICIPANT PASS
+                                  FCFS DIRECTORY • PARTICIPANT PASS
                                 </span>
                               </div>
                               <h4 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
