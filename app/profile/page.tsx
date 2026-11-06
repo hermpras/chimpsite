@@ -473,16 +473,11 @@ function ProfileContent() {
             onRefresh={handleRefreshAll}
             className="border-2 border-amber-400/50 rounded-2xl shadow-brutal-sm [image-rendering:pixelated]"
           />
-          <div className="space-y-1.5 flex-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+          <div className="space-y-2 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-wider text-white">
                 {displayName}
               </h1>
-              {isXConnected && currentXUsername && currentXName && (
-                <span className="font-mono-street text-xs text-zinc-400">
-                  @{currentXUsername}
-                </span>
-              )}
             </div>
             <p className="font-mono-street text-xs sm:text-sm text-zinc-400">
               One account for your X account and wallets; allowlists, trait drops, and gear follow it.
