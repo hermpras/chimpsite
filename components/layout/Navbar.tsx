@@ -9,9 +9,8 @@ import { useSiweAuth } from "@/hooks/useSiweAuth";
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/drops", label: "Drops" },
   { href: "/whitelist", label: "Whitelist" },
-  { href: "/profile", label: "Profile" },
+  { href: "/drops", label: "Drops" },
   { href: "/docs", label: "Docs" },
 ];
 

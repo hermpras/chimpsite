@@ -28,14 +28,11 @@ export function Footer() {
           <Link href="/" className="transition-colors hover:text-amber-400">
             Home
           </Link>
-          <Link href="/drops" className="transition-colors hover:text-amber-400">
-            Drops
-          </Link>
           <Link href="/whitelist" className="transition-colors hover:text-amber-400">
             Whitelist
           </Link>
-          <Link href="/profile" className="transition-colors hover:text-amber-400">
-            Profile
+          <Link href="/drops" className="transition-colors hover:text-amber-400">
+            Drops
           </Link>
           <Link href="/docs" className="transition-colors hover:text-amber-400">
             Docs

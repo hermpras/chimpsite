@@ -4,6 +4,7 @@ import { useSiweAuth } from "./useSiweAuth";
 
 interface XIdentityState {
   xUsername: string | null;
+  xName: string | null;
   xProfileImageUrl: string | null;
   isConnected: boolean;
 }
@@ -20,13 +21,14 @@ export function useXIdentity(): XIdentityState {
   const { status } = useSiweAuth();
   const [state, setState] = useState<XIdentityState>({
     xUsername: null,
+    xName: null,
     xProfileImageUrl: null,
     isConnected: false,
   });
 
   const fetchXStatus = useCallback(async () => {
     if (status !== "authenticated") {
-      setState({ xUsername: null, xProfileImageUrl: null, isConnected: false });
+      setState({ xUsername: null, xName: null, xProfileImageUrl: null, isConnected: false });
       return;
     }
     try {
@@ -36,11 +38,13 @@ export function useXIdentity(): XIdentityState {
         connected?: boolean;
         identity?: {
           username?: string;
+          name?: string;
           profileImageUrl?: string;
         };
       };
       setState({
         xUsername: data?.identity?.username ?? null,
+        xName: data?.identity?.name ?? null,
         xProfileImageUrl: data?.identity?.profileImageUrl ?? null,
         isConnected: Boolean(data?.connected),
       });
