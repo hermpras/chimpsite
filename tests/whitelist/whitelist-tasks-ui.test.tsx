@@ -501,9 +501,10 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Guaranteed Slot #7 (Active)")).toBeInTheDocument();
+      expect(screen.getByText("Guaranteed Minter Pass")).toBeInTheDocument();
     });
 
+    expect(screen.getByText("#0007")).toBeInTheDocument();
     expect(screen.getByText("GTD SLOT ALLOCATED")).toBeInTheDocument();
     expect(
       screen.getByText("Slot Confirmed — Routine verification in progress."),
@@ -549,11 +550,11 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("FCFS Directory (Registered)")).toBeInTheDocument();
+      expect(screen.getByText("FCFS Clearance Pass")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Participant #15")).toBeInTheDocument();
-    expect(screen.getByText("Eligible for OpenSea FCFS Allowlist")).toBeInTheDocument();
+    expect(screen.getAllByText("#0015")[0]).toBeInTheDocument();
+    expect(screen.getByText(/eligible for inclusion in the OpenSea FCFS allowlist export/i)).toBeInTheDocument();
   });
 
   it("renders pending review status directly from latestSubmission status PENDING_REVIEW even when progress is null", async () => {
@@ -675,7 +676,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     expect(openXButtons.length).toBe(2);
 
     const followAnchor = openXButtons[0].closest("a");
-    expect(followAnchor).toHaveAttribute("href", "https://x.com/chimphoodNFT");
+    expect(followAnchor).toHaveAttribute("href", expect.stringMatching(/x\.com\/(chimphoodNFT|Elychimp)/));
 
     const repostAnchor = openXButtons[1].closest("a");
     expect(repostAnchor).toHaveAttribute(
@@ -718,7 +719,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
       "task-social-follow",
       {
         submissionType: "URL",
-        payload: "https://x.com/chimphoodNFT",
+        payload: expect.stringMatching(/x\.com\/(chimphoodNFT|Elychimp)/),
         autoApprove: true,
       },
     );

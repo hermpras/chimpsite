@@ -23,11 +23,14 @@ import {
   ChevronDown,
   ChevronUp,
   Palette,
+  Download,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
+import { useXIdentity } from "@/hooks/useXIdentity";
+import { SyndicateShareCardModal } from "@/components/whitelist/SyndicateShareCardModal";
 import {
   fetchWhitelistStatus,
   type WhitelistStatusResponse,
@@ -92,6 +95,8 @@ export default function WhitelistPage() {
     dismissError,
   } = useSiweAuth();
   const address = sessionAddress || walletAddress;
+  const { xName } = useXIdentity();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const handleConnectWallet = () => {
     login?.();
@@ -1658,6 +1663,15 @@ export default function WhitelistPage() {
                   <p className="text-[11px] text-zinc-400 font-mono-street">
                     {heldCategories.length} / 5 Categories Completed
                   </p>
+                  {isTraitsComplete && (
+                    <button
+                      onClick={() => setIsShareModalOpen(true)}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-400/40 bg-amber-950/40 px-3 py-1.5 text-[11px] font-mono-street font-bold text-amber-300 hover:bg-amber-900/50 hover:border-amber-400 transition-colors cursor-pointer"
+                    >
+                      <Download className="h-3 w-3" />
+                      <span>Download Share Card</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Five Trait Categories (Owned in Color, Missing in Grayscale) */}
@@ -2021,8 +2035,18 @@ export default function WhitelistPage() {
                             </div>
                           </div>
 
-                          {/* Action Buttons: Share on X Flex Button */}
-                          <div className="pt-1">
+                          {/* Action Buttons: Download Pass Card & Share on X */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                            <Button
+                              type="button"
+                              onClick={() => setIsShareModalOpen(true)}
+                              variant="outline"
+                              size="lg"
+                              className="w-full gap-2 rounded-xl border-amber-400/50 bg-amber-950/30 text-amber-300 hover:bg-amber-900/40 hover:border-amber-400 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                            >
+                              <Download className="h-4 w-4 text-amber-400" />
+                              <span>Download Pass Card</span>
+                            </Button>
                             <a
                               href={tweetHref}
                               target="_blank"
@@ -2032,11 +2056,11 @@ export default function WhitelistPage() {
                               <Button
                                 variant="primary"
                                 size="lg"
-                                className="w-full gap-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:bg-amber-300 font-mono-street font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                className="w-full gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:bg-amber-300 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
                               >
-                                <XLogo className="h-4 w-4 fill-black" />
-                                <span>Share Clearance on X</span>
-                                <ExternalLink className="h-3.5 w-3.5" />
+                                <XLogo className="h-3.5 w-3.5 fill-black" />
+                                <span>Share on X</span>
+                                <ExternalLink className="h-3 w-3" />
                               </Button>
                             </a>
                           </div>
@@ -2144,24 +2168,36 @@ export default function WhitelistPage() {
                             </div>
                           </div>
 
-                          {/* Share Button for FCFS */}
+                          {/* Action Buttons for FCFS */}
                           {statusResult.status.isFullyQualified && (
-                            <a
-                              href={tweetHref}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block w-full pt-1"
-                            >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                               <Button
-                                variant="primary"
+                                type="button"
+                                onClick={() => setIsShareModalOpen(true)}
+                                variant="outline"
                                 size="lg"
-                                className="w-full gap-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono-street font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                className="w-full gap-2 rounded-xl border-cyan-400/50 bg-cyan-950/30 text-cyan-300 hover:bg-cyan-900/40 hover:border-cyan-400 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
                               >
-                                <XLogo className="h-4 w-4 fill-black" />
-                                <span>Share FCFS Standing on X</span>
-                                <ExternalLink className="h-3.5 w-3.5" />
+                                <Download className="h-4 w-4 text-cyan-400" />
+                                <span>Download Pass Card</span>
                               </Button>
-                            </a>
+                              <a
+                                href={tweetHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-full"
+                              >
+                                <Button
+                                  variant="primary"
+                                  size="lg"
+                                  className="w-full gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                >
+                                  <XLogo className="h-3.5 w-3.5 fill-black" />
+                                  <span>Share on X</span>
+                                  <ExternalLink className="h-3 w-3" />
+                                </Button>
+                              </a>
+                            </div>
                           )}
 
                           {/* Notice */}
@@ -2218,6 +2254,22 @@ export default function WhitelistPage() {
           </div>
         </div>
       </div>
+
+      {/* Shareable Collectible Avatar & Pass Card Modal */}
+      <SyndicateShareCardModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        slotNumber={statusResult?.status?.slotNumber}
+        queueNumber={statusResult?.status?.queueNumber}
+        phase={statusResult?.status?.phase}
+        isFullyQualified={statusResult?.status?.isFullyQualified}
+        address={address ?? undefined}
+        xUsername={statusResult?.status?.details?.xUsername}
+        xName={xName ?? undefined}
+        avatarUrl={address ? `/api/renders/avatar/${encodeURIComponent(address)}` : undefined}
+        heldCategoriesCount={heldCategories.length}
+        allocatedAt={statusResult?.status?.allocatedAt ?? statusResult?.status?.joinedAt}
+      />
     </div>
   );
 }
