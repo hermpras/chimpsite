@@ -369,7 +369,7 @@ export function SyndicateShareCardModal({
 
       ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
       ctx.font = "bold 11px 'Space Mono', monospace";
-      ctx.fillText("OFFICE OF INTAKE AND CLASSIFICATION", cardX + 115, cardY + 65);
+      ctx.fillText("OFFICIAL SYNDICATE ID BADGE", cardX + 115, cardY + 65);
 
       // Washi Tape on Right with CASE NO. (angled scotch tape)
       ctx.save();
@@ -388,10 +388,10 @@ export function SyndicateShareCardModal({
       ctx.fillStyle = "#064e3b";
       ctx.font = "bold 9px 'Space Mono', monospace";
       ctx.textAlign = "left";
-      ctx.fillText("CASE NO.", 12, 18);
+      ctx.fillText("SLOT NO.", 12, 18);
 
       ctx.font = "900 18px 'Space Mono', monospace";
-      ctx.fillText(`P-${paddedNum}`, 12, 38);
+      ctx.fillText(`#${paddedNum}`, 12, 38);
       ctx.restore();
 
       // 5. Left: Character Photo ID Box
@@ -726,17 +726,17 @@ export function SyndicateShareCardModal({
                       Elychimp Syndicate
                     </h4>
                     <span className="font-mono-street text-[8px] sm:text-[10px] text-emerald-200 tracking-wider">
-                      Office of Intake and Classification
+                      Official Syndicate ID Badge
                     </span>
                   </div>
                 </div>
 
-                {/* Taped Case No. Tag */}
+                {/* Taped Slot No. Tag */}
                 <div className="relative -rotate-2 rounded-sm bg-emerald-300/90 px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono-street text-[9px] sm:text-[11px] text-emerald-950 shadow-sm border border-emerald-400/80 font-bold">
                   <span className="block text-[7px] uppercase tracking-widest text-emerald-900 leading-none">
-                    CASE NO.
+                    SLOT NO.
                   </span>
-                  <span>P-{paddedNum}</span>
+                  <span>#{paddedNum}</span>
                 </div>
               </div>
 
