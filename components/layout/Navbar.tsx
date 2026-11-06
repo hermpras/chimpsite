@@ -53,6 +53,11 @@ export function Navbar() {
     };
   }, [mobileMenuOpen]);
 
+  // Close mobile menu on page navigation
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-800/80 bg-[#08090d]/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -166,7 +171,7 @@ export function Navbar() {
           </nav>
 
           <div className="mt-6 border-t border-gray-800/80 pt-5 flex justify-center">
-            <WalletButton />
+            <WalletButton align="center" onAction={() => setMobileMenuOpen(false)} />
           </div>
         </div>
       )}

@@ -19,8 +19,20 @@ import { Wallet, ChevronDown, User, LogOut, LogIn, Loader2 } from "lucide-react"
  * - Authenticated: address chip with a small menu (Profile / Sign out).
  *
  * @param compact - When true, renders a minimal icon-only button (used in mobile navbar).
+ * @param align - Dropdown menu alignment: "right" (default) or "center" (for mobile drawers).
+ * @param onAction - Optional callback invoked when a menu action is chosen (e.g. closing drawer).
  */
-export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
+export interface WalletButtonProps {
+  compact?: boolean;
+  align?: "right" | "center";
+  onAction?: () => void;
+}
+
+export function WalletButton({
+  compact = false,
+  align = "right",
+  onAction,
+}: WalletButtonProps = {}) {
   const {
     status,
     walletAddress,
@@ -111,7 +123,15 @@ export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
         )}
 
         {menuOpen && (
-          <div className="absolute right-0 z-50 mt-2 w-72 rounded-2xl border-2 border-zinc-800 bg-[#0c0e17] p-2.5 shadow-2xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-150">
+          <div
+            className={`absolute z-50 mt-2 w-72 max-w-[calc(100vw-32px)] rounded-2xl border-2 border-zinc-800 bg-[#0c0e17] p-2.5 shadow-2xl backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-150 ${
+              align === "center"
+                ? "left-1/2 -translate-x-1/2"
+                : compact
+                ? "-right-12 sm:right-0"
+                : "right-0"
+            }`}
+          >
             {/* Header Profile Section */}
             <div className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/70 p-3 mb-2">
               <UserAvatar
@@ -151,7 +171,10 @@ export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
             <div className="space-y-1">
               <Link
                 href="/profile"
-                onClick={() => setMenuOpen(false)}
+                onClick={() => {
+                  setMenuOpen(false);
+                  onAction?.();
+                }}
                 className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-xs font-mono-street uppercase font-bold text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
               >
                 <User className="h-4 w-4 text-zinc-400" />
@@ -164,6 +187,7 @@ export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
               <button
                 onClick={() => {
                   setMenuOpen(false);
+                  onAction?.();
                   void logout();
                 }}
                 className="flex items-center gap-3 w-full rounded-xl px-3 py-2 text-left font-mono-street text-xs uppercase font-bold text-rose-400 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
@@ -196,7 +220,7 @@ export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
 
   if (status === "wallet-only" && walletAddress) {
     return (
-      <div className="flex flex-col items-end gap-1">
+      <div className={`flex flex-col gap-1 ${align === "center" ? "items-center" : "items-end"}`}>
         <button
           onClick={() => void login()}
           aria-label="Sign in"
@@ -212,7 +236,7 @@ export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
         {error && !compact && (
           <button
             onClick={dismissError}
-            className="max-w-56 text-right text-[11px] text-red-400 hover:text-red-300 font-mono-street"
+            className={`max-w-56 text-[11px] text-red-400 hover:text-red-300 font-mono-street ${align === "center" ? "text-center" : "text-right"}`}
             title="Dismiss"
           >
             {error}
@@ -224,7 +248,7 @@ export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
 
   return (
     <>
-      <div className="flex flex-col items-end gap-1">
+      <div className={`flex flex-col gap-1 ${align === "center" ? "items-center" : "items-end"}`}>
         <button
           onClick={() => setModalOpen(true)}
           aria-label="Sign in"
@@ -240,7 +264,7 @@ export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
         {error && !compact && (
           <button
             onClick={dismissError}
-            className="max-w-56 text-right text-[11px] text-red-400 hover:text-red-300 font-mono-street"
+            className={`max-w-56 text-[11px] text-red-400 hover:text-red-300 font-mono-street ${align === "center" ? "text-center" : "text-right"}`}
             title="Dismiss"
           >
             {error}
