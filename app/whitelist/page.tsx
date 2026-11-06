@@ -1024,7 +1024,7 @@ export default function WhitelistPage() {
                 A signature, not a transaction.
               </p>
               <p className="text-zinc-400 leading-relaxed font-mono-street text-xs">
-                With a wallet: its public address. Signing in is a signed message, never an on-chain transaction, and it costs nothing.
+                We only verify your public address. Signing in is an off-chain message that costs zero gas and cannot move any funds.
               </p>
             </div>
 
