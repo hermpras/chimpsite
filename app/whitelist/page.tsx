@@ -1053,7 +1053,7 @@ export default function WhitelistPage() {
                     variant="primary"
                     size="lg"
                     onClick={() => void login?.()}
-                    className="w-full rounded-xl font-display uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
+                    className="w-full rounded-xl font-mono-street font-bold uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
                   >
                     Sign In with Ethereum
                   </Button>
@@ -1063,7 +1063,7 @@ export default function WhitelistPage() {
                   variant="primary"
                   size="lg"
                   onClick={handleConnectWallet}
-                  className="w-full rounded-xl font-display uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
+                  className="w-full rounded-xl font-mono-street font-bold uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
                 >
                   Connect Wallet
                 </Button>
@@ -1134,7 +1134,7 @@ export default function WhitelistPage() {
                 size="lg"
                 disabled={isConnectingX}
                 onClick={handleDirectConnectX}
-                className="w-full rounded-xl bg-white text-black hover:bg-zinc-200 font-display uppercase tracking-wider py-3.5 text-base shadow-brutal-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full rounded-xl bg-white text-black hover:bg-zinc-200 font-mono-street font-bold uppercase tracking-wider py-3.5 text-base shadow-brutal-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 {isConnectingX ? (
                   <>
@@ -1729,7 +1729,7 @@ export default function WhitelistPage() {
                     <p className="text-[11px] text-zinc-400">Need more traits to complete your collection?</p>
                   </div>
                   <Link href="/drops">
-                    <Button variant="primary" size="sm" className="rounded-xl text-xs font-display uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 shrink-0">
+                    <Button variant="primary" size="sm" className="rounded-xl text-xs font-mono-street font-bold uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 shrink-0">
                       Go to Drops
                       <ExternalLink className="ml-1 h-3 w-3" />
                     </Button>

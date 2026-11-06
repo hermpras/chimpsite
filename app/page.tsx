@@ -461,7 +461,7 @@ export default function HomePage() {
 
             <div className="mt-8 pt-4 border-t border-gray-800">
               <Link href="/drops" className="block w-full">
-                <Button className="w-full justify-between border-2 border-black bg-gradient-to-r from-[#ff5b89] to-[#fb7185] font-display text-lg uppercase tracking-wider text-white shadow-brutal transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:brightness-110 py-6">
+                <Button className="w-full justify-between border-2 border-black bg-gradient-to-r from-[#ff5b89] to-[#fb7185] font-mono-street font-bold text-lg uppercase tracking-wider text-white shadow-brutal transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:brightness-110 py-6">
                   OPEN CRATES <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
@@ -493,7 +493,7 @@ export default function HomePage() {
 
             <div className="mt-8 pt-4 border-t border-gray-800">
               <Link href="/whitelist" className="block w-full">
-                <Button className="w-full justify-between border-2 border-black bg-amber-400 font-display text-lg uppercase tracking-wider text-black shadow-brutal transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-amber-300 py-6">
+                <Button className="w-full justify-between border-2 border-black bg-amber-400 font-mono-street font-bold text-lg uppercase tracking-wider text-black shadow-brutal transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-amber-300 py-6">
                   GET ON THE LIST <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
