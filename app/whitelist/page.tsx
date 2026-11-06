@@ -30,7 +30,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import { useXIdentity } from "@/hooks/useXIdentity";
-import { SyndicateShareCardModal } from "@/components/whitelist/SyndicateShareCardModal";
+import { SyndicateShareCardModal, BananaSticker } from "@/components/whitelist/SyndicateShareCardModal";
 import {
   fetchWhitelistStatus,
   type WhitelistStatusResponse,
@@ -1939,139 +1939,169 @@ export default function WhitelistPage() {
                        );
                        const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
                        const tweetHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`;
+                       const displayName = xName || (gtdXUsername ? `@${gtdXUsername}` : address ? shortenAddress(address) : "Syndicate Member");
                        const operatorHandle = gtdXUsername ? `@${gtdXUsername}` : "—";
                        const allocatedDate = statusResult.status.allocatedAt
                          ? new Date(statusResult.status.allocatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                          : "—";
+                       const gtdAvatarUrl = address ? `/api/renders/avatar/${encodeURIComponent(address)}` : undefined;
 
                        return (
                          <div className="space-y-3">
-                           {/* GTD Dark Pass Card */}
-                           <div className="relative select-none overflow-hidden rounded-2xl border border-amber-400/60 bg-[#0d0d0d] shadow-[0_0_0_1px_rgba(251,191,36,0.15),0_8px_32px_rgba(0,0,0,0.6)] p-5">
-                             {/* Corner brackets */}
-                             <span className="pointer-events-none absolute top-3 left-3 text-amber-400/60 font-mono text-xs leading-none select-none">┌</span>
-                             <span className="pointer-events-none absolute top-3 right-3 text-amber-400/60 font-mono text-xs leading-none select-none">┐</span>
-                             <span className="pointer-events-none absolute bottom-3 left-3 text-amber-400/60 font-mono text-xs leading-none select-none">└</span>
-                             <span className="pointer-events-none absolute bottom-3 right-3 text-amber-400/60 font-mono text-xs leading-none select-none">┘</span>
+                           {/* Lanyard ID Badge Card (Image 2 style) */}
+                           <div className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#a3a7c8] to-[#bcc0dc] p-2.5 sm:p-4 shadow-xl select-none">
+                             {/* Translucent Acrylic Sleeve */}
+                             <div className="relative mx-auto rounded-[18px] border-2 border-white/80 bg-white/40 p-1.5 sm:p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.18)] backdrop-blur-sm">
+                               {/* Top Lanyard Slot */}
+                               <div className="mx-auto mb-2 h-2.5 w-20 rounded-full border border-white/80 bg-[#7b809d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]" />
 
-                             {/* Header */}
-                             <div className="flex items-start justify-between mb-3">
-                               <div className="flex items-center gap-2.5">
-                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                 <img
-                                   src="/images/elychimp-logo.png"
-                                   alt="Elychimp"
-                                   className="h-8 w-auto object-contain brightness-0 invert opacity-90"
-                                 />
-                                 <div>
-                                   <p className="font-mono-street text-[9px] text-amber-400/80 uppercase tracking-[0.2em] leading-none">Elychimp Syndicate • Clearance Pass</p>
-                                   <h3 className="font-display text-xl sm:text-2xl uppercase tracking-tight text-white leading-none mt-0.5">Guaranteed Minter Pass</h3>
+                               {/* Inner White Paper Card */}
+                               <div className="relative overflow-hidden rounded-xl border border-black/10 bg-[#fafafd] shadow-sm">
+                                 {/* Header: Forest Green Syndicate Band */}
+                                 <div className="flex items-center justify-between bg-[#16452d] px-3 sm:px-4 py-2 sm:py-2.5 text-white border-b-2 border-[#2d704c]">
+                                   <div className="flex items-center gap-2">
+                                     {/* eslint-disable-next-line @next/next/no-img-element */}
+                                     <img
+                                       src="/images/elychimp-logo.png"
+                                       alt="Elychimp Logo"
+                                       className="h-7 sm:h-9 w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
+                                     />
+                                     <div>
+                                       <h4 className="font-display text-xs sm:text-sm uppercase tracking-wide leading-none text-white">
+                                         Elychimp Syndicate
+                                       </h4>
+                                       <span className="font-mono-street text-[7px] sm:text-[9px] text-emerald-200 tracking-wider">
+                                         Official Syndicate ID Badge
+                                       </span>
+                                     </div>
+                                   </div>
+
+                                   {/* Slot No. Tag */}
+                                   <div className="-rotate-2 rounded-sm bg-emerald-300/90 px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono-street text-[9px] sm:text-[11px] text-emerald-950 shadow-sm border border-emerald-400/80 font-bold">
+                                     <span className="block text-[6px] uppercase tracking-widest text-emerald-900 leading-none">SLOT NO.</span>
+                                     <span>#{paddedSlot}</span>
+                                   </div>
+                                 </div>
+
+                                 {/* Main Body */}
+                                 <div className="p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-5 items-start">
+                                   {/* Photo ID */}
+                                   <div className="flex flex-col items-center shrink-0 mx-auto sm:mx-0">
+                                     <div className="relative p-1 sm:p-1.5 bg-white rounded-md border border-black/15 shadow-sm">
+                                       {/* eslint-disable-next-line @next/next/no-img-element */}
+                                       <img
+                                         src={gtdAvatarUrl || "/images/chimp-base-bw.png"}
+                                         alt="Elychimp Character"
+                                         className="h-24 w-24 sm:h-32 sm:w-32 object-contain [image-rendering:pixelated] rounded"
+                                         onError={(e) => { (e.target as HTMLImageElement).src = "/images/chimp-base-bw.png"; }}
+                                       />
+                                       {/* Red Verification Stamp */}
+                                       <div className="absolute -bottom-2 -left-2 pointer-events-none -rotate-12 border-[1.5px] border-red-600/85 rounded-full text-center text-red-600 font-display leading-none bg-white/80 shadow-sm">
+                                         <div className="rounded-full border border-red-600/60 p-1 sm:p-1.5 flex flex-col items-center justify-center w-14 sm:w-16 h-14 sm:h-16">
+                                           <span className="text-[5px] sm:text-[6px] font-mono font-bold tracking-widest text-red-600">★ ELYCHIMP ★</span>
+                                           <span className="text-[7px] sm:text-[8px] font-black tracking-wider my-0.5 text-red-600">GUARANTEED</span>
+                                           <span className="text-[4px] sm:text-[5px] font-mono text-red-600/80">CLEARANCE</span>
+                                         </div>
+                                       </div>
+                                     </div>
+                                     <div className="mt-2 w-full rounded bg-[#111827] px-2 py-0.5 text-center text-white font-display text-[7px] sm:text-[9px] tracking-wider shadow-sm uppercase">
+                                       Guaranteed Minter Pass
+                                     </div>
+                                   </div>
+
+                                   {/* Info Fields */}
+                                   <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2 font-mono-street text-left w-full">
+                                     <div>
+                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">NAME</span>
+                                       <p className="font-display text-sm sm:text-lg uppercase tracking-wider text-gray-900 leading-tight truncate">
+                                         {displayName}
+                                       </p>
+                                     </div>
+                                     <div>
+                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">ACCOUNT</span>
+                                       <p className="font-mono-street text-[10px] sm:text-xs font-bold text-gray-800 truncate">
+                                         {operatorHandle}
+                                       </p>
+                                     </div>
+                                     <div>
+                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">WALLET ADDRESS</span>
+                                       <p className="font-mono-street text-[9px] sm:text-[11px] font-semibold text-gray-600 truncate">
+                                         {address ? shortenAddress(address) : "0x0000...0000"}
+                                       </p>
+                                     </div>
+                                     <div>
+                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">VISITING SINCE</span>
+                                       <p className="font-mono-street text-[9px] sm:text-[11px] font-bold text-gray-900 truncate">
+                                         {allocatedDate} • HYPERLIQUID L2
+                                       </p>
+                                     </div>
+                                     {/* Barcode */}
+                                     <div className="relative pt-0.5 h-7 sm:h-9">
+                                       <div className="h-full w-full bg-[repeating-linear-gradient(90deg,#18181b,#18181b_2px,transparent_2px,transparent_4px,#18181b_4px,#18181b_7px,transparent_7px,transparent_9px)] opacity-80 rounded" />
+                                       <div className="absolute inset-0 flex items-center justify-center">
+                                         <span className="rounded border border-black/40 bg-white px-2 sm:px-3 py-0.5 font-mono-street text-[8px] sm:text-[9px] font-bold text-gray-900 shadow-sm">
+                                           elychimp.xyz
+                                         </span>
+                                       </div>
+                                     </div>
+                                   </div>
+                                 </div>
+
+                                 {/* Bottom Serial Strip */}
+                                 <div className="border-t border-zinc-200 bg-[#edeef2] px-3 sm:px-4 py-1.5 sm:py-2 text-center font-mono-street text-[9px] sm:text-[11px] font-bold tracking-wider text-zinc-700 select-all uppercase">
+                                   SERIAL: ELY-GTD-{paddedSlot} &bull; ELYCHIMP.XYZ
                                  </div>
                                </div>
-                               <div className="text-right shrink-0 ml-2">
-                                 <p className="font-mono-street text-[8px] text-amber-400/70 uppercase tracking-widest leading-none">Allocated Slot</p>
-                                 <p className="font-display text-2xl sm:text-3xl text-amber-400 leading-none tracking-tight">#{paddedSlot}</p>
-                               </div>
-                             </div>
 
-                             {/* Divider */}
-                             <div className="h-px bg-amber-400/20 mb-3" />
+                               {/* Banana Stickers */}
+                               <BananaSticker className="absolute top-8 sm:top-10 right-20 sm:right-28 w-14 sm:w-20 h-7 sm:h-10 -rotate-12" />
+                               <BananaSticker className="absolute top-28 sm:top-36 -right-2 sm:right-1 w-12 sm:w-16 h-6 sm:h-8 rotate-24" />
+                               <BananaSticker className="absolute bottom-6 sm:bottom-8 right-6 sm:right-10 w-16 sm:w-22 h-8 sm:h-11 rotate-6" />
 
-                             {/* Status Bar */}
-                             <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-950/40 px-3 py-2 mb-3">
-                               <div className="flex items-center gap-1.5">
-                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
-                                 <span className="font-mono-street text-[10px] font-bold text-emerald-300 uppercase tracking-wider">★ GTD Mint Secured &amp; Active</span>
-                               </div>
-                               <span className="font-mono-street text-[9px] text-zinc-400">Secured on {allocatedDate}</span>
+                               {/* Plastic Glare */}
+                               <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rounded-[16px]" />
                              </div>
+                           </div>
 
-                             {/* Specs Grid */}
-                             <div className="grid grid-cols-3 gap-2 mb-3">
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Mint Stage</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-amber-400 leading-tight">Phase 1 (GTD)</p>
+                           {/* Review Note */}
+                           <div className="flex items-start gap-2.5 rounded-xl border border-zinc-800/80 bg-black/40 p-3 text-[11px] text-zinc-400 font-mono-street">
+                             <ReviewIcon className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+                             <div className="space-y-0.5 min-w-0">
+                               <div className="flex items-center gap-2">
+                                 <Badge variant={review.badgeVariant} className={`text-[10px] ${review.colorClass}`}>
+                                   {review.label}
+                                 </Badge>
+                                 <span className="text-zinc-300 font-semibold">{review.subtext}</span>
                                </div>
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Allocation</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-white leading-tight">1x Genesis Chimp</p>
-                               </div>
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Mint Price</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-amber-400 leading-tight">Free / Hyperliquid</p>
-                               </div>
+                               <p className="text-zinc-400 text-[10px] leading-relaxed pt-0.5">
+                                 Your Guaranteed Whitelist slot is locked in the syndicate registry. Keep this wallet and X account connected for snapshot export.
+                               </p>
                              </div>
-                             <div className="grid grid-cols-2 gap-2 mb-4">
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Authenticated Wallet</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-white leading-tight truncate">{address ? shortenAddress(address) : "—"}</p>
-                               </div>
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Operator (X)</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-amber-400 leading-tight truncate">{operatorHandle}</p>
-                               </div>
-                             </div>
+                           </div>
 
-                             {/* Review Note */}
-                             <div className="flex items-start gap-2.5 rounded-lg border border-zinc-800/80 bg-zinc-900/60 p-3 mb-4">
-                               <ReviewIcon className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
-                               <div className="space-y-0.5 min-w-0">
-                                 <div className="flex items-center gap-2">
-                                   <Badge variant={review.badgeVariant} className={`text-[10px] ${review.colorClass}`}>
-                                     {review.label}
-                                   </Badge>
-                                   <span className="font-mono-street text-[10px] text-zinc-300 font-semibold">{review.subtext}</span>
-                                 </div>
-                                 <p className="font-mono-street text-zinc-500 text-[10px] leading-relaxed pt-0.5">
-                                   Your Guaranteed Whitelist slot is locked in the syndicate registry. Keep this wallet and X account connected for snapshot export.
-                                 </p>
-                               </div>
-                             </div>
-
-                             {/* Action Buttons */}
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
+                           {/* Action Buttons */}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                             <Button
+                               type="button"
+                               onClick={() => setIsShareModalOpen(true)}
+                               variant="outline"
+                               size="lg"
+                               className="w-full gap-2 rounded-xl border-amber-400/50 bg-amber-950/30 text-amber-300 hover:bg-amber-900/40 hover:border-amber-400 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                             >
+                               <Download className="h-4 w-4 text-amber-400" />
+                               <span>Download Pass Card</span>
+                             </Button>
+                             <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
                                <Button
-                                 type="button"
-                                 onClick={() => setIsShareModalOpen(true)}
-                                 variant="outline"
+                                 variant="primary"
                                  size="lg"
-                                 className="w-full gap-2 rounded-xl border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 hover:border-zinc-500 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                 className="w-full gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:bg-amber-300 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
                                >
-                                 <Download className="h-4 w-4" />
-                                 <span>Download Pass Card</span>
+                                 <XLogo className="h-3.5 w-3.5 fill-black" />
+                                 <span>Share on X</span>
+                                 <ExternalLink className="h-3 w-3" />
                                </Button>
-                               <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
-                                 <Button
-                                   variant="primary"
-                                   size="lg"
-                                   className="w-full gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:opacity-90 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-[0_0_20px_rgba(251,191,36,0.3)] cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
-                                 >
-                                   <XLogo className="h-3.5 w-3.5 fill-black" />
-                                   <span>Share on X</span>
-                                   <ExternalLink className="h-3 w-3" />
-                                 </Button>
-                               </a>
-                             </div>
-
-                             {/* Bottom Barcode Strip */}
-                             <div className="relative h-8 overflow-hidden rounded-lg">
-                               <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(251,191,36,0.15),rgba(251,191,36,0.15)_1px,transparent_1px,transparent_3px,rgba(251,191,36,0.1)_3px,rgba(251,191,36,0.1)_5px,transparent_5px,transparent_8px)]" />
-                               <div className="absolute inset-0 flex items-center justify-between px-3">
-                                 <div className="flex items-center gap-1 opacity-50">
-                                   {[2,4,1,3,2,5,1,4,2,3,1].map((h, i) => (
-                                     <div key={i} style={{ height: `${h * 4}px` }} className="w-0.5 bg-amber-400 rounded-sm" />
-                                   ))}
-                                 </div>
-                                 <span className="font-mono-street text-[9px] text-amber-400/60 uppercase tracking-widest">
-                                   SERIAL: ELY-GTD-{paddedSlot}
-                                 </span>
-                                 <div className="flex items-center gap-1 opacity-50">
-                                   {[1,3,2,4,1,5,2,3,1,4,2].map((h, i) => (
-                                     <div key={i} style={{ height: `${h * 4}px` }} className="w-0.5 bg-amber-400 rounded-sm" />
-                                   ))}
-                                 </div>
-                               </div>
-                             </div>
+                             </a>
                            </div>
                          </div>
                        );
@@ -2086,149 +2116,179 @@ export default function WhitelistPage() {
                        );
                        const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
                        const tweetHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`;
+                       const displayName = xName || (fcfsXUsername ? `@${fcfsXUsername}` : address ? shortenAddress(address) : "Syndicate Member");
                        const fcfsOperator = fcfsXUsername ? `@${fcfsXUsername}` : "—";
                        const joinedDate = statusResult.status.joinedAt
                          ? new Date(statusResult.status.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                          : "—";
+                       const fcfsAvatarUrl = address ? `/api/renders/avatar/${encodeURIComponent(address)}` : undefined;
 
                        return (
                          <div className="space-y-3">
-                           {/* FCFS Dark Pass Card */}
-                           <div className="relative select-none overflow-hidden rounded-2xl border border-cyan-400/50 bg-[#0d0d0d] shadow-[0_0_0_1px_rgba(34,211,238,0.12),0_8px_32px_rgba(0,0,0,0.6)] p-5">
-                             {/* Corner brackets */}
-                             <span className="pointer-events-none absolute top-3 left-3 text-cyan-400/50 font-mono text-xs leading-none select-none">┌</span>
-                             <span className="pointer-events-none absolute top-3 right-3 text-cyan-400/50 font-mono text-xs leading-none select-none">┐</span>
-                             <span className="pointer-events-none absolute bottom-3 left-3 text-cyan-400/50 font-mono text-xs leading-none select-none">└</span>
-                             <span className="pointer-events-none absolute bottom-3 right-3 text-cyan-400/50 font-mono text-xs leading-none select-none">┘</span>
+                           {/* Lanyard ID Badge Card — FCFS Teal Variant */}
+                           <div className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#9baec8] to-[#b0c4dc] p-2.5 sm:p-4 shadow-xl select-none">
+                             {/* Translucent Acrylic Sleeve */}
+                             <div className="relative mx-auto rounded-[18px] border-2 border-white/80 bg-white/40 p-1.5 sm:p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.18)] backdrop-blur-sm">
+                               {/* Top Lanyard Slot */}
+                               <div className="mx-auto mb-2 h-2.5 w-20 rounded-full border border-white/80 bg-[#7b809d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]" />
 
-                             {/* Header */}
-                             <div className="flex items-start justify-between mb-3">
-                               <div className="flex items-center gap-2.5">
-                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                 <img
-                                   src="/images/elychimp-logo.png"
-                                   alt="Elychimp"
-                                   className="h-8 w-auto object-contain brightness-0 invert opacity-90"
-                                 />
-                                 <div>
-                                   <p className="font-mono-street text-[9px] text-cyan-400/80 uppercase tracking-[0.2em] leading-none">Elychimp Syndicate • FCFS Directory</p>
-                                   <h3 className="font-display text-xl sm:text-2xl uppercase tracking-tight text-white leading-none mt-0.5">FCFS Clearance Pass</h3>
+                               {/* Inner White Paper Card */}
+                               <div className="relative overflow-hidden rounded-xl border border-black/10 bg-[#fafafd] shadow-sm">
+                                 {/* Header: Teal Syndicate Band */}
+                                 <div className="flex items-center justify-between bg-[#134e5e] px-3 sm:px-4 py-2 sm:py-2.5 text-white border-b-2 border-[#1d7d8a]">
+                                   <div className="flex items-center gap-2">
+                                     {/* eslint-disable-next-line @next/next/no-img-element */}
+                                     <img
+                                       src="/images/elychimp-logo.png"
+                                       alt="Elychimp Logo"
+                                       className="h-7 sm:h-9 w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
+                                     />
+                                     <div>
+                                       <h4 className="font-display text-xs sm:text-sm uppercase tracking-wide leading-none text-white">
+                                         Elychimp Syndicate
+                                       </h4>
+                                       <span className="font-mono-street text-[7px] sm:text-[9px] text-cyan-200 tracking-wider">
+                                         Official Syndicate ID Badge
+                                       </span>
+                                     </div>
+                                   </div>
+
+                                   {/* Queue No. Tag */}
+                                   <div className="-rotate-2 rounded-sm bg-cyan-300/90 px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono-street text-[9px] sm:text-[11px] text-cyan-950 shadow-sm border border-cyan-400/80 font-bold">
+                                     <span className="block text-[6px] uppercase tracking-widest text-cyan-900 leading-none">QUEUE NO.</span>
+                                     <span>#{paddedQueue}</span>
+                                   </div>
+                                 </div>
+
+                                 {/* Main Body */}
+                                 <div className="p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-5 items-start">
+                                   {/* Photo ID */}
+                                   <div className="flex flex-col items-center shrink-0 mx-auto sm:mx-0">
+                                     <div className="relative p-1 sm:p-1.5 bg-white rounded-md border border-black/15 shadow-sm">
+                                       {/* eslint-disable-next-line @next/next/no-img-element */}
+                                       <img
+                                         src={fcfsAvatarUrl || "/images/chimp-base-bw.png"}
+                                         alt="Elychimp Character"
+                                         className="h-24 w-24 sm:h-32 sm:w-32 object-contain [image-rendering:pixelated] rounded"
+                                         onError={(e) => { (e.target as HTMLImageElement).src = "/images/chimp-base-bw.png"; }}
+                                       />
+                                       {/* Cyan Verification Stamp */}
+                                       <div className="absolute -bottom-2 -left-2 pointer-events-none -rotate-12 border-[1.5px] border-cyan-600/85 rounded-full text-center text-cyan-700 font-display leading-none bg-white/80 shadow-sm">
+                                         <div className="rounded-full border border-cyan-600/60 p-1 sm:p-1.5 flex flex-col items-center justify-center w-14 sm:w-16 h-14 sm:h-16">
+                                           <span className="text-[5px] sm:text-[6px] font-mono font-bold tracking-widest text-cyan-700">★ ELYCHIMP ★</span>
+                                           <span className="text-[7px] sm:text-[8px] font-black tracking-wider my-0.5 text-cyan-700">FCFS</span>
+                                           <span className="text-[4px] sm:text-[5px] font-mono text-cyan-700/80">CLEARANCE</span>
+                                         </div>
+                                       </div>
+                                     </div>
+                                     <div className="mt-2 w-full rounded bg-[#134e5e] px-2 py-0.5 text-center text-white font-display text-[7px] sm:text-[9px] tracking-wider shadow-sm uppercase">
+                                       FCFS Clearance Pass
+                                     </div>
+                                   </div>
+
+                                   {/* Info Fields */}
+                                   <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2 font-mono-street text-left w-full">
+                                     <div>
+                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">NAME</span>
+                                       <p className="font-display text-sm sm:text-lg uppercase tracking-wider text-gray-900 leading-tight truncate">
+                                         {displayName}
+                                       </p>
+                                     </div>
+                                     <div>
+                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">ACCOUNT</span>
+                                       <p className="font-mono-street text-[10px] sm:text-xs font-bold text-gray-800 truncate">
+                                         {fcfsOperator}
+                                       </p>
+                                     </div>
+                                     <div>
+                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">WALLET ADDRESS</span>
+                                       <p className="font-mono-street text-[9px] sm:text-[11px] font-semibold text-gray-600 truncate">
+                                         {address ? shortenAddress(address) : "0x0000...0000"}
+                                       </p>
+                                     </div>
+                                     <div>
+                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">VISITING SINCE</span>
+                                       <p className="font-mono-street text-[9px] sm:text-[11px] font-bold text-gray-900 truncate">
+                                         {joinedDate} • HYPERLIQUID L2
+                                       </p>
+                                     </div>
+                                     {/* Barcode */}
+                                     <div className="relative pt-0.5 h-7 sm:h-9">
+                                       <div className="h-full w-full bg-[repeating-linear-gradient(90deg,#18181b,#18181b_2px,transparent_2px,transparent_4px,#18181b_4px,#18181b_7px,transparent_7px,transparent_9px)] opacity-80 rounded" />
+                                       <div className="absolute inset-0 flex items-center justify-center">
+                                         <span className="rounded border border-black/40 bg-white px-2 sm:px-3 py-0.5 font-mono-street text-[8px] sm:text-[9px] font-bold text-gray-900 shadow-sm">
+                                           elychimp.xyz
+                                         </span>
+                                       </div>
+                                     </div>
+                                   </div>
+                                 </div>
+
+                                 {/* Bottom Serial Strip */}
+                                 <div className="border-t border-zinc-200 bg-[#edeef2] px-3 sm:px-4 py-1.5 sm:py-2 text-center font-mono-street text-[9px] sm:text-[11px] font-bold tracking-wider text-zinc-700 select-all uppercase">
+                                   SERIAL: ELY-FCFS-{paddedQueue} &bull; ELYCHIMP.XYZ
                                  </div>
                                </div>
-                               <div className="text-right shrink-0 ml-2">
-                                 <p className="font-mono-street text-[8px] text-cyan-400/70 uppercase tracking-widest leading-none">Queue No.</p>
-                                 <p className="font-display text-2xl sm:text-3xl text-cyan-400 leading-none tracking-tight">#{paddedQueue}</p>
-                               </div>
-                             </div>
 
-                             {/* Divider */}
-                             <div className="h-px bg-cyan-400/20 mb-3" />
+                               {/* Banana Stickers */}
+                               <BananaSticker className="absolute top-8 sm:top-10 right-20 sm:right-28 w-14 sm:w-20 h-7 sm:h-10 -rotate-12" />
+                               <BananaSticker className="absolute top-28 sm:top-36 -right-2 sm:right-1 w-12 sm:w-16 h-6 sm:h-8 rotate-24" />
+                               <BananaSticker className="absolute bottom-6 sm:bottom-8 right-6 sm:right-10 w-16 sm:w-22 h-8 sm:h-11 rotate-6" />
 
-                             {/* Status Bar */}
-                             <div className="flex items-center justify-between rounded-lg border border-cyan-500/30 bg-cyan-950/30 px-3 py-2 mb-3">
-                               <div className="flex items-center gap-1.5">
-                                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)] animate-pulse" />
-                                 <span className="font-mono-street text-[10px] font-bold text-cyan-300 uppercase tracking-wider">★ FCFS Registration Active</span>
-                               </div>
-                               <span className="font-mono-street text-[9px] text-zinc-400">Registered on {joinedDate}</span>
-                             </div>
-
-                             {/* Specs Grid */}
-                             <div className="grid grid-cols-3 gap-2 mb-3">
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Mint Stage</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-cyan-400 leading-tight">Phase 2 (FCFS)</p>
-                               </div>
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Allocation</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-white leading-tight">1x Genesis Chimp</p>
-                               </div>
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Mint Price</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-cyan-400 leading-tight">Free / Hyperliquid</p>
-                               </div>
-                             </div>
-                             <div className="grid grid-cols-2 gap-2 mb-3">
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Authenticated Wallet</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-white leading-tight truncate">{address ? shortenAddress(address) : "—"}</p>
-                               </div>
-                               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2.5">
-                                 <p className="font-mono-street text-[8px] text-zinc-500 uppercase tracking-widest mb-1">Operator (X)</p>
-                                 <p className="font-mono-street text-[11px] font-bold text-cyan-400 leading-tight truncate">{fcfsOperator}</p>
-                               </div>
-                             </div>
-
-                             {/* Eligibility Note */}
-                             {statusResult.status.isFullyQualified ? (
-                               <div className="flex items-start gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-950/40 p-3 mb-3">
-                                 <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
-                                 <div className="space-y-0.5">
-                                   <p className="font-mono-street text-[10px] font-bold text-emerald-300 uppercase tracking-wider">All 5 Requirements Satisfied ✓</p>
-                                   <p className="font-mono-street text-zinc-500 text-[10px] leading-relaxed">
-                                     Your wallet is eligible for inclusion in the OpenSea FCFS allowlist export.
-                                   </p>
-                                 </div>
-                               </div>
-                             ) : (
-                               <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-950/40 p-3 mb-3">
-                                 <AlertCircle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
-                                 <div className="space-y-0.5">
-                                   <p className="font-mono-street text-[10px] font-bold text-amber-300 uppercase tracking-wider">Action Required — Complete 5/5 Requirements</p>
-                                   <p className="font-mono-street text-zinc-500 text-[10px] leading-relaxed">
-                                     Complete missing requirements to qualify for the FCFS allowlist export.
-                                   </p>
-                                 </div>
-                               </div>
-                             )}
-
-                             {/* Action Buttons — only if fully qualified */}
-                             {statusResult.status.isFullyQualified && (
-                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
-                                 <Button
-                                   type="button"
-                                   onClick={() => setIsShareModalOpen(true)}
-                                   variant="outline"
-                                   size="lg"
-                                   className="w-full gap-2 rounded-xl border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 hover:border-zinc-500 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
-                                 >
-                                   <Download className="h-4 w-4" />
-                                   <span>Download Pass Card</span>
-                                 </Button>
-                                 <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
-                                   <Button
-                                     variant="primary"
-                                     size="lg"
-                                     className="w-full gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-[0_0_20px_rgba(34,211,238,0.3)] cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
-                                   >
-                                     <XLogo className="h-3.5 w-3.5 fill-black" />
-                                     <span>Share on X</span>
-                                     <ExternalLink className="h-3 w-3" />
-                                   </Button>
-                                 </a>
-                               </div>
-                             )}
-
-                             {/* Bottom Barcode Strip */}
-                             <div className="relative h-8 overflow-hidden rounded-lg">
-                               <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(34,211,238,0.12),rgba(34,211,238,0.12)_1px,transparent_1px,transparent_3px,rgba(34,211,238,0.08)_3px,rgba(34,211,238,0.08)_5px,transparent_5px,transparent_8px)]" />
-                               <div className="absolute inset-0 flex items-center justify-between px-3">
-                                 <div className="flex items-center gap-1 opacity-50">
-                                   {[2,4,1,3,2,5,1,4,2,3,1].map((h, i) => (
-                                     <div key={i} style={{ height: `${h * 4}px` }} className="w-0.5 bg-cyan-400 rounded-sm" />
-                                   ))}
-                                 </div>
-                                 <span className="font-mono-street text-[9px] text-cyan-400/60 uppercase tracking-widest">
-                                   SERIAL: ELY-FCFS-{paddedQueue}
-                                 </span>
-                                 <div className="flex items-center gap-1 opacity-50">
-                                   {[1,3,2,4,1,5,2,3,1,4,2].map((h, i) => (
-                                     <div key={i} style={{ height: `${h * 4}px` }} className="w-0.5 bg-cyan-400 rounded-sm" />
-                                   ))}
-                                 </div>
-                               </div>
+                               {/* Plastic Glare */}
+                               <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rounded-[16px]" />
                              </div>
                            </div>
+
+                           {/* Eligibility Note */}
+                           {statusResult.status.isFullyQualified ? (
+                             <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3">
+                               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+                               <div className="space-y-0.5">
+                                 <p className="font-mono-street text-[10px] font-bold text-emerald-300 uppercase tracking-wider">All 5 Requirements Satisfied ✓</p>
+                                 <p className="font-mono-street text-zinc-400 text-[10px] leading-relaxed">
+                                   Your wallet is eligible for inclusion in the OpenSea FCFS allowlist export.
+                                 </p>
+                               </div>
+                             </div>
+                           ) : (
+                             <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-950/40 p-3">
+                               <AlertCircle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                               <div className="space-y-0.5">
+                                 <p className="font-mono-street text-[10px] font-bold text-amber-300 uppercase tracking-wider">Action Required — Complete 5/5 Requirements</p>
+                                 <p className="font-mono-street text-zinc-400 text-[10px] leading-relaxed">
+                                   Complete missing requirements to qualify for the OpenSea FCFS allowlist export.
+                                 </p>
+                               </div>
+                             </div>
+                           )}
+
+                           {/* Action Buttons — only if fully qualified */}
+                           {statusResult.status.isFullyQualified && (
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                               <Button
+                                 type="button"
+                                 onClick={() => setIsShareModalOpen(true)}
+                                 variant="outline"
+                                 size="lg"
+                                 className="w-full gap-2 rounded-xl border-cyan-400/50 bg-cyan-950/30 text-cyan-300 hover:bg-cyan-900/40 hover:border-cyan-400 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                               >
+                                 <Download className="h-4 w-4 text-cyan-400" />
+                                 <span>Download Pass Card</span>
+                               </Button>
+                               <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
+                                 <Button
+                                   variant="primary"
+                                   size="lg"
+                                   className="w-full gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                 >
+                                   <XLogo className="h-3.5 w-3.5 fill-black" />
+                                   <span>Share on X</span>
+                                   <ExternalLink className="h-3 w-3" />
+                                 </Button>
+                               </a>
+                             </div>
+                           )}
 
                            {/* Notice */}
                            <div className="text-[10px] font-mono-street text-zinc-500">

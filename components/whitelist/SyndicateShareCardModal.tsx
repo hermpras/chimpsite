@@ -29,7 +29,7 @@ export interface SyndicateShareCardModalProps {
 }
 
 // Banana Die-Cut Sticker for HTML Preview
-function BananaSticker({
+export function BananaSticker({
   className = "",
   style = {},
 }: {
