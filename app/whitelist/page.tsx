@@ -331,7 +331,7 @@ export default function WhitelistPage() {
     if (metaUrl && (metaUrl.startsWith("http://") || metaUrl.startsWith("https://"))) {
       return metaUrl;
     }
-    return "https://x.com/chimphoodNFT";
+    return "https://x.com/Elychimp";
   }
 
   function getTaskTypeMeta(task: ActiveCampaignTask): { label: string; icon: React.ReactNode } {

@@ -492,9 +492,16 @@ export default function DropsPage() {
 
                   <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm flex flex-col justify-between text-center">
                     <div>
-                      <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
-                        {isWindowActive ? "Claim Window Status" : "Next Drop Window"}
-                      </span>
+                      <div className="flex items-center justify-center gap-2">
+                        <span
+                          className={`inline-block h-2 w-2 rounded-full ${
+                            isWindowActive ? "bg-amber-400 animate-ping" : "bg-cyan-400"
+                          }`}
+                        />
+                        <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
+                          {isWindowActive ? "Claim Window Active" : "Next Drop Window"}
+                        </span>
+                      </div>
                       <p
                         className={`my-1.5 font-mono-street text-2xl sm:text-3xl font-black ${
                           isWindowActive ? "text-amber-400" : "text-amber-300"

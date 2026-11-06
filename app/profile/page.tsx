@@ -214,6 +214,17 @@ function ProfileContent() {
   const xError = searchParams?.get("x_error") || searchParams?.get("error");
 
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
+  const tabListRef = React.useRef<HTMLDivElement>(null);
+
+  const handleSelectTab = (tab: ProfileTab) => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined" && tabListRef.current) {
+      const rect = tabListRef.current.getBoundingClientRect();
+      if (rect.top < 64) {
+        tabListRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  };
 
   const { status, sessionAddress, walletAddress } = useSiweAuth();
   const address = sessionAddress || walletAddress;
@@ -531,9 +542,10 @@ function ProfileContent() {
 
         {/* Profile Tab Navigation */}
         <div
+          ref={tabListRef}
           role="tablist"
           aria-label="Profile navigation"
-          className="border-b border-zinc-800"
+          className="border-b border-zinc-800 scroll-mt-20"
         >
           <div className="flex gap-2 sm:gap-6 overflow-x-auto">
             <button
@@ -543,7 +555,7 @@ function ProfileContent() {
               aria-controls="panel-overview"
               aria-selected={activeTab === "overview"}
               tabIndex={activeTab === "overview" ? 0 : -1}
-              onClick={() => setActiveTab("overview")}
+              onClick={() => handleSelectTab("overview")}
               className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "overview"
                   ? "border-amber-400 text-amber-400"
@@ -560,7 +572,7 @@ function ProfileContent() {
               aria-controls="panel-collection"
               aria-selected={activeTab === "collection"}
               tabIndex={activeTab === "collection" ? 0 : -1}
-              onClick={() => setActiveTab("collection")}
+              onClick={() => handleSelectTab("collection")}
               className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "collection"
                   ? "border-amber-400 text-amber-400"
@@ -577,7 +589,7 @@ function ProfileContent() {
               aria-controls="panel-gifts"
               aria-selected={activeTab === "gifts"}
               tabIndex={activeTab === "gifts" ? 0 : -1}
-              onClick={() => setActiveTab("gifts")}
+              onClick={() => handleSelectTab("gifts")}
               className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "gifts"
                   ? "border-amber-400 text-amber-400"

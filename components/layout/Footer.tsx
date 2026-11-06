@@ -44,14 +44,14 @@ export function Footer() {
 
         <div className="flex items-center gap-4">
           <a
-            href="https://x.com/chimphoodNFT"
+            href="https://x.com/Elychimp"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Follow Elychimp on X"
             className="flex items-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-xs text-gray-400 transition-colors hover:border-amber-400 hover:text-white"
           >
             <XLogo className="h-3.5 w-3.5" />
-            <span className="font-mono-street text-[10px] font-bold">@chimphoodNFT</span>
+            <span className="font-mono-street text-[10px] font-bold">@Elychimp</span>
           </a>
           <p className="font-mono-street text-center text-[11px] text-gray-400 sm:text-right uppercase">
             &copy; {new Date().getFullYear()} Elychimp.

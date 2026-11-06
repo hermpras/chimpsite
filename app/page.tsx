@@ -159,6 +159,11 @@ export default function HomePage() {
                   <img
                     src="/traits/sky.png"
                     alt="Mascot Sky Background"
+                    width={360}
+                    height={360}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
                   />
 
@@ -167,6 +172,11 @@ export default function HomePage() {
                   <img
                     src="/images/chimp-base-bw.png"
                     alt="Mascot Base Chimp"
+                    width={360}
+                    height={360}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated] opacity-35"
                   />
 
@@ -175,6 +185,11 @@ export default function HomePage() {
                   <img
                     src="/traits/gold.png"
                     alt="Mascot Golden Fur"
+                    width={360}
+                    height={360}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
                   />
 
@@ -183,6 +198,11 @@ export default function HomePage() {
                   <img
                     src="/traits/varsity-jacket.png"
                     alt="Mascot Varsity Jacket"
+                    width={360}
+                    height={360}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
                   />
 
@@ -191,6 +211,11 @@ export default function HomePage() {
                   <img
                     src="/traits/snapback.png"
                     alt="Mascot Snapback"
+                    width={360}
+                    height={360}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
                   />
 
@@ -199,6 +224,11 @@ export default function HomePage() {
                   <img
                     src="/traits/matrix-shades.png"
                     alt="Mascot Matrix Shades"
+                    width={360}
+                    height={360}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
                   />
 
