@@ -41,7 +41,7 @@ export function WalletConnectCard() {
           </div>
           <div>
             <CardTitle className="font-display text-lg uppercase tracking-wider text-white">Web3 Wallet</CardTitle>
-            <CardDescription className="font-mono-street text-[11px] text-zinc-400">Sign in with Ethereum (SIWE)</CardDescription>
+            <CardDescription className="font-mono-street text-[11px] text-zinc-400">Gasless off-chain signature verification</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -94,7 +94,7 @@ export function WalletConnectCard() {
               variant="primary"
               size="sm"
               onClick={() => void login()}
-              className="rounded-lg text-xs font-display uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 font-bold shrink-0 self-start sm:self-auto cursor-pointer shadow-brutal-sm"
+              className="rounded-lg text-xs font-mono-street font-bold uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 shrink-0 self-start sm:self-auto cursor-pointer shadow-brutal-sm"
             >
               Sign In with Ethereum
             </Button>
@@ -108,7 +108,7 @@ export function WalletConnectCard() {
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3">
                 <div>
                   <p className="text-xs font-bold text-zinc-300">Status: Not Connected</p>
-                  <p className="text-[11px] text-zinc-500">Connect wallet & sign in with Ethereum.</p>
+                  <p className="text-[11px] text-zinc-500">Connect wallet to sign in.</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">

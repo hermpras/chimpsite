@@ -262,14 +262,12 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     await waitFor(() => {
       // Baris status must be "Status: Connected" without repeating username
       expect(screen.getByText("Status: Connected")).toBeInTheDocument();
-      // Username is displayed once below it
-      expect(screen.getByText("@chimphood_og")).toBeInTheDocument();
+      // Username is displayed
+      expect(screen.getAllByText("@chimphood_og").length).toBeGreaterThanOrEqual(1);
       // Profile header description is neutral
       expect(
-        screen.getByText("Integrated identity management for Web3 Wallets and X (Twitter) accounts."),
+        screen.getByText("One account for your X account and wallets; allowlists, trait drops, and gear follow it."),
       ).toBeInTheDocument();
-      // Header meta chip retains username
-      expect(screen.getByText(/@chimphood_og \(Connected\)/)).toBeInTheDocument();
     });
 
     const connectedButton = screen.getByRole("button", { name: "X Account Connected" });
@@ -340,7 +338,7 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     fireEvent.click(collectionTab);
 
     const collectionSummary = screen.getByTestId("trait-collection-summary");
-    expect(collectionSummary.className).toContain("border-b border-gray-800");
+    expect(collectionSummary.className).toMatch(/border-b border-(gray|zinc)-800/);
     expect(collectionSummary.className).not.toContain("rounded-lg border border-gray-800 bg-gray-950/60 p-4");
   });
 });

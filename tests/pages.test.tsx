@@ -99,9 +99,8 @@ describe("Public Pages English Copy Rendering", () => {
       </Providers>,
     );
     expect(screen.getAllByRole("link", { name: "Home" }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("link", { name: "Drops" }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByRole("link", { name: "Whitelist" }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("link", { name: "Profile" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("link", { name: "Drops" }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByRole("link", { name: "Docs" }).length).toBeGreaterThanOrEqual(1);
 
     // Open mobile menu
@@ -122,28 +121,25 @@ describe("Public Pages English Copy Rendering", () => {
     const { container } = render(<Footer />);
 
     // Brand link to "/"
-    const brandLink = screen.getByRole("link", { name: /Elychimp/i });
+    const brandLink = screen.getByRole("link", { name: "Elychimp Logo" });
     expect(brandLink).toHaveAttribute("href", "/");
 
     // Footer navigation links in exact order
     const footerNav = screen.getByRole("navigation", { name: "Footer navigation" });
     const links = footerNav.querySelectorAll("a");
-    expect(links.length).toBe(5);
+    expect(links.length).toBe(4);
 
     expect(links[0]).toHaveTextContent("Home");
     expect(links[0]).toHaveAttribute("href", "/");
 
-    expect(links[1]).toHaveTextContent("Drops");
-    expect(links[1]).toHaveAttribute("href", "/drops");
+    expect(links[1]).toHaveTextContent("Whitelist");
+    expect(links[1]).toHaveAttribute("href", "/whitelist");
 
-    expect(links[2]).toHaveTextContent("Whitelist");
-    expect(links[2]).toHaveAttribute("href", "/whitelist");
+    expect(links[2]).toHaveTextContent("Drops");
+    expect(links[2]).toHaveAttribute("href", "/drops");
 
-    expect(links[3]).toHaveTextContent("Profile");
-    expect(links[3]).toHaveAttribute("href", "/profile");
-
-    expect(links[4]).toHaveTextContent("Docs");
-    expect(links[4]).toHaveAttribute("href", "/docs");
+    expect(links[3]).toHaveTextContent("Docs");
+    expect(links[3]).toHaveAttribute("href", "/docs");
 
     // Old scaffold text is gone
     expect(screen.queryByText(/Foundation & Data Architecture/i)).not.toBeInTheDocument();
@@ -183,7 +179,7 @@ describe("Public Pages English Copy Rendering", () => {
     );
     expect(screen.getByText("User Profile")).toBeInTheDocument();
     expect(screen.getByText("Web3 Wallet")).toBeInTheDocument();
-    expect(screen.getByText("Sign in with Ethereum (SIWE)")).toBeInTheDocument();
+    expect(screen.getByText("Gasless off-chain signature verification")).toBeInTheDocument();
     expect(screen.getByText("X (Twitter) Identity")).toBeInTheDocument();
     expect(screen.getByText("Community Tier & Whitelist Status")).toBeInTheDocument();
     expect(screen.getByText("Collection & Inventory")).toBeInTheDocument();

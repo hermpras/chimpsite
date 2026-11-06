@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { WalletConnectCard } from "@/components/auth/WalletConnectCard";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
+import { useXIdentity } from "@/hooks/useXIdentity";
 import {
   fetchWhitelistStatus,
   type WhitelistStatusResponse,
@@ -220,13 +221,14 @@ function ProfileContent() {
     setActiveTab(tab);
     if (typeof window !== "undefined" && tabListRef.current) {
       const rect = tabListRef.current.getBoundingClientRect();
-      if (rect.top < 64) {
+      if (rect.top < 64 && typeof tabListRef.current.scrollIntoView === "function") {
         tabListRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
   };
 
   const { status, sessionAddress, walletAddress } = useSiweAuth();
+  const { xName, xUsername: hookXUsername } = useXIdentity();
   const address = sessionAddress || walletAddress;
   const [wlData, setWlData] = useState<WhitelistStatusResponse | null>(null);
   const [xStatusData, setXStatusData] = useState<{
@@ -234,6 +236,7 @@ function ProfileContent() {
     identity?: {
       xId?: string;
       username?: string;
+      name?: string;
       profileImageUrl?: string | null;
     } | null;
   } | null>(null);
@@ -421,10 +424,19 @@ function ProfileContent() {
   const isXConnected =
     status === "authenticated" &&
     (Boolean(wlData?.status?.details?.hasLinkedX) || Boolean(xStatusData?.connected));
+  const currentXName =
+    status === "authenticated"
+      ? xName || xStatusData?.identity?.name
+      : undefined;
   const currentXUsername =
     status === "authenticated"
-      ? wlData?.status?.details?.xUsername || xStatusData?.identity?.username
+      ? hookXUsername || wlData?.status?.details?.xUsername || xStatusData?.identity?.username
       : undefined;
+  const displayName = isXConnected
+    ? currentXName || (currentXUsername ? `@${currentXUsername}` : "Chimp Member")
+    : address
+      ? shortenAddress(address)
+      : "User Profile";
   const rawXProfileImg =
     status === "authenticated"
       ? wlData?.status?.details?.xProfileImageUrl || xStatusData?.identity?.profileImageUrl
@@ -461,37 +473,20 @@ function ProfileContent() {
             onRefresh={handleRefreshAll}
             className="border-2 border-amber-400/50 rounded-2xl shadow-brutal-sm [image-rendering:pixelated]"
           />
-          <div className="space-y-2 flex-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-wider text-white">
-                {isXConnected && currentXUsername ? `@${currentXUsername}` : "User Profile"}
+          <div className="space-y-1.5 flex-1">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans">
+                {displayName}
               </h1>
-              {getWhitelistSummaryBadge(wlData?.status, status === "authenticated")}
+              {isXConnected && currentXUsername && currentXName && (
+                <span className="font-mono-street text-xs text-zinc-400">
+                  @{currentXUsername}
+                </span>
+              )}
             </div>
             <p className="font-mono-street text-xs sm:text-sm text-zinc-400">
-              Integrated identity management for Web3 Wallets and X (Twitter) accounts.
+              One account for your X account and wallets; allowlists, trait drops, and gear follow it.
             </p>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono-street text-xs">
-              {address ? (
-                <p className="text-zinc-400">
-                  Connected:{" "}
-                  <span className="text-emerald-400 font-bold" title={address}>
-                    {shortenAddress(address)}
-                  </span>
-                </p>
-              ) : (
-                <p className="text-zinc-500">Wallet: Not Connected</p>
-              )}
-              <span className="text-zinc-600 hidden sm:inline">•</span>
-              {isXConnected && currentXUsername ? (
-                <p className="text-zinc-400">
-                  X Account:{" "}
-                  <span className="text-cyan-400 font-bold">@{currentXUsername} (Connected)</span>
-                </p>
-              ) : (
-                <p className="text-zinc-500">X Account: Not Connected</p>
-              )}
-            </div>
           </div>
         </div>
 
@@ -752,7 +747,7 @@ function ProfileContent() {
                   <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-center text-sm text-zinc-400">
                     <p className="font-bold text-zinc-200">Wallet Not Authenticated</p>
                     <p className="mt-1 text-xs text-zinc-500">
-                      Connect and authenticate your Web3 wallet via Sign in with Ethereum (SIWE) above to view your Whitelist allocation status, trait collection progress, and campaign tasks.
+                      Sign in with your Web3 wallet above to view your Whitelist allocation status, trait collection progress, and campaign tasks.
                     </p>
                   </div>
                 ) : (
@@ -1233,7 +1228,7 @@ function ProfileContent() {
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-center text-sm text-zinc-400 font-mono-street">
                   <p className="font-bold text-zinc-200">Wallet Not Authenticated</p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Connect and authenticate your Web3 wallet via Sign in with Ethereum (SIWE) above to view and manage trait gifts.
+                    Sign in with your Web3 wallet above to view and manage trait gifts.
                   </p>
                 </div>
               </CardContent>
