@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { shortenAddress } from "@/lib/auth/address";
 import { UserAvatar } from "@/components/inventory/UserAvatar";
 import { WalletModal } from "./WalletModal";
-import { Wallet, ChevronDown, User, LogOut } from "lucide-react";
+import { Wallet, ChevronDown, User, LogOut, LogIn, Loader2 } from "lucide-react";
 
 /**
  * Navbar wallet control.
@@ -181,27 +181,34 @@ export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
   if (status === "signing") {
     if (compact) {
       return (
-        <div className="h-8 w-8 animate-pulse rounded-lg border border-amber-400/30 bg-amber-400/10" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-300">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
       );
     }
     return (
-      <Button variant="outline" size="sm" disabled className="font-mono-street text-xs border-amber-400/40 text-amber-400">
-        {busyMessage ?? "Signing…"}
-      </Button>
+      <div className="flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 font-display text-sm tracking-wider uppercase text-black font-bold shadow-sm">
+        <Loader2 className="h-4 w-4 animate-spin text-black" />
+        <span>{busyMessage ?? "Signing in…"}</span>
+      </div>
     );
   }
 
   if (status === "wallet-only" && walletAddress) {
     return (
       <div className="flex flex-col items-end gap-1">
-        <Button
-          variant="primary"
-          size="sm"
+        <button
           onClick={() => void login()}
-          className="border border-black bg-amber-400 font-display uppercase tracking-wider text-black hover:bg-amber-300 shadow-brutal-sm text-xs px-4 py-2"
+          aria-label="Sign in"
+          className={
+            compact
+              ? "flex items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-1.5 font-display text-xs tracking-wider uppercase text-black font-bold shadow-sm transition-all hover:bg-amber-300 active:scale-95"
+              : "flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 font-display text-sm tracking-wider uppercase text-black font-bold shadow-sm transition-all hover:bg-amber-300 hover:shadow-md active:scale-95"
+          }
         >
-          {compact ? "Sign In" : "Sign In with Ethereum"}
-        </Button>
+          <LogIn className="h-4 w-4 shrink-0 text-black stroke-[2.5]" />
+          <span>Sign in</span>
+        </button>
         {error && !compact && (
           <button
             onClick={dismissError}
@@ -220,15 +227,15 @@ export function WalletButton({ compact = false }: { compact?: boolean } = {}) {
       <div className="flex flex-col items-end gap-1">
         <button
           onClick={() => setModalOpen(true)}
-          aria-label="Connect Wallet"
+          aria-label="Sign in"
           className={
             compact
-              ? "flex items-center justify-center rounded-lg border-2 border-amber-400 bg-amber-400/10 p-2 text-amber-300 shadow-brutal-sm transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-amber-400 hover:text-black active:translate-x-0.5 active:translate-y-0.5"
-              : "flex items-center gap-2 border-2 border-amber-400 bg-amber-400/10 px-4 py-2 font-mono-street text-xs font-black uppercase tracking-wider text-amber-300 shadow-brutal-sm transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-amber-400 hover:text-black active:translate-x-0.5 active:translate-y-0.5"
+              ? "flex items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-1.5 font-display text-xs tracking-wider uppercase text-black font-bold shadow-sm transition-all hover:bg-amber-300 active:scale-95"
+              : "flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 font-display text-sm tracking-wider uppercase text-black font-bold shadow-sm transition-all hover:bg-amber-300 hover:shadow-md active:scale-95"
           }
         >
-          <Wallet className="h-4 w-4" />
-          {!compact && <span>Connect Wallet</span>}
+          <LogIn className="h-4 w-4 shrink-0 text-black stroke-[2.5]" />
+          <span>Sign in</span>
         </button>
         {error && !compact && (
           <button
