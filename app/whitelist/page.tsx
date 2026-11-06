@@ -1005,18 +1005,13 @@ export default function WhitelistPage() {
         <div className={activeStepNumber === 1 ? "block" : "hidden"}>
           <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-6 sm:p-8 shadow-brutal-sm max-w-2xl mx-auto space-y-6">
             <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/30">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 font-mono-street">
-                    Step 1 of 5
-                  </span>
-                  <h2 className="font-display text-xl uppercase tracking-wider text-white">
-                    Connect EVM Wallet
-                  </h2>
-                </div>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 font-mono-street">
+                  Step 1 of 5
+                </span>
+                <h2 className="font-display text-xl uppercase tracking-wider text-white">
+                  Connect EVM Wallet
+                </h2>
               </div>
               <Badge variant="outline" className="border-amber-400/40 bg-amber-950/40 text-amber-300 font-mono-street text-xs font-bold uppercase">
                 Active Step
@@ -1024,13 +1019,12 @@ export default function WhitelistPage() {
             </div>
 
             {/* Notice / Instructions */}
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs space-y-2">
-              <div className="flex items-center gap-2 font-bold text-zinc-200 font-mono-street">
-                <AlertCircle className="h-4 w-4 text-amber-400" />
-                <span>Wallet Not Authenticated</span>
-              </div>
-              <p className="text-zinc-400 leading-relaxed font-mono-street text-[13px]">
-                Connect your Web3 wallet via Sign in with Ethereum (SIWE) above to view your real-time Whitelist allocation status and trait checklist.
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs space-y-1.5">
+              <p className="font-bold text-white font-mono-street text-sm">
+                A signature, not a transaction.
+              </p>
+              <p className="text-zinc-400 leading-relaxed font-mono-street text-xs">
+                With a wallet: its public address. Signing in is a signed message, never an on-chain transaction, and it costs nothing.
               </p>
             </div>
 
@@ -1074,12 +1068,6 @@ export default function WhitelistPage() {
                   Connect Wallet
                 </Button>
               )}
-            </div>
-
-            <div className="border-t border-zinc-800/80 pt-3 text-center">
-              <p className="text-xs text-zinc-500 font-mono-street">
-                Step 2 (X Account Sync) and Step 3 (Campaign Tasks) will become accessible immediately after your wallet is authenticated.
-              </p>
             </div>
           </div>
         </div>
