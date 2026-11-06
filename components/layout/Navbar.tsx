@@ -106,8 +106,14 @@ export function Navbar() {
 
         {/* Right: Wallet Button & Mobile Menu Toggle */}
         <div className="flex flex-1 items-center justify-end gap-3">
+          {/* Desktop wallet button */}
           <div className="hidden sm:flex items-center">
             <WalletButton />
+          </div>
+
+          {/* Mobile: compact wallet button always visible */}
+          <div className="flex sm:hidden items-center">
+            <WalletButton compact />
           </div>
 
           {/* Mobile menu trigger */}
