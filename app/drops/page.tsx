@@ -37,6 +37,7 @@ import {
   type WonTraitData,
 } from "@/components/drops/ClaimLootboxModal";
 import { XLogo } from "@/components/icons/XLogo";
+import { ElychimpSpinner } from "@/components/ui/ElychimpSpinner";
 
 const RARITY_THEME: Record<
   string,
@@ -398,7 +399,11 @@ export default function DropsPage() {
                 title="Refresh Drop Status"
                 aria-label="Refresh Drop Status"
               >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin text-amber-400" : ""}`} />
+                {isLoading ? (
+                  <ElychimpSpinner size="sm" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
               </button>
             </div>
           </div>
@@ -420,16 +425,22 @@ export default function DropsPage() {
                   disabled={isLoading}
                   className="border-rose-500/40 text-xs text-rose-300 hover:bg-rose-500/20 shrink-0"
                 >
-                  <RefreshCw className={`mr-1.5 h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
+                  {isLoading ? (
+                    <ElychimpSpinner size="xs" className="mr-1.5" />
+                  ) : (
+                    <RefreshCw className="mr-1.5 h-3 w-3" />
+                  )}
                   Try Again
                 </Button>
               </div>
             )}
 
             {isLoading && !dropData ? (
-              <div className="py-12 text-center text-sm text-gray-400">
-                <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-emerald-400" />
-                Loading drop event and stock data...
+              <div className="py-16 text-center text-sm text-gray-400 flex flex-col items-center justify-center">
+                <ElychimpSpinner size="lg" className="mb-4 filter drop-shadow-[0_0_20px_rgba(251,191,36,0.35)]" />
+                <span className="font-mono-street text-xs uppercase tracking-wider text-amber-400 animate-pulse">
+                  Loading drop event and stock data...
+                </span>
               </div>
             ) : fetchError && !dropData ? (
               <div
@@ -532,7 +543,7 @@ export default function DropsPage() {
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
-                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              <ElychimpSpinner size="xs" />
                               Claiming...
                             </span>
                           </Button>
@@ -544,7 +555,7 @@ export default function DropsPage() {
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
-                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              <ElychimpSpinner size="xs" />
                               {busyMessage || "Authenticating..."}
                             </span>
                           </Button>
@@ -574,7 +585,7 @@ export default function DropsPage() {
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
-                              <RefreshCw className="h-3.5 w-3.5 animate-spin text-black" />
+                              <ElychimpSpinner size="xs" />
                               Verifying Registration...
                             </span>
                           </Button>

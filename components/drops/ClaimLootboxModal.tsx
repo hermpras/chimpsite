@@ -13,6 +13,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { ElychimpSpinner } from "@/components/ui/ElychimpSpinner";
 
 export interface WonTraitData {
   id: string;
@@ -432,7 +433,7 @@ export function ClaimLootboxModal({
 
             {/* Header Badge */}
             <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-400">
-              <Sparkles className="h-3.5 w-3.5 animate-spin" />
+              <ElychimpSpinner size="xs" />
               <span>
                 {periodIndex ? `PERIOD #${periodIndex} DROP CAPSULE` : "LOOT CAPSULE"}
               </span>
