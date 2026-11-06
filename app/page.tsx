@@ -3,11 +3,8 @@ import Link from "next/link";
 import {
   Shield,
   Gift,
-  User,
-  FileText,
   ArrowRight,
   Flame,
-  Zap,
   Layers,
   Share2,
   Clock,
@@ -49,32 +46,10 @@ export default function HomePage() {
 
         {/* Hero Content Container (Centered & max-w-7xl) */}
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Top Industrial Telemetry Strip */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b-2 border-pink-500/30 pb-3 font-mono-street text-[11px] uppercase tracking-widest text-gray-400">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#ff5b89] animate-ping" />
-              <span className="font-bold text-[#ff5b89]">ELYCHIMP SYNDICATE</span>
-              <span className="text-gray-600">//</span>
-              <span className="text-pink-200/80">LEONIDA • HYPERLIQUID L2</span>
-            </div>
-            <div className="flex items-center gap-4 text-gray-400">
-              <span className="hidden sm:inline">CYCLE 04 LIVE</span>
-              <span className="rounded bg-gradient-to-r from-pink-500/20 to-amber-500/20 px-2.5 py-0.5 font-bold text-amber-300 border border-pink-500/40 shadow-sm">
-                MINT: NOV 19
-              </span>
-            </div>
-          </div>
-
           {/* Main Hero Grid */}
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
           {/* Left: Heavy Poster Typography */}
           <div className="flex flex-col items-start lg:col-span-7">
-            {/* Tag Badge */}
-            <div className="mb-4 inline-flex items-center gap-2 border-2 border-pink-500/60 bg-pink-500/10 px-3 py-1 font-mono-street text-xs font-black uppercase tracking-wider text-pink-300 backdrop-blur-sm">
-              <Zap className="h-3.5 w-3.5 text-pink-400" />
-              <span>Leonida Street Protocol // Vice City Spec</span>
-            </div>
-
             {/* Giant Display Headline */}
             <h1 className="font-display text-5xl sm:text-7xl md:text-8xl lg:text-9xl uppercase tracking-tighter leading-[0.88] text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
               RULE THE <br />
@@ -97,7 +72,7 @@ export default function HomePage() {
               <Link href="/whitelist" className="w-full sm:w-auto">
                 <Button
                   size="lg"
-                  className="w-full gap-3 border-2 border-black bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 font-display text-lg sm:text-xl tracking-wider uppercase text-black shadow-brutal transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[7px_7px_0px_#ff5b89] active:translate-x-1 active:translate-y-1 active:shadow-none sm:w-auto px-6 py-4 sm:px-8 sm:py-6"
+                  className="w-full gap-3 border-2 border-black bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 font-mono-street font-bold text-lg sm:text-xl tracking-wider uppercase text-black shadow-brutal transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[7px_7px_0px_#ff5b89] active:translate-x-1 active:translate-y-1 active:shadow-none sm:w-auto px-6 py-4 sm:px-8 sm:py-6"
                 >
                   GET ON THE LIST <ArrowRight className="h-5 w-5" />
                 </Button>
@@ -106,31 +81,13 @@ export default function HomePage() {
                 <Button
                   size="lg"
                   variant="secondary"
-                  className="w-full gap-3 border-2 border-pink-500/50 bg-[#0d0a14]/90 backdrop-blur-md font-display text-lg sm:text-xl tracking-wider uppercase text-pink-200 shadow-brutal transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-pink-400 hover:text-white hover:shadow-[7px_7px_0px_rgba(255,91,137,0.8)] active:translate-x-1 active:translate-y-1 active:shadow-none sm:w-auto px-6 py-4 sm:px-8 sm:py-6"
+                  className="w-full gap-3 border-2 border-pink-500/50 bg-[#0d0a14]/90 backdrop-blur-md font-mono-street font-bold text-lg sm:text-xl tracking-wider uppercase text-pink-200 shadow-brutal transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-pink-400 hover:text-white hover:shadow-[7px_7px_0px_rgba(255,91,137,0.8)] active:translate-x-1 active:translate-y-1 active:shadow-none sm:w-auto px-6 py-4 sm:px-8 sm:py-6"
                 >
                   OPEN CRATES <Gift className="h-5 w-5 text-pink-400" />
                 </Button>
               </Link>
             </div>
 
-            {/* Secondary Direct Links */}
-            <div className="mt-8 flex flex-wrap items-center gap-6 font-mono-street text-xs uppercase tracking-wider text-stone-400">
-              <Link
-                href="/profile"
-                className="flex items-center gap-1.5 font-bold text-stone-300 transition-colors hover:text-pink-400"
-              >
-                <User className="h-3.5 w-3.5 text-pink-400" />
-                <span>[01] My Syndicate ID</span>
-              </Link>
-              <span className="text-gray-700">/</span>
-              <Link
-                href="/docs"
-                className="flex items-center gap-1.5 font-bold text-stone-300 transition-colors hover:text-amber-400"
-              >
-                <FileText className="h-3.5 w-3.5 text-amber-400" />
-                <span>[02] System Dossier</span>
-              </Link>
-            </div>
           </div>
 
           {/* Right: Physical Blister Pack / Action Toy Card */}
@@ -523,7 +480,7 @@ export default function HomePage() {
             <Link href="/whitelist">
               <Button
                 size="lg"
-                className="border-2 border-black bg-gradient-to-r from-amber-400 to-[#ff5b89] font-display text-lg sm:text-xl uppercase tracking-wider text-black shadow-brutal hover:brightness-110 px-6 py-4 sm:px-8 sm:py-6"
+                className="border-2 border-black bg-gradient-to-r from-amber-400 to-[#ff5b89] font-mono-street font-bold text-lg sm:text-xl uppercase tracking-wider text-black shadow-brutal hover:brightness-110 px-6 py-4 sm:px-8 sm:py-6"
               >
                 GET ON THE LIST
               </Button>
@@ -532,7 +489,7 @@ export default function HomePage() {
               <Button
                 size="lg"
                 variant="secondary"
-                className="border-2 border-pink-500/40 bg-black/60 font-display text-lg sm:text-xl uppercase tracking-wider text-pink-200 shadow-brutal hover:border-pink-400 hover:text-white px-6 py-4 sm:px-8 sm:py-6"
+                className="border-2 border-pink-500/40 bg-black/60 font-mono-street font-bold text-lg sm:text-xl uppercase tracking-wider text-pink-200 shadow-brutal hover:border-pink-400 hover:text-white px-6 py-4 sm:px-8 sm:py-6"
               >
                 VIEW GEAR
               </Button>

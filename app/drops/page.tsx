@@ -528,7 +528,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm"
+                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -540,7 +540,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm"
+                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -552,7 +552,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300"
+                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300"
                             onClick={() => void login()}
                           >
                             Sign In with Ethereum
@@ -561,7 +561,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300"
+                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300"
                             onClick={() => void login()}
                           >
                             Connect Wallet to Register
@@ -570,7 +570,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm cursor-wait"
+                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm cursor-wait"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -582,7 +582,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-cyan-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-cyan-300 flex items-center justify-center gap-2"
+                            className="w-full border border-black bg-cyan-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-cyan-300 flex items-center justify-center gap-2"
                             onClick={handleConnectX}
                             disabled={isConnectingX}
                           >
@@ -592,7 +592,7 @@ export default function DropsPage() {
                         ) : !areTasksDone ? (
                           <Link
                             href="/whitelist#tasks"
-                            className="w-full inline-flex items-center justify-center gap-1.5 border border-black bg-amber-400 font-display text-xs uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300 py-2 px-3 text-center"
+                            className="w-full inline-flex items-center justify-center gap-1.5 border border-black bg-amber-400 font-mono-street font-bold text-xs uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300 py-2 px-3 text-center"
                           >
                             <Flame className="h-4 w-4 text-black shrink-0" />
                             <span>Complete Quests on Whitelist ({completedTasks}/{totalTasks})</span>
@@ -620,7 +620,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-display text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300 cursor-pointer"
+                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300 cursor-pointer"
                             onClick={handleClaim}
                           >
                             Claim Trait Now
