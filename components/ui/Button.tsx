@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "gold";
   size?: "sm" | "md" | "lg";
 }
 
@@ -15,7 +15,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    "inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50 disabled:opacity-50 disabled:cursor-not-allowed";
+    "inline-flex items-center justify-center font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-[#34B7DD]/50 disabled:opacity-50 disabled:cursor-not-allowed";
 
   const sizeStyles = {
     sm: "px-3 py-1.5 text-xs",
@@ -25,11 +25,15 @@ export function Button({
 
   const variantStyles = {
     primary:
-      "bg-amber-400 text-black hover:bg-amber-300 shadow-sm active:bg-amber-500",
-    secondary: "bg-gray-800 text-gray-100 hover:bg-gray-700 active:bg-gray-900",
+      "bg-[#34B7DD] text-[#04181C] hover:bg-[#6FCDE8] active:bg-[#2D7388] font-semibold shadow-[0_0_20px_rgba(52,183,221,0.2)] hover:shadow-[0_0_25px_rgba(52,183,221,0.35)]",
+    gold:
+      "bg-[#F59E0B] text-[#04181C] hover:bg-[#FBBF24] active:bg-[#D97706] font-semibold shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_25px_rgba(245,158,11,0.35)]",
+    secondary:
+      "bg-[#102B33] text-[#DBF2F9] border border-[#1E4D5A] hover:bg-[#163B44] hover:border-[#34B7DD]/60 hover:text-white active:bg-[#0B2026]",
     outline:
-      "border border-gray-700 bg-transparent text-gray-200 hover:bg-gray-800/60 active:bg-gray-800",
-    ghost: "bg-transparent text-gray-300 hover:bg-gray-800/50 text-gray-200",
+      "border border-[#163B44] bg-transparent text-[#DBF2F9] hover:border-[#34B7DD]/60 hover:bg-[#0B2026]/70 hover:text-white active:bg-[#102B33]",
+    ghost:
+      "bg-transparent text-[#8AA8B2] hover:text-[#DBF2F9] hover:bg-[#102B33]/60",
   };
 
   return (

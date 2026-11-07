@@ -1,20 +1,53 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans:
+    "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Anton", impact, sans-serif;
+  --font-mono:
+    "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-elysium-void: #04181c;
+  --color-elysium-canvas: #051d22;
+  --color-elysium-surface: #0b2026;
+  --color-elysium-elevated: #102b33;
+  --color-elysium-border: #163b44;
+  --color-elysium-border-highlight: #1e4d5a;
+
+  --color-elysium-cyan: #34b7dd;
+  --color-elysium-cyan-light: #6fcde8;
+  --color-elysium-cyan-muted: #2d7388;
+  --color-elysium-gold: #f59e0b;
+  --color-elysium-gold-light: #fbbf24;
+
+  --color-elysium-white: #f8f7f4;
+  --color-elysium-text: #dbf2f9;
+  --color-elysium-muted: #8aa8b2;
+}
+
 :root {
-  --background: #08090d;
-  --foreground: #f4f4f5;
-  --muted: #151821;
-  --muted-foreground: #a1a1aa;
-  --accent: #f59e0b;
-  --accent-hover: #d97706;
-  --card: #0f1118;
-  --card-border: #222634;
+  --background: #04181c;
+  --foreground: #dbf2f9;
+  --muted: #0b2026;
+  --muted-foreground: #8aa8b2;
+  --accent: #34b7dd;
+  --accent-hover: #6fcde8;
+  --accent-gold: #f59e0b;
+  --card: #0b2026;
+  --card-border: #163b44;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    "DM Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  letter-spacing: -0.015em;
   min-height: 100vh;
 }
 
@@ -25,38 +58,57 @@ button,
 
 /* Typography Utility Classes */
 .font-display {
-  font-family: "Anton", "Syne", impact, sans-serif;
-}
-
-.font-syne {
-  font-family: "Syne", sans-serif;
+  font-family: "Anton", impact, sans-serif;
 }
 
 .font-mono-street {
-  font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family:
+    "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
 }
 
-/* Brutalist Shadows & Street Aesthetics */
+/* Precision Cyber Glow & Aesthetic Shadows */
+.glow-cyan-sm {
+  box-shadow: 0 0 14px rgba(52, 183, 221, 0.2);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 28px rgba(52, 183, 221, 0.25);
+}
+
+.glow-gold-sm {
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.2);
+}
+
+.glow-gold {
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.25);
+}
+
+/* Preserved Brutalist & Street Aesthetics (Refined with Elysium Depth) */
 .shadow-brutal-sm {
-  box-shadow: 3px 3px 0px #000000;
+  box-shadow: 2px 2px 0px #04181c;
 }
 
 .shadow-brutal {
-  box-shadow: 5px 5px 0px #000000;
+  box-shadow: 4px 4px 0px #04181c;
 }
 
 .shadow-brutal-amber {
-  box-shadow: 6px 6px 0px rgba(245, 158, 11, 0.9);
+  box-shadow: 4px 4px 0px rgba(245, 158, 11, 0.85);
 }
 
 .shadow-brutal-cyan {
-  box-shadow: 6px 6px 0px rgba(6, 182, 212, 0.9);
+  box-shadow: 4px 4px 0px rgba(52, 183, 221, 0.85);
 }
 
 /* Marquee Animation */
 @keyframes marquee {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .animate-marquee {
@@ -69,10 +121,63 @@ button,
   animation-play-state: paused;
 }
 
+/* Premium Mobile Drawer & Backdrop Animations */
+@keyframes mobileBackdropFade {
+  0% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    backdrop-filter: blur(12px);
+  }
+}
+
+@keyframes mobileDrawerSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mobileItemCascade {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-mobile-backdrop {
+  animation: mobileBackdropFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-mobile-drawer {
+  animation: mobileDrawerSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-mobile-item {
+  animation: mobileItemCascade 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee {
     animation: none;
     width: 100%;
     overflow-x: auto;
+  }
+
+  .animate-mobile-backdrop,
+  .animate-mobile-drawer,
+  .animate-mobile-item {
+    animation: none !important;
   }
 }
