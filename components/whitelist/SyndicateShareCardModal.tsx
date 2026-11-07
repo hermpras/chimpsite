@@ -670,7 +670,7 @@ export function SyndicateShareCardModal({
         <div className="space-y-1 pr-8">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-amber-400" />
-            <span className="font-mono-street text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">
               OFFICIAL SYNDICATE ID BADGE
             </span>
           </div>
@@ -680,7 +680,7 @@ export function SyndicateShareCardModal({
           >
             Syndicate Clearance Pass
           </h3>
-          <p className="text-xs text-zinc-400 font-mono-street">
+          <p className="text-xs text-[#8AA8B2]">
             Optimized for Twitter/X sharing with full assembled avatar and security clearance details.
           </p>
         </div>
@@ -707,14 +707,14 @@ export function SyndicateShareCardModal({
                     <h4 className="font-display text-sm sm:text-lg uppercase tracking-wide leading-none text-white">
                       Elychimp Syndicate
                     </h4>
-                    <span className="font-mono-street text-[8px] sm:text-[10px] text-emerald-200 tracking-wider">
+                    <span className="text-[8px] sm:text-[10px] text-emerald-200 font-semibold tracking-wider">
                       Official Syndicate ID Badge
                     </span>
                   </div>
                 </div>
 
                 {/* Taped Slot No. Tag */}
-                <div className="relative -rotate-2 rounded-sm bg-emerald-300/90 px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono-street text-[9px] sm:text-[11px] text-emerald-950 shadow-sm border border-emerald-400/80 font-bold">
+                <div className="relative -rotate-2 rounded-sm bg-emerald-300/90 px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono text-[9px] sm:text-[11px] text-emerald-950 shadow-sm border border-emerald-400/80 font-bold">
                   <span className="block text-[7px] uppercase tracking-widest text-emerald-900 leading-none">
                     SLOT NO.
                   </span>
@@ -766,7 +766,7 @@ export function SyndicateShareCardModal({
                 </div>
 
                 {/* Identity Information on Right */}
-                <div className="flex-1 w-full space-y-2.5 sm:space-y-3 font-mono-street text-left">
+                <div className="flex-1 w-full space-y-2.5 sm:space-y-3 text-left">
                   <div>
                     <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
                       NAME
@@ -780,7 +780,7 @@ export function SyndicateShareCardModal({
                     <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
                       ACCOUNT
                     </span>
-                    <p className="font-mono-street text-xs sm:text-sm font-bold text-gray-800">
+                    <p className="font-mono text-xs sm:text-sm font-semibold text-gray-800">
                       {xUsername ? `@${xUsername}` : "EVM Verified"}
                     </p>
                   </div>
@@ -789,7 +789,7 @@ export function SyndicateShareCardModal({
                     <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
                       WALLET ADDRESS
                     </span>
-                    <p className="font-mono-street text-[11px] sm:text-xs font-semibold text-gray-600">
+                    <p className="font-mono text-[11px] sm:text-xs font-semibold text-gray-600">
                       {address ? shortenAddress(address) : "0x0000...0000"}
                     </p>
                   </div>
@@ -798,7 +798,7 @@ export function SyndicateShareCardModal({
                     <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
                       VISITING SINCE
                     </span>
-                    <p className="font-mono-street text-[11px] sm:text-xs font-bold text-gray-900">
+                    <p className="text-[11px] sm:text-xs font-medium text-gray-900">
                       {formattedDate} • HYPERLIQUID L2
                     </p>
                   </div>
@@ -807,7 +807,7 @@ export function SyndicateShareCardModal({
                   <div className="relative pt-1 flex items-center justify-between">
                     <div className="h-9 w-full bg-[repeating-linear-gradient(90deg,#18181b,#18181b_2px,transparent_2px,transparent_4px,#18181b_4px,#18181b_7px,transparent_7px,transparent_9px)] opacity-90 rounded" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="rounded-md border border-black/40 bg-white px-3 py-0.5 font-mono-street text-[10px] sm:text-xs font-bold text-gray-900 shadow-sm">
+                      <span className="rounded-md border border-black/40 bg-white px-3 py-0.5 font-mono text-[10px] sm:text-xs font-bold text-gray-900 shadow-sm">
                         elychimp.xyz
                       </span>
                     </div>
@@ -816,7 +816,7 @@ export function SyndicateShareCardModal({
               </div>
 
               {/* Bottom Serial Strip */}
-              <div className="border-t border-zinc-200 bg-[#edeef2] px-3 sm:px-4 py-2 text-center font-mono-street text-[9px] sm:text-[11px] font-bold tracking-wider text-zinc-700 select-all uppercase">
+              <div className="border-t border-zinc-200 bg-[#edeef2] px-3 sm:px-4 py-2 text-center font-mono text-[9px] sm:text-[11px] font-semibold tracking-wider text-zinc-700 select-all uppercase">
                 SERIAL: ELY-{isGtd ? "GTD" : "FCFS"}-{paddedNum} &bull; elychimp.xyz
               </div>
             </div>
@@ -846,7 +846,7 @@ export function SyndicateShareCardModal({
               disabled={isGenerating}
               variant="primary"
               size="lg"
-              className="w-full gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:bg-amber-300 font-mono-street font-medium text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:bg-amber-300 font-bold text-xs uppercase tracking-wider py-3.5 shadow-[0_0_20px_rgba(245,158,11,0.25)] cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
             >
               <Download className="h-4 w-4" />
               <span>{isGenerating ? "Rendering PNG..." : "Download Card (PNG • 16:9)"}</span>
@@ -861,7 +861,7 @@ export function SyndicateShareCardModal({
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full gap-2 rounded-xl border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white font-mono-street font-medium text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer"
+                className="w-full gap-2 rounded-xl border-[#163B44] bg-[#0B2026] hover:bg-[#102B33] text-white font-bold text-xs uppercase tracking-wider py-3.5 shadow-sm cursor-pointer"
               >
                 <XLogo className="h-4 w-4 fill-white" />
                 <span>Share on X</span>
@@ -872,7 +872,7 @@ export function SyndicateShareCardModal({
 
           <button
             onClick={handleCopyLink}
-            className="w-full py-2 text-center text-xs font-mono-street text-zinc-400 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="w-full py-2 text-center text-xs font-medium text-zinc-400 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
             {copiedLink ? (
               <>
