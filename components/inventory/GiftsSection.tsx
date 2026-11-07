@@ -109,7 +109,7 @@ export function GiftsSection({
               onClick={() => onRefresh()}
               disabled={isLoading}
               title="Refresh gifts"
-              className="rounded-lg border border-gray-800 p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white disabled:opacity-50"
+              className="rounded-lg border border-[#163B44] p-1.5 text-gray-400 hover:bg-[#102B33] hover:text-white disabled:opacity-50"
             >
               <RotateCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             </button>
@@ -180,13 +180,13 @@ export function GiftsSection({
             </div>
 
             {isLoading && pendingIncoming.length === 0 ? (
-              <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-4 text-center text-xs text-gray-500">
+              <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-4 text-center text-xs text-gray-500">
                 Checking for incoming gifts...
               </div>
             ) : pendingIncoming.length === 0 ? (
               <div
                 data-testid="no-incoming-gifts"
-                className="rounded-lg border border-dashed border-gray-800 bg-gray-900/30 p-5 text-center text-xs text-gray-500"
+                className="rounded-lg border border-dashed border-[#163B44] bg-[#051D22]/50 p-5 text-center text-xs text-gray-500"
               >
                 No pending incoming gifts.
               </div>
@@ -200,11 +200,11 @@ export function GiftsSection({
                     <div
                       key={gift.id}
                       data-testid={`incoming-gift-${gift.id}`}
-                      className="flex flex-col gap-3 rounded-xl border border-gray-800 bg-[#0d111c] p-3.5 transition-colors sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-3 rounded-xl border border-[#163B44] bg-[#0B2026] p-3.5 transition-colors sm:flex-row sm:items-center sm:justify-between"
                     >
                       {/* Trait Thumbnail & Details */}
                       <div className="flex items-center gap-3">
-                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-900">
+                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-[#0B2026]">
                           {gift.inventoryItem.trait.imageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -267,7 +267,7 @@ export function GiftsSection({
                           data-testid={`reject-gift-${gift.id}`}
                           disabled={isActing}
                           onClick={() => handleResolve(gift, "REJECT")}
-                          className="border-gray-700 text-xs text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10"
+                          className="border-[#163B44] text-xs text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10"
                         >
                           <X className="mr-1 h-3.5 w-3.5" />
                           {isActing ? "Rejecting..." : "Reject"}
@@ -288,13 +288,13 @@ export function GiftsSection({
             </div>
 
             {isLoading && pendingOutgoing.length === 0 ? (
-              <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-4 text-center text-xs text-gray-500">
+              <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-4 text-center text-xs text-gray-500">
                 Checking outgoing gifts...
               </div>
             ) : pendingOutgoing.length === 0 ? (
               <div
                 data-testid="no-outgoing-gifts"
-                className="rounded-lg border border-dashed border-gray-800 bg-gray-900/30 p-5 text-center text-xs text-gray-500"
+                className="rounded-lg border border-dashed border-[#163B44] bg-[#051D22]/50 p-5 text-center text-xs text-gray-500"
               >
                 No pending outgoing gifts.
               </div>
@@ -308,11 +308,11 @@ export function GiftsSection({
                     <div
                       key={gift.id}
                       data-testid={`outgoing-gift-${gift.id}`}
-                      className="flex flex-col gap-3 rounded-xl border border-gray-800 bg-[#0d111c] p-3.5 transition-colors sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-3 rounded-xl border border-[#163B44] bg-[#0B2026] p-3.5 transition-colors sm:flex-row sm:items-center sm:justify-between"
                     >
                       {/* Trait Thumbnail & Details */}
                       <div className="flex items-center gap-3">
-                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-900">
+                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-[#0B2026]">
                           {gift.inventoryItem.trait.imageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -359,7 +359,7 @@ export function GiftsSection({
                           data-testid={`cancel-gift-${gift.id}`}
                           disabled={isActing}
                           onClick={() => handleResolve(gift, "CANCEL")}
-                          className="border-gray-700 text-xs text-amber-300 hover:border-amber-500/40 hover:bg-amber-500/10"
+                          className="border-[#163B44] text-xs text-amber-300 hover:border-amber-500/40 hover:bg-amber-500/10"
                           title="Cancel gift and unlock item back into your inventory"
                         >
                           <X className="mr-1 h-3.5 w-3.5" />

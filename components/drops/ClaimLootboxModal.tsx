@@ -400,21 +400,21 @@ export function ClaimLootboxModal({
             setSoundEnabled(next);
             if (next) playTone("click");
           }}
-          className="rounded-full bg-gray-900/80 p-2 text-gray-400 hover:text-white border border-gray-800 backdrop-blur transition-colors"
+          className="rounded-full bg-[#0B2026]/80 p-2 text-[#8AA8B2] hover:text-white border border-[#163B44] backdrop-blur transition-colors"
           title={soundEnabled ? "Mute SFX" : "Unmute SFX"}
           aria-label={soundEnabled ? "Mute SFX" : "Unmute SFX"}
         >
           {soundEnabled ? (
             <Volume2 className="h-4 w-4" />
           ) : (
-            <VolumeX className="h-4 w-4 text-gray-500" />
+            <VolumeX className="h-4 w-4 text-[#8AA8B2]" />
           )}
         </button>
         {phase !== "ROLLING" && (
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full bg-gray-900/80 p-2 text-gray-400 hover:text-white border border-gray-800 backdrop-blur transition-colors"
+            className="rounded-full bg-[#0B2026]/80 p-2 text-[#8AA8B2] hover:text-white border border-[#163B44] backdrop-blur transition-colors"
             title="Close modal"
             aria-label="Close modal"
           >
@@ -424,15 +424,15 @@ export function ClaimLootboxModal({
       </div>
 
       {/* Main Container */}
-      <div className="relative my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-gradient-to-b from-[#141828]/95 via-[#0b0e18]/98 to-[#06070e]/99 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-2xl">
+      <div className="relative my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-[#1E4D5A] bg-gradient-to-b from-[#0B2026]/95 via-[#071F24]/98 to-[#04181C]/99 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(4,24,28,0.9)] backdrop-blur-2xl">
         {/* ===================== PHASE 1: ROLLING ===================== */}
         {phase === "ROLLING" && (
           <div className="flex flex-col items-center py-4">
             {/* Ambient Back Glow */}
-            <div className="absolute inset-0 bg-radial from-emerald-500/10 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-radial from-[#34B7DD]/10 via-transparent to-transparent pointer-events-none" />
 
             {/* Header Badge */}
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-400">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-[#34B7DD]/40 bg-[#34B7DD]/10 px-3 py-1 text-xs font-semibold text-[#6FCDE8]">
               <ElychimpSpinner size="xs" />
               <span>
                 {periodIndex ? `PERIOD #${periodIndex} DROP CAPSULE` : "LOOT CAPSULE"}
@@ -447,7 +447,7 @@ export function ClaimLootboxModal({
             </h3>
 
             {/* Spinning Trait Roulette Pod */}
-            <div className="relative mt-6 flex h-52 w-52 items-center justify-center rounded-2xl border-2 border-emerald-500/40 bg-[#0c0f1a] p-3 shadow-[0_0_40px_rgba(16,185,129,0.2)] animate-pod-pulse">
+            <div className="relative mt-6 flex h-52 w-52 items-center justify-center rounded-2xl border-2 border-[#34B7DD]/40 bg-[#051D22] p-3 shadow-[0_0_40px_rgba(52,183,221,0.2)] animate-pod-pulse">
               {/* Rotating Corner Tech Brackets */}
               <div className="absolute top-1 left-1 h-3 w-3 border-t-2 border-l-2 border-emerald-400" />
               <div className="absolute top-1 right-1 h-3 w-3 border-t-2 border-r-2 border-emerald-400" />

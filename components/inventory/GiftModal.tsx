@@ -193,13 +193,13 @@ export function GiftModal({
       data-testid="gift-modal"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
     >
-      <div className="relative w-full max-w-lg rounded-2xl border border-gray-800 bg-[#0d111c] p-6 shadow-2xl">
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 shadow-2xl">
         {/* Close Button */}
         <button
           onClick={handleClose}
           disabled={isSubmitting}
           data-testid="gift-modal-close"
-          className="absolute top-4 right-4 rounded-lg p-1 text-gray-400 hover:bg-gray-800 hover:text-white"
+          className="absolute top-4 right-4 rounded-lg p-1 text-gray-400 hover:bg-[#102B33] hover:text-white"
         >
           <X className="h-5 w-5" />
         </button>
@@ -220,8 +220,8 @@ export function GiftModal({
         </div>
 
         {/* Selected Trait Preview */}
-        <div className="mb-5 flex items-center gap-4 rounded-xl border border-gray-800 bg-gray-900/60 p-3.5">
-          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-800">
+        <div className="mb-5 flex items-center gap-4 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3.5">
+          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-[#102B33]">
             {item.trait.imageUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -239,12 +239,12 @@ export function GiftModal({
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
-                  CATEGORY_BADGE_STYLES[item.trait.category] || "border-gray-700 bg-gray-800 text-gray-300"
+                  CATEGORY_BADGE_STYLES[item.trait.category] || "border-[#163B44] bg-[#102B33] text-gray-300"
                 }`}
               >
                 {item.trait.category}
               </span>
-              <span className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-[10px] text-gray-300">
+              <span className="rounded bg-[#102B33] px-1.5 py-0.5 font-mono text-[10px] text-gray-300">
                 #{item.edition}
               </span>
             </div>
@@ -321,7 +321,7 @@ export function GiftModal({
                       }
                     }}
                     disabled={isSubmitting || isSearching}
-                    className="w-full rounded-lg border border-gray-700 bg-gray-900/80 px-3.5 py-2.5 font-mono text-sm text-white placeholder-gray-500 transition-colors focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none disabled:opacity-50"
+                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026]/90 px-3.5 py-2.5 font-mono text-sm text-white placeholder-gray-500 transition-colors focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none disabled:opacity-50"
                   />
                 </div>
                 {!isAddressFormat && trimmed && (
@@ -364,7 +364,7 @@ export function GiftModal({
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-gray-700 bg-gray-800">
+                    <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-[#163B44] bg-[#102B33]">
                       {verifiedRecipient.profileImageUrl ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img

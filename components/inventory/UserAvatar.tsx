@@ -78,7 +78,7 @@ export function UserAvatar({
     return (
       <div
         data-testid={isSm ? "navbar-avatar-fallback" : "avatar-fallback"}
-        className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-gray-800 bg-[#0d111c] text-gray-400 shadow-inner ${containerClass} ${className}`}
+        className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[#163B44] bg-[#0B2026] text-gray-400 shadow-inner ${containerClass} ${className}`}
         title={identifier ? "Base Chimp (no traits in inventory)" : "No character avatar"}
       >
         {identifier ? (
@@ -100,7 +100,7 @@ export function UserAvatar({
       return (
         <div
           data-testid="navbar-avatar-fallback"
-          className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-gray-800 bg-[#0d111c] text-gray-400 ${containerClass} ${className}`}
+          className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[#163B44] bg-[#0B2026] text-gray-400 ${containerClass} ${className}`}
           title="Avatar unavailable"
         >
           <User className={iconClass} />
@@ -124,7 +124,7 @@ export function UserAvatar({
             data-testid="avatar-retry-btn"
             onClick={handleManualReRender}
             disabled={isReRendering}
-            className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 bg-gray-900 text-gray-300 shadow hover:bg-gray-800 hover:text-white"
+            className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#163B44] bg-[#0B2026] text-gray-300 shadow hover:bg-[#102B33] hover:text-white"
             title="Retry Avatar Render"
           >
             <RefreshCw
@@ -142,7 +142,7 @@ export function UserAvatar({
     return (
       <div
         data-testid={isSm ? "navbar-avatar-fallback" : "avatar-fallback"}
-        className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-gray-800 bg-[#0d111c] text-gray-400 shadow-inner ${containerClass} ${className}`}
+        className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[#163B44] bg-[#0B2026] text-gray-400 shadow-inner ${containerClass} ${className}`}
         title="No character avatar (no traits in inventory)"
       >
         <User className={iconClass} />
@@ -156,13 +156,13 @@ export function UserAvatar({
   return (
     <div className="relative inline-block">
       <div
-        className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-gray-800 bg-[#0d111c] shadow-inner ${containerClass} ${className}`}
+        className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[#163B44] bg-[#0B2026] shadow-inner ${containerClass} ${className}`}
       >
         {/* Loading overlay */}
         {!imgLoaded && (
           <div
             data-testid="avatar-loading"
-            className="absolute inset-0 z-10 flex items-center justify-center bg-gray-900/90 text-emerald-400"
+            className="absolute inset-0 z-10 flex items-center justify-center bg-[#0B2026]/90 text-emerald-400"
           >
             <Loader2 className={`animate-spin ${isSm ? "h-3 w-3" : "h-6 w-6"}`} />
           </div>
@@ -190,7 +190,7 @@ export function UserAvatar({
           data-testid="avatar-refresh-btn"
           onClick={handleManualReRender}
           disabled={isReRendering}
-          className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 bg-gray-900 text-gray-300 shadow hover:border-emerald-500/50 hover:bg-gray-800 hover:text-white"
+          className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#163B44] bg-[#0B2026] text-gray-300 shadow hover:border-emerald-500/50 hover:bg-[#102B33] hover:text-white"
           title="Re-render Avatar"
         >
           <RefreshCw

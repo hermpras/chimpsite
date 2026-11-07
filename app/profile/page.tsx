@@ -52,31 +52,31 @@ const CATEGORY_THEMES: Record<
 > = {
   BG: {
     heldClass: "border-sky-500/40 bg-sky-950/40 text-sky-300 shadow-[0_0_12px_rgba(6,182,212,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-[#163B44] bg-[#051D22]/60 text-zinc-500",
     checkColor: "text-sky-400",
     badgeClass: "border-sky-500/30 bg-sky-500/10 text-sky-400",
   },
   FUR: {
     heldClass: "border-amber-500/40 bg-amber-950/40 text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-[#163B44] bg-[#051D22]/60 text-zinc-500",
     checkColor: "text-amber-400",
     badgeClass: "border-amber-500/30 bg-amber-500/10 text-amber-400",
   },
   CLOTHING: {
     heldClass: "border-violet-500/40 bg-violet-950/40 text-violet-300 shadow-[0_0_12px_rgba(192,132,252,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-[#163B44] bg-[#051D22]/60 text-zinc-500",
     checkColor: "text-violet-400",
     badgeClass: "border-violet-500/30 bg-violet-500/10 text-violet-400",
   },
   HEADWEAR: {
     heldClass: "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-[#163B44] bg-[#051D22]/60 text-zinc-500",
     checkColor: "text-emerald-400",
     badgeClass: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
   },
   EYEWEAR: {
     heldClass: "border-teal-500/40 bg-teal-950/40 text-teal-300 shadow-[0_0_12px_rgba(244,114,182,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-[#163B44] bg-[#051D22]/60 text-zinc-500",
     checkColor: "text-teal-400",
     badgeClass: "border-teal-500/30 bg-teal-500/10 text-teal-400",
   },
@@ -142,14 +142,14 @@ function getWhitelistSummaryBadge(
 ) {
   if (!isAuthenticated) {
     return (
-      <Badge variant="outline" className="border-zinc-700 bg-zinc-800/40 text-zinc-400 font-mono-street text-[11px]">
+      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-[11px]">
         Wallet Not Connected
       </Badge>
     );
   }
   if (!status) {
     return (
-      <Badge variant="outline" className="border-zinc-700 bg-zinc-800/40 text-zinc-400 font-mono-street text-[11px]">
+      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-[11px]">
         WL Status: Loading...
       </Badge>
     );
@@ -159,7 +159,7 @@ function getWhitelistSummaryBadge(
       return (
         <Badge
           variant="default"
-          className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-mono-street font-bold text-[11px] uppercase tracking-wide"
+          className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-[11px] uppercase tracking-wide"
         >
           WL Status: Guaranteed Slot #{status.slotNumber}
         </Badge>
@@ -168,7 +168,7 @@ function getWhitelistSummaryBadge(
       return (
         <Badge
           variant="default"
-          className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-mono-street font-bold text-[11px]"
+          className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-[11px]"
         >
           WL Status: FCFS Directory #{status.queueNumber}
         </Badge>
@@ -177,7 +177,7 @@ function getWhitelistSummaryBadge(
       return (
         <Badge
           variant="outline"
-          className="border-rose-500/40 bg-rose-950/60 text-rose-300 font-mono-street font-bold text-[11px]"
+          className="border-rose-500/40 bg-rose-950/60 text-rose-300 font-bold text-[11px]"
         >
           WL Status: REVOKED
         </Badge>
@@ -185,7 +185,7 @@ function getWhitelistSummaryBadge(
     case "NONE":
     default:
       return (
-        <Badge variant="outline" className="border-zinc-700 bg-zinc-800/40 text-zinc-400 font-mono-street text-[11px]">
+        <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-[11px]">
           WL Status: Not Registered
         </Badge>
       );
@@ -460,10 +460,10 @@ function ProfileContent() {
     wlData?.status?.details?.totalMandatoryTasksCount ?? 0;
 
   return (
-    <div className="min-h-screen bg-[#08090d] text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#04181C] text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
         {/* Page Header with Character Avatar & Profile Overview */}
-        <div className="flex flex-col items-start gap-5 rounded-2xl border border-zinc-800 bg-[#0c0d15] p-6 shadow-brutal-sm sm:flex-row sm:items-center">
+        <div className="flex flex-col items-start gap-5 rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 shadow-brutal-sm sm:flex-row sm:items-center">
           <UserAvatar
             identifier={address}
             hasInventory={inventoryItems.length > 0}
@@ -479,7 +479,7 @@ function ProfileContent() {
                 {displayName}
               </h1>
             </div>
-            <p className="font-mono-street text-xs sm:text-sm text-zinc-400">
+            <p className="text-xs sm:text-sm text-zinc-400">
               One account for your X account and wallets; allowlists, trait drops, and gear follow it.
             </p>
           </div>
@@ -490,7 +490,7 @@ function ProfileContent() {
           <div
             role="status"
             data-testid="x-link-success-banner"
-            className="rounded-2xl border border-emerald-500/40 bg-emerald-950/40 p-4 text-emerald-200 shadow-brutal-sm font-mono-street"
+            className="rounded-2xl border border-emerald-500/40 bg-emerald-950/40 p-4 text-emerald-200 shadow-brutal-sm"
           >
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-400" />
@@ -518,7 +518,7 @@ function ProfileContent() {
           <div
             role="alert"
             data-testid="x-link-error-banner"
-            className="rounded-2xl border border-rose-500/40 bg-rose-950/40 p-4 text-rose-200 shadow-brutal-sm font-mono-street"
+            className="rounded-2xl border border-rose-500/40 bg-rose-950/40 p-4 text-rose-200 shadow-brutal-sm"
           >
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-rose-400" />
@@ -535,7 +535,7 @@ function ProfileContent() {
           ref={tabListRef}
           role="tablist"
           aria-label="Profile navigation"
-          className="border-b border-zinc-800 scroll-mt-20"
+          className="border-b border-[#163B44] scroll-mt-20"
         >
           <div className="flex gap-2 sm:gap-6 overflow-x-auto">
             <button
@@ -549,7 +549,7 @@ function ProfileContent() {
               className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "overview"
                   ? "border-amber-400 text-amber-400"
-                  : "border-transparent text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                  : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
               <User className="h-4 w-4" />
@@ -566,7 +566,7 @@ function ProfileContent() {
               className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "collection"
                   ? "border-amber-400 text-amber-400"
-                  : "border-transparent text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                  : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
               <Sparkles className="h-4 w-4" />
@@ -583,7 +583,7 @@ function ProfileContent() {
               className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "gifts"
                   ? "border-amber-400 text-amber-400"
-                  : "border-transparent text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                  : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
               <Gift className="h-4 w-4" />
@@ -604,7 +604,7 @@ function ProfileContent() {
             <WalletConnectCard />
 
             {/* X (Twitter) Account Section */}
-            <Card className="rounded-2xl border-zinc-800 bg-[#0c0d15] shadow-brutal-sm p-4 sm:p-5">
+            <Card className="rounded-2xl border-[#163B44] bg-[#0B2026] shadow-brutal-sm p-4 sm:p-5">
               <CardHeader className="mb-3 space-y-0.5">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-400 border border-cyan-400/30">
@@ -612,13 +612,13 @@ function ProfileContent() {
                   </div>
                   <div>
                     <CardTitle className="font-display text-lg uppercase tracking-wider text-white">X (Twitter) Identity</CardTitle>
-                    <CardDescription className="font-mono-street text-[11px] text-zinc-400">Social account verification status</CardDescription>
+                    <CardDescription className="text-[11px] text-zinc-400">Social account verification status</CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 p-0 font-mono-street">
+              <CardContent className="space-y-3 p-0">
                 {isXConnected ? (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       {currentXProfileImg && !xAvatarError ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
@@ -644,11 +644,11 @@ function ProfileContent() {
                           <span className="font-bold text-white text-sm truncate">
                             @{currentXUsername}
                           </span>
-                          <span className="text-[10px] font-mono-street text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 px-1.5 py-0.2 rounded font-semibold">
+                          <span className="text-[10px] text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 px-1.5 py-0.2 rounded font-semibold">
                             Connected
                           </span>
                         </div>
-                        <p className="font-mono-street text-[11px] text-zinc-500">
+                        <p className="text-[11px] text-zinc-500">
                           Status: Connected
                         </p>
                       </div>
@@ -657,16 +657,16 @@ function ProfileContent() {
                       variant="outline"
                       size="sm"
                       disabled
-                      className="rounded-lg text-xs font-mono-street border-cyan-500/30 bg-cyan-950/40 text-cyan-300 shrink-0 self-start sm:self-auto cursor-default opacity-80"
+                      className="rounded-lg text-xs border-cyan-500/30 bg-cyan-950/40 text-cyan-300 shrink-0 self-start sm:self-auto cursor-default opacity-80"
                     >
                       X Account Connected
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3">
                     <div>
                       <p className="text-xs font-bold text-zinc-300">Status: Not Connected</p>
-                      <p className="font-mono-street text-[11px] text-zinc-500">
+                      <p className="text-[11px] text-zinc-500">
                         {currentXUsername ? `@${currentXUsername}` : "No X account linked"}
                       </p>
                     </div>
@@ -681,7 +681,7 @@ function ProfileContent() {
                   </div>
                 )}
                 {status !== "authenticated" && (
-                  <p className="text-center text-[11px] text-zinc-500 font-mono-street pt-0.5">
+                  <p className="text-center text-[11px] text-zinc-500 pt-0.5">
                     Connect and authenticate your Web3 wallet first to enable X linking.
                   </p>
                 )}
@@ -689,7 +689,7 @@ function ProfileContent() {
             </Card>
 
             {/* Tier & Allocation Overview */}
-            <Card className="rounded-2xl border-zinc-800 bg-[#0c0d15] shadow-brutal-sm md:col-span-2">
+            <Card className="rounded-2xl border-[#163B44] bg-[#0B2026] shadow-brutal-sm md:col-span-2">
               <CardHeader>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
@@ -698,48 +698,48 @@ function ProfileContent() {
                     </div>
                     <div>
                       <CardTitle className="font-display text-xl uppercase tracking-wider text-white">Community Tier & Whitelist Status</CardTitle>
-                      <CardDescription className="font-mono-street text-xs text-zinc-400">
+                      <CardDescription className="text-xs text-zinc-400">
                         Membership tier and Whitelist allocation associated with your account
                       </CardDescription>
                     </div>
                   </div>
                   <div>
                     {status !== "authenticated" ? (
-                      <Badge variant="outline" className="border-zinc-700 bg-zinc-800/40 text-zinc-400 font-mono-street text-xs">Tier Unassigned</Badge>
+                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">Tier Unassigned</Badge>
                     ) : wlData?.status?.phase === "SLOT_ALLOCATED" ? (
                       <Badge
                         variant="default"
-                        className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-mono-street font-bold text-xs uppercase"
+                        className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase"
                       >
                         WL Slot #{wlData.status.slotNumber}
                       </Badge>
                     ) : wlData?.status?.phase === "FCFS_REGISTERED" ? (
                       <Badge
                         variant="default"
-                        className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-mono-street font-bold text-xs"
+                        className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs"
                       >
                         FCFS Directory #{wlData.status.queueNumber}
                       </Badge>
                     ) : wlData?.status?.phase === "REVOKED" ? (
                       <Badge
                         variant="outline"
-                        className="border-rose-500/40 bg-rose-950/60 text-rose-300 font-mono-street font-bold text-xs"
+                        className="border-rose-500/40 bg-rose-950/60 text-rose-300 font-bold text-xs"
                       >
                         REVOKED
                       </Badge>
                     ) : wlData?.status?.phase === "NONE" ? (
-                      <Badge variant="outline" className="border-zinc-700 bg-zinc-800/40 text-zinc-400 font-mono-street text-xs">
+                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">
                         Not Registered
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="border-zinc-700 bg-zinc-800/40 text-zinc-400 font-mono-street text-xs">Tier Unassigned</Badge>
+                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">Tier Unassigned</Badge>
                     )}
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4 font-mono-street">
+              <CardContent className="space-y-4">
                 {status !== "authenticated" ? (
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-center text-sm text-zinc-400">
+                  <div className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-center text-sm text-zinc-400">
                     <p className="font-bold text-zinc-200">Wallet Not Authenticated</p>
                     <p className="mt-1 text-xs text-zinc-500">
                       Sign in with your Web3 wallet above to view your Whitelist allocation status, trait collection progress, and campaign tasks.
@@ -841,7 +841,7 @@ function ProfileContent() {
                           </div>
                         )}
 
-                        <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 text-xs text-zinc-400">
+                        <div className="rounded-lg border border-[#163B44] bg-[#0B2026]/80 p-3 text-xs text-zinc-400">
                           <p className="font-medium text-zinc-300">FCFS Directory Notice</p>
                           <p className="mt-0.5 text-zinc-500">
                             Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed (GTD) slot or an allocation. GTD slots are never automatically filled.
@@ -878,7 +878,7 @@ function ProfileContent() {
                     {/* 4. NONE (Not Registered in FCFS Directory) */}
                     {(!wlData?.status || wlData?.status?.phase === "NONE") && (
                       <div
-                        className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs text-zinc-400 space-y-2"
+                        className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-4 text-xs text-zinc-400 space-y-2"
                         data-testid="none-status-card"
                       >
                         <p className="font-bold text-white">Not Registered in FCFS Directory</p>
@@ -899,16 +899,16 @@ function ProfileContent() {
                     {/* Progress Section: 5 Trait Categories & Mandatory Campaign Tasks (Hidden when REVOKED) */}
                     {wlData?.status?.phase !== "REVOKED" && (
                       <div
-                        className="space-y-4 border-t border-zinc-800 pt-4"
+                        className="space-y-4 border-t border-[#163B44] pt-4"
                         data-testid="whitelist-progress-section"
                       >
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 font-mono-street">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                           Whitelist Qualification Progress
                         </h3>
 
                         {/* 5 Trait Categories Checklist */}
                         <div>
-                          <div className="mb-2 flex items-center justify-between text-xs font-mono-street">
+                          <div className="mb-2 flex items-center justify-between text-xs">
                             <span className="text-zinc-400">
                               Required Trait Categories (5 of 5)
                             </span>
@@ -924,10 +924,10 @@ function ProfileContent() {
                                 <div
                                   key={cat}
                                   data-testid={`profile-trait-${cat.toLowerCase()}`}
-                                  className={`flex items-center gap-1.5 rounded-xl border p-2.5 transition-colors font-mono-street ${
+                                  className={`flex items-center gap-1.5 rounded-xl border p-2.5 transition-colors ${
                                     isHeld
                                       ? theme?.heldClass || "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-bold"
-                                      : theme?.unheldClass || "border-zinc-800 bg-zinc-900/40 text-zinc-600 grayscale opacity-40"
+                                      : theme?.unheldClass || "border-[#163B44] bg-[#051D22]/60 text-zinc-600 grayscale opacity-40"
                                   }`}
                                 >
                                   {isHeld ? (
@@ -945,7 +945,7 @@ function ProfileContent() {
                         </div>
 
                         {/* Mandatory Campaign Tasks Progress */}
-                        <div className="flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 sm:flex-row sm:items-center sm:justify-between text-xs font-mono-street">
+                        <div className="flex flex-col gap-2 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3 sm:flex-row sm:items-center sm:justify-between text-xs">
                           <div>
                             <span className="font-bold text-zinc-200">Mandatory Campaign Tasks</span>
                             <p className="text-[11px] text-zinc-500">
@@ -985,7 +985,7 @@ function ProfileContent() {
                           wlData.status.missingRequirements.length > 0 &&
                           !wlData.status.isFullyQualified &&
                           wlData.status.phase !== "SLOT_ALLOCATED" && (
-                            <div className="space-y-1 rounded-xl border border-amber-500/40 bg-amber-950/40 p-3 text-xs text-amber-200 font-mono-street">
+                            <div className="space-y-1 rounded-xl border border-amber-500/40 bg-amber-950/40 p-3 text-xs text-amber-200">
                               <p className="font-bold text-amber-300">Missing Requirements:</p>
                               <ul className="list-inside list-disc space-y-0.5 text-amber-200/90 text-[11px]">
                                 {wlData.status.missingRequirements.map((req, i) => (
@@ -1011,7 +1011,7 @@ function ProfileContent() {
           className={activeTab === "collection" ? "block" : "hidden"}
         >
           {/* Collection & Inventory Overview */}
-          <Card className="rounded-2xl border-zinc-800 bg-[#0c0d15] shadow-brutal-sm w-full">
+          <Card className="rounded-2xl border-[#163B44] bg-[#0B2026] shadow-brutal-sm w-full">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1020,21 +1020,21 @@ function ProfileContent() {
                   </div>
                   <div>
                     <CardTitle className="font-display text-xl uppercase tracking-wider text-white">Collection & Inventory</CardTitle>
-                    <CardDescription className="font-mono-street text-xs text-zinc-400">
+                    <CardDescription className="text-xs text-zinc-400">
                       Collected Elychimp Traits, items, and ecosystem collectibles
                     </CardDescription>
                   </div>
                 </div>
                 {isInventoryLoading ? (
-                  <Badge variant="outline" className="border-zinc-700 bg-zinc-800/40 text-zinc-400 font-mono-street text-xs">Loading...</Badge>
+                  <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">Loading...</Badge>
                 ) : inventoryError ? (
-                  <Badge variant="warning" className="border-rose-500/40 bg-rose-950/50 text-rose-300 font-mono-street text-xs">Inventory Error</Badge>
+                  <Badge variant="warning" className="border-rose-500/40 bg-rose-950/50 text-rose-300 text-xs">Inventory Error</Badge>
                 ) : inventoryItems.length > 0 ? (
-                  <Badge variant="default" className="border-amber-400/40 bg-amber-950/60 text-amber-300 font-mono-street font-bold text-xs">
+                  <Badge variant="default" className="border-amber-400/40 bg-amber-950/60 text-amber-300 font-bold text-xs">
                     {inventoryItems.length} {inventoryItems.length === 1 ? "Item" : "Items"}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="border-zinc-700 bg-zinc-800/40 text-zinc-400 font-mono-street text-xs">Inventory Empty</Badge>
+                  <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">Inventory Empty</Badge>
                 )}
               </div>
             </CardHeader>
@@ -1042,7 +1042,7 @@ function ProfileContent() {
               {isInventoryLoading ? (
                 <div
                   data-testid="inventory-loading"
-                  className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-8 text-center font-mono-street"
+                  className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-8 text-center"
                 >
                   <p className="text-sm font-bold text-white">
                     Loading your inventory...
@@ -1054,7 +1054,7 @@ function ProfileContent() {
               ) : inventoryError ? (
                 <div
                   data-testid="inventory-error"
-                  className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-6 text-center font-mono-street"
+                  className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-6 text-center"
                 >
                   <p className="text-sm font-bold text-rose-300">
                     Unable to load inventory
@@ -1065,7 +1065,7 @@ function ProfileContent() {
                 <div className="space-y-6">
                   {/* 5-Category Trait Collection Overview */}
                   <div
-                    className="space-y-3 pb-6 border-b border-zinc-800/80 font-mono-street"
+                    className="space-y-3 pb-6 border-b border-[#163B44]"
                     data-testid="trait-collection-summary"
                   >
                     <div className="mb-3 flex items-center justify-between text-xs">
@@ -1088,10 +1088,10 @@ function ProfileContent() {
                           <div
                             key={category}
                             data-testid={`collection-category-${category.toLowerCase()}`}
-                            className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs transition-colors font-mono-street ${
+                            className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs transition-colors ${
                               isHeld
                                 ? `${theme?.heldClass || "border-emerald-500/40 bg-emerald-950/40 text-emerald-300"} font-bold`
-                                : "border-zinc-800 bg-zinc-900/40 text-zinc-600 grayscale opacity-40"
+                                : "border-[#163B44] bg-[#051D22]/60 text-zinc-600 grayscale opacity-40"
                             }`}
                           >
                             {isHeld ? (
@@ -1099,7 +1099,7 @@ function ProfileContent() {
                                 className={`h-4 w-4 shrink-0 ${theme?.checkColor || "text-emerald-400"}`}
                               />
                             ) : (
-                              <div className="h-4 w-4 shrink-0 rounded-full border border-zinc-700 bg-zinc-800" />
+                              <div className="h-4 w-4 shrink-0 rounded-full border border-[#163B44] bg-[#102B33]" />
                             )}
                             <span className="font-bold tracking-wide">{category}</span>
                           </div>
@@ -1120,7 +1120,7 @@ function ProfileContent() {
                 <div data-testid="inventory-empty" className="space-y-6">
                   {/* 5-Category Trait Collection Overview */}
                   <div
-                    className="space-y-3 pb-6 border-b border-zinc-800/80 font-mono-street"
+                    className="space-y-3 pb-6 border-b border-[#163B44]"
                     data-testid="trait-collection-summary"
                   >
                     <div className="mb-3 flex items-center justify-between text-xs">
@@ -1136,9 +1136,9 @@ function ProfileContent() {
                         <div
                           key={category}
                           data-testid={`collection-category-${category.toLowerCase()}`}
-                          className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 p-2.5 text-xs text-zinc-600 grayscale opacity-40 font-mono-street"
+                          className="flex items-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22]/60 p-2.5 text-xs text-zinc-600 grayscale opacity-40"
                         >
-                          <div className="h-4 w-4 shrink-0 rounded-full border border-zinc-700 bg-zinc-800" />
+                          <div className="h-4 w-4 shrink-0 rounded-full border border-[#163B44] bg-[#102B33]" />
                           <span className="font-bold tracking-wide">{category}</span>
                         </div>
                       ))}
@@ -1152,9 +1152,9 @@ function ProfileContent() {
                   </div>
 
                   {/* Base Chimp Character Showcase */}
-                  <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 text-center sm:flex-row sm:gap-10 sm:text-left">
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-[#163B44] bg-[#051D22]/60 p-8 text-center sm:flex-row sm:gap-10 sm:text-left">
                     <div className="relative mb-6 flex-shrink-0 sm:mb-0">
-                      <div className="h-52 w-52 overflow-hidden rounded-3xl border-2 border-zinc-700 bg-[#0c0d15] shadow-brutal-sm sm:h-60 sm:w-60">
+                      <div className="h-52 w-52 overflow-hidden rounded-3xl border-2 border-[#163B44] bg-[#0B2026] shadow-brutal-sm sm:h-60 sm:w-60">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src="/images/chimp-base-bw.png"
@@ -1162,7 +1162,7 @@ function ProfileContent() {
                           className="h-full w-full object-cover [image-rendering:pixelated]"
                         />
                       </div>
-                      <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 font-mono-street text-[11px] font-bold text-zinc-200 uppercase tracking-wider shadow-md">
+                      <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-[#163B44] bg-[#0B2026] px-3 py-1 text-[11px] font-bold text-zinc-200 uppercase tracking-wider shadow-md">
                         Base Chimp
                       </span>
                     </div>
@@ -1170,7 +1170,7 @@ function ProfileContent() {
                       <h3 className="font-display text-xl uppercase tracking-wider text-white">
                         No items or traits found in your inventory
                       </h3>
-                      <p className="max-w-md font-mono-street text-xs text-zinc-400 leading-relaxed">
+                      <p className="max-w-md text-xs text-zinc-400 leading-relaxed">
                         This is your Base Chimp canvas. Claim traits during active drops or receive gifts from peers to reveal your colored Elychimp avatar and qualify for the Whitelist!
                       </p>
                       <div className="pt-2">
@@ -1205,7 +1205,7 @@ function ProfileContent() {
               onRefresh={handleRefreshAll}
             />
           ) : (
-            <Card className="rounded-2xl border-zinc-800 bg-[#0c0d15] shadow-brutal-sm w-full" data-testid="gifts-unauthenticated">
+            <Card className="rounded-2xl border-[#163B44] bg-[#0B2026] shadow-brutal-sm w-full" data-testid="gifts-unauthenticated">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="rounded-xl bg-teal-400/10 p-2.5 text-teal-400 border border-teal-400/30">
@@ -1213,14 +1213,14 @@ function ProfileContent() {
                   </div>
                   <div>
                     <CardTitle className="font-display text-xl uppercase tracking-wider text-white">Gifts & Peer Transfers</CardTitle>
-                    <CardDescription className="font-mono-street text-xs text-zinc-400">
+                    <CardDescription className="text-xs text-zinc-400">
                       Review incoming trait gifts and manage your outgoing transfers
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-center text-sm text-zinc-400 font-mono-street">
+                <div className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-center text-sm text-zinc-400">
                   <p className="font-bold text-zinc-200">Wallet Not Authenticated</p>
                   <p className="mt-1 text-xs text-zinc-500">
                     Sign in with your Web3 wallet above to view and manage trait gifts.
@@ -1248,7 +1248,7 @@ export default function ProfilePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#08090d] text-zinc-400 py-12 px-4 sm:px-6 lg:px-8 font-mono-street text-xs text-center">
+        <div className="min-h-screen bg-[#04181C] text-zinc-400 py-12 px-4 sm:px-6 lg:px-8 text-xs text-center">
           Loading profile...
         </div>
       }

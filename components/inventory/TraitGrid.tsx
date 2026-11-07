@@ -85,10 +85,10 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
           <div
             key={item.id}
             data-testid={`inventory-item-${item.id}`}
-            className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-800 bg-[#0d111c] transition-colors hover:border-gray-700"
+            className="group relative flex flex-col overflow-hidden rounded-xl border border-[#163B44] bg-[#0B2026] transition-colors hover:border-[#163B44]"
           >
             {/* Item Image / Fallback Container */}
-            <div className="relative aspect-square w-full overflow-hidden bg-gray-900/80">
+            <div className="relative aspect-square w-full overflow-hidden bg-[#0B2026]/90">
               {item.trait.imageUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -136,7 +136,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
               ) : null}
 
               {/* Edition Tag */}
-              <div className="absolute bottom-2 left-2 rounded border border-gray-800 bg-gray-950/80 px-2 py-0.5 font-mono text-xs font-medium text-gray-300 backdrop-blur">
+              <div className="absolute bottom-2 left-2 rounded border border-[#163B44] bg-[#04181C]/90 px-2 py-0.5 font-mono text-xs font-medium text-gray-300 backdrop-blur">
                 #{item.edition}
               </div>
             </div>
@@ -147,7 +147,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                 <div className="mb-1.5 flex items-center justify-between gap-1">
                   <span
                     className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
-                      CATEGORY_BADGE_STYLES[item.trait.category] || "border-gray-700 bg-gray-800 text-gray-300"
+                      CATEGORY_BADGE_STYLES[item.trait.category] || "border-[#163B44] bg-[#102B33] text-gray-300"
                     }`}
                   >
                     {item.trait.category}
@@ -159,7 +159,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between border-t border-gray-800/80 pt-1 text-[11px] text-gray-500">
+                <div className="flex items-center justify-between border-t border-[#163B44] pt-1 text-[11px] text-gray-500">
                   <span>Via {item.acquiredVia.toLowerCase()}</span>
                   {item.isLocked && item.lockReason && (
                     <span
@@ -175,7 +175,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                 {!onGiftItem || totalCategoryCount < 2 ? (
                   <div
                     data-testid={`single-copy-badge-${item.id}`}
-                    className="flex h-8 w-full items-center justify-center rounded-lg border border-gray-800/80 bg-gray-900/40 text-[10px] text-gray-500"
+                    className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-[10px] text-gray-500"
                     title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
                   >
                     Keep 1 in {item.trait.category} (Category minimum)
@@ -193,7 +193,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                   ) : (
                     <div
                       data-testid={`single-copy-badge-${item.id}`}
-                      className="flex h-8 w-full items-center justify-center rounded-lg border border-gray-800/80 bg-gray-900/40 text-[10px] text-gray-500"
+                      className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-[10px] text-gray-500"
                       title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
                     >
                       Keep 1 in {item.trait.category} (Category minimum)
@@ -224,7 +224,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                 ) : (
                   <div
                     data-testid={`single-copy-badge-${item.id}`}
-                    className="flex h-8 w-full items-center justify-center rounded-lg border border-gray-800/80 bg-gray-900/40 text-[10px] text-gray-500"
+                    className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-[10px] text-gray-500"
                     title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
                   >
                     Keep 1 in {item.trait.category} (Category minimum)

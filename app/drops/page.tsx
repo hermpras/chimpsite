@@ -60,7 +60,7 @@ const RARITY_THEME: Record<
 > = {
   LEGENDARY: {
     border: "border-amber-400/50 hover:border-amber-300",
-    bg: "bg-gradient-to-b from-amber-950/40 via-[#0e1019] to-[#07080e]",
+    bg: "bg-gradient-to-b from-amber-950/40 via-[#071F24] to-[#04181C]",
     text: "text-amber-300 font-extrabold",
     badgeBg: "bg-gradient-to-r from-amber-500/30 to-yellow-500/20",
     badgeBorder: "border-amber-400/70",
@@ -71,12 +71,12 @@ const RARITY_THEME: Record<
     sheen: "from-transparent via-amber-400/80 to-transparent",
     ambientGlow: "bg-amber-500/20",
     pedestalBorder: "border-amber-500/30 group-hover:border-amber-400/60",
-    pedestalBg: "bg-gradient-to-b from-amber-950/25 via-[#090b12] to-[#05060a]",
+    pedestalBg: "bg-gradient-to-b from-amber-950/25 via-[#051D22] to-[#04181C]",
     halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-500/25 via-transparent to-transparent",
   },
   EPIC: {
     border: "border-purple-500/50 hover:border-purple-400",
-    bg: "bg-gradient-to-b from-purple-950/40 via-[#0e1019] to-[#07080e]",
+    bg: "bg-gradient-to-b from-purple-950/40 via-[#071F24] to-[#04181C]",
     text: "text-purple-300 font-bold",
     badgeBg: "bg-gradient-to-r from-purple-500/30 to-fuchsia-500/20",
     badgeBorder: "border-purple-400/70",
@@ -87,12 +87,12 @@ const RARITY_THEME: Record<
     sheen: "from-transparent via-purple-400/80 to-transparent",
     ambientGlow: "bg-purple-500/20",
     pedestalBorder: "border-purple-500/30 group-hover:border-purple-400/60",
-    pedestalBg: "bg-gradient-to-b from-purple-950/25 via-[#090b12] to-[#05060a]",
+    pedestalBg: "bg-gradient-to-b from-purple-950/25 via-[#051D22] to-[#04181C]",
     halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500/25 via-transparent to-transparent",
   },
   RARE: {
     border: "border-sky-500/50 hover:border-sky-400",
-    bg: "bg-gradient-to-b from-sky-950/35 via-[#0e1019] to-[#07080e]",
+    bg: "bg-gradient-to-b from-sky-950/35 via-[#071F24] to-[#04181C]",
     text: "text-sky-300 font-semibold",
     badgeBg: "bg-gradient-to-r from-sky-500/30 to-cyan-500/20",
     badgeBorder: "border-sky-400/70",
@@ -103,12 +103,12 @@ const RARITY_THEME: Record<
     sheen: "from-transparent via-sky-400/80 to-transparent",
     ambientGlow: "bg-sky-500/18",
     pedestalBorder: "border-sky-500/30 group-hover:border-sky-400/60",
-    pedestalBg: "bg-gradient-to-b from-sky-950/25 via-[#090b12] to-[#05060a]",
+    pedestalBg: "bg-gradient-to-b from-sky-950/25 via-[#051D22] to-[#04181C]",
     halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-500/22 via-transparent to-transparent",
   },
   UNCOMMON: {
     border: "border-emerald-500/40 hover:border-emerald-400",
-    bg: "bg-gradient-to-b from-emerald-950/30 via-[#0e1019] to-[#07080e]",
+    bg: "bg-gradient-to-b from-emerald-950/30 via-[#071F24] to-[#04181C]",
     text: "text-emerald-300 font-medium",
     badgeBg: "bg-gradient-to-r from-emerald-500/25 to-teal-500/15",
     badgeBorder: "border-emerald-400/60",
@@ -119,23 +119,23 @@ const RARITY_THEME: Record<
     sheen: "from-transparent via-emerald-400/70 to-transparent",
     ambientGlow: "bg-emerald-500/15",
     pedestalBorder: "border-emerald-500/30 group-hover:border-emerald-400/50",
-    pedestalBg: "bg-gradient-to-b from-emerald-950/20 via-[#090b12] to-[#05060a]",
+    pedestalBg: "bg-gradient-to-b from-emerald-950/20 via-[#051D22] to-[#04181C]",
     halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-500/20 via-transparent to-transparent",
   },
   COMMON: {
-    border: "border-zinc-800 hover:border-zinc-700",
-    bg: "bg-gradient-to-b from-zinc-900/40 via-[#0e1019] to-[#07080e]",
+    border: "border-[#163B44] hover:border-[#163B44]",
+    bg: "bg-gradient-to-b from-zinc-900/40 via-[#071F24] to-[#04181C]",
     text: "text-zinc-300 font-medium",
     badgeBg: "bg-zinc-800/80",
-    badgeBorder: "border-zinc-700",
+    badgeBorder: "border-[#163B44]",
     badgeText: "text-zinc-400",
     glow: "shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_8px_28px_rgba(148,163,184,0.12)]",
     prefix: "",
     barColor: "bg-gradient-to-r from-zinc-500 via-zinc-400 to-zinc-300",
     sheen: "from-transparent via-zinc-600/40 to-transparent",
     ambientGlow: "bg-zinc-500/10",
-    pedestalBorder: "border-zinc-800 group-hover:border-zinc-700",
-    pedestalBg: "bg-[#090b12]",
+    pedestalBorder: "border-[#163B44] group-hover:border-[#163B44]",
+    pedestalBg: "bg-[#051D22]",
     halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-600/15 via-transparent to-transparent",
   },
 };
@@ -394,7 +394,7 @@ export default function DropsPage() {
             Claim periodic lootbox mystery pods to collect traits across all 5 categories.
           </p>
 
-          <div className="flex flex-wrap items-center gap-2.5 pt-1 font-mono-street text-[11px] uppercase tracking-wider">
+          <div className="flex flex-wrap items-center gap-2.5 pt-1 text-[11px] uppercase tracking-wider">
             <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 font-bold text-amber-300">
               <span className="text-amber-400">⚡</span>
               {dropData?.drop?.cycleDurationHours === 5
@@ -411,23 +411,19 @@ export default function DropsPage() {
 
       <div className="space-y-8">
         {/* Drops Cycle Status Card */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#131626]/90 via-[#0a0d16]/95 to-[#06080e]/98 p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl transition-all">
+        <div className="relative overflow-hidden rounded-3xl border border-[#163B44] bg-gradient-to-b from-[#0B2026]/90 via-[#051D22]/95 to-[#04181C]/98 p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl transition-all">
           {/* Top Luxury Gold Accent Sheen */}
           <div className="pointer-events-none absolute inset-x-12 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.08] pb-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#163B44] pb-5">
             <div>
               <div className="flex items-center gap-2.5">
                 <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
                   Periodic Drop Cycle
                 </h2>
-                <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 font-mono-street text-[10px] font-bold text-amber-300 uppercase tracking-widest">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24] animate-pulse" />
-                  Synced Engine
-                </span>
               </div>
-              <p className="font-mono-street text-xs text-gray-400 uppercase tracking-wide mt-1">
-                1 claim per EVM wallet per period cycle. Distributed with provable off-chain RNG and unique serial editions.
+              <p className="text-xs text-[#8AA8B2] mt-1">
+                1 claim per EVM wallet per period cycle.
               </p>
             </div>
 
@@ -435,7 +431,7 @@ export default function DropsPage() {
               <button
                 onClick={loadDropData}
                 disabled={isLoading}
-                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-gray-300 hover:border-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 hover:shadow-[0_0_15px_rgba(251,191,36,0.2)] transition-all duration-300 disabled:opacity-50"
+                className="flex items-center justify-center rounded-xl border border-[#163B44] bg-[#102B33]/50 p-2.5 text-gray-300 hover:border-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 hover:shadow-[0_0_15px_rgba(251,191,36,0.2)] transition-all duration-300 disabled:opacity-50"
                 title="Refresh Drop Status"
                 aria-label="Refresh Drop Status"
               >
@@ -478,7 +474,7 @@ export default function DropsPage() {
             {isLoading && !dropData ? (
               <div className="py-20 text-center text-sm text-gray-400 flex flex-col items-center justify-center">
                 <ElychimpSpinner size="lg" className="mb-4 filter drop-shadow-[0_0_25px_rgba(251,191,36,0.5)]" />
-                <span className="font-mono-street text-xs uppercase tracking-widest text-amber-400 animate-pulse">
+                <span className="text-xs uppercase tracking-widest text-amber-400 animate-pulse">
                   Loading drop event and stock data...
                 </span>
               </div>
@@ -510,29 +506,25 @@ export default function DropsPage() {
                 {/* 3 Metric Cards */}
                 <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
                   {/* Period Cycle Card */}
-                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#0d101a] to-[#07090f] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-center items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
+                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#071F24] to-[#04181C] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-center items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-amber-500/15 blur-xl" />
-                    <span className="font-mono-street text-xs font-bold text-amber-300/90 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                    <span className="text-xs font-bold text-amber-300/90 uppercase tracking-widest flex items-center justify-center gap-1.5">
                       <Sparkles className="h-3.5 w-3.5 text-amber-400" /> Period Cycle
                     </span>
                     <p className="my-2 font-display text-4xl sm:text-5xl font-black bg-gradient-to-br from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]">
                       #{displayPeriodIndex}
                     </p>
-                    <span className="inline-flex items-center gap-1.5 font-mono-street text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-white/[0.04] border border-white/[0.06] rounded-full px-3 py-0.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse" />
-                      UTC Interval Synchronized
-                    </span>
                   </div>
 
                   {/* Remaining Stock Card */}
-                  <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#0d101a] to-[#07090f] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-center items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
+                  <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#071F24] to-[#04181C] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-center items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-cyan-500/15 blur-xl" />
-                    <span className="font-mono-street text-xs font-bold text-cyan-300/90 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                    <span className="text-xs font-bold text-cyan-300/90 uppercase tracking-widest flex items-center justify-center gap-1.5">
                       <Layers className="h-3.5 w-3.5 text-cyan-400" /> Remaining Stock
                     </span>
-                    <p className="my-2 font-mono-street text-2xl sm:text-3xl font-black text-white">
+                    <p className="my-2 font-mono text-2xl sm:text-3xl font-bold text-white">
                       <span className="bg-gradient-to-r from-cyan-100 via-cyan-300 to-sky-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(6,182,212,0.3)]">
                         {displayRemainingStock}
                       </span>{" "}
@@ -548,7 +540,7 @@ export default function DropsPage() {
                         }}
                       />
                     </div>
-                    <span className="mt-2 inline-flex items-center gap-1 font-mono-street text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
+                    <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
                       {displayStockPercentage}% Available
                     </span>
                   </div>
@@ -557,8 +549,8 @@ export default function DropsPage() {
                   <div
                     className={`relative overflow-hidden rounded-2xl border ${
                       isWindowActive
-                        ? "border-amber-500/40 bg-gradient-to-b from-amber-950/25 via-[#0d101a] to-[#07090f] shadow-[0_8px_24px_rgba(245,158,11,0.15),inset_0_1px_0_rgba(251,191,36,0.2)] hover:border-amber-400/60"
-                        : "border-white/10 bg-gradient-to-b from-white/[0.03] via-[#0d101a] to-[#07090f] shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-white/20"
+                        ? "border-amber-500/40 bg-gradient-to-b from-amber-950/25 via-[#071F24] to-[#04181C] shadow-[0_8px_24px_rgba(245,158,11,0.15),inset_0_1px_0_rgba(251,191,36,0.2)] hover:border-amber-400/60"
+                        : "border-[#163B44] bg-gradient-to-b from-white/[0.03] via-[#071F24] to-[#04181C] shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-white/20"
                     } p-5 sm:p-6 flex flex-col justify-between text-center group transition-all duration-300`}
                   >
                     <div
@@ -576,7 +568,7 @@ export default function DropsPage() {
                           }`}
                         />
                         <span
-                          className={`font-mono-street text-xs font-bold uppercase tracking-widest ${
+                          className={`text-xs font-bold uppercase tracking-widest ${
                             isWindowActive ? "text-amber-300" : "text-gray-300"
                           }`}
                         >
@@ -584,7 +576,7 @@ export default function DropsPage() {
                         </span>
                       </div>
                       <p
-                        className={`my-2 font-mono-street text-2xl sm:text-3xl font-black ${
+                        className={`my-2 font-mono text-2xl sm:text-3xl font-bold ${
                           isWindowActive
                             ? "bg-gradient-to-r from-amber-100 via-yellow-300 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]"
                             : "text-amber-300"
@@ -595,23 +587,23 @@ export default function DropsPage() {
                           : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
                       </p>
                       {isWindowActive && dropData.claimWindow?.endsAt && (
-                        <span className="block font-mono-street text-[10px] text-gray-400 uppercase tracking-wider">
+                        <span className="block text-[10px] text-gray-400 uppercase tracking-wider">
                           Closes at {formatTimeWithUtc(dropData.claimWindow.endsAt)}
                         </span>
                       )}
                       {!isWindowActive && periodEndsMs > 0 && (
-                        <span className="block font-mono-street text-[10px] text-gray-400 uppercase tracking-wider">
+                        <span className="block text-[10px] text-gray-400 uppercase tracking-wider">
                           Cycle starts at {formatTimeWithUtc(periodEndsMs)}
                         </span>
                       )}
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-white/[0.08]">
+                    <div className="mt-4 pt-3 border-t border-[#163B44]">
                       {claimLoading ? (
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] py-2.5"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] py-2.5"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -623,7 +615,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] py-2.5"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] py-2.5"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -635,7 +627,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5"
                             onClick={() => void login()}
                           >
                             Sign In with Ethereum
@@ -644,7 +636,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5"
                             onClick={() => void login()}
                           >
                             Connect Wallet to Register
@@ -653,7 +645,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-wait py-2.5"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-wait py-2.5"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -665,7 +657,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-amber-500/50 bg-gradient-to-r from-amber-500/20 via-amber-600/15 to-transparent font-mono-street text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-90 py-2.5 shadow-sm"
+                            className="w-full rounded-xl border border-amber-500/50 bg-gradient-to-r from-amber-500/20 via-amber-600/15 to-transparent text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-90 py-2.5 shadow-sm"
                             disabled
                           >
                             <ShieldCheck className="h-4 w-4 text-amber-400 shrink-0" />
@@ -675,7 +667,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-cyan-400/50 bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(6,182,212,0.35)] hover:from-cyan-300 hover:to-blue-400 flex items-center justify-center gap-2 transition-all py-2.5"
+                            className="w-full rounded-xl border border-cyan-400/50 bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 font-bold text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(6,182,212,0.35)] hover:from-cyan-300 hover:to-blue-400 flex items-center justify-center gap-2 transition-all py-2.5"
                             onClick={handleConnectX}
                             disabled={isConnectingX}
                           >
@@ -685,7 +677,7 @@ export default function DropsPage() {
                         ) : !areTasksDone ? (
                           <Link
                             href="/whitelist#tasks"
-                            className="w-full rounded-xl inline-flex items-center justify-center gap-1.5 border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-400 font-mono-street font-bold text-xs uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 py-2.5 px-3 text-center transition-all"
+                            className="w-full rounded-xl inline-flex items-center justify-center gap-1.5 border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-400 font-bold text-xs uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 py-2.5 px-3 text-center transition-all"
                           >
                             <Flame className="h-4 w-4 text-black shrink-0" />
                             <span>Complete Quests on Whitelist ({completedTasks}/{totalTasks})</span>
@@ -694,7 +686,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-emerald-500/40 bg-emerald-950/40 font-mono-street text-xs font-semibold text-emerald-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-95 py-2.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                            className="w-full rounded-xl border border-emerald-500/40 bg-emerald-950/40 text-xs font-semibold text-emerald-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-95 py-2.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
                             disabled
                           >
                             <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -704,7 +696,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-red-500/30 bg-red-500/10 font-mono-street text-[11px] font-medium text-red-300 uppercase tracking-wider cursor-not-allowed opacity-75 py-2.5"
+                            className="w-full rounded-xl border border-red-500/30 bg-red-500/10 text-[11px] font-medium text-red-300 uppercase tracking-wider cursor-not-allowed opacity-75 py-2.5"
                             disabled
                           >
                             Period Stock Exhausted
@@ -713,7 +705,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.4)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.6)] hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer py-2.5"
+                            className="w-full rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.4)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.6)] hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer py-2.5"
                             onClick={handleClaim}
                           >
                             Claim Trait Now
@@ -722,7 +714,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-white/10 bg-white/[0.04] font-mono-street text-xs font-medium text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed py-2.5"
+                            className="w-full rounded-xl border border-[#163B44] bg-[#102B33]/50 text-xs font-medium text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed py-2.5"
                             disabled
                           >
                             <Clock className="h-4 w-4 text-amber-400 shrink-0" />
@@ -732,17 +724,17 @@ export default function DropsPage() {
 
                         {hasAllocatedSlot && (
                           <div className="mt-2.5 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-center space-y-2 shadow-sm">
-                            <p className="font-mono-street text-[11px] text-amber-300 font-bold uppercase flex items-center justify-center gap-1.5">
+                            <p className="text-[11px] text-amber-300 font-bold uppercase flex items-center justify-center gap-1.5">
                               <ShieldCheck className="h-3.5 w-3.5 text-amber-400 shrink-0" />
                               <span>Whitelist Allocation Secured</span>
                             </p>
-                            <p className="font-mono-street text-[10px] text-gray-300 leading-normal">
+                            <p className="text-[10px] text-gray-300 leading-normal">
                               Trait drops are reserved for participants still qualifying. You can gift duplicate traits to friends from your Backpack.
                             </p>
                             <div className="pt-0.5">
                               <Link
                                 href="/profile"
-                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-3 py-1.5 font-mono-street text-[10px] font-bold uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/25 transition-colors"
+                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/25 transition-colors"
                               >
                                 <Gift className="h-3.5 w-3.5 text-cyan-400" />
                                 <span>Go to Backpack to Gift</span>
@@ -753,34 +745,34 @@ export default function DropsPage() {
                         )}
 
                         {connectXError && (
-                          <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
+                          <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
                             <span>{connectXError}</span>
                           </p>
                         )}
                         {claimMessage && (
                           <div className="mt-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-center shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                            <p className="font-mono-street text-xs font-semibold text-emerald-300">
+                            <p className="text-xs font-semibold text-emerald-300">
                               {claimMessage}
                             </p>
                           </div>
                         )}
                         {claimError && !isAlreadyClaimed && !hasAllocatedSlot && (
-                          <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
+                          <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
                             <span>{claimError}</span>
                           </p>
                         )}
                         {isAlreadyClaimed && !claimMessage && (
-                          <div className="mt-2.5 rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-center">
-                            <span className="font-mono-street text-[10px] text-gray-400 uppercase">
+                          <div className="mt-2.5 rounded-xl border border-[#163B44] bg-black/60 px-3 py-1.5 text-center">
+                            <span className="text-[10px] text-gray-400 uppercase">
                               You have claimed your 1 trait allocation for Period #{dropData.period.periodIndex}. Next drop cycle begins in {formatRemaining(nextDropRemainingMs)}.
                             </span>
                           </div>
                         )}
                         {!isWindowActive && isUserEligible && !hasAllocatedSlot && (
-                          <div className="mt-2.5 rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-center">
-                            <span className="font-mono-street text-[10px] text-gray-400 uppercase">
+                          <div className="mt-2.5 rounded-xl border border-[#163B44] bg-black/60 px-3 py-1.5 text-center">
+                            <span className="text-[10px] text-gray-400 uppercase">
                               Registered &amp; Ready for Period #{displayPeriodIndex}
                             </span>
                           </div>
@@ -790,14 +782,11 @@ export default function DropsPage() {
                 </div>
 
                 {/* Trait Inventory Pool */}
-                <div className="space-y-4 pt-4 border-t border-white/[0.08]">
+                <div className="space-y-4 pt-4 border-t border-[#163B44]">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h3 className="text-xs font-bold tracking-wider text-white uppercase flex items-center gap-2">
-                        <span>Drop Pool Inventory ({dropData.stock?.poolItems?.length ?? 0} Available Traits)</span>
-                        <span className="rounded bg-amber-400/10 px-2 py-0.5 text-[10px] font-mono text-amber-300 border border-amber-400/30">
-                          PROVABLY FAIR RNG
-                        </span>
+                      <h3 className="text-xs font-bold tracking-wider text-white uppercase">
+                        Drop Pool Inventory ({dropData.stock?.poolItems?.length ?? 0} Available Traits)
                       </h3>
                       <p className="text-[11px] text-gray-400 mt-0.5">
                         Real-time trait stock and distribution directly from drop service
@@ -833,7 +822,7 @@ export default function DropsPage() {
 
                             <div>
                               {/* Card Top: Badges & Drop Probability */}
-                              <div className="relative z-10 flex items-center justify-between gap-1.5 pb-2.5 border-b border-white/[0.08]">
+                              <div className="relative z-10 flex items-center justify-between gap-1.5 pb-2.5 border-b border-[#163B44]">
                                 <div className="flex flex-wrap items-center gap-1.5">
                                   <span
                                     className={`rounded-md border px-2 py-0.5 text-[9px] font-mono uppercase font-bold tracking-wider ${categoryStyle}`}
@@ -857,7 +846,7 @@ export default function DropsPage() {
                                 </div>
 
                                 {/* Probability Drop Rate */}
-                                <div className="shrink-0 flex items-center gap-1 rounded-md border border-white/10 bg-black/60 px-2 py-0.5 shadow-inner">
+                                <div className="shrink-0 flex items-center gap-1 rounded-md border border-[#163B44] bg-black/60 px-2 py-0.5 shadow-inner">
                                   <span className="text-[10px] text-amber-400 font-mono">✦</span>
                                   <span className={`font-mono text-xs font-extrabold ${theme.text}`}>
                                     {item.probabilityPercent}%
@@ -922,7 +911,7 @@ export default function DropsPage() {
                                 (stockPercent <= 20 || currentRemaining <= 2);
 
                               return (
-                                <div className="relative z-10 mt-3 border-t border-white/[0.08] pt-2.5">
+                                <div className="relative z-10 mt-3 border-t border-[#163B44] pt-2.5">
                                   <div className="mb-1.5 flex items-center justify-between text-[10px] font-mono">
                                     <span className="flex items-center gap-1.5">
                                       {isLowStock && (
@@ -957,7 +946,7 @@ export default function DropsPage() {
                                       </span>
                                     </span>
                                   </div>
-                                  <div className="h-2 w-full overflow-hidden rounded-full border border-white/10 bg-black/80 p-[1px]">
+                                  <div className="h-2 w-full overflow-hidden rounded-full border border-[#163B44] bg-black/80 p-[1px]">
                                     <div
                                       className={`h-full rounded-full transition-all duration-500 ${
                                         isSoldOut
@@ -979,7 +968,7 @@ export default function DropsPage() {
                   ) : (
                     <div
                       data-testid="empty-drop-pool"
-                      className="relative overflow-hidden rounded-2xl border border-dashed border-white/10 bg-gradient-to-b from-white/[0.03] via-transparent to-transparent p-10 text-center backdrop-blur-sm"
+                      className="relative overflow-hidden rounded-2xl border border-dashed border-[#163B44] bg-gradient-to-b from-white/[0.03] via-transparent to-transparent p-10 text-center backdrop-blur-sm"
                     >
                       <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.15)]">
                         <Sparkles className="mx-auto h-7 w-7 text-amber-400 animate-pulse" />
@@ -995,8 +984,8 @@ export default function DropsPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-8 text-center backdrop-blur-sm">
-                <p className="font-mono-street text-sm text-gray-400 uppercase tracking-wider">
+              <div className="rounded-2xl border border-[#163B44] bg-white/[0.02] p-8 text-center backdrop-blur-sm">
+                <p className="text-sm text-gray-400 uppercase tracking-wider">
                   No active drop event currently in progress. Cycles renew on UTC schedule.
                 </p>
               </div>
@@ -1005,43 +994,31 @@ export default function DropsPage() {
         </div>
 
         {/* Duplicate Trait Gifting Card */}
-        <div className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-b from-[#121626]/90 via-[#0a0d18]/95 to-[#060810]/98 p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(6,182,212,0.15)] backdrop-blur-2xl">
+        <div className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-b from-[#0B2026]/90 via-[#051D22]/95 to-[#04181C]/98 p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(6,182,212,0.15)] backdrop-blur-2xl">
           {/* Top Cyan Accent Sheen */}
           <div className="pointer-events-none absolute inset-x-12 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
-          <div className="flex items-center gap-4 border-b border-white/[0.08] pb-5">
+          <div className="flex items-center gap-4 border-b border-[#163B44] pb-5">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/50 bg-gradient-to-br from-cyan-500/20 to-blue-900/30 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
               <Gift className="h-6 w-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-display text-xl uppercase tracking-wider text-white">
-                  Gifts &amp; Duplicate Trait Exchange
-                </h3>
-                <span className="hidden sm:inline-block rounded-md border border-cyan-400/40 bg-cyan-400/10 px-2 py-0.5 text-[9px] font-mono text-cyan-300 font-bold uppercase">
-                  Syndicate Escrow
-                </span>
-              </div>
-              <p className="font-mono-street text-[11px] text-gray-400 uppercase mt-0.5">
+              <h3 className="font-display text-xl uppercase tracking-wider text-white">
+                Gifts &amp; Duplicate Trait Exchange
+              </h3>
+              <p className="text-xs text-[#8AA8B2] mt-0.5">
                 Help fellow community members complete their 5 required trait categories
               </p>
             </div>
           </div>
-          <div className="mt-5 space-y-3.5 rounded-2xl border border-white/[0.08] bg-black/60 p-5 text-xs font-mono-street text-gray-300 shadow-inner">
+          <div className="mt-5 space-y-3.5 rounded-2xl border border-[#163B44] bg-[#051D22] p-5 text-xs text-[#DBF2F9] shadow-inner">
             <p className="leading-relaxed">
               Hold duplicate traits? You can gift them to peers directly from your{" "}
-              <Link href="/profile" className="font-bold text-amber-400 hover:text-yellow-300 underline underline-offset-4 decoration-amber-400/50 hover:decoration-amber-300 transition-colors">
+              <Link href="/profile" className="font-bold text-[#34B7DD] hover:text-[#6FCDE8] underline underline-offset-4 decoration-[#34B7DD]/50 hover:decoration-[#6FCDE8] transition-colors">
                 User Inventory
               </Link>
-              . Senders must retain at least 1 trait in the category; limited to 1 gift per wallet per UTC day.
+              . Senders must retain at least 1 trait in the category; limited to 1 gift per wallet per day.
             </p>
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-t border-white/[0.08] pt-3 text-[10px] text-gray-400 uppercase tracking-wider">
-              <span className="flex items-center gap-1.5 text-cyan-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                Gift Resolution Window
-              </span>
-              <span>24 Hours UTC (Lazy validation upon acceptance)</span>
-            </div>
           </div>
         </div>
       </div>
