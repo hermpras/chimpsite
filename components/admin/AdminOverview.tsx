@@ -142,16 +142,16 @@ export function AdminOverview({
   return (
     <div className="space-y-8">
       {/* Top Banner & Refresh Action */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-gray-800 pb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-[#163B44] pb-5">
         <div className="space-y-2">
           {/* Eyebrow status */}
-          <div className="flex flex-wrap items-center gap-2 font-mono-street text-[11px] uppercase tracking-wider">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider">
             <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 font-bold text-amber-300">
               <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
               COMMAND CONSOLE
             </span>
-            <span className="border border-cyan-400/40 bg-cyan-400/10 px-2.5 py-0.5 font-bold text-cyan-300">
-              Elysium L2 // Hyperliquid
+            <span className="border border-[#163B44] bg-[#0B2026] px-2.5 py-0.5 font-bold text-[#34B7DD]">
+              Elysium L2
             </span>
             <span className="border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 font-bold text-emerald-300">
               Real-time Invariant Surveillance
@@ -164,12 +164,12 @@ export function AdminOverview({
             </h1>
             <Badge
               variant={isSuperAdmin ? "default" : "warning"}
-              className="font-mono-street text-xs font-bold uppercase tracking-wider"
+              className="text-xs font-bold uppercase tracking-wider"
             >
               {roleType}
             </Badge>
           </div>
-          <p className="max-w-2xl text-xs sm:text-sm text-gray-400 font-mono-street">
+          <p className="max-w-2xl text-xs sm:text-sm text-gray-400">
             Operations control center for Whitelist programs, campaigns, evidence reviews, bans, and drop allocations.
           </p>
         </div>
@@ -178,7 +178,7 @@ export function AdminOverview({
           <Button
             variant="outline"
             size="sm"
-            className="border-2 border-gray-800 bg-gray-900 font-mono-street text-xs text-gray-300 hover:border-amber-400 hover:text-white transition-colors"
+            className="border-2 border-[#163B44] bg-[#0B2026] text-xs text-gray-300 hover:border-amber-400 hover:text-white transition-colors"
             onClick={() => {
               setLoading(true);
               setRefreshKey((k) => k + 1);
@@ -192,14 +192,14 @@ export function AdminOverview({
       </div>
 
       {/* Operator Identity HUD Ribbon (Compact Tactical Bar) */}
-      <div className="rounded-2xl border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 shadow-brutal-sm">
+      <div className="rounded-2xl border-2 border-[#163B44] bg-[#0B2026] p-4 sm:p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-3 sm:gap-6 font-mono-street text-xs">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs">
             <div className="flex items-center gap-2">
               <span className="text-gray-400">Operator Wallet:</span>
               <button
                 onClick={handleCopyWallet}
-                className="group flex items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-900 px-2.5 py-1 text-white hover:border-amber-400 transition-colors"
+                className="group flex items-center gap-1.5 rounded-lg border border-[#163B44] bg-[#0B2026] px-2.5 py-1 text-white hover:border-amber-400 transition-colors"
                 title="Click to copy full address"
               >
                 <span className="font-medium text-amber-300">{shortenAddress(address || "0x0000000000000000000000000000000000000000")}</span>
@@ -213,20 +213,20 @@ export function AdminOverview({
 
             <div className="flex items-center gap-2">
               <span className="text-gray-400">User ID:</span>
-              <span className="font-mono text-gray-300 bg-gray-900 px-2 py-0.5 rounded border border-gray-800 text-[11px]">
+              <span className="font-mono text-gray-300 bg-[#0B2026] px-2 py-0.5 rounded border border-[#163B44] text-[11px]">
                 {userId}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-gray-400">Grants:</span>
-              <Badge variant="outline" className="text-[10px] font-mono-street font-bold text-cyan-300 border-cyan-500/40 bg-cyan-950/30">
+              <Badge variant="outline" className="text-[10px] font-bold text-cyan-300 border-cyan-500/40 bg-cyan-950/30">
                 {permissions.includes("*") ? "All Permissions (*)" : `${permissions.length} Grants`}
               </Badge>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 font-mono-street text-xs">
+          <div className="flex items-center gap-2 shrink-0 text-xs">
             <span className="inline-flex items-center gap-1.5 border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-1 text-[11px] font-bold text-emerald-300 rounded-lg">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               Node: Elysium L2
@@ -235,17 +235,17 @@ export function AdminOverview({
         </div>
 
         {/* Active grants pill row */}
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-gray-800/80 pt-3">
-          <span className="text-[10px] uppercase font-bold text-gray-500 font-mono-street mr-1">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[#163B44] pt-3">
+          <span className="text-[10px] uppercase font-bold text-gray-500 mr-1">
             Active Grants:
           </span>
           {permissions.length === 0 ? (
-            <span className="text-[10px] text-gray-500 font-mono-street">None assigned</span>
+            <span className="text-[10px] text-gray-500">None assigned</span>
           ) : (
             permissions.map((p) => (
               <span
                 key={p}
-                className="rounded border border-gray-800 bg-[#07080d] px-2 py-0.5 font-mono-street text-[10px] text-gray-300"
+                className="rounded border border-[#163B44] bg-[#04181C] px-2 py-0.5 text-[10px] text-gray-300"
               >
                 {p}
               </span>
@@ -257,10 +257,10 @@ export function AdminOverview({
       {/* Module Quick Metric Cards — The "Sekali Lihat Langsung Paham" HUD */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* 1. Evidence Card */}
-        <Card className="border-2 border-gray-800 bg-[#0c0d15] transition-all hover:border-amber-400/60 shadow-brutal-sm flex flex-col justify-between">
+        <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-amber-400/60 shadow-sm flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <span className="font-mono-street text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
                 Action Queue
               </span>
               <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
@@ -277,24 +277,24 @@ export function AdminOverview({
                 {pendingEvidenceCount !== null ? pendingEvidenceCount : "-"}
               </div>
               {pendingEvidenceCount !== null && pendingEvidenceCount > 0 ? (
-                <span className="inline-flex items-center gap-1 font-mono-street text-[10px] font-bold text-amber-300 border border-amber-500/40 bg-amber-950/40 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 border border-amber-500/40 bg-amber-950/40 px-2 py-0.5 rounded-full">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
                   Action Needed
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 font-mono-street text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
                   All Caught Up ✓
                 </span>
               )}
             </div>
-            <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-400 leading-relaxed">
               Submissions awaiting moderator review
             </p>
-            <div className="pt-2 border-t border-gray-800">
+            <div className="pt-2 border-t border-[#163B44]">
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full justify-between font-mono-street text-xs border border-gray-700 bg-gray-900 hover:border-amber-400 hover:text-white"
+                className="w-full justify-between text-xs border border-[#163B44] bg-[#0B2026] hover:border-amber-400 hover:text-white"
                 onClick={() => onNavigateTab("evidence")}
               >
                 <span>Review Submissions</span>
@@ -305,10 +305,10 @@ export function AdminOverview({
         </Card>
 
         {/* 2. Whitelist Allocation Card */}
-        <Card className="border-2 border-gray-800 bg-[#0c0d15] transition-all hover:border-emerald-400/60 shadow-brutal-sm flex flex-col justify-between">
+        <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-emerald-400/60 shadow-sm flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <span className="font-mono-street text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
                 Allowlist Quota
               </span>
               <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
@@ -322,29 +322,29 @@ export function AdminOverview({
           <CardContent className="space-y-3">
             <div className="flex items-baseline justify-between">
               <div className="font-display text-3xl font-black text-white">
-                {allocatedSlots} <span className="text-xs font-mono-street text-gray-500 font-normal">/ {totalSlots}</span>
+                {allocatedSlots} <span className="text-xs text-gray-500 font-normal">/ {totalSlots}</span>
               </div>
-              <span className="font-mono-street text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
                 {fillPercentage}% Full
               </span>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-[#102B33] h-2 rounded-full overflow-hidden">
               <div
                 className="bg-emerald-400 h-full transition-all duration-500"
                 style={{ width: `${fillPercentage}%` }}
               />
             </div>
 
-            <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-400 leading-relaxed">
               {Math.max(0, totalSlots - allocatedSlots)} GTD slots remaining on Elysium
             </p>
-            <div className="pt-2 border-t border-gray-800">
+            <div className="pt-2 border-t border-[#163B44]">
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full justify-between font-mono-street text-xs border border-gray-700 bg-gray-900 hover:border-emerald-400 hover:text-white"
+                className="w-full justify-between text-xs border border-[#163B44] bg-[#0B2026] hover:border-emerald-400 hover:text-white"
                 onClick={() => onNavigateTab("whitelist")}
               >
                 <span>Manage Whitelist</span>
@@ -355,10 +355,10 @@ export function AdminOverview({
         </Card>
 
         {/* 3. Drops Card */}
-        <Card className="border-2 border-gray-800 bg-[#0c0d15] transition-all hover:border-orange-400/60 shadow-brutal-sm flex flex-col justify-between">
+        <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-orange-400/60 shadow-sm flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <span className="font-mono-street text-[10px] font-bold text-orange-400 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">
                 Contraband Engine
               </span>
               <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
@@ -374,20 +374,20 @@ export function AdminOverview({
               <div className="font-display text-2xl font-black text-white">
                 {dropData?.active ? "Active" : "Closed"}
               </div>
-              <Badge variant={dropData?.active ? "success" : "warning"} className="font-mono-street text-[10px]">
+              <Badge variant={dropData?.active ? "success" : "warning"} className="text-[10px]">
                 {dropData?.period ? `Period #${dropData.period.periodIndex}` : "Idle"}
               </Badge>
             </div>
-            <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-400 leading-relaxed">
               {dropData?.stock
                 ? `${dropData.stock.totalRemaining} of ${dropData.stock.totalAllocated} traits available`
                 : "No active claiming period"}
             </p>
-            <div className="pt-2 border-t border-gray-800">
+            <div className="pt-2 border-t border-[#163B44]">
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full justify-between font-mono-street text-xs border border-gray-700 bg-gray-900 hover:border-orange-400 hover:text-white"
+                className="w-full justify-between text-xs border border-[#163B44] bg-[#0B2026] hover:border-orange-400 hover:text-white"
                 onClick={() => onNavigateTab("drops")}
               >
                 <span>Inspect Drops &amp; Emergency</span>
@@ -398,10 +398,10 @@ export function AdminOverview({
         </Card>
 
         {/* 4. Security & Abuse Flags Card */}
-        <Card className="border-2 border-gray-800 bg-[#0c0d15] transition-all hover:border-rose-400/60 shadow-brutal-sm flex flex-col justify-between">
+        <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-rose-400/60 shadow-sm flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <span className="font-mono-street text-[10px] font-bold text-rose-400 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
                 Sybil Surveillance
               </span>
               <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
@@ -418,23 +418,23 @@ export function AdminOverview({
                 {openFlagsCount !== null ? openFlagsCount : "0"}
               </div>
               {openFlagsCount !== null && openFlagsCount > 0 ? (
-                <span className="font-mono-street text-[10px] font-bold text-rose-300 border border-rose-500/40 bg-rose-950/40 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-rose-300 border border-rose-500/40 bg-rose-950/40 px-2 py-0.5 rounded-full">
                   Investigate
                 </span>
               ) : (
-                <span className="font-mono-street text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
                   Shield Nominal ✓
                 </span>
               )}
             </div>
-            <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-gray-400 leading-relaxed">
               Open Sybil cluster flags &amp; bot signals
             </p>
-            <div className="pt-2 border-t border-gray-800">
+            <div className="pt-2 border-t border-[#163B44]">
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full justify-between font-mono-street text-xs border border-gray-700 bg-gray-900 hover:border-rose-400 hover:text-white"
+                className="w-full justify-between text-xs border border-[#163B44] bg-[#0B2026] hover:border-rose-400 hover:text-white"
                 onClick={() => onNavigateTab("abuse-flags")}
               >
                 <span>Review Abuse Flags</span>
@@ -446,7 +446,7 @@ export function AdminOverview({
       </div>
 
       {/* Campaigns quick status strip */}
-      <div className="flex items-center justify-between border-2 border-gray-800 bg-[#0c0d15] p-4 rounded-xl font-mono-street text-xs shadow-brutal-sm">
+      <div className="flex items-center justify-between border-2 border-[#163B44] bg-[#0B2026] p-4 rounded-xl text-xs shadow-sm">
         <div className="flex items-center gap-3">
           <Sparkles className="h-5 w-5 text-emerald-400 shrink-0" />
           <div>
@@ -459,7 +459,7 @@ export function AdminOverview({
         <Button
           variant="outline"
           size="sm"
-          className="border border-gray-700 bg-gray-900 text-xs font-mono-street text-gray-300 hover:border-emerald-400 hover:text-white"
+          className="border border-[#163B44] bg-[#0B2026] text-xs text-gray-300 hover:border-emerald-400 hover:text-white"
           onClick={() => onNavigateTab("campaigns")}
         >
           <span>Manage Campaigns</span>
@@ -469,19 +469,19 @@ export function AdminOverview({
 
       {/* Quick Action Navigation Grid */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+        <div className="flex items-center justify-between border-b border-[#163B44] pb-2">
           <h2 className="font-display text-xl uppercase tracking-wider text-white">
             Operations Modules
           </h2>
-          <span className="font-mono-street text-xs text-gray-500 uppercase">
+          <span className="text-xs text-gray-500 uppercase">
             Click to navigate
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 font-mono-street">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div
             onClick={() => onNavigateTab("evidence")}
-            className="group cursor-pointer rounded-xl border-2 border-gray-800 bg-[#0c0d15] p-5 transition-all hover:border-amber-400 hover:shadow-brutal-sm hover:-translate-y-0.5"
+            className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-amber-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -499,7 +499,7 @@ export function AdminOverview({
 
           <div
             onClick={() => onNavigateTab("campaigns")}
-            className="group cursor-pointer rounded-xl border-2 border-gray-800 bg-[#0c0d15] p-5 transition-all hover:border-emerald-400 hover:shadow-brutal-sm hover:-translate-y-0.5"
+            className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-emerald-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -517,7 +517,7 @@ export function AdminOverview({
 
           <div
             onClick={() => onNavigateTab("whitelist")}
-            className="group cursor-pointer rounded-xl border-2 border-gray-800 bg-[#0c0d15] p-5 transition-all hover:border-cyan-400 hover:shadow-brutal-sm hover:-translate-y-0.5"
+            className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-cyan-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -535,7 +535,7 @@ export function AdminOverview({
 
           <div
             onClick={() => onNavigateTab("users-bans")}
-            className="group cursor-pointer rounded-xl border-2 border-gray-800 bg-[#0c0d15] p-5 transition-all hover:border-rose-400 hover:shadow-brutal-sm hover:-translate-y-0.5"
+            className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-rose-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -553,7 +553,7 @@ export function AdminOverview({
 
           <div
             onClick={() => onNavigateTab("drops")}
-            className="group cursor-pointer rounded-xl border-2 border-gray-800 bg-[#0c0d15] p-5 transition-all hover:border-orange-400 hover:shadow-brutal-sm hover:-translate-y-0.5"
+            className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-orange-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -571,7 +571,7 @@ export function AdminOverview({
 
           <div
             onClick={() => onNavigateTab("abuse-flags")}
-            className="group cursor-pointer rounded-xl border-2 border-gray-800 bg-[#0c0d15] p-5 transition-all hover:border-pink-400 hover:shadow-brutal-sm hover:-translate-y-0.5"
+            className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-pink-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -590,8 +590,8 @@ export function AdminOverview({
       </div>
 
       {/* Operational Governance Cheat Sheet (Replaces blank notice) */}
-      <div className="rounded-2xl border-2 border-gray-800 bg-gradient-to-r from-[#0c0d15] via-[#10121d] to-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-4 font-mono-street text-xs">
-        <div className="flex items-center gap-2.5 text-amber-400 border-b border-gray-800 pb-3">
+      <div className="rounded-2xl border-2 border-[#163B44] bg-gradient-to-r from-[#0B2026] via-[#102B33] to-[#0B2026] p-5 sm:p-6 shadow-sm space-y-4 text-xs">
+        <div className="flex items-center gap-2.5 text-amber-400 border-b border-[#163B44] pb-3">
           <Terminal className="h-5 w-5" />
           <h3 className="font-display text-base uppercase tracking-wider text-white">
             Operational Governance Cheat Sheet
@@ -602,28 +602,28 @@ export function AdminOverview({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-gray-300">
-          <div className="border border-gray-800 bg-[#07080d] p-3 rounded-xl space-y-1">
+          <div className="border border-[#163B44] bg-[#04181C] p-3 rounded-xl space-y-1">
             <span className="font-bold text-emerald-400 uppercase">1. GTD Hard Cap</span>
             <p className="text-gray-400 text-[11px] leading-relaxed">
               Strictly 1,000 slots. Concurrency protected by database row locks. Auto-allocated upon meeting 5 requirements.
             </p>
           </div>
 
-          <div className="border border-gray-800 bg-[#07080d] p-3 rounded-xl space-y-1">
+          <div className="border border-[#163B44] bg-[#04181C] p-3 rounded-xl space-y-1">
             <span className="font-bold text-amber-400 uppercase">2. Drop Clock Cycle</span>
             <p className="text-gray-400 text-[11px] leading-relaxed">
               2-hour UTC cycles. First 30 minutes open for claims. Strictly 1 claim per period per wallet.
             </p>
           </div>
 
-          <div className="border border-gray-800 bg-[#07080d] p-3 rounded-xl space-y-1">
+          <div className="border border-[#163B44] bg-[#04181C] p-3 rounded-xl space-y-1">
             <span className="font-bold text-pink-400 uppercase">3. Gifting Guard</span>
             <p className="text-gray-400 text-[11px] leading-relaxed">
               Sender must retain ≥ 1 trait in category. Equipped avatar traits cannot be transferred.
             </p>
           </div>
 
-          <div className="border border-gray-800 bg-[#07080d] p-3 rounded-xl space-y-1">
+          <div className="border border-[#163B44] bg-[#04181C] p-3 rounded-xl space-y-1">
             <span className="font-bold text-rose-400 uppercase">4. Anti-Sybil Policy</span>
             <p className="text-gray-400 text-[11px] leading-relaxed">
               Strict 1:1 EVM to X binding. Slot revocation results in permanent disqualification (DEC-022).

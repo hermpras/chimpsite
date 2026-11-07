@@ -184,7 +184,7 @@ export function AdminAuditLog() {
   return (
     <div className="space-y-6">
       {/* Header Card */}
-      <Card className="border-gray-800 bg-[#0c0e17]">
+      <Card className="border-[#163B44] bg-[#0B2026]">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -250,7 +250,7 @@ export function AdminAuditLog() {
       )}
 
       {/* Filters Form */}
-      <Card className="border-gray-800 bg-[#0c0e17]">
+      <Card className="border-[#163B44] bg-[#0B2026]">
         <CardContent className="pt-6">
           <form onSubmit={handleApplyFilters} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -265,7 +265,7 @@ export function AdminAuditLog() {
                     value={actionInput}
                     onChange={(e) => setActionInput(e.target.value)}
                     placeholder="e.g. BAN_USER"
-                    className="w-full rounded-md border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -280,7 +280,7 @@ export function AdminAuditLog() {
                   value={entityTypeInput}
                   onChange={(e) => setEntityTypeInput(e.target.value)}
                   placeholder="e.g. User, WLSlot"
-                  className="w-full rounded-md border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -294,7 +294,7 @@ export function AdminAuditLog() {
                   value={actorIdInput}
                   onChange={(e) => setActorIdInput(e.target.value)}
                   placeholder="User ID..."
-                  className="w-full rounded-md border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -307,7 +307,7 @@ export function AdminAuditLog() {
                   type="date"
                   value={fromInput}
                   onChange={(e) => setFromInput(e.target.value)}
-                  className="w-full rounded-md border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -320,13 +320,13 @@ export function AdminAuditLog() {
                   type="date"
                   value={toInput}
                   onChange={(e) => setToInput(e.target.value)}
-                  className="w-full rounded-md border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Filter Actions */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-800/80">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#163B44]">
               <div className="flex items-center gap-2">
                 <Button
                   type="submit"
@@ -353,7 +353,7 @@ export function AdminAuditLog() {
                   value={limit}
                   onChange={(e) => handleLimitChange(Number(e.target.value))}
                   aria-label="Audit log page size"
-                  className="rounded border border-gray-800 bg-gray-900 px-2 py-1 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="rounded border border-[#163B44] bg-[#0B2026] px-2 py-1 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 >
                   <option value={10}>10</option>
                   <option value={25}>25</option>
@@ -367,7 +367,7 @@ export function AdminAuditLog() {
       </Card>
 
       {/* Logs Table Card */}
-      <Card className="border-gray-800 bg-[#0c0e17]">
+      <Card className="border-[#163B44] bg-[#0B2026]">
         <CardContent className="p-0">
           {loading && logs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -385,7 +385,7 @@ export function AdminAuditLog() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-gray-800 bg-gray-900/40 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                <thead className="border-b border-[#163B44] bg-[#051D22]/60 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                   <tr>
                     <th className="px-4 py-3">Timestamp</th>
                     <th className="px-4 py-3">Actor</th>
@@ -407,7 +407,7 @@ export function AdminAuditLog() {
                     return (
                       <tr
                         key={log.id}
-                        className="transition-colors hover:bg-gray-800/30"
+                        className="transition-colors hover:bg-[#102B33]/30"
                       >
                         {/* Timestamp */}
                         <td className="whitespace-nowrap px-4 py-3 text-gray-300 font-sans">
@@ -450,7 +450,7 @@ export function AdminAuditLog() {
 
                         {/* Entity Type */}
                         <td className="whitespace-nowrap px-4 py-3 text-gray-300 font-sans">
-                          <span className="rounded bg-gray-800/80 px-1.5 py-0.5 text-[11px] text-gray-300">
+                          <span className="rounded bg-[#102B33]/80 px-1.5 py-0.5 text-[11px] text-gray-300">
                             {log.entityType}
                           </span>
                         </td>
@@ -484,7 +484,7 @@ export function AdminAuditLog() {
 
           {/* Pagination Controls */}
           {totalCount > 0 && (
-            <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-800 px-4 py-3 sm:flex-row">
+            <div className="flex flex-col items-center justify-between gap-3 border-t border-[#163B44] px-4 py-3 sm:flex-row">
               <div className="text-xs text-gray-400">
                 Showing{" "}
                 <span className="font-medium text-white">
@@ -534,9 +534,9 @@ export function AdminAuditLog() {
           aria-modal="true"
           aria-labelledby="audit-detail-title"
         >
-          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-gray-800 bg-[#0f111a] p-6 shadow-2xl">
+          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-[#163B44] bg-[#071F24] p-6 shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-gray-800 pb-4">
+            <div className="flex items-start justify-between border-b border-[#163B44] pb-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Badge variant="default" className="text-xs">
@@ -552,7 +552,7 @@ export function AdminAuditLog() {
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-800 hover:text-white"
+                className="rounded-lg p-1 text-gray-400 hover:bg-[#102B33] hover:text-white"
                 aria-label="Close details modal"
               >
                 <X className="h-5 w-5" />
@@ -562,7 +562,7 @@ export function AdminAuditLog() {
             {/* Modal Body */}
             <div className="mt-5 space-y-5">
               {/* Metadata Grid */}
-              <div className="grid grid-cols-1 gap-3 rounded-lg border border-gray-800/80 bg-gray-900/40 p-4 text-xs sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-4 text-xs sm:grid-cols-2">
                 <div>
                   <span className="text-gray-400">Created At:</span>{" "}
                   <span className="font-semibold text-white">
@@ -604,7 +604,7 @@ export function AdminAuditLog() {
                     Old Values (Before Operation)
                   </span>
                 </div>
-                <pre className="max-h-56 overflow-x-auto rounded-lg border border-gray-800 bg-gray-950 p-3 font-mono text-xs text-gray-300">
+                <pre className="max-h-56 overflow-x-auto rounded-lg border border-[#163B44] bg-[#04181C] p-3 font-mono text-xs text-gray-300">
                   {formatSafeJson(selectedLog.oldValues)}
                 </pre>
               </div>
@@ -616,7 +616,7 @@ export function AdminAuditLog() {
                     New Values (After Operation)
                   </span>
                 </div>
-                <pre className="max-h-56 overflow-x-auto rounded-lg border border-gray-800 bg-gray-950 p-3 font-mono text-xs text-emerald-300">
+                <pre className="max-h-56 overflow-x-auto rounded-lg border border-[#163B44] bg-[#04181C] p-3 font-mono text-xs text-emerald-300">
                   {formatSafeJson(selectedLog.newValues)}
                 </pre>
               </div>
@@ -628,14 +628,14 @@ export function AdminAuditLog() {
                     Context Metadata
                   </span>
                 </div>
-                <pre className="max-h-56 overflow-x-auto rounded-lg border border-gray-800 bg-gray-950 p-3 font-mono text-xs text-amber-300">
+                <pre className="max-h-56 overflow-x-auto rounded-lg border border-[#163B44] bg-[#04181C] p-3 font-mono text-xs text-amber-300">
                   {formatSafeJson(selectedLog.metadata)}
                 </pre>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="mt-6 flex justify-end border-t border-gray-800 pt-4">
+            <div className="mt-6 flex justify-end border-t border-[#163B44] pt-4">
               <Button
                 variant="outline"
                 size="sm"

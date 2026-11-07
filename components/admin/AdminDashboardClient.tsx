@@ -65,7 +65,7 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
     : hasPerm(currentNav?.requiredPermission);
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-[#090a0f] lg:flex-row">
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-[#04181C] lg:flex-row">
       {/* Sidebar Navigation */}
       <AdminSidebar
         activeTab={activeTab}
@@ -82,8 +82,8 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
       <main className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-6xl space-y-6">
           {/* Top Breadcrumb & Actions Bar */}
-          <div className="flex flex-col gap-2 border-b border-gray-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-400 font-mono-street">
+          <div className="flex flex-col gap-2 border-b border-[#163B44] pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
               <Link href="/" className="transition-colors hover:text-amber-400 font-bold">
                 Elychimp
               </Link>
@@ -95,14 +95,14 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
               </span>
             </div>
 
-            <div className="flex items-center gap-2 font-mono-street">
+            <div className="flex items-center gap-2">
               <Link href="/whitelist">
                 <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-gray-300 hover:text-white">
                   Public Portal <ExternalLink className="h-3 w-3" />
                 </Button>
               </Link>
               <Link href="/">
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs border-gray-700 bg-gray-900 text-gray-300 hover:border-amber-400 hover:text-white">
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs border-[#163B44] bg-[#0B2026] text-gray-300 hover:border-amber-400 hover:text-white">
                   <ArrowLeft className="h-3 w-3" /> Site Home
                 </Button>
               </Link>

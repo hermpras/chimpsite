@@ -33,7 +33,7 @@ const CATEGORIES = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
 const RARITIES = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"] as const;
 
 const RARITY_COLORS: Record<string, string> = {
-  COMMON: "border-gray-700 bg-gray-800 text-gray-300",
+  COMMON: "border-[#163B44] bg-[#102B33] text-gray-300",
   UNCOMMON: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
   RARE: "border-sky-500/30 bg-sky-500/10 text-sky-400",
   EPIC: "border-purple-500/30 bg-purple-500/10 text-purple-400",
@@ -365,7 +365,7 @@ export function AdminTraits() {
       </div>
 
       {/* Filter Toolbar: Categories & Status */}
-      <div className="flex flex-col gap-3 border-b border-gray-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-[#163B44] pb-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Category filter tabs */}
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -374,7 +374,7 @@ export function AdminTraits() {
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               selectedCategory === "ALL"
                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                : "bg-gray-900/60 text-gray-400 hover:text-white border border-gray-800"
+                : "bg-[#0B2026]/80 text-gray-400 hover:text-white border border-[#163B44]"
             }`}
           >
             All Categories ({traits.length})
@@ -389,7 +389,7 @@ export function AdminTraits() {
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                   selectedCategory === cat
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                    : "bg-gray-900/60 text-gray-400 hover:text-white border border-gray-800"
+                    : "bg-[#0B2026]/80 text-gray-400 hover:text-white border border-[#163B44]"
                 }`}
               >
                 {cat} ({count})
@@ -399,7 +399,7 @@ export function AdminTraits() {
         </div>
 
         {/* Status Filter */}
-        <div className="flex items-center gap-1 self-start rounded-lg border border-gray-800 bg-gray-950 p-1 sm:self-auto">
+        <div className="flex items-center gap-1 self-start rounded-lg border border-[#163B44] bg-[#04181C] p-1 sm:self-auto">
           {(["ALL", "ACTIVE", "INACTIVE"] as const).map((filter) => (
             <button
               key={filter}
@@ -407,7 +407,7 @@ export function AdminTraits() {
               onClick={() => setStatusFilter(filter)}
               className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 statusFilter === filter
-                  ? "bg-gray-800 text-white shadow-sm"
+                  ? "bg-[#102B33] text-white shadow-sm"
                   : "text-gray-400 hover:text-gray-200"
               }`}
             >
@@ -419,7 +419,7 @@ export function AdminTraits() {
 
       {/* Traits Grid */}
       {loading ? (
-        <div className="rounded-xl border border-gray-800 bg-[#0c0e17] p-12 text-center text-gray-400">
+        <div className="rounded-xl border border-[#163B44] bg-[#0B2026] p-12 text-center text-gray-400">
           <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-emerald-400" />
           <p className="text-sm">Loading trait catalog...</p>
         </div>
@@ -429,7 +429,7 @@ export function AdminTraits() {
           <p className="text-sm font-semibold">{error}</p>
         </div>
       ) : filteredTraits.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-800 bg-[#0c0e17] p-12 text-center text-gray-400">
+        <div className="rounded-xl border border-dashed border-[#163B44] bg-[#0B2026] p-12 text-center text-gray-400">
           <Layers className="mx-auto mb-3 h-10 w-10 text-gray-600" />
           <h3 className="text-base font-semibold text-white">No traits match filter</h3>
           <p className="mt-1 text-xs text-gray-500">
@@ -451,19 +451,19 @@ export function AdminTraits() {
               key={trait.id}
               className={`group relative flex flex-col overflow-hidden rounded-xl border p-3 shadow transition-all ${
                 trait.isActive
-                  ? "border-gray-800 bg-[#0c0e17]/80 hover:border-gray-700 hover:shadow-lg"
-                  : "border-gray-800/60 bg-[#0c0e17]/40 opacity-70 hover:opacity-100"
+                  ? "border-[#163B44] bg-[#0B2026]/80 hover:border-[#163B44] hover:shadow-lg"
+                  : "border-[#163B44] bg-[#0B2026]/40 opacity-70 hover:opacity-100"
               }`}
             >
               {/* Image Preview Container */}
-              <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-950/80 border border-gray-800/80">
+              <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-[#04181C]/80 border border-[#163B44]">
                 <img
                   src={trait.imageUrl}
                   alt={trait.name}
                   className="h-full w-full object-contain [image-rendering:pixelated] transition-transform group-hover:scale-105"
                 />
                 {/* Category Badge */}
-                <span className="absolute top-2 right-2 rounded border border-gray-800 bg-gray-900/90 px-1.5 py-0.5 text-[9px] font-bold text-gray-300 uppercase">
+                <span className="absolute top-2 right-2 rounded border border-[#163B44] bg-[#0B2026]/90 px-1.5 py-0.5 text-[9px] font-bold text-gray-300 uppercase">
                   {trait.category}
                 </span>
                 {/* Active Indicator Dot */}
@@ -485,7 +485,7 @@ export function AdminTraits() {
                     className={`rounded border px-1.5 py-0.2 text-[8px] font-semibold uppercase ${
                       trait.isActive
                         ? "border-emerald-500/40 text-emerald-400"
-                        : "border-gray-700 text-gray-500"
+                        : "border-[#163B44] text-gray-500"
                     }`}
                   >
                     {trait.isActive ? "Active" : "Inactive"}
@@ -506,7 +506,7 @@ export function AdminTraits() {
               </div>
 
               {/* Action Buttons: Edit, Toggle Active, Delete */}
-              <div className="mt-3 flex items-center justify-between gap-1 border-t border-gray-800/80 pt-2">
+              <div className="mt-3 flex items-center justify-between gap-1 border-t border-[#163B44] pt-2">
                 <button
                   type="button"
                   title={trait.isActive ? "Deactivate (exclude from drops)" : "Activate (include in drops)"}
@@ -515,7 +515,7 @@ export function AdminTraits() {
                   className={`flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors ${
                     trait.isActive
                       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                      : "border-gray-800 bg-gray-900 text-gray-500 hover:text-gray-300"
+                      : "border-[#163B44] bg-[#0B2026] text-gray-500 hover:text-gray-300"
                   }`}
                 >
                   <Power className="h-3.5 w-3.5" />
@@ -525,7 +525,7 @@ export function AdminTraits() {
                     type="button"
                     title="Edit Trait Details"
                     onClick={() => openEditModal(trait)}
-                    className="flex h-7 items-center gap-1 rounded-md border border-gray-800 bg-gray-900/80 px-2 text-[11px] font-medium text-gray-300 hover:border-gray-700 hover:bg-gray-800 hover:text-white transition-colors"
+                    className="flex h-7 items-center gap-1 rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2 text-[11px] font-medium text-gray-300 hover:border-[#163B44] hover:bg-[#102B33] hover:text-white transition-colors"
                   >
                     <Pencil className="h-3 w-3" />
                     Edit
@@ -552,7 +552,7 @@ export function AdminTraits() {
       {/* Upload Modal */}
       {isUploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-2xl border border-gray-800 bg-[#0c0e17] p-6 shadow-2xl">
+          <div className="relative w-full max-w-lg rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 shadow-2xl">
             <button
               type="button"
               onClick={() => setIsUploadOpen(false)}
@@ -589,7 +589,7 @@ export function AdminTraits() {
                   PNG Image File (240×240 Transparent)
                 </label>
                 <div className="flex items-center gap-4">
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-dashed border-gray-700 bg-gray-950 flex items-center justify-center">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-dashed border-[#163B44] bg-[#04181C] flex items-center justify-center">
                     {previewUrl ? (
                       <img
                         src={previewUrl}
@@ -621,7 +621,7 @@ export function AdminTraits() {
                     placeholder="e.g. Cyber Halo"
                     value={uploadName}
                     onChange={(e) => setUploadName(e.target.value)}
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -633,7 +633,7 @@ export function AdminTraits() {
                     onChange={(e) =>
                       setUploadCategory(e.target.value as (typeof CATEGORIES)[number])
                     }
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   >
                     {CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>
@@ -654,7 +654,7 @@ export function AdminTraits() {
                     onChange={(e) =>
                       setUploadRarity(e.target.value as (typeof RARITIES)[number])
                     }
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   >
                     {RARITIES.map((r) => (
                       <option key={r} value={r}>
@@ -673,7 +673,7 @@ export function AdminTraits() {
                     placeholder="e.g. 50"
                     value={uploadMaxSupply}
                     onChange={(e) => setUploadMaxSupply(e.target.value)}
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -687,7 +687,7 @@ export function AdminTraits() {
                   placeholder="Short description of this trait..."
                   value={uploadDescription}
                   onChange={(e) => setUploadDescription(e.target.value)}
-                  className="w-full rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none resize-none"
                 />
               </div>
 
@@ -729,7 +729,7 @@ export function AdminTraits() {
       {/* Edit Trait Modal */}
       {editingTrait && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-2xl border border-gray-800 bg-[#0c0e17] p-6 shadow-2xl">
+          <div className="relative w-full max-w-lg rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 shadow-2xl">
             <button
               type="button"
               onClick={() => setEditingTrait(null)}
@@ -767,7 +767,7 @@ export function AdminTraits() {
                   Trait Artwork (Upload to replace current PNG)
                 </label>
                 <div className="flex items-center gap-4">
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-gray-700 bg-gray-950 flex items-center justify-center">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-[#163B44] bg-[#04181C] flex items-center justify-center">
                     {editPreviewUrl ? (
                       <img
                         src={editPreviewUrl}
@@ -804,7 +804,7 @@ export function AdminTraits() {
                     required
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -816,7 +816,7 @@ export function AdminTraits() {
                     onChange={(e) =>
                       setEditCategory(e.target.value as (typeof CATEGORIES)[number])
                     }
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   >
                     {CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>
@@ -838,7 +838,7 @@ export function AdminTraits() {
                     onChange={(e) =>
                       setEditRarity(e.target.value as (typeof RARITIES)[number])
                     }
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   >
                     {RARITIES.map((r) => (
                       <option key={r} value={r}>
@@ -857,19 +857,19 @@ export function AdminTraits() {
                     placeholder="Infinite"
                     value={editMaxSupply}
                     onChange={(e) => setEditMaxSupply(e.target.value)}
-                    className="w-full rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Status Toggle Checkbox */}
-              <div className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+              <div className="flex items-center gap-3 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
                 <input
                   id="edit-is-active"
                   type="checkbox"
                   checked={Boolean(editIsActive)}
                   onChange={(e) => setEditIsActive(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-700 bg-gray-850 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900 cursor-pointer"
+                  className="h-4 w-4 rounded border-[#163B44] bg-gray-850 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900 cursor-pointer"
                 />
                 <label htmlFor="edit-is-active" className="text-xs text-gray-300 cursor-pointer select-none">
                   <span className="font-semibold text-white">Active in Drop Cycles</span>
@@ -889,7 +889,7 @@ export function AdminTraits() {
                   placeholder="Short description..."
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  className="w-full rounded-lg border border-gray-800 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none resize-none"
                 />
               </div>
 
@@ -929,7 +929,7 @@ export function AdminTraits() {
       {/* Delete Confirmation Modal */}
       {deletingTrait && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-2xl border border-gray-800 bg-[#0c0e17] p-6 shadow-2xl">
+          <div className="relative w-full max-w-md rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 shadow-2xl">
             <button
               type="button"
               onClick={() => setDeletingTrait(null)}
@@ -962,8 +962,8 @@ export function AdminTraits() {
               </div>
             )}
 
-            <div className="mb-4 flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-950/60 p-3">
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-gray-700 bg-gray-900">
+            <div className="mb-4 flex items-center gap-3 rounded-xl border border-[#163B44] bg-[#04181C]/80 p-3">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-[#163B44] bg-[#0B2026]">
                 <img
                   src={deletingTrait.imageUrl}
                   alt={deletingTrait.name}

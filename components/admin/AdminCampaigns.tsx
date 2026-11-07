@@ -710,7 +710,7 @@ export function AdminCampaigns() {
   };
 
   const renderCreateForm = () => (
-    <Card className="border-emerald-500/30 bg-[#0c0e17]">
+    <Card className="border-emerald-500/30 bg-[#0B2026]">
       <CardHeader>
         <CardTitle className="text-base text-white">Create New Campaign</CardTitle>
         <CardDescription className="text-xs text-gray-400">
@@ -734,7 +734,7 @@ export function AdminCampaigns() {
                 value={newSlug}
                 onChange={(e) => setNewSlug(e.target.value)}
                 required
-                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
               />
             </div>
             <div>
@@ -751,7 +751,7 @@ export function AdminCampaigns() {
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 required
-                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
               />
             </div>
             <div>
@@ -778,7 +778,7 @@ export function AdminCampaigns() {
                   value={newWlProgramId}
                   onChange={(e) => setNewWlProgramId(e.target.value)}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="">Select a Whitelist Program...</option>
                   {wlPrograms.map((p) => (
@@ -795,7 +795,7 @@ export function AdminCampaigns() {
                   value={newWlProgramId}
                   onChange={(e) => setNewWlProgramId(e.target.value)}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               )}
             </div>
@@ -811,7 +811,7 @@ export function AdminCampaigns() {
                 type="datetime-local"
                 value={newStartsAt}
                 onChange={(e) => setNewStartsAt(e.target.value)}
-                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
               />
             </div>
           </div>
@@ -829,7 +829,7 @@ export function AdminCampaigns() {
               placeholder="Summary of quest objectives..."
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
-              className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
             />
           </div>
 
@@ -852,7 +852,7 @@ export function AdminCampaigns() {
   );
 
   const renderInlineTasks = (camp: CampaignItem, tasks: CampaignTaskItem[]) => (
-    <div className="mt-4 border-t border-gray-800 pt-3">
+    <div className="mt-4 border-t border-[#163B44] pt-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-semibold text-gray-300">
           Version {camp.currentVersion?.versionNumber ?? 1} Task Specifications
@@ -867,7 +867,7 @@ export function AdminCampaigns() {
           Loading version tasks...
         </div>
       ) : tasks.length === 0 ? (
-        <div className="rounded border border-gray-800/80 bg-gray-900/30 p-3 text-xs text-gray-500 italic">
+        <div className="rounded border border-[#163B44] bg-[#051D22]/50 p-3 text-xs text-gray-500 italic">
           No tasks configured in this version.
         </div>
       ) : (
@@ -875,7 +875,7 @@ export function AdminCampaigns() {
           {tasks.map((task) => (
             <div
               key={task.id}
-              className="space-y-1 rounded border border-gray-800 bg-gray-900/40 p-2.5 text-xs"
+              className="space-y-1 rounded border border-[#163B44] bg-[#051D22]/60 p-2.5 text-xs"
             >
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-white">{task.title}</span>
@@ -939,7 +939,7 @@ export function AdminCampaigns() {
             Loading version tasks...
           </div>
         ) : tasks.length === 0 ? (
-          <div className="rounded border border-gray-800/80 bg-gray-900/30 p-6 text-center text-xs text-gray-500 italic">
+          <div className="rounded border border-[#163B44] bg-[#051D22]/50 p-6 text-center text-xs text-gray-500 italic">
             No tasks configured in this version. Use the &quot;Add Task&quot; button above to create one.
           </div>
         ) : (
@@ -951,7 +951,7 @@ export function AdminCampaigns() {
               return (
                 <div
                   key={task.id}
-                  className="flex flex-col justify-between space-y-3 rounded-lg border border-gray-800 bg-gray-900/40 p-4 text-xs transition-colors hover:border-gray-700/80"
+                  className="flex flex-col justify-between space-y-3 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-4 text-xs transition-colors hover:border-[#163B44]/80"
                 >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
@@ -984,7 +984,7 @@ export function AdminCampaigns() {
                     )}
 
                     {tweetUrl && (
-                      <div className="flex items-center gap-1.5 rounded border border-gray-800/80 bg-gray-950/60 px-2.5 py-1.5 text-[11px] text-emerald-400">
+                      <div className="flex items-center gap-1.5 rounded border border-[#163B44] bg-[#04181C]/80 px-2.5 py-1.5 text-[11px] text-emerald-400">
                         <LinkIcon className="h-3 w-3 flex-shrink-0" />
                         <span className="truncate" title={tweetUrl}>
                           Target: {tweetUrl}
@@ -993,7 +993,7 @@ export function AdminCampaigns() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 border-t border-gray-800/80 pt-2.5">
+                  <div className="flex items-center justify-end gap-2 border-t border-[#163B44] pt-2.5">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1078,7 +1078,7 @@ export function AdminCampaigns() {
             </Button>
           </div>
         ) : versionHistory.length === 0 ? (
-          <div className="rounded border border-gray-800/80 bg-gray-900/30 p-8 text-center text-xs text-gray-500 italic">
+          <div className="rounded border border-[#163B44] bg-[#051D22]/50 p-8 text-center text-xs text-gray-500 italic">
             No version history found.
           </div>
         ) : (
@@ -1105,7 +1105,7 @@ export function AdminCampaigns() {
                     className={`cursor-pointer transition-all ${
                       isSelected
                         ? "border-emerald-500/60 bg-emerald-950/20 ring-1 ring-emerald-500/30"
-                        : "border-gray-800 bg-[#0c0e17]/80 hover:border-gray-700"
+                        : "border-[#163B44] bg-[#0B2026]/80 hover:border-[#163B44]"
                     }`}
                     onClick={() => setSelectedVersionId(v.id)}
                   >
@@ -1140,7 +1140,7 @@ export function AdminCampaigns() {
                         </p>
                       )}
 
-                      <div className="flex items-center justify-between border-t border-gray-800/80 pt-2 text-[11px]">
+                      <div className="flex items-center justify-between border-t border-[#163B44] pt-2 text-[11px]">
                         <span className="text-gray-400">{taskCount} tasks</span>
                         <Button
                           variant={isSelected ? "primary" : "outline"}
@@ -1163,7 +1163,7 @@ export function AdminCampaigns() {
             {/* Right: Selected Version Task Snapshot (7 cols on lg) */}
             <div className="space-y-4 lg:col-span-7">
               {activeSnapshot ? (
-                <Card className="border-gray-800 bg-[#0c0e17]/90">
+                <Card className="border-[#163B44] bg-[#0B2026]/90">
                   <CardHeader className="pb-3">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
@@ -1207,7 +1207,7 @@ export function AdminCampaigns() {
 
                   <CardContent className="space-y-3 pt-0">
                     {!activeSnapshot.tasks || activeSnapshot.tasks.length === 0 ? (
-                      <div className="rounded border border-gray-800/80 bg-gray-900/30 p-6 text-center text-xs text-gray-500 italic">
+                      <div className="rounded border border-[#163B44] bg-[#051D22]/50 p-6 text-center text-xs text-gray-500 italic">
                         No tasks recorded in this version snapshot.
                       </div>
                     ) : (
@@ -1219,7 +1219,7 @@ export function AdminCampaigns() {
                           return (
                             <div
                               key={task.id}
-                              className="space-y-1.5 rounded-lg border border-gray-800 bg-gray-900/40 p-3 text-xs"
+                              className="space-y-1.5 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3 text-xs"
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <span className="font-semibold text-white">
@@ -1251,7 +1251,7 @@ export function AdminCampaigns() {
                               )}
 
                               {tweetUrl && (
-                                <div className="flex items-center gap-1.5 rounded border border-gray-800/80 bg-gray-950/60 px-2 py-1 text-[11px] text-emerald-400">
+                                <div className="flex items-center gap-1.5 rounded border border-[#163B44] bg-[#04181C]/80 px-2 py-1 text-[11px] text-emerald-400">
                                   <LinkIcon className="h-3 w-3 flex-shrink-0" />
                                   <span className="truncate" title={tweetUrl}>
                                     Target: {tweetUrl}
@@ -1321,7 +1321,7 @@ export function AdminCampaigns() {
           </div>
         )}
 
-        <Card className="border-gray-800 bg-[#0c0e17]/80">
+        <Card className="border-[#163B44] bg-[#0B2026]/80">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-bold text-white">
               Edit Campaign Information
@@ -1349,7 +1349,7 @@ export function AdminCampaigns() {
                     value={camp.slug}
                     readOnly
                     disabled
-                    className="w-full cursor-not-allowed rounded-md border border-gray-800 bg-gray-900/40 px-3 py-2 font-mono text-xs text-gray-400 focus:outline-none"
+                    className="w-full cursor-not-allowed rounded-md border border-[#163B44] bg-[#051D22]/60 px-3 py-2 font-mono text-xs text-gray-400 focus:outline-none"
                   />
                   <span className="mt-1 block text-[11px] text-gray-500">
                     slug: {camp.slug} (Permanent URL identifier)
@@ -1370,7 +1370,7 @@ export function AdminCampaigns() {
                     value={camp.wlProgramId}
                     readOnly
                     disabled
-                    className="w-full cursor-not-allowed rounded-md border border-gray-800 bg-gray-900/40 px-3 py-2 font-mono text-xs text-emerald-400/80 focus:outline-none"
+                    className="w-full cursor-not-allowed rounded-md border border-[#163B44] bg-[#051D22]/60 px-3 py-2 font-mono text-xs text-emerald-400/80 focus:outline-none"
                   />
                   <span className="mt-1 block font-mono text-[11px] text-gray-500">
                     {camp.wlProgramId} (Permanent whitelist allocation binding)
@@ -1399,7 +1399,7 @@ export function AdminCampaigns() {
                   required
                   maxLength={255}
                   disabled={settingsSaving}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -1421,11 +1421,11 @@ export function AdminCampaigns() {
                     if (settingsSuccess) setSettingsSuccess(null);
                   }}
                   disabled={settingsSaving}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 border-t border-gray-800/80 pt-3">
+              <div className="flex items-center justify-end gap-2 border-t border-[#163B44] pt-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -1463,7 +1463,7 @@ export function AdminCampaigns() {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-        <Card className="w-full max-w-lg border-gray-800 bg-[#0c0e17] shadow-2xl">
+        <Card className="w-full max-w-lg border-[#163B44] bg-[#0B2026] shadow-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
               <CardTitle className="text-base text-white">
@@ -1497,7 +1497,7 @@ export function AdminCampaigns() {
                   value={addTaskCode}
                   onChange={(e) => setAddTaskCode(e.target.value.toUpperCase())}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 font-mono text-xs uppercase text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 font-mono text-xs uppercase text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
                 <span className="mt-1 block text-[11px] text-gray-500">
                   Permanent identifier. Cannot be modified once created.
@@ -1518,7 +1518,7 @@ export function AdminCampaigns() {
                   value={addTaskTitle}
                   onChange={(e) => setAddTaskTitle(e.target.value)}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1534,7 +1534,7 @@ export function AdminCampaigns() {
                     id="add-task-type"
                     value={addTaskType}
                     onChange={(e) => setAddTaskType(e.target.value)}
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   >
                     <option value="SOCIAL_X_FOLLOW">SOCIAL_X_FOLLOW (Follow)</option>
                     <option value="SOCIAL_X_LIKE">SOCIAL_X_LIKE (Like)</option>
@@ -1559,7 +1559,7 @@ export function AdminCampaigns() {
                     value={addTaskPoints}
                     onChange={(e) => setAddTaskPoints(Number(e.target.value))}
                     required
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1577,7 +1577,7 @@ export function AdminCampaigns() {
                   placeholder="https://x.com/ChimpHood/status/1234567890"
                   value={addTaskTweetUrl}
                   onChange={(e) => setAddTaskTweetUrl(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1594,7 +1594,7 @@ export function AdminCampaigns() {
                   placeholder="Instructions for participants..."
                   value={addTaskDescription}
                   onChange={(e) => setAddTaskDescription(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1604,7 +1604,7 @@ export function AdminCampaigns() {
                   type="checkbox"
                   checked={addTaskIsRequired}
                   onChange={(e) => setAddTaskIsRequired(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-emerald-500 focus:ring-emerald-400"
+                  className="h-4 w-4 rounded border-[#163B44] bg-[#0B2026] text-emerald-500 focus:ring-emerald-400"
                 />
                 <label htmlFor="add-task-required" className="text-xs text-gray-300">
                   Required for Whitelist qualification
@@ -1651,7 +1651,7 @@ export function AdminCampaigns() {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-        <Card className="w-full max-w-lg border-gray-800 bg-[#0c0e17] shadow-2xl">
+        <Card className="w-full max-w-lg border-[#163B44] bg-[#0B2026] shadow-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
               <CardTitle className="text-base text-white">
@@ -1674,7 +1674,7 @@ export function AdminCampaigns() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <span className="mb-1 block font-medium text-gray-400">Task Code</span>
-                  <div className="rounded-md border border-gray-800 bg-gray-900/90 px-3 py-2 font-mono text-xs text-gray-300">
+                  <div className="rounded-md border border-[#163B44] bg-[#0B2026]/90 px-3 py-2 font-mono text-xs text-gray-300">
                     {editingTask.taskCode}
                   </div>
                   <span className="mt-1 block text-[10px] text-gray-500">
@@ -1683,7 +1683,7 @@ export function AdminCampaigns() {
                 </div>
                 <div>
                   <span className="mb-1 block font-medium text-gray-400">Task Type</span>
-                  <div className="rounded-md border border-gray-800 bg-gray-900/90 px-3 py-2 font-mono text-xs text-gray-300">
+                  <div className="rounded-md border border-[#163B44] bg-[#0B2026]/90 px-3 py-2 font-mono text-xs text-gray-300">
                     {editingTask.taskType}
                   </div>
                   <span className="mt-1 block text-[10px] text-gray-500">
@@ -1705,7 +1705,7 @@ export function AdminCampaigns() {
                   value={editTaskTitle}
                   onChange={(e) => setEditTaskTitle(e.target.value)}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1723,7 +1723,7 @@ export function AdminCampaigns() {
                   value={editTaskPoints}
                   onChange={(e) => setEditTaskPoints(Number(e.target.value))}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1740,7 +1740,7 @@ export function AdminCampaigns() {
                   placeholder="https://x.com/ChimpHood/status/..."
                   value={editTaskTweetUrl}
                   onChange={(e) => setEditTaskTweetUrl(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1756,7 +1756,7 @@ export function AdminCampaigns() {
                   rows={2}
                   value={editTaskDescription}
                   onChange={(e) => setEditTaskDescription(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1766,7 +1766,7 @@ export function AdminCampaigns() {
                   type="checkbox"
                   checked={editTaskIsRequired}
                   onChange={(e) => setEditTaskIsRequired(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-emerald-500 focus:ring-emerald-400"
+                  className="h-4 w-4 rounded border-[#163B44] bg-[#0B2026] text-emerald-500 focus:ring-emerald-400"
                 />
                 <label htmlFor="edit-task-required" className="text-xs text-gray-300">
                   Required for Whitelist qualification
@@ -1821,7 +1821,7 @@ export function AdminCampaigns() {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-        <Card className="w-full max-w-md border-rose-500/30 bg-[#0c0e17] shadow-2xl">
+        <Card className="w-full max-w-md border-rose-500/30 bg-[#0B2026] shadow-2xl">
           <CardHeader className="pb-3">
             <CardTitle className="text-base text-rose-300">
               Delete Task Confirmation
@@ -1919,7 +1919,7 @@ export function AdminCampaigns() {
         {renderNotifications()}
 
         {/* Detail Navigation Tabs */}
-        <div className="flex border-b border-gray-800" role="tablist">
+        <div className="flex border-b border-[#163B44]" role="tablist">
           <button
             type="button"
             role="tab"
@@ -2030,12 +2030,12 @@ export function AdminCampaigns() {
 
         {/* Campaigns List */}
         {loading ? (
-          <div className="rounded-lg border border-gray-800 bg-[#0c0e17] p-12 text-center text-sm text-gray-400">
+          <div className="rounded-lg border border-[#163B44] bg-[#0B2026] p-12 text-center text-sm text-gray-400">
             <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-emerald-400" />
             Loading campaigns...
           </div>
         ) : campaigns.length === 0 ? (
-          <Card className="border-gray-800 bg-[#0c0e17]">
+          <Card className="border-[#163B44] bg-[#0B2026]">
             <CardContent className="p-12 text-center">
               <Sparkles className="mx-auto mb-3 h-10 w-10 text-gray-600" />
               <h3 className="text-base font-semibold text-gray-300">
@@ -2056,7 +2056,7 @@ export function AdminCampaigns() {
               return (
                 <Card
                   key={camp.id}
-                  className={`border-gray-800 bg-[#0c0e17]/90 transition-all hover:border-gray-700/80 ${
+                  className={`border-[#163B44] bg-[#0B2026]/90 transition-all hover:border-[#163B44]/80 ${
                     isPrimary ? "ring-1 ring-emerald-500/20" : ""
                   }`}
                 >

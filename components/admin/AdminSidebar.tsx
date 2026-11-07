@@ -134,10 +134,10 @@ export function AdminSidebar({
               onSelectTab(item.id);
               if (mobileOpen) onToggleMobile();
             }}
-            className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all font-mono-street ${
+            className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               isActive
                 ? "border border-amber-400/60 bg-amber-400/10 text-amber-300 shadow-sm"
-                : "text-gray-300 hover:bg-gray-800/60 hover:text-white border border-transparent"
+                : "text-gray-300 hover:bg-[#102B33]/60 hover:text-white border border-transparent"
             }`}
           >
             <div className="flex items-center gap-3">
@@ -160,7 +160,7 @@ export function AdminSidebar({
               {!allowed && (
                 <span
                   title="Permission restricted"
-                  className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-500"
+                  className="rounded bg-[#102B33] px-1.5 py-0.5 text-[10px] text-gray-500"
                 >
                   Locked
                 </span>
@@ -175,18 +175,18 @@ export function AdminSidebar({
   return (
     <>
       {/* Mobile Top Bar */}
-      <div className="flex items-center justify-between border-b border-gray-800 bg-[#0c0e17] px-4 py-3 lg:hidden">
+      <div className="flex items-center justify-between border-b border-[#163B44] bg-[#0B2026] px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <span className="font-display text-lg uppercase tracking-wider text-white">
             ELY<span className="text-amber-400">CHIMP</span>
           </span>
-          <Badge variant="warning" className="text-[10px] font-mono-street">
+          <Badge variant="warning" className="text-[10px]">
             ADMIN
           </Badge>
         </div>
         <button
           onClick={onToggleMobile}
-          className="rounded p-1.5 text-gray-300 hover:bg-gray-800 hover:text-white"
+          className="rounded p-1.5 text-gray-300 hover:bg-[#102B33] hover:text-white"
           aria-label="Toggle admin sidebar"
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -200,20 +200,20 @@ export function AdminSidebar({
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             onClick={onToggleMobile}
           />
-          <div className="fixed inset-y-0 left-0 w-72 border-r border-gray-800 bg-[#0c0e17] shadow-xl">
-            <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
+          <div className="fixed inset-y-0 left-0 w-72 border-r border-[#163B44] bg-[#0B2026] shadow-xl">
+            <div className="flex h-16 items-center justify-between border-b border-[#163B44] px-4">
               <div className="flex items-center gap-2">
                 <span className="font-display font-bold text-white uppercase tracking-wider">
                   ELY<span className="text-amber-400">CHIMP</span> Admin
                 </span>
-                <Badge variant="default" className="font-mono-street text-[10px]">{roleType}</Badge>
+                <Badge variant="default" className="text-[10px]">{roleType}</Badge>
               </div>
               <button onClick={onToggleMobile} className="text-gray-400 hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
             {renderNavLinks()}
-            <div className="border-t border-gray-800 p-4 text-xs text-gray-400 font-mono-street">
+            <div className="border-t border-[#163B44] p-4 text-xs text-gray-400">
               <p className="font-semibold text-gray-300">{shortAddress}</p>
               <p className="mt-1 text-[11px] text-gray-500">Role: {roleType}</p>
             </div>
@@ -222,21 +222,21 @@ export function AdminSidebar({
       )}
 
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden w-64 flex-shrink-0 border-r border-gray-800 bg-[#0c0e17]/80 backdrop-blur lg:block">
+      <aside className="hidden w-64 flex-shrink-0 border-r border-[#163B44] bg-[#0B2026]/80 backdrop-blur lg:block">
         <div className="flex h-full flex-col justify-between">
           <div>
             {/* Header branding */}
-            <div className="border-b border-gray-800 px-6 py-5">
+            <div className="border-b border-[#163B44] px-6 py-5">
               <div className="flex items-center gap-2">
                 <span className="font-display text-xl uppercase tracking-wider text-white">
                   ELY<span className="text-amber-400">CHIMP</span>
                 </span>
-                <Badge variant="warning" className="text-[10px] font-mono-street">
+                <Badge variant="warning" className="text-[10px]">
                   ADMIN
                 </Badge>
               </div>
-              <p className="mt-1 font-mono-street text-[11px] text-gray-400 uppercase tracking-wide">
-                Elysium L2 // Command
+              <p className="mt-1 text-[11px] text-gray-400 uppercase tracking-wide">
+                Elysium L2 Admin Portal
               </p>
             </div>
 
@@ -245,8 +245,8 @@ export function AdminSidebar({
           </div>
 
           {/* Admin user info footer */}
-          <div className="border-t border-gray-800 p-4">
-            <div className="rounded-lg border border-gray-800/80 bg-gray-900/40 p-3">
+          <div className="border-t border-[#163B44] p-4">
+            <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-300">
                   {shortAddress}
@@ -257,13 +257,13 @@ export function AdminSidebar({
                 {permissions.slice(0, 3).map((perm) => (
                   <span
                     key={perm}
-                    className="rounded bg-gray-800 px-1.5 py-0.5 text-[9px] text-gray-400"
+                    className="rounded bg-[#102B33] px-1.5 py-0.5 text-[9px] text-gray-400"
                   >
                     {perm}
                   </span>
                 ))}
                 {permissions.length > 3 && (
-                  <span className="rounded bg-gray-800 px-1 py-0.5 text-[9px] text-gray-500">
+                  <span className="rounded bg-[#102B33] px-1 py-0.5 text-[9px] text-gray-500">
                     +{permissions.length - 3}
                   </span>
                 )}

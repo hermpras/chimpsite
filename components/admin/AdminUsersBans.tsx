@@ -181,7 +181,7 @@ export function AdminUsersBans() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Tool 1: Ban User Form */}
-        <Card className="border-gray-800 bg-[#0c0e17]/90">
+        <Card className="border-[#163B44] bg-[#0B2026]/90">
           <CardHeader>
             <div className="flex items-center gap-2">
               <UserX className="h-5 w-5 text-rose-400" />
@@ -208,7 +208,7 @@ export function AdminUsersBans() {
                   value={banUserId}
                   onChange={(e) => setBanUserId(e.target.value)}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
                 />
               </div>
 
@@ -226,7 +226,7 @@ export function AdminUsersBans() {
                   value={banReason}
                   onChange={(e) => setBanReason(e.target.value)}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
                 />
               </div>
 
@@ -242,7 +242,7 @@ export function AdminUsersBans() {
                     id="ban-type"
                     value={banType}
                     onChange={(e) => setBanType(e.target.value as any)}
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-2.5 py-1.5 text-xs text-white focus:border-rose-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white focus:border-rose-500 focus:outline-none"
                   >
                     <option value="PERMANENT">PERMANENT</option>
                     <option value="TEMPORARY">TEMPORARY</option>
@@ -262,7 +262,7 @@ export function AdminUsersBans() {
                     id="ban-scope"
                     value={banScope}
                     onChange={(e) => setBanScope(e.target.value as any)}
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-2.5 py-1.5 text-xs text-white focus:border-rose-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white focus:border-rose-500 focus:outline-none"
                   >
                     <option value="FULL_SYSTEM">FULL_SYSTEM</option>
                     <option value="CLAIM_RESTRICTED">CLAIM_RESTRICTED</option>
@@ -286,7 +286,7 @@ export function AdminUsersBans() {
                     placeholder="https://... or note"
                     value={banEvidence}
                     onChange={(e) => setBanEvidence(e.target.value)}
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
                   />
                 </div>
 
@@ -302,7 +302,7 @@ export function AdminUsersBans() {
                     type="datetime-local"
                     value={banExpiresAt}
                     onChange={(e) => setBanExpiresAt(e.target.value)}
-                    className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -355,7 +355,7 @@ export function AdminUsersBans() {
         </Card>
 
         {/* Tool 2: Revoke Ban Form */}
-        <Card className="border-gray-800 bg-[#0c0e17]/90">
+        <Card className="border-[#163B44] bg-[#0B2026]/90">
           <CardHeader>
             <div className="flex items-center gap-2">
               <UserCheck className="h-5 w-5 text-emerald-400" />
@@ -382,7 +382,7 @@ export function AdminUsersBans() {
                   value={revokeBanId}
                   onChange={(e) => setRevokeBanId(e.target.value)}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -399,7 +399,7 @@ export function AdminUsersBans() {
                   placeholder="e.g. Successful appeal / false positive verified"
                   value={revokeReason}
                   onChange={(e) => setRevokeReason(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -437,7 +437,7 @@ export function AdminUsersBans() {
       </div>
 
       {/* Tool 3: User Directory & Search */}
-      <Card className="border-gray-800 bg-[#0c0e17]/90">
+      <Card className="border-[#163B44] bg-[#0B2026]/90">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -477,7 +477,7 @@ export function AdminUsersBans() {
                 placeholder="Search by wallet address (0x...), User CUID, or X username..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-md border border-gray-700 bg-gray-900/60 py-1.5 pr-3 pl-9 text-xs text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 py-1.5 pr-3 pl-9 text-xs text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
               />
             </div>
             <Button
@@ -516,9 +516,9 @@ export function AdminUsersBans() {
           )}
 
           {/* Users Table */}
-          <div className="overflow-x-auto rounded-lg border border-gray-800">
+          <div className="overflow-x-auto rounded-lg border border-[#163B44]">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-gray-800 bg-gray-900/60 text-gray-400">
+              <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-gray-400">
                 <tr>
                   <th className="px-3 py-2.5 font-medium">User ID</th>
                   <th className="px-3 py-2.5 font-medium">Wallet Address</th>
@@ -528,7 +528,7 @@ export function AdminUsersBans() {
                   <th className="px-3 py-2.5 text-right font-medium">Quick Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/60 bg-[#0c0e17]/40 text-gray-300">
+              <tbody className="divide-y divide-gray-800/60 bg-[#0B2026]/40 text-gray-300">
                 {loadingUsers && users.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-500">
@@ -543,7 +543,7 @@ export function AdminUsersBans() {
                   </tr>
                 ) : (
                   users.map((u) => (
-                    <tr key={u.id} className="transition-colors hover:bg-gray-800/30">
+                    <tr key={u.id} className="transition-colors hover:bg-[#102B33]/30">
                       <td className="px-3 py-2.5 font-mono text-gray-200">
                         <span title={u.id}>{u.id}</span>
                       </td>

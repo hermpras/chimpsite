@@ -268,7 +268,7 @@ export function AdminEvidenceReview() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex flex-col gap-3 border-b border-gray-800 pb-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-[#163B44] pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-2 flex items-center gap-1 text-xs font-medium text-gray-400">
             <Filter className="h-3.5 w-3.5" /> Status:
@@ -280,7 +280,7 @@ export function AdminEvidenceReview() {
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 filterStatus === status
                   ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
-                  : "text-gray-400 hover:bg-gray-800/60 hover:text-white"
+                  : "text-gray-400 hover:bg-[#102B33]/60 hover:text-white"
               }`}
             >
               {status === "ALL" ? "All Submissions" : status.replace("_", " ")}
@@ -297,7 +297,7 @@ export function AdminEvidenceReview() {
             className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
               taskScopeFilter === "REPLY_QUOTE_ONLY"
                 ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
-                : "text-gray-400 hover:bg-gray-800/60 hover:text-white"
+                : "text-gray-400 hover:bg-[#102B33]/60 hover:text-white"
             }`}
           >
             Reply & Quote Only
@@ -308,7 +308,7 @@ export function AdminEvidenceReview() {
             className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
               taskScopeFilter === "ALL"
                 ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
-                : "text-gray-400 hover:bg-gray-800/60 hover:text-white"
+                : "text-gray-400 hover:bg-[#102B33]/60 hover:text-white"
             }`}
           >
             All Tasks
@@ -333,12 +333,12 @@ export function AdminEvidenceReview() {
 
       {/* Submissions List */}
       {loading ? (
-        <div className="rounded-lg border border-gray-800 bg-[#0c0e17] p-12 text-center text-sm text-gray-400">
+        <div className="rounded-lg border border-[#163B44] bg-[#0B2026] p-12 text-center text-sm text-gray-400">
           <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-emerald-400" />
           Loading evidence submissions...
         </div>
       ) : filteredSubmissions.length === 0 ? (
-        <Card className="border-gray-800 bg-[#0c0e17]">
+        <Card className="border-[#163B44] bg-[#0B2026]">
           <CardContent className="p-12 text-center">
             <FileCheck2 className="mx-auto mb-3 h-10 w-10 text-gray-600" />
             <h3 className="text-base font-semibold text-gray-300">
@@ -463,7 +463,7 @@ export function AdminEvidenceReview() {
             return (
               <Card
                 key={sub.id}
-                className="border-gray-800 bg-[#0c0e17]/90 transition-all hover:border-gray-700/80"
+                className="border-[#163B44] bg-[#0B2026]/90 transition-all hover:border-[#163B44]/80"
               >
                 <CardContent className="p-5">
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -480,12 +480,12 @@ export function AdminEvidenceReview() {
                           {sub.status.replace("_", " ")}
                         </Badge>
                         {isFollowLikeRepost && (
-                          <span className="rounded bg-gray-800/80 px-2 py-0.5 text-[10px] text-gray-400 border border-gray-700/60">
+                          <span className="rounded bg-[#102B33]/80 px-2 py-0.5 text-[10px] text-gray-400 border border-[#163B44]/60">
                             Auto-Verified
                           </span>
                         )}
                         {sub.task?.taskType && (
-                          <span className="rounded bg-gray-800/80 px-2 py-0.5 text-[11px] font-mono text-gray-300">
+                          <span className="rounded bg-[#102B33]/80 px-2 py-0.5 text-[11px] font-mono text-gray-300">
                             {sub.task.taskType.replace("SOCIAL_X_", "")}
                           </span>
                         )}
@@ -567,7 +567,7 @@ export function AdminEvidenceReview() {
 
                       {/* Evidence Payload - Hidden for FOLLOW, LIKE, REPOST */}
                       {!isFollowLikeRepost ? (
-                        <div className="mt-3 rounded-lg border border-gray-800/80 bg-gray-900/40 p-3">
+                        <div className="mt-3 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
                           <span className="mb-1 block text-[11px] font-semibold text-gray-400">
                             Submitted Evidence Content:
                           </span>
@@ -596,7 +596,7 @@ export function AdminEvidenceReview() {
                           )}
                         </div>
                       ) : (
-                        <div className="mt-2 flex items-center gap-1.5 rounded border border-gray-800/50 bg-gray-900/20 px-2.5 py-1.5 text-[11px] text-gray-400">
+                        <div className="mt-2 flex items-center gap-1.5 rounded border border-[#163B44]/50 bg-[#0B2026]/20 px-2.5 py-1.5 text-[11px] text-gray-400">
                           <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
                           <span>Auto-verified social task — manual proof content hidden</span>
                         </div>
@@ -604,7 +604,7 @@ export function AdminEvidenceReview() {
 
                       {/* Reviewer Notes (if already reviewed) */}
                       {sub.reviewerNotes && (
-                        <div className="rounded-lg border border-gray-800 bg-gray-900/20 p-2.5 text-xs text-gray-400">
+                        <div className="rounded-lg border border-[#163B44] bg-[#0B2026]/20 p-2.5 text-xs text-gray-400">
                           <span className="font-semibold text-gray-300">
                             Reviewer Notes:
                           </span>{" "}
@@ -614,7 +614,7 @@ export function AdminEvidenceReview() {
                     </div>
 
                     {/* Review Controls */}
-                    <div className="w-full flex-shrink-0 space-y-3 border-t border-gray-800 pt-2 md:w-72 md:border-t-0 md:border-l md:pt-0 md:pl-4">
+                    <div className="w-full flex-shrink-0 space-y-3 border-t border-[#163B44] pt-2 md:w-72 md:border-t-0 md:border-l md:pt-0 md:pl-4">
                       <div>
                         <label
                           htmlFor={`notes-${sub.id}`}
@@ -638,7 +638,7 @@ export function AdminEvidenceReview() {
                             }))
                           }
                           disabled={isBusy || !isPending}
-                          className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                          className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
 

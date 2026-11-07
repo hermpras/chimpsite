@@ -585,7 +585,7 @@ export function AdminDrops() {
       )}
 
       {/* SECTION 1: Active Live Drop Window & Stock Monitor */}
-      <Card className="border-gray-800 bg-[#0c0e17]/90">
+      <Card className="border-[#163B44] bg-[#0B2026]/90">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -612,14 +612,14 @@ export function AdminDrops() {
               Loading current drop status...
             </div>
           ) : !dropData?.drop ? (
-            <div className="rounded-lg border border-gray-800/80 bg-gray-900/30 p-8 text-center text-xs text-gray-500">
+            <div className="rounded-lg border border-[#163B44] bg-[#051D22]/50 p-8 text-center text-xs text-gray-500">
               No drop event is currently active in the system.
             </div>
           ) : (
             <div className="space-y-6">
               {/* Drop Metadata Bar */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+                <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
                   <span className="block text-[11px] text-gray-400">Drop Title</span>
                   <span className="text-sm font-semibold text-white">
                     {dropData.drop.title}
@@ -629,7 +629,7 @@ export function AdminDrops() {
                   </span>
                 </div>
 
-                <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+                <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
                   <span className="block text-[11px] text-gray-400">Claim Window</span>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span
@@ -659,7 +659,7 @@ export function AdminDrops() {
                   )}
                 </div>
 
-                <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+                <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
                   <span className="block text-[11px] text-gray-400">Total Remaining</span>
                   <span className="text-sm font-semibold text-emerald-400">
                     {dropData.stock?.totalRemaining ?? 0} /{" "}
@@ -670,7 +670,7 @@ export function AdminDrops() {
                   </span>
                 </div>
 
-                <div className="rounded-lg border border-gray-800 bg-gray-900/40 p-3">
+                <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
                   <span className="block text-[11px] text-gray-400">Stock Lock</span>
                   <span className="text-sm font-semibold text-white">
                     {dropData.period?.isStockLocked ? "Locked" : "Unlocked"}
@@ -688,9 +688,9 @@ export function AdminDrops() {
                   Live Pool Trait Allocations
                 </h3>
                 {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 ? (
-                  <div className="overflow-x-auto rounded-lg border border-gray-800">
+                  <div className="overflow-x-auto rounded-lg border border-[#163B44]">
                     <table className="w-full text-left text-xs text-gray-300">
-                      <thead className="border-b border-gray-800 bg-gray-900/60 text-[11px] text-gray-400">
+                      <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
                         <tr>
                           <th className="px-3 py-2">Trait Name</th>
                           <th className="px-3 py-2">Category</th>
@@ -702,7 +702,7 @@ export function AdminDrops() {
                       </thead>
                       <tbody className="divide-y divide-gray-800/60">
                         {dropData.stock.poolItems.map((item) => (
-                          <tr key={item.poolItemId} className="hover:bg-gray-900/30">
+                          <tr key={item.poolItemId} className="hover:bg-[#051D22]/50">
                             <td className="px-3 py-2 font-medium text-white">
                               {item.traitName}
                             </td>
@@ -727,7 +727,7 @@ export function AdminDrops() {
                     </table>
                   </div>
                 ) : (
-                  <div className="rounded border border-gray-800/80 bg-gray-900/30 p-4 text-center text-xs text-gray-500">
+                  <div className="rounded border border-[#163B44] bg-[#051D22]/50 p-4 text-center text-xs text-gray-500">
                     No pool items configured for this drop.
                   </div>
                 )}
@@ -738,7 +738,7 @@ export function AdminDrops() {
       </Card>
 
       {/* SECTION 2: Drops & Periods Configuration */}
-      <Card className="border-gray-800 bg-[#0c0e17]/90">
+      <Card className="border-[#163B44] bg-[#0B2026]/90">
         <CardHeader>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
@@ -753,7 +753,7 @@ export function AdminDrops() {
                 <select
                   value={selectedDropId ?? ""}
                   onChange={(e) => setSelectedDropId(e.target.value)}
-                  className="rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="rounded-md border border-[#163B44] bg-[#0B2026] px-2 py-1 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 >
                   {drops.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -776,7 +776,7 @@ export function AdminDrops() {
               Loading drop list...
             </div>
           ) : drops.length === 0 ? (
-            <div className="rounded-lg border border-gray-800/80 bg-gray-900/30 p-8 text-center text-xs text-gray-500">
+            <div className="rounded-lg border border-[#163B44] bg-[#051D22]/50 p-8 text-center text-xs text-gray-500">
               No drops created yet. Click &quot;+ Create Drop&quot; to create your first
               drop event.
             </div>
@@ -788,7 +788,7 @@ export function AdminDrops() {
           ) : (
             <div className="space-y-6">
               {/* Selected Drop Meta Overview & Master Control */}
-              <div className="flex flex-col gap-3 rounded-lg border border-gray-800 bg-gray-900/40 p-4">
+              <div className="flex flex-col gap-3 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="flex items-center gap-2">
@@ -999,9 +999,9 @@ export function AdminDrops() {
                   <Clock className="h-3.5 w-3.5 text-emerald-400" />
                   2-Hour UTC Cycle Periods & Stock Status
                 </h3>
-                <div className="overflow-x-auto rounded-lg border border-gray-800">
+                <div className="overflow-x-auto rounded-lg border border-[#163B44]">
                   <table className="w-full text-left text-xs text-gray-300">
-                    <thead className="border-b border-gray-800 bg-gray-900/60 text-[11px] text-gray-400">
+                    <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
                       <tr>
                         <th className="px-3 py-2.5">Period</th>
                         <th className="px-3 py-2.5">UTC Window</th>
@@ -1027,7 +1027,7 @@ export function AdminDrops() {
                           new Date() <= new Date(p.endsAt);
 
                         return (
-                          <tr key={p.id} className="hover:bg-gray-900/30">
+                          <tr key={p.id} className="hover:bg-[#051D22]/50">
                             <td className="px-3 py-2.5 font-medium text-white">
                               #{p.periodIndex}
                             </td>
@@ -1136,7 +1136,7 @@ export function AdminDrops() {
       </Card>
 
       {/* SECTION 3: Emergency Close Controls */}
-      <Card className="border-rose-500/30 bg-[#0c0e17]/90">
+      <Card className="border-rose-500/30 bg-[#0B2026]/90">
         <CardHeader>
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-rose-400" />
@@ -1166,7 +1166,7 @@ export function AdminDrops() {
                 onChange={(e) => setEmergencyReason(e.target.value)}
                 disabled={closing || !dropData?.period}
                 required
-                className="w-full rounded-md border border-gray-700 bg-gray-900/60 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-rose-500 focus:outline-none"
               />
             </div>
 
@@ -1213,8 +1213,8 @@ export function AdminDrops() {
       {/* MODAL 1: Create Drop Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-xl border border-gray-800 bg-[#0f111a] p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+          <div className="w-full max-w-lg rounded-xl border border-[#163B44] bg-[#071F24] p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-emerald-400" />
                 <h2 className="text-base font-semibold text-white">Create New Drop</h2>
@@ -1244,7 +1244,7 @@ export function AdminDrops() {
                   value={createTitle}
                   onChange={(e) => setCreateTitle(e.target.value)}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1258,7 +1258,7 @@ export function AdminDrops() {
                   value={createSlug}
                   onChange={(e) => setCreateSlug(e.target.value)}
                   required
-                  className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1272,7 +1272,7 @@ export function AdminDrops() {
                     value={createStartsAt}
                     onChange={(e) => setCreateStartsAt(e.target.value)}
                     required
-                    className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   />
                   <span className="mt-1 block text-[10px] text-gray-500">
                     Must align to 2h UTC cycle (00:00, 02:00, etc.)
@@ -1288,7 +1288,7 @@ export function AdminDrops() {
                     value={createEndsAt}
                     onChange={(e) => setCreateEndsAt(e.target.value)}
                     required
-                    className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1302,7 +1302,7 @@ export function AdminDrops() {
                   placeholder="Optional description of the drop campaign..."
                   value={createDescription}
                   onChange={(e) => setCreateDescription(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -1313,7 +1313,7 @@ export function AdminDrops() {
                 <select
                   value={createStatus}
                   onChange={(e) => setCreateStatus(e.target.value)}
-                  className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="DRAFT">DRAFT</option>
                   <option value="SCHEDULED">SCHEDULED</option>
@@ -1327,14 +1327,14 @@ export function AdminDrops() {
                   id="auto-gen"
                   checked={autoGeneratePeriods}
                   onChange={(e) => setAutoGeneratePeriods(e.target.checked)}
-                  className="rounded border-gray-700 bg-gray-900 text-emerald-500 focus:ring-0"
+                  className="rounded border-[#163B44] bg-[#0B2026] text-emerald-500 focus:ring-0"
                 />
                 <label htmlFor="auto-gen" className="text-xs text-gray-300">
                   Auto-generate 2-Hour UTC Periods across timeline
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-gray-800 pt-3">
+              <div className="flex justify-end gap-2 border-t border-[#163B44] pt-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -1362,8 +1362,8 @@ export function AdminDrops() {
       {/* MODAL 2: Configure Stock per Trait Modal */}
       {configuringPeriod && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-xl border border-gray-800 bg-[#0f111a] p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+          <div className="w-full max-w-2xl rounded-xl border border-[#163B44] bg-[#071F24] p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
               <div>
                 <div className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-emerald-400" />
@@ -1425,7 +1425,7 @@ export function AdminDrops() {
                 <select
                   value={selectedTraitToAdd}
                   onChange={(e) => setSelectedTraitToAdd(e.target.value)}
-                  className="flex-1 rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="flex-1 rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="">-- Select Trait to Allocate --</option>
                   {traits
@@ -1450,9 +1450,9 @@ export function AdminDrops() {
               </div>
 
               {/* Trait Allocations List */}
-              <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-800">
+              <div className="max-h-60 overflow-y-auto rounded-lg border border-[#163B44]">
                 <table className="w-full text-left text-xs text-gray-300">
-                  <thead className="sticky top-0 border-b border-gray-800 bg-gray-900/60 text-[11px] text-gray-400">
+                  <thead className="sticky top-0 border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
                     <tr>
                       <th className="px-3 py-2">Trait Name</th>
                       <th className="px-3 py-2">Category</th>
@@ -1483,7 +1483,7 @@ export function AdminDrops() {
                             : "0.0";
 
                         return (
-                          <tr key={item.traitId} className="hover:bg-gray-900/30">
+                          <tr key={item.traitId} className="hover:bg-[#051D22]/50">
                             <td className="px-3 py-2 font-medium text-white">
                               {traitMeta?.name ?? item.traitId}
                             </td>
@@ -1505,7 +1505,7 @@ export function AdminDrops() {
                                     parseInt(e.target.value, 10) || 0,
                                   )
                                 }
-                                className="w-20 rounded border border-gray-700 bg-gray-900 px-2 py-1 font-mono text-xs text-white focus:border-emerald-500 focus:outline-none"
+                                className="w-20 rounded border border-[#163B44] bg-[#0B2026] px-2 py-1 font-mono text-xs text-white focus:border-emerald-500 focus:outline-none"
                               />
                             </td>
                             <td className="px-3 py-2">
@@ -1521,7 +1521,7 @@ export function AdminDrops() {
                                     parseInt(e.target.value, 10) || 100,
                                   )
                                 }
-                                className="w-16 rounded border border-gray-700 bg-gray-900 px-2 py-1 font-mono text-xs text-white focus:border-emerald-500 focus:outline-none"
+                                className="w-16 rounded border border-[#163B44] bg-[#0B2026] px-2 py-1 font-mono text-xs text-white focus:border-emerald-500 focus:outline-none"
                               />
                             </td>
                             <td className="px-3 py-2 font-mono text-gray-300">
@@ -1557,7 +1557,7 @@ export function AdminDrops() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-2 border-t border-gray-800 pt-3">
+              <div className="flex justify-end gap-2 border-t border-[#163B44] pt-3">
                 <Button
                   type="button"
                   variant="outline"

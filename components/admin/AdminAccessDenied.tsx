@@ -78,7 +78,7 @@ export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-center">
-            <div className="rounded-lg border border-gray-800 bg-[#0c0e17] p-4 text-xs text-gray-400">
+            <div className="rounded-lg border border-[#163B44] bg-[#0B2026] p-4 text-xs text-gray-400">
               <div className="flex items-center justify-center gap-2 text-rose-300">
                 <ShieldAlert className="h-4 w-4" />
                 <span className="font-semibold">Role Verification Failed</span>
