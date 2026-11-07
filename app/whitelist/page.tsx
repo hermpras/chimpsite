@@ -59,27 +59,27 @@ const CATEGORY_THEMES: Record<
 > = {
   BG: {
     heldClass: "border-cyan-400/40 bg-cyan-950/40 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-zinc-700/50 bg-[#0e0f14] text-zinc-500",
     checkColor: "text-cyan-400",
   },
   FUR: {
     heldClass: "border-amber-400/40 bg-amber-950/40 text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-zinc-700/50 bg-[#0e0f14] text-zinc-500",
     checkColor: "text-amber-400",
   },
   CLOTHING: {
     heldClass: "border-purple-400/40 bg-purple-950/40 text-purple-300 shadow-[0_0_12px_rgba(192,132,252,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-zinc-700/50 bg-[#0e0f14] text-zinc-500",
     checkColor: "text-purple-400",
   },
   HEADWEAR: {
     heldClass: "border-emerald-400/40 bg-emerald-950/40 text-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-zinc-700/50 bg-[#0e0f14] text-zinc-500",
     checkColor: "text-emerald-400",
   },
   EYEWEAR: {
     heldClass: "border-pink-400/40 bg-pink-950/40 text-pink-300 shadow-[0_0_12px_rgba(244,114,182,0.15)]",
-    unheldClass: "border-zinc-800 bg-zinc-900/40 text-zinc-500",
+    unheldClass: "border-zinc-700/50 bg-[#0e0f14] text-zinc-500",
     checkColor: "text-pink-400",
   },
 };
@@ -915,7 +915,7 @@ export default function WhitelistPage() {
         {/* =======================================================================
             HEADER & 5-STEP HORIZONTAL PROGRESS INDICATOR
         ======================================================================= */}
-        <header className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-5">
+        <header className="rounded-2xl border border-zinc-700/60 bg-[#16171c] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
@@ -930,7 +930,7 @@ export default function WhitelistPage() {
           </div>
 
           {/* Horizontal Five-Step Progress Indicator */}
-          <div className="border-t border-zinc-800/80 pt-4">
+          <div className="border-t border-zinc-700/60 pt-4">
             <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-1 text-xs">
               {[
                 { num: 1, label: "WALLET", done: isWalletConnected },
@@ -965,7 +965,7 @@ export default function WhitelistPage() {
                           ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-semibold"
                           : isActive
                             ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-bold shadow-[0_0_12px_rgba(251,191,36,0.2)]"
-                            : "border-zinc-800 bg-zinc-900/40 text-zinc-500 hover:text-zinc-300"
+                            : "border-zinc-700/60 bg-[#0e0f14] text-zinc-400 hover:text-white hover:border-zinc-500"
                       }`}
                     >
                       <span
@@ -984,7 +984,7 @@ export default function WhitelistPage() {
                     {idx < 4 && (
                       <div
                         className={`hidden sm:block flex-1 h-0.5 min-w-3 ${
-                          step.done ? "bg-emerald-500/40" : "bg-zinc-800"
+                          step.done ? "bg-emerald-500/50" : "bg-zinc-700/60"
                         }`}
                       />
                     )}
@@ -1008,8 +1008,8 @@ export default function WhitelistPage() {
             Visible when activeStepNumber === 1
         ======================================================================= */}
         <div className={activeStepNumber === 1 ? "block" : "hidden"}>
-          <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-6 sm:p-8 shadow-brutal-sm max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+          <div className="rounded-2xl border border-zinc-700/60 bg-[#16171c] p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.45)] max-w-2xl mx-auto space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-700/60 pb-4">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 font-mono-street">
                   Step 1 of 5
@@ -1024,7 +1024,7 @@ export default function WhitelistPage() {
             </div>
 
             {/* Notice / Instructions */}
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs space-y-1.5">
+            <div className="rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-4 text-xs space-y-1.5">
               <p className="font-bold text-white font-mono-street text-sm">
                 A signature, not a transaction.
               </p>
@@ -1082,8 +1082,8 @@ export default function WhitelistPage() {
             Visible when activeStepNumber === 2
         ======================================================================= */}
         <div className={activeStepNumber === 2 ? "block" : "hidden"}>
-          <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-6 sm:p-8 shadow-brutal-sm max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+          <div className="rounded-2xl border border-zinc-700/60 bg-[#16171c] p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.45)] max-w-2xl mx-auto space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-700/60 pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-400 border border-cyan-400/30">
                   <XLogo className="h-5 w-5" />
@@ -1111,7 +1111,7 @@ export default function WhitelistPage() {
             </div>
 
             {/* Notice & Instructions */}
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs space-y-2">
+            <div className="rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-4 text-xs space-y-2">
               <p className="font-bold text-white font-mono-street text-sm">
                 Connect X (Twitter) Account
               </p>
@@ -1155,7 +1155,7 @@ export default function WhitelistPage() {
               </Button>
             </div>
 
-            <div className="border-t border-zinc-800/80 pt-3 text-center">
+            <div className="border-t border-zinc-700/50/80 pt-3 text-center">
               <p className="text-xs text-zinc-500 font-mono-street">
                 Step 3 (Campaign Tasks) will unlock immediately once your X account is connected.
               </p>
@@ -1170,7 +1170,7 @@ export default function WhitelistPage() {
         <div className={activeStepNumber === 3 ? "block" : "hidden"}>
           <div className="space-y-6">
             {/* Step 1 & 2 Completed Summary Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-[#0c0d15] p-4 shadow-brutal-sm text-xs font-mono-street">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-700/60 bg-[#16171c] p-4 shadow-[0_4px_24px_rgba(0,0,0,0.45)] text-xs font-mono-street">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
@@ -1187,8 +1187,8 @@ export default function WhitelistPage() {
             </div>
 
             {/* Campaign Tasks Section */}
-            <div id="tasks" className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-5 scroll-mt-24">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800/80 pb-4">
+            <div id="tasks" className="rounded-2xl border border-zinc-700/60 bg-[#16171c] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5 scroll-mt-24">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-700/60 pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/30">
                     <Flame className="h-4 w-4" />
@@ -1237,7 +1237,7 @@ export default function WhitelistPage() {
                 campaigns.map((campaign) => (
                   <div key={campaign.id} className="space-y-4">
                     {/* Campaign Title & Instructions */}
-                    <div className="rounded-xl bg-zinc-900/60 border border-zinc-800 p-3.5 space-y-1">
+                    <div className="rounded-xl bg-[#0e0f14] border border-zinc-700/50 p-3.5 space-y-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-display text-sm tracking-wide uppercase text-white">
                           {campaign.title}
@@ -1283,10 +1283,10 @@ export default function WhitelistPage() {
                           return (
                             <div
                               key={task.id}
-                              className="flex flex-col justify-between gap-3.5 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 hover:border-zinc-700 md:flex-row md:items-center transition-all"
+                              className="flex flex-col justify-between gap-3.5 rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-4 hover:border-zinc-500 md:flex-row md:items-center transition-all"
                             >
                               <div className="flex min-w-0 flex-1 items-start gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 mt-0.5">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-700/60 bg-[#16171c] mt-0.5">
                                   {taskMeta.icon}
                                 </div>
                                 <div className="min-w-0 flex-1 space-y-1">
@@ -1359,7 +1359,7 @@ export default function WhitelistPage() {
                               </div>
 
                               {/* Action Buttons & Status */}
-                              <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 border-t border-zinc-800 md:border-t-0 md:pt-0">
+                              <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 border-t border-zinc-700/50 md:border-t-0 md:pt-0">
                                 {taskStatus.key !== "NOT_SUBMITTED" && (
                                   <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 font-mono-street ${taskStatus.colorClass}`}>
                                     {taskStatus.key === "APPROVED" && <CheckCircle2 className="mr-1 h-3 w-3 shrink-0" />}
@@ -1456,7 +1456,7 @@ export default function WhitelistPage() {
                         return (
                           <div
                             key={task.id}
-                            className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
+                            className="space-y-3 rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-4"
                           >
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                               <div className="space-y-1">
@@ -1622,9 +1622,9 @@ export default function WhitelistPage() {
                 LEFT COLUMN: CHARACTER AND INVENTORY (5 Cols on LG)
             =================================================================== */}
             <div className="lg:col-span-5 space-y-5">
-              <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 shadow-brutal-sm space-y-5">
+              <div className="rounded-2xl border border-zinc-700/60 bg-[#16171c] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5">
                 {/* Character Preview Header */}
-                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+                <div className="flex items-center justify-between border-b border-zinc-700/60 pb-3">
                   <div className="flex items-center gap-2">
                     <h3 className="font-display text-sm tracking-wide uppercase text-white">
                       Character & Wardrobe
@@ -1643,7 +1643,7 @@ export default function WhitelistPage() {
                 </div>
 
                 {/* Character Pixel-Art Preview Frame */}
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-radial from-zinc-900 to-[#08090d] p-6 shadow-inner relative overflow-hidden">
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-700/60 bg-[#0e0f14] p-6 shadow-inner relative overflow-hidden">
                   <div className="relative">
                     <UserAvatar
                       identifier={address}
@@ -1696,7 +1696,7 @@ export default function WhitelistPage() {
                             className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
                               isHeld
                                 ? `${theme.heldClass} font-bold`
-                                : "border-zinc-800 bg-zinc-900/40 text-zinc-600 grayscale opacity-40"
+                                : "border-zinc-700/50 bg-[#0e0f14] text-zinc-400 grayscale opacity-60"
                             }`}
                           >
                             <div className="mb-1">
@@ -1718,7 +1718,7 @@ export default function WhitelistPage() {
                 )}
 
                 {/* Inventory Summary (Total items and duplicates) */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3.5 space-y-1.5 text-xs font-mono-street">
+                <div className="rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-3.5 space-y-1.5 text-xs font-mono-street">
                   <div className="flex items-center justify-between">
                     <span className="text-zinc-400 font-medium">Total Inventory Items:</span>
                     <span className="font-mono font-bold text-white">
@@ -1731,13 +1731,13 @@ export default function WhitelistPage() {
                       {duplicateCount}
                     </span>
                   </div>
-                  <p className="text-[11px] text-zinc-500 pt-1 border-t border-zinc-800">
+                  <p className="text-[11px] text-zinc-500 pt-1 border-t border-zinc-700/50">
                     Duplicates remain in your backpack. Qualification requires 1 item in each of the 5 distinct categories.
                   </p>
                 </div>
 
                 {/* Trait Lootbox Drops CTA */}
-                <div className="rounded-xl border border-amber-400/30 bg-amber-950/20 p-3.5 flex items-center justify-between gap-2 text-xs font-mono-street">
+                <div className="rounded-xl border border-amber-400/40 bg-amber-950/30 p-3.5 flex items-center justify-between gap-2 text-xs font-mono-street">
                   <div>
                     <p className="font-bold text-white">Trait Lootbox Drops</p>
                     <p className="text-[11px] text-zinc-400">Need more traits to complete your collection?</p>
@@ -1757,8 +1757,8 @@ export default function WhitelistPage() {
                 Compact information panel: Step 1-5
             =================================================================== */}
             <div className="lg:col-span-7 space-y-5">
-              <div className="rounded-2xl border border-zinc-800 bg-[#0c0d15] p-5 sm:p-6 shadow-brutal-sm space-y-5">
-                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+              <div className="rounded-2xl border border-zinc-700/60 bg-[#16171c] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5">
+                <div className="flex items-center justify-between border-b border-zinc-700/60 pb-3">
                   <div className="flex items-center gap-2">
                     <h3 className="font-display text-sm tracking-wide uppercase text-white">
                       Whitelist Status & Allocation
@@ -1785,7 +1785,7 @@ export default function WhitelistPage() {
                 {/* Steps 1 to 5 Status Overview */}
                 <div className="space-y-3 font-mono-street">
                   {/* Step 1: Wallet Connection */}
-                  <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs">
+                  <div className="flex items-center justify-between rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-3 text-xs">
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-black font-extrabold text-[10px]">
                         1
@@ -1804,7 +1804,7 @@ export default function WhitelistPage() {
                   </div>
 
                   {/* Step 2: X Account Sync */}
-                  <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs">
+                  <div className="flex items-center justify-between rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-3 text-xs">
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-400 text-black font-extrabold text-[10px]">
                         2
@@ -1825,7 +1825,7 @@ export default function WhitelistPage() {
                   </div>
 
                   {/* Step 3: Campaign Tasks Completion */}
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs space-y-2">
+                  <div className="rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-3 text-xs space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-black font-extrabold text-[10px]">
@@ -1865,7 +1865,7 @@ export default function WhitelistPage() {
 
                     {/* Toggleable Task Proof Checklist in View B */}
                     {showTasksInViewB && (
-                      <div className="mt-2 pt-2 border-t border-zinc-800 space-y-2">
+                      <div className="mt-2 pt-2 border-t border-zinc-700/50 space-y-2">
                         {campaigns.flatMap((c) => c.tasks).map((t) => {
                           const st = getTaskStatus(t);
                           return (
@@ -1887,7 +1887,7 @@ export default function WhitelistPage() {
                   </div>
 
                   {/* Step 4: Trait Collection Progress */}
-                  <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs">
+                  <div className="flex items-center justify-between rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-3 text-xs">
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-400 text-black font-extrabold text-[10px]">
                         4
@@ -1912,7 +1912,7 @@ export default function WhitelistPage() {
                   </div>
 
                   {/* Step 5: Whitelist Qualification & Real Allocation Status */}
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 text-xs space-y-3">
+                  <div className="rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-3.5 text-xs space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-black font-extrabold text-[10px]">
@@ -2064,7 +2064,7 @@ export default function WhitelistPage() {
                            </div>
 
                            {/* Review Note */}
-                           <div className="flex items-start gap-2.5 rounded-xl border border-zinc-800/80 bg-black/40 p-3 text-[11px] text-zinc-400 font-mono-street">
+                           <div className="flex items-start gap-2.5 rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-3 text-[11px] text-zinc-400 font-mono-street">
                              <ReviewIcon className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
                              <div className="space-y-0.5 min-w-0">
                                <div className="flex items-center gap-2">
