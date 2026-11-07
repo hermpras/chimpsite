@@ -115,33 +115,33 @@ function DropsArtCanvas() {
 function GiftsArtCanvas() {
   return (
     <div className="relative flex h-full w-full items-center justify-center">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(236,72,153,0.12)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(52,183,221,0.12)_0%,transparent_70%)]" />
       
       <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
         {/* Sender Vault Box (Left) */}
-        <rect x="24" y="56" width="38" height="48" rx="8" fill="#1b1c20" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
+        <rect x="24" y="56" width="38" height="48" rx="8" fill="#071F24" stroke="#163B44" strokeWidth="1.2" />
         <circle cx="43" cy="74" r="5" fill="#f59e0b" fillOpacity="0.4" />
         <circle cx="43" cy="74" r="2" fill="#f59e0b" />
         <rect x="35" y="87" width="16" height="4" rx="2" fill="rgba(255,255,255,0.15)" />
 
         {/* Recipient Vault Box (Right) */}
-        <rect x="98" y="56" width="38" height="48" rx="8" fill="#1b1c20" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
-        <circle cx="117" cy="74" r="5" fill="#ec4899" fillOpacity="0.3" />
-        <circle cx="117" cy="74" r="2" fill="#ec4899" />
+        <rect x="98" y="56" width="38" height="48" rx="8" fill="#071F24" stroke="#163B44" strokeWidth="1.2" />
+        <circle cx="117" cy="74" r="5" fill="#34B7DD" fillOpacity="0.4" />
+        <circle cx="117" cy="74" r="2" fill="#34B7DD" />
         <rect x="109" y="87" width="16" height="4" rx="2" fill="rgba(255,255,255,0.15)" />
 
         {/* Transfer Beam & Direction */}
-        <path d="M62 70 H98" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeDasharray="3 3" />
-        <path d="M90 66L97 70L90 74" fill="rgba(255,255,255,0.4)" />
+        <path d="M62 70 H98" stroke="rgba(52,183,221,0.3)" strokeWidth="1.5" strokeDasharray="3 3" />
+        <path d="M90 66L97 70L90 74" fill="#34B7DD" />
 
         {/* Floating Capsule with Retention Lock Emblem */}
-        <circle cx="80" cy="70" r="14" fill="#241b21" stroke="#ec4899" strokeWidth="1.5" />
+        <circle cx="80" cy="70" r="14" fill="#0B2026" stroke="#34B7DD" strokeWidth="1.5" />
         {/* Retention Lock Icon */}
-        <rect x="74" y="68" width="12" height="9" rx="2" fill="#ec4899" />
-        <path d="M76 68V64C76 61.8 77.8 60 80 60C82.2 60 84 61.8 84 64V68" stroke="#ec4899" strokeWidth="1.2" />
+        <rect x="74" y="68" width="12" height="9" rx="2" fill="#34B7DD" />
+        <path d="M76 68V64C76 61.8 77.8 60 80 60C82.2 60 84 61.8 84 64V68" stroke="#34B7DD" strokeWidth="1.2" />
         
         {/* +1 Duplicate Indicator */}
-        <text x="80" y="118" textAnchor="middle" fill="#ec4899" fontSize="10" fontFamily="monospace" fontWeight="bold">
+        <text x="80" y="118" textAnchor="middle" fill="#34B7DD" fontSize="10" fontFamily="monospace" fontWeight="bold">
           KEEP &gt;= 1
         </text>
       </svg>
@@ -152,12 +152,12 @@ function GiftsArtCanvas() {
 function WhitelistArtCanvas() {
   return (
     <div className="relative flex h-full w-full items-center justify-center">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.12)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(52,183,221,0.12)_0%,transparent_70%)]" />
       
       <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
         {/* Tier 1 GTD Pass (Gold - Foreground) */}
         <g transform="translate(24, 34)">
-          <rect x="0" y="0" width="70" height="92" rx="10" fill="#221e14" stroke="#f59e0b" strokeWidth="1.6" />
+          <rect x="0" y="0" width="70" height="92" rx="10" fill="#1C180E" stroke="#f59e0b" strokeWidth="1.6" />
           {/* Chip Emblem */}
           <rect x="12" y="14" width="16" height="13" rx="3" fill="#f59e0b" />
           <path d="M12 20.5H28" stroke="#051D22" strokeWidth="1" />
@@ -170,9 +170,9 @@ function WhitelistArtCanvas() {
 
         {/* Tier 2 FCFS Pass (Cyan - Offset Behind) */}
         <g transform="translate(68, 44)">
-          <rect x="0" y="0" width="68" height="84" rx="10" fill="#132024" stroke="#06b6d4" strokeWidth="1.2" strokeOpacity="0.8" />
-          <circle cx="50" cy="22" r="6" fill="#06b6d4" fillOpacity="0.3" stroke="#06b6d4" strokeWidth="1" />
-          <text x="12" y="38" fill="#06b6d4" fontSize="8" fontFamily="monospace" fontWeight="bold">TIER 2</text>
+          <rect x="0" y="0" width="68" height="84" rx="10" fill="#071F24" stroke="#34B7DD" strokeWidth="1.2" strokeOpacity="0.8" />
+          <circle cx="50" cy="22" r="6" fill="#34B7DD" fillOpacity="0.3" stroke="#34B7DD" strokeWidth="1" />
+          <text x="12" y="38" fill="#34B7DD" fontSize="8" fontFamily="monospace" fontWeight="bold">TIER 2</text>
           <text x="12" y="50" fill="#ffffff" fontSize="10" fontFamily="sans-serif" fontWeight="800">FCFS</text>
           <text x="12" y="66" fill="#a1a1aa" fontSize="7" fontFamily="monospace">OPENSEA</text>
         </g>
@@ -184,26 +184,26 @@ function WhitelistArtCanvas() {
 function TasksArtCanvas() {
   return (
     <div className="relative flex h-full w-full items-center justify-center">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.12)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(52,183,221,0.12)_0%,transparent_70%)]" />
       
       <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
         {/* Dossier Document Sheet */}
-        <rect x="36" y="22" width="88" height="116" rx="8" fill="#171920" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
+        <rect x="36" y="22" width="88" height="116" rx="8" fill="#071F24" stroke="#163B44" strokeWidth="1.2" />
         
         {/* Dossier Top Bar */}
-        <rect x="44" y="32" width="40" height="6" rx="3" fill="rgba(255,255,235,0.3)" />
-        <circle cx="112" cy="35" r="3" fill="#06b6d4" />
+        <rect x="44" y="32" width="40" height="6" rx="3" fill="rgba(255,255,255,0.2)" />
+        <circle cx="112" cy="35" r="3" fill="#34B7DD" />
 
         {/* Line Items with Status Checkpoints */}
         {/* Item 1: Verified */}
         <line x1="44" y1="52" x2="88" y2="52" stroke="rgba(255,255,255,0.15)" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="106" cy="52" r="5" fill="#10b981" />
-        <path d="M104 52L105.5 53.5L108 50.5" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx="106" cy="52" r="5" fill="#34B7DD" />
+        <path d="M104 52L105.5 53.5L108 50.5" stroke="#04181C" strokeWidth="1.4" strokeLinecap="round" />
 
         {/* Item 2: Verified */}
         <line x1="44" y1="68" x2="80" y2="68" stroke="rgba(255,255,255,0.15)" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="106" cy="68" r="5" fill="#10b981" />
-        <path d="M104 68L105.5 69.5L108 66.5" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx="106" cy="68" r="5" fill="#34B7DD" />
+        <path d="M104 68L105.5 69.5L108 66.5" stroke="#04181C" strokeWidth="1.4" strokeLinecap="round" />
 
         {/* Item 3: Pending Review */}
         <line x1="44" y1="84" x2="72" y2="84" stroke="rgba(255,255,255,0.15)" strokeWidth="2" strokeLinecap="round" />
@@ -211,8 +211,8 @@ function TasksArtCanvas() {
         <circle cx="106" cy="84" r="1.5" fill="#f59e0b" />
 
         {/* Verification Stamp at Bottom */}
-        <rect x="44" y="102" width="72" height="24" rx="5" fill="#102d24" stroke="#10b981" strokeWidth="1.2" strokeDasharray="2 2" />
-        <text x="80" y="117" textAnchor="middle" fill="#10b981" fontSize="9" fontFamily="monospace" fontWeight="bold">
+        <rect x="44" y="102" width="72" height="24" rx="5" fill="#04181C" stroke="#34B7DD" strokeWidth="1.2" strokeDasharray="2 2" />
+        <text x="80" y="117" textAnchor="middle" fill="#34B7DD" fontSize="9" fontFamily="monospace" fontWeight="bold">
           PROOF VERIFIED
         </text>
       </svg>
@@ -223,38 +223,38 @@ function TasksArtCanvas() {
 function SecurityArtCanvas() {
   return (
     <div className="relative flex h-full w-full items-center justify-center">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(244,63,94,0.12)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(52,183,221,0.14)_0%,transparent_70%)]" />
       
       <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
         {/* Hexagonal Cryptographic Vault Crest */}
         <path
           d="M80 20 L126 46 V98 L80 124 L34 98 V46 Z"
-          fill="#1c181d"
-          stroke="rgba(255,255,255,0.12)"
+          fill="#071F24"
+          stroke="#163B44"
           strokeWidth="1.4"
         />
 
         {/* SIWE Key Shield Core */}
         <path
           d="M80 34 L114 54 V90 L80 110 L46 90 V54 Z"
-          fill="#271920"
-          stroke="#f43f5e"
+          fill="#0B2026"
+          stroke="#34B7DD"
           strokeWidth="1.5"
         />
 
         {/* Inner Lock Emblem */}
-        <rect x="71" y="70" width="18" height="16" rx="3.5" fill="#f43f5e" />
-        <circle cx="80" cy="77" r="2" fill="#051D22" />
-        <path d="M80 79V83" stroke="#051D22" strokeWidth="1.5" strokeLinecap="round" />
+        <rect x="71" y="70" width="18" height="16" rx="3.5" fill="#34B7DD" />
+        <circle cx="80" cy="77" r="2" fill="#04181C" />
+        <path d="M80 79V83" stroke="#04181C" strokeWidth="1.5" strokeLinecap="round" />
         <path
           d="M74 70V64C74 60.7 76.7 58 80 58C83.3 58 86 60.7 86 64V70"
-          stroke="#f43f5e"
+          stroke="#34B7DD"
           strokeWidth="1.8"
         />
 
         {/* 1:1 Social Anchor Node */}
-        <circle cx="80" cy="138" r="8" fill="#191a20" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-        <path d="M80 124V130" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" strokeDasharray="2 2" />
+        <circle cx="80" cy="138" r="8" fill="#071F24" stroke="#163B44" strokeWidth="1" />
+        <path d="M80 124V130" stroke="rgba(52,183,221,0.4)" strokeWidth="1.2" strokeDasharray="2 2" />
         <text x="80" y="141" textAnchor="middle" fill="#ffffff" fontSize="7" fontFamily="sans-serif" fontWeight="bold">𝕏</text>
       </svg>
     </div>
@@ -560,8 +560,8 @@ export default function DocsPage() {
 
                 {/* Right Content */}
                 <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-pink-400">
-                    <Gift className="h-4 w-4" />
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#34B7DD]">
+                    <Gift className="h-4 w-4 text-[#34B7DD]" />
                     <span>03. Peer Gifting</span>
                   </div>
 
@@ -574,22 +574,22 @@ export default function DocsPage() {
                   </p>
 
                   {/* Category Retention Rule Highlight */}
-                  <div className="rounded-xl border border-pink-500/25 bg-pink-950/20 p-4 space-y-2.5">
-                    <div className="flex items-center gap-2 font-bold text-xs sm:text-sm uppercase tracking-wide text-pink-300">
-                      <Share2 className="h-4 w-4 text-pink-400" />
+                  <div className="rounded-xl border border-[#34B7DD]/30 bg-[#34B7DD]/10 p-4 space-y-2.5">
+                    <div className="flex items-center gap-2 font-bold text-xs sm:text-sm uppercase tracking-wide text-[#34B7DD]">
+                      <Share2 className="h-4 w-4 text-[#34B7DD]" />
                       <span>The Category Retention Rule</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-[13px]">
-                      <div className="flex items-center gap-2 text-emerald-300">
-                        <Check className="h-4 w-4 shrink-0 text-emerald-400" />
+                      <div className="flex items-center gap-2 text-[#DBF2F9]">
+                        <Check className="h-4 w-4 shrink-0 text-[#34B7DD]" />
                         <span>Must own at least 2 items in category to gift.</span>
                       </div>
-                      <div className="flex items-center gap-2 text-emerald-300">
-                        <Check className="h-4 w-4 shrink-0 text-emerald-400" />
+                      <div className="flex items-center gap-2 text-[#DBF2F9]">
+                        <Check className="h-4 w-4 shrink-0 text-[#34B7DD]" />
                         <span>Must retain at least 1 item after transfer.</span>
                       </div>
-                      <div className="flex items-center gap-2 text-rose-300 sm:col-span-2">
-                        <XCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                      <div className="flex items-center gap-2 text-[#DBF2F9] sm:col-span-2">
+                        <AlertCircle className="h-4 w-4 shrink-0 text-[#F59E0B]" />
                         <span>Cannot gift the active trait currently equipped on your avatar profile.</span>
                       </div>
                     </div>
@@ -620,8 +620,8 @@ export default function DocsPage() {
 
                 {/* Right Content */}
                 <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
-                    <ShieldCheck className="h-4 w-4" />
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#F59E0B]">
+                    <ShieldCheck className="h-4 w-4 text-[#F59E0B]" />
                     <span>04. Whitelist Allocation</span>
                   </div>
 
@@ -635,28 +635,28 @@ export default function DocsPage() {
 
                   {/* 5 Mandatory Criteria Pills */}
                   <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-4 space-y-3">
-                    <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-emerald-300">
+                    <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white">
                       5 Mandatory Qualification Criteria:
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-[13px] text-[#DBF2F9]">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
                         <span><strong className="text-white">1. EVM Wallet:</strong> Verified SIWE session.</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
                         <span><strong className="text-white">2. Linked X:</strong> OAuth 2.0 PKCE profile.</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
                         <span><strong className="text-white">3. 5-Trait Set:</strong> 1+ item in all 5 categories.</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
                         <span><strong className="text-white">4. Quests:</strong> 100% campaign task completion.</span>
                       </div>
                       <div className="flex items-center gap-2 sm:col-span-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
                         <span><strong className="text-white">5. Clean Standing:</strong> Zero fraud flags, active bans, or Sybil flags.</span>
                       </div>
                     </div>
@@ -667,7 +667,7 @@ export default function DocsPage() {
                     <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-4 space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-[#F59E0B]">Tier 1: GTD</span>
-                        <span className="text-xs font-bold text-emerald-400">1,000 Slots</span>
+                        <span className="text-xs font-bold text-[#F59E0B] font-mono">1,000 Slots</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-snug">
                         Fulfilling all 5 criteria grants instant allocation via pessimistic row locks while capacity remains.
@@ -677,7 +677,7 @@ export default function DocsPage() {
                     <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-4 space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-[#34B7DD]">Tier 2: FCFS</span>
-                        <span className="text-xs font-bold text-cyan-400">OpenSea Export</span>
+                        <span className="text-xs font-bold text-[#34B7DD] font-mono">OpenSea Export</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-snug">
                         Deterministic queue index for qualified operatives without GTD slots, exported cleanly to SeaDrop.
@@ -731,19 +731,19 @@ export default function DocsPage() {
                     </div>
 
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-400/10 border border-emerald-400/30 text-emerald-400 shrink-0 mt-0.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#34B7DD]/10 border border-[#34B7DD]/30 text-[#34B7DD] shrink-0 mt-0.5">
                         <CheckCircle2 className="h-4 w-4" />
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
                         <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Approved (Verified)</span>
                         <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-relaxed text-left">
-                          Updates to <code className="text-emerald-400 font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">VERIFIED</code>, awarding quest completion status.
+                          Updates to <code className="text-[#34B7DD] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">VERIFIED</code>, awarding quest completion status.
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-400/10 border border-rose-400/30 text-rose-400 shrink-0 mt-0.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#163B44]/60 border border-[#1E4D5A] text-[#8AA8B2] shrink-0 mt-0.5">
                         <RefreshCw className="h-4 w-4" />
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
@@ -780,8 +780,8 @@ export default function DocsPage() {
 
                 {/* Right Content */}
                 <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-400">
-                    <Lock className="h-4 w-4" />
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#34B7DD]">
+                    <Lock className="h-4 w-4 text-[#34B7DD]" />
                     <span>06. Platform Security</span>
                   </div>
 
@@ -796,19 +796,19 @@ export default function DocsPage() {
                   {/* Security Highlights - Elongated Horizontal Cards */}
                   <div className="space-y-2.5 pt-1">
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-400/10 border border-rose-400/30 text-rose-400 shrink-0 mt-0.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#34B7DD]/10 border border-[#34B7DD]/30 text-[#34B7DD] shrink-0 mt-0.5">
                         <Lock className="h-4 w-4" />
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
                         <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Sign-In with Ethereum (EIP-4361)</span>
                         <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-relaxed text-left">
-                          Cryptographic <code className="text-rose-300 font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">personal_sign</code> authentication. Zero gas fees, zero token approvals, and zero contract spending permissions.
+                          Cryptographic <code className="text-[#34B7DD] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">personal_sign</code> authentication. Zero gas fees, zero token approvals, and zero contract spending permissions.
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-400/10 border border-cyan-400/30 text-cyan-400 shrink-0 mt-0.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#34B7DD]/10 border border-[#34B7DD]/30 text-[#34B7DD] shrink-0 mt-0.5">
                         <ShieldCheck className="h-4 w-4" />
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
@@ -821,9 +821,9 @@ export default function DocsPage() {
                   </div>
 
                   {/* Non-Custodial Advisory Box */}
-                  <div className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-4 space-y-2 text-xs sm:text-sm text-[#DBF2F9]">
-                    <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm uppercase tracking-wide text-rose-400">
-                      <ShieldAlert className="h-4 w-4" />
+                  <div className="rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 p-4 space-y-2 text-xs sm:text-sm text-[#DBF2F9]">
+                    <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm uppercase tracking-wide text-[#F59E0B]">
+                      <ShieldAlert className="h-4 w-4 text-[#F59E0B]" />
                       <span>Critical Non-Custodial Advisory</span>
                     </div>
                     <p className="text-xs sm:text-sm text-[#DBF2F9] leading-relaxed font-normal">
@@ -845,7 +845,7 @@ export default function DocsPage() {
                 <span className="font-bold text-xs uppercase tracking-wider text-white">
                   On this page
                 </span>
-                <span className="text-xs text-[#F59E0B] font-bold uppercase tracking-wider">
+                <span className="text-xs text-[#34B7DD] font-bold uppercase tracking-wider">
                   6 Topics
                 </span>
               </div>
@@ -860,14 +860,14 @@ export default function DocsPage() {
                       onClick={(e) => scrollToSection(e, item.id)}
                       className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs sm:text-sm transition-all ${
                         isCurrent
-                          ? "bg-[#F59E0B]/10 text-[#F59E0B] font-bold border border-[#F59E0B]/30"
+                          ? "bg-[#34B7DD]/10 text-[#34B7DD] font-bold border border-[#34B7DD]/30"
                           : "text-[#8AA8B2] hover:text-white hover:bg-[#102B33]"
                       }`}
                     >
                       <div className="flex items-center gap-2.5 truncate">
                         <span
                           className={`text-xs font-bold ${
-                            isCurrent ? "text-[#F59E0B]" : "text-[#8AA8B2] group-hover:text-[#DBF2F9]"
+                            isCurrent ? "text-[#34B7DD]" : "text-[#8AA8B2] group-hover:text-[#DBF2F9]"
                           }`}
                         >
                           0{index + 1}
@@ -877,7 +877,7 @@ export default function DocsPage() {
                       <ChevronRight
                         className={`h-3.5 w-3.5 shrink-0 transition-transform ${
                           isCurrent
-                            ? "text-[#F59E0B] translate-x-0.5"
+                            ? "text-[#34B7DD] translate-x-0.5"
                             : "text-[#8AA8B2] group-hover:text-white"
                         }`}
                       />
@@ -890,19 +890,19 @@ export default function DocsPage() {
               <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 space-y-2.5 text-xs">
                 <div className="flex items-center justify-between text-[#8AA8B2]">
                   <span>GTD Slot Cap</span>
-                  <span className="font-bold text-emerald-400">1,000 Slots</span>
+                  <span className="font-bold text-[#F59E0B] font-mono">1,000 Slots</span>
                 </div>
                 <div className="flex items-center justify-between text-[#8AA8B2]">
                   <span>Cycle Frequency</span>
-                  <span className="font-bold text-[#F59E0B]">2-Hour UTC</span>
+                  <span className="font-bold text-white font-mono">2-Hour UTC</span>
                 </div>
                 <div className="flex items-center justify-between text-[#8AA8B2]">
                   <span>Claim Window</span>
-                  <span className="font-bold text-[#34B7DD]">30 Minutes</span>
+                  <span className="font-bold text-[#34B7DD] font-mono">30 Minutes</span>
                 </div>
                 <div className="flex items-center justify-between text-[#8AA8B2]">
                   <span>Wardrobe Fit</span>
-                  <span className="font-bold text-purple-400">5 Categories</span>
+                  <span className="font-bold text-[#34B7DD] font-mono">5 Categories</span>
                 </div>
               </div>
             </div>
