@@ -9,6 +9,7 @@ export interface UserDropEligibilityResult {
   completedMandatoryTasksCount: number;
   areMandatoryTasksCompleted: boolean;
   isBanned: boolean;
+  hasAllocatedSlot: boolean;
   missingRequirements: string[];
 }
 
@@ -19,6 +20,7 @@ export interface UserDropEligibilityResult {
  * 2. Linked X (Twitter) social identity.
  * 3. Completion of all mandatory campaign tasks under active campaigns.
  * 4. Account not banned from claiming drops.
+ * 5. Account does NOT hold an allocated or confirmed Whitelist slot.
  */
 export async function checkUserDropEligibility(
   prismaOrTx: any,
@@ -37,11 +39,12 @@ export async function checkUserDropEligibility(
       completedMandatoryTasksCount: 0,
       areMandatoryTasksCompleted: false,
       isBanned: false,
+      hasAllocatedSlot: false,
       missingRequirements: ["Valid user ID required."],
     };
   }
 
-  // 1. Fetch user with wallet, xIdentity, and active claim bans
+  // 1. Fetch user with wallet, xIdentity, active claim bans, and active/confirmed wlSlots
   const user = await prismaOrTx.user?.findUnique({
     where: { id: userId },
     include: {
@@ -52,6 +55,11 @@ export async function checkUserDropEligibility(
           isActive: true,
           scope: { in: ["FULL_SYSTEM", "CLAIM_RESTRICTED"] },
           OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+        },
+      },
+      wlSlots: {
+        where: {
+          status: { in: ["ALLOCATED", "CONFIRMED"] },
         },
       },
     },
@@ -67,6 +75,7 @@ export async function checkUserDropEligibility(
       completedMandatoryTasksCount: 0,
       areMandatoryTasksCompleted: false,
       isBanned: false,
+      hasAllocatedSlot: false,
       missingRequirements: ["User account not found."],
     };
   }
@@ -93,6 +102,25 @@ export async function checkUserDropEligibility(
   );
   if (isBanned) {
     missingRequirements.push("Your account is restricted from claiming drops.");
+  }
+
+  // Check if user already holds an allocated or confirmed Whitelist slot
+  let hasAllocatedSlot = false;
+  if (Array.isArray(user.wlSlots) && user.wlSlots.length > 0) {
+    hasAllocatedSlot = true;
+  } else if (typeof prismaOrTx.wLSlot?.findFirst === "function") {
+    const slot = await prismaOrTx.wLSlot.findFirst({
+      where: {
+        userId,
+        status: { in: ["ALLOCATED", "CONFIRMED"] },
+      },
+      select: { id: true },
+    });
+    hasAllocatedSlot = Boolean(slot);
+  }
+
+  if (hasAllocatedSlot) {
+    missingRequirements.push("Users holding an allocated Whitelist slot cannot claim drops.");
   }
 
   // 2. Check Mandatory Tasks (all active campaigns under the active WL program)
@@ -242,7 +270,8 @@ export async function checkUserDropEligibility(
     );
   }
 
-  const isEligible = hasWallet && hasLinkedX && areMandatoryTasksCompleted && !isBanned;
+  const isEligible =
+    hasWallet && hasLinkedX && areMandatoryTasksCompleted && !isBanned && !hasAllocatedSlot;
 
   return {
     isEligible,
@@ -253,6 +282,7 @@ export async function checkUserDropEligibility(
     completedMandatoryTasksCount,
     areMandatoryTasksCompleted,
     isBanned,
+    hasAllocatedSlot,
     missingRequirements,
   };
 }

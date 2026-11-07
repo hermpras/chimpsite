@@ -72,7 +72,7 @@ export default function HomePage() {
               <Link href="/whitelist" className="w-full sm:w-auto">
                 <Button
                   size="lg"
-                  className="w-full gap-3 border-2 border-black bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 font-mono-street font-bold text-lg sm:text-xl tracking-wider uppercase text-black shadow-brutal transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[7px_7px_0px_#ff5b89] active:translate-x-1 active:translate-y-1 active:shadow-none sm:w-auto px-6 py-4 sm:px-8 sm:py-6"
+                  className="w-full gap-3 border-2 border-black bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 font-mono-street font-medium text-lg sm:text-xl tracking-wider uppercase text-black shadow-brutal transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[7px_7px_0px_#ff5b89] active:translate-x-1 active:translate-y-1 active:shadow-none sm:w-auto px-6 py-4 sm:px-8 sm:py-6"
                 >
                   GET ON THE LIST <ArrowRight className="h-5 w-5" />
                 </Button>
@@ -81,7 +81,7 @@ export default function HomePage() {
                 <Button
                   size="lg"
                   variant="secondary"
-                  className="w-full gap-3 border-2 border-pink-500/50 bg-[#0d0a14]/90 backdrop-blur-md font-mono-street font-bold text-lg sm:text-xl tracking-wider uppercase text-pink-200 shadow-brutal transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-pink-400 hover:text-white hover:shadow-[7px_7px_0px_rgba(255,91,137,0.8)] active:translate-x-1 active:translate-y-1 active:shadow-none sm:w-auto px-6 py-4 sm:px-8 sm:py-6"
+                  className="w-full gap-3 border-2 border-pink-500/50 bg-[#0d0a14]/90 backdrop-blur-md font-mono-street font-medium text-lg sm:text-xl tracking-wider uppercase text-pink-200 shadow-brutal transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-pink-400 hover:text-white hover:shadow-[7px_7px_0px_rgba(255,91,137,0.8)] active:translate-x-1 active:translate-y-1 active:shadow-none sm:w-auto px-6 py-4 sm:px-8 sm:py-6"
                 >
                   OPEN CRATES <Gift className="h-5 w-5 text-pink-400" />
                 </Button>
@@ -418,7 +418,7 @@ export default function HomePage() {
 
             <div className="mt-8 pt-4 border-t border-gray-800">
               <Link href="/drops" className="block w-full">
-                <Button className="w-full justify-between border-2 border-black bg-gradient-to-r from-[#ff5b89] to-[#fb7185] font-mono-street font-bold text-lg uppercase tracking-wider text-white shadow-brutal transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:brightness-110 py-6">
+                <Button className="w-full justify-between border-2 border-black bg-gradient-to-r from-[#ff5b89] to-[#fb7185] font-mono-street font-medium text-lg uppercase tracking-wider text-white shadow-brutal transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:brightness-110 py-6">
                   OPEN CRATES <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
@@ -450,7 +450,7 @@ export default function HomePage() {
 
             <div className="mt-8 pt-4 border-t border-gray-800">
               <Link href="/whitelist" className="block w-full">
-                <Button className="w-full justify-between border-2 border-black bg-amber-400 font-mono-street font-bold text-lg uppercase tracking-wider text-black shadow-brutal transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-amber-300 py-6">
+                <Button className="w-full justify-between border-2 border-black bg-amber-400 font-mono-street font-medium text-lg uppercase tracking-wider text-black shadow-brutal transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-amber-300 py-6">
                   GET ON THE LIST <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
@@ -480,7 +480,7 @@ export default function HomePage() {
             <Link href="/whitelist">
               <Button
                 size="lg"
-                className="border-2 border-black bg-gradient-to-r from-amber-400 to-[#ff5b89] font-mono-street font-bold text-lg sm:text-xl uppercase tracking-wider text-black shadow-brutal hover:brightness-110 px-6 py-4 sm:px-8 sm:py-6"
+                className="border-2 border-black bg-gradient-to-r from-amber-400 to-[#ff5b89] font-mono-street font-medium text-lg sm:text-xl uppercase tracking-wider text-black shadow-brutal hover:brightness-110 px-6 py-4 sm:px-8 sm:py-6"
               >
                 GET ON THE LIST
               </Button>
@@ -489,7 +489,7 @@ export default function HomePage() {
               <Button
                 size="lg"
                 variant="secondary"
-                className="border-2 border-pink-500/40 bg-black/60 font-mono-street font-bold text-lg sm:text-xl uppercase tracking-wider text-pink-200 shadow-brutal hover:border-pink-400 hover:text-white px-6 py-4 sm:px-8 sm:py-6"
+                className="border-2 border-pink-500/40 bg-black/60 font-mono-street font-medium text-lg sm:text-xl uppercase tracking-wider text-pink-200 shadow-brutal hover:border-pink-400 hover:text-white px-6 py-4 sm:px-8 sm:py-6"
               >
                 VIEW GEAR
               </Button>

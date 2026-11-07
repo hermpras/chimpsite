@@ -75,7 +75,7 @@ export function WalletConnectCard() {
               variant="outline"
               size="sm"
               onClick={() => void logout()}
-              className="rounded-lg text-xs font-mono-street font-bold border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 shrink-0 self-start sm:self-auto cursor-pointer"
+              className="rounded-lg text-xs font-mono-street font-medium border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 shrink-0 self-start sm:self-auto cursor-pointer"
             >
               Sign out
             </Button>
@@ -94,7 +94,7 @@ export function WalletConnectCard() {
               variant="primary"
               size="sm"
               onClick={() => void login()}
-              className="rounded-lg text-xs font-mono-street font-bold uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 shrink-0 self-start sm:self-auto cursor-pointer shadow-brutal-sm"
+              className="rounded-lg text-xs font-mono-street font-medium uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 shrink-0 self-start sm:self-auto cursor-pointer shadow-brutal-sm"
             >
               Sign In with Ethereum
             </Button>
@@ -125,7 +125,7 @@ export function WalletConnectCard() {
                       iconUrl={connector.icon}
                       className="h-4 w-4"
                     />
-                    <span className="font-syne font-bold text-xs truncate">Connect {connector.name}</span>
+                    <span className="font-syne font-medium text-xs truncate">Connect {connector.name}</span>
                   </Button>
                 ))}
                 {connectors.length === 0 && (

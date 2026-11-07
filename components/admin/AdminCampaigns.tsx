@@ -1925,7 +1925,7 @@ export function AdminCampaigns() {
             role="tab"
             aria-selected={detailTab === "tasks"}
             onClick={() => handleSelectTab("tasks")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-medium transition-colors ${
               detailTab === "tasks"
                 ? "border-emerald-500 text-emerald-400"
                 : "border-transparent text-gray-400 hover:text-gray-200"
@@ -1939,7 +1939,7 @@ export function AdminCampaigns() {
             role="tab"
             aria-selected={detailTab === "versions"}
             onClick={() => handleSelectTab("versions")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-medium transition-colors ${
               detailTab === "versions"
                 ? "border-emerald-500 text-emerald-400"
                 : "border-transparent text-gray-400 hover:text-gray-200"
@@ -1953,7 +1953,7 @@ export function AdminCampaigns() {
             role="tab"
             aria-selected={detailTab === "settings"}
             onClick={() => handleSelectTab("settings")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-medium transition-colors ${
               detailTab === "settings"
                 ? "border-emerald-500 text-emerald-400"
                 : "border-transparent text-gray-400 hover:text-gray-200"

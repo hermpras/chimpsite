@@ -180,10 +180,62 @@ describe("checkUserDropEligibility", () => {
     expect(result.isEligible).toBe(true);
     expect(result.hasWallet).toBe(true);
     expect(result.hasLinkedX).toBe(true);
+    expect(result.hasAllocatedSlot).toBe(false);
     expect(result.xUsername).toBe("chimp_fan");
     expect(result.totalMandatoryTasksCount).toBe(2);
     expect(result.completedMandatoryTasksCount).toBe(2);
     expect(result.areMandatoryTasksCompleted).toBe(true);
     expect(result.missingRequirements).toHaveLength(0);
+  });
+
+  it("returns not eligible if user holds an allocated Whitelist slot via user.wlSlots", async () => {
+    const mockTx = {
+      user: {
+        findUnique: async () => ({
+          id: "u1",
+          wallet: { address: "0x1111111111111111111111111111111111111111" },
+          xIdentity: { xId: "x-123", username: "chimp_fan" },
+          banRecords: [],
+          wlSlots: [{ id: "slot-1", status: "ALLOCATED" }],
+        }),
+      },
+      promoCampaign: {
+        findMany: async () => [],
+      },
+    };
+
+    const result = await checkUserDropEligibility(mockTx, "u1", now);
+    expect(result.isEligible).toBe(false);
+    expect(result.hasAllocatedSlot).toBe(true);
+    expect(result.missingRequirements).toContain(
+      "Users holding an allocated Whitelist slot cannot claim drops.",
+    );
+  });
+
+  it("returns not eligible if user holds an allocated Whitelist slot via wLSlot.findFirst", async () => {
+    const mockTx = {
+      user: {
+        findUnique: async () => ({
+          id: "u1",
+          wallet: { address: "0x1111111111111111111111111111111111111111" },
+          xIdentity: { xId: "x-123", username: "chimp_fan" },
+          banRecords: [],
+          wlSlots: [],
+        }),
+      },
+      wLSlot: {
+        findFirst: async () => ({ id: "slot-gtd-1", status: "CONFIRMED" }),
+      },
+      promoCampaign: {
+        findMany: async () => [],
+      },
+    };
+
+    const result = await checkUserDropEligibility(mockTx, "u1", now);
+    expect(result.isEligible).toBe(false);
+    expect(result.hasAllocatedSlot).toBe(true);
+    expect(result.missingRequirements).toContain(
+      "Users holding an allocated Whitelist slot cannot claim drops.",
+    );
   });
 });

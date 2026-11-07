@@ -846,7 +846,7 @@ export function SyndicateShareCardModal({
               disabled={isGenerating}
               variant="primary"
               size="lg"
-              className="w-full gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:bg-amber-300 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:bg-amber-300 font-mono-street font-medium text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
             >
               <Download className="h-4 w-4" />
               <span>{isGenerating ? "Rendering PNG..." : "Download Card (PNG • 16:9)"}</span>
@@ -861,7 +861,7 @@ export function SyndicateShareCardModal({
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full gap-2 rounded-xl border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer"
+                className="w-full gap-2 rounded-xl border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-white font-mono-street font-medium text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer"
               >
                 <XLogo className="h-4 w-4 fill-white" />
                 <span>Share on X</span>

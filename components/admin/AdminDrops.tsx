@@ -863,7 +863,7 @@ export function AdminDrops() {
                           size="sm"
                           disabled={togglingStatus}
                           onClick={() => handleToggleDropStatus("ACTIVE")}
-                          className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs"
+                          className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs"
                         >
                           {togglingStatus ? (
                             <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -887,7 +887,7 @@ export function AdminDrops() {
                         size="sm"
                         disabled={togglingStatus}
                         onClick={() => handleToggleDropStatus("ACTIVE")}
-                        className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs"
+                        className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs"
                       >
                         {togglingStatus ? (
                           <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -968,7 +968,7 @@ export function AdminDrops() {
                         size="sm"
                         disabled={togglingCycleMode}
                         onClick={() => handleToggleCycleMode(5)}
-                        className="bg-amber-600 hover:bg-amber-500 text-black font-semibold text-xs"
+                        className="bg-amber-600 hover:bg-amber-500 text-black font-medium text-xs"
                       >
                         {togglingCycleMode ? (
                           <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />

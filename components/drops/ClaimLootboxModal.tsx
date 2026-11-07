@@ -424,7 +424,7 @@ export function ClaimLootboxModal({
       </div>
 
       {/* Main Container */}
-      <div className="relative my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-800 bg-[#090b12] p-6 text-center shadow-2xl">
+      <div className="relative my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-gradient-to-b from-[#141828]/95 via-[#0b0e18]/98 to-[#06070e]/99 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-2xl">
         {/* ===================== PHASE 1: ROLLING ===================== */}
         {phase === "ROLLING" && (
           <div className="flex flex-col items-center py-4">
@@ -537,14 +537,23 @@ export function ClaimLootboxModal({
 
             {/* Trait Card */}
             <div
-              className={`relative mt-5 flex h-56 w-56 items-center justify-center rounded-2xl border-2 ${wonTheme.border} ${wonTheme.bg} p-3 ${wonTheme.glow} transition-all duration-300`}
+              className={`relative mt-5 flex h-56 w-56 items-center justify-center overflow-hidden rounded-2xl border-2 ${wonTheme.border} ${wonTheme.bg} p-3 ${wonTheme.glow} transition-all duration-300 shadow-2xl group`}
             >
+              {/* Top Shimmer Sheen */}
+              <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+
+              {/* Luxury Corner Tech Brackets */}
+              <div className="absolute top-2 left-2 h-2.5 w-2.5 border-t border-l border-white/40" />
+              <div className="absolute top-2 right-2 h-2.5 w-2.5 border-t border-r border-white/40" />
+              <div className="absolute bottom-2 left-2 h-2.5 w-2.5 border-b border-l border-white/40" />
+              <div className="absolute bottom-2 right-2 h-2.5 w-2.5 border-b border-r border-white/40" />
+
               {wonTrait.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={wonTrait.imageUrl}
                   alt={wonTrait.name}
-                  className="h-44 w-44 object-contain transition-transform duration-300 hover:scale-105"
+                  className="h-44 w-44 object-contain transition-transform duration-300 hover:scale-105 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
                   style={{ imageRendering: "pixelated" }}
                 />
               ) : (
@@ -554,7 +563,7 @@ export function ClaimLootboxModal({
               )}
 
               {/* Edition Serial Pill */}
-              <div className="absolute bottom-2.5 right-2.5 rounded-md border border-gray-700 bg-gray-900/90 px-2 py-0.5 text-[10px] font-mono font-bold text-white shadow-sm">
+              <div className="absolute bottom-2.5 right-2.5 rounded-lg border border-amber-400/40 bg-black/80 px-2.5 py-0.5 text-[10px] font-mono font-bold text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.25)] backdrop-blur-sm">
                 Edition #{claimedItem.edition}
               </div>
             </div>
@@ -585,7 +594,7 @@ export function ClaimLootboxModal({
               <Link
                 href="/profile"
                 onClick={onClose}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/60 bg-emerald-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/60 bg-emerald-600 py-3 text-sm font-medium text-white shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition-colors"
               >
                 <span>Equip in Profile</span>
                 <ExternalLink className="h-4 w-4" />
@@ -596,7 +605,7 @@ export function ClaimLootboxModal({
                   href={tweetHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-700 bg-gray-900/90 py-2.5 text-xs font-semibold text-gray-200 hover:border-gray-500 hover:bg-gray-800 transition-colors"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-700 bg-gray-900/90 py-2.5 text-xs font-medium text-gray-200 hover:border-gray-500 hover:bg-gray-800 transition-colors"
                 >
                   <Share2 className="h-3.5 w-3.5 text-sky-400" />
                   <span>Share on X</span>
@@ -604,7 +613,7 @@ export function ClaimLootboxModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 rounded-xl border border-gray-800 bg-gray-900/50 py-2.5 text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-800/80 transition-colors"
+                  className="flex-1 rounded-xl border border-gray-800 bg-gray-900/50 py-2.5 text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800/80 transition-colors"
                 >
                   Collect & Close
                 </button>
@@ -628,7 +637,7 @@ export function ClaimLootboxModal({
             <button
               type="button"
               onClick={onClose}
-              className="mt-6 w-full rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-xs font-semibold text-white hover:bg-gray-700 transition-colors"
+              className="mt-6 w-full rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
             >
               Close
             </button>

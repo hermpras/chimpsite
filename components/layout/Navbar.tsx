@@ -81,7 +81,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-lg px-3.5 py-1.5 font-mono-street text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                className={`rounded-lg px-3.5 py-1.5 font-mono-street text-xs font-medium uppercase tracking-wider transition-all duration-150 ${
                   isActive
                     ? "border border-amber-400/50 bg-amber-400/10 text-amber-400 shadow-sm"
                     : "text-gray-400 hover:bg-gray-800/60 hover:text-white"
@@ -96,7 +96,7 @@ export function Navbar() {
           {isAdmin && (
             <Link
               href="/admin"
-              className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 font-mono-street text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 font-mono-street text-xs font-medium uppercase tracking-wider transition-all ${
                 pathname.startsWith("/admin")
                   ? "border border-amber-500/50 bg-amber-500/20 text-amber-400"
                   : "text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
@@ -142,7 +142,7 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`w-full text-center rounded-xl py-3 font-mono-street text-sm font-bold uppercase tracking-wider transition-all ${
+                  className={`w-full text-center rounded-xl py-3 font-mono-street text-sm font-medium uppercase tracking-wider transition-all ${
                     isActive
                       ? "border border-amber-400/50 bg-amber-400/10 text-amber-400 shadow-sm"
                       : "text-gray-300 hover:bg-gray-800/80 hover:text-white"
@@ -158,7 +158,7 @@ export function Navbar() {
               <Link
                 href="/admin"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 font-mono-street text-sm font-bold uppercase tracking-wider transition-all ${
+                className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 font-mono-street text-sm font-medium uppercase tracking-wider transition-all ${
                   pathname.startsWith("/admin")
                     ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
                     : "text-amber-400 hover:bg-amber-500/10"

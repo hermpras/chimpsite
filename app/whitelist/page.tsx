@@ -962,18 +962,18 @@ export default function WhitelistPage() {
                       }}
                       className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl border transition-all font-mono-street text-xs cursor-pointer hover:border-amber-400/80 ${
                         step.done
-                          ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-semibold"
+                          ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-medium"
                           : isActive
-                            ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-bold shadow-[0_0_12px_rgba(251,191,36,0.2)]"
+                            ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-medium shadow-[0_0_12px_rgba(251,191,36,0.2)]"
                             : "border-zinc-700/60 bg-[#0e0f14] text-zinc-400 hover:text-white hover:border-zinc-500"
                       }`}
                     >
                       <span
-                        className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${
+                        className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-medium ${
                           step.done
-                            ? "bg-emerald-500 text-black font-extrabold"
+                            ? "bg-emerald-500 text-black font-medium"
                             : isActive
-                              ? "bg-amber-400 text-black font-extrabold"
+                              ? "bg-amber-400 text-black font-medium"
                               : "bg-zinc-800 text-zinc-400"
                         }`}
                       >
@@ -1039,7 +1039,7 @@ export default function WhitelistPage() {
                 {dismissError && (
                   <button
                     onClick={dismissError}
-                    className="shrink-0 text-[11px] font-semibold underline text-rose-400 hover:text-rose-300"
+                    className="shrink-0 text-[11px] font-medium underline text-rose-400 hover:text-rose-300"
                   >
                     Dismiss
                   </button>
@@ -1058,7 +1058,7 @@ export default function WhitelistPage() {
                     variant="primary"
                     size="lg"
                     onClick={() => void login?.()}
-                    className="w-full rounded-xl font-mono-street font-bold uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
+                    className="w-full rounded-xl font-mono-street font-medium uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
                   >
                     Sign In with Ethereum
                   </Button>
@@ -1068,7 +1068,7 @@ export default function WhitelistPage() {
                   variant="primary"
                   size="lg"
                   onClick={handleConnectWallet}
-                  className="w-full rounded-xl font-mono-street font-bold uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
+                  className="w-full rounded-xl font-mono-street font-medium uppercase tracking-wider py-3.5 text-base bg-amber-400 text-black hover:bg-amber-300 shadow-brutal-sm cursor-pointer"
                 >
                   Connect Wallet
                 </Button>
@@ -1139,7 +1139,7 @@ export default function WhitelistPage() {
                 size="lg"
                 disabled={isConnectingX}
                 onClick={handleDirectConnectX}
-                className="w-full rounded-xl bg-white text-black hover:bg-zinc-200 font-mono-street font-bold uppercase tracking-wider py-3.5 text-base shadow-brutal-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full rounded-xl bg-white text-black hover:bg-zinc-200 font-mono-street font-medium uppercase tracking-wider py-3.5 text-base shadow-brutal-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 {isConnectingX ? (
                   <>
@@ -1374,7 +1374,7 @@ export default function WhitelistPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={() => markTaskOpened(task.id)}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-mono-street font-bold text-zinc-200 hover:bg-zinc-700 transition-colors"
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-mono-street font-medium text-zinc-200 hover:bg-zinc-700 transition-colors"
                                 >
                                   <span>OPEN X</span>
                                   <ExternalLink className="h-3 w-3 text-zinc-400" />
@@ -1383,7 +1383,7 @@ export default function WhitelistPage() {
                                 {taskStatus.key === "APPROVED" ? (
                                   <button
                                     disabled
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-3 py-1.5 text-xs font-mono-street font-bold text-emerald-300"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-3 py-1.5 text-xs font-mono-street font-medium text-emerald-300"
                                   >
                                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                                     <span>DONE</span>
@@ -1391,7 +1391,7 @@ export default function WhitelistPage() {
                                 ) : isCountingDown ? (
                                   <button
                                     disabled
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-amber-500/50 bg-amber-950/50 px-3 py-1.5 text-xs font-mono-street font-bold text-amber-300 animate-pulse"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-amber-500/50 bg-amber-950/50 px-3 py-1.5 text-xs font-mono-street font-medium text-amber-300 animate-pulse"
                                   >
                                     <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-400" />
                                     <span>VERIFYING ({countdownSeconds}s)...</span>
@@ -1400,7 +1400,7 @@ export default function WhitelistPage() {
                                   <button
                                     disabled
                                     title="Please click 'OPEN X' first"
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-mono-street font-bold text-zinc-600 opacity-60"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-mono-street font-medium text-zinc-600 opacity-60"
                                   >
                                     <span>VERIFY TASK</span>
                                     <ArrowRight className="h-3 w-3 text-zinc-600" />
@@ -1409,7 +1409,7 @@ export default function WhitelistPage() {
                                   <button
                                     disabled
                                     title="Paste your reply or quote link first"
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-mono-street font-bold text-zinc-600 opacity-60"
+                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-mono-street font-medium text-zinc-600 opacity-60"
                                   >
                                     <span>VERIFY TASK</span>
                                     <ArrowRight className="h-3 w-3 text-zinc-600" />
@@ -1418,7 +1418,7 @@ export default function WhitelistPage() {
                                   <Button
                                     variant="primary"
                                     size="sm"
-                                    className="gap-1 rounded-xl text-xs font-mono-street font-bold bg-amber-400 text-black hover:bg-amber-300"
+                                    className="gap-1 rounded-xl text-xs font-mono-street font-medium bg-amber-400 text-black hover:bg-amber-300"
                                     onClick={() => login()}
                                   >
                                     <span>CONNECT WALLET TO VERIFY</span>
@@ -1428,7 +1428,7 @@ export default function WhitelistPage() {
                                   <Button
                                     variant="primary"
                                     size="sm"
-                                    className="gap-1 rounded-xl text-xs font-mono-street font-bold bg-amber-400 text-black hover:bg-amber-300"
+                                    className="gap-1 rounded-xl text-xs font-mono-street font-medium bg-amber-400 text-black hover:bg-amber-300"
                                     onClick={() => handleSocialVerify(task)}
                                     disabled={isSubmitting || isCountingDown}
                                   >
@@ -1584,7 +1584,7 @@ export default function WhitelistPage() {
                                       size="sm"
                                       onClick={() => handleEvidenceSubmit(task)}
                                       disabled={isSubmitting || !taskInput.payload.trim()}
-                                      className="rounded-xl text-xs font-mono-street font-bold bg-amber-400 text-black hover:bg-amber-300"
+                                      className="rounded-xl text-xs font-mono-street font-medium bg-amber-400 text-black hover:bg-amber-300"
                                     >
                                       <Send className="mr-1 h-3 w-3" />
                                       {isSubmitting
@@ -1622,92 +1622,126 @@ export default function WhitelistPage() {
                 LEFT COLUMN: CHARACTER AND INVENTORY (5 Cols on LG)
             =================================================================== */}
             <div className="lg:col-span-5 space-y-5">
-              <div className="rounded-2xl border border-zinc-700/60 bg-[#16171c] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5">
+              <div className="relative rounded-3xl border-2 border-gray-800 bg-gradient-to-b from-[#131520] via-[#0c0d15] to-[#08090e] p-5 sm:p-6 shadow-[0_12px_40px_rgba(0,0,0,0.6)] space-y-5 overflow-hidden backdrop-blur-md">
+                {/* Luxury Foil Sheen Top Edge */}
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/80 to-transparent" />
+
+                {/* Ambient Back Glows */}
+                <div className="pointer-events-none absolute -top-20 -right-20 h-48 w-48 rounded-full bg-amber-500/10 blur-[80px]" />
+                <div className="pointer-events-none absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-cyan-500/10 blur-[80px]" />
+
                 {/* Character Preview Header */}
-                <div className="flex items-center justify-between border-b border-zinc-700/60 pb-3">
+                <div className="relative flex items-center justify-between border-b border-gray-800/80 pb-3.5">
                   <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                     <h3 className="font-display text-sm tracking-wide uppercase text-white">
-                      Character & Wardrobe
+                      Character &amp; Wardrobe
                     </h3>
                   </div>
-                  <Badge
-                    variant={isTraitsComplete ? "default" : "outline"}
-                    className={`text-[10px] font-mono-street font-bold ${
+                  <span
+                    className={`rounded-full border px-2.5 py-0.5 text-[10px] font-mono-street font-bold tracking-wider uppercase ${
                       isTraitsComplete
-                        ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/40"
-                        : "bg-zinc-800 text-zinc-300 border-zinc-700"
+                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                        : "border-gray-700 bg-gray-800/60 text-gray-300"
                     }`}
                   >
                     {isTraitsComplete ? "Full Color ✨" : "In Progress"}
-                  </Badge>
+                  </span>
                 </div>
 
                 {/* Character Pixel-Art Preview Frame */}
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-700/60 bg-[#0e0f14] p-6 shadow-inner relative overflow-hidden">
+                <div className="relative flex flex-col items-center justify-center rounded-2xl border border-gray-800/80 bg-gradient-to-b from-[#12141f]/95 via-[#0a0b12] to-[#06070a] p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] overflow-hidden">
+                  {/* Radial Spotlight Halo behind avatar */}
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(251,191,36,0.12),transparent_70%)]" />
+
                   <div className="relative">
                     <UserAvatar
                       identifier={address}
                       hasInventory={inventoryItems.length > 0}
                       size="xl"
-                      className="border-2 border-amber-400/50 rounded-2xl shadow-brutal-sm [image-rendering:pixelated]"
+                      className={`border-2 rounded-2xl shadow-brutal-sm [image-rendering:pixelated] transition-all duration-300 ${
+                        isTraitsComplete
+                          ? "border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.3)] ring-2 ring-amber-400/20"
+                          : "border-gray-700 shadow-sm"
+                      }`}
                     />
                     {isTraitsComplete && (
-                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-black shadow-xs">
+                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 text-black shadow-[0_0_12px_rgba(251,191,36,0.5)]">
                         <Sparkles className="h-3.5 w-3.5" />
                       </div>
                     )}
                   </div>
-                  <p className="mt-3 font-mono-street text-xs font-bold text-white uppercase tracking-wider">
+
+                  {/* Clean Prestige Pill (replaces bulky share button) */}
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-gradient-to-r from-amber-500/15 via-yellow-400/10 to-amber-500/15 px-3 py-1 shadow-[0_0_15px_rgba(251,191,36,0.12)]">
+                    <span className="relative flex h-2 w-2">
+                      {isTraitsComplete && (
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                      )}
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+                    </span>
+                    <span className="font-mono-street text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                      {isTraitsComplete ? "Full Outfit Assembled" : "Trait Assembly In-Progress"}
+                    </span>
+                  </div>
+
+                  <h4 className="mt-2.5 font-display text-sm tracking-wide text-white uppercase text-center">
                     {isTraitsComplete ? "Elychimp Outfit Complete!" : "Elychimp In-Progress Avatar"}
+                  </h4>
+                  <p className="mt-0.5 font-mono-street text-[11px] text-gray-400 text-center">
+                    <span className="text-amber-400 font-bold">{heldCategories.length}</span> of 5 Distinct Categories Collected
                   </p>
-                  <p className="text-[11px] text-zinc-400 font-mono-street">
-                    {heldCategories.length} / 5 Categories Completed
-                  </p>
-                  {isTraitsComplete && (
-                    <button
-                      onClick={() => setIsShareModalOpen(true)}
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-400/40 bg-amber-950/40 px-3 py-1.5 text-[11px] font-mono-street font-bold text-amber-300 hover:bg-amber-900/50 hover:border-amber-400 transition-colors cursor-pointer"
-                    >
-                      <Download className="h-3 w-3" />
-                      <span>Download Share Card</span>
-                    </button>
-                  )}
                 </div>
 
                 {/* Five Trait Categories (Owned in Color, Missing in Grayscale) */}
                 {statusResult?.status?.phase !== "REVOKED" && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs font-mono-street">
-                      <span className="font-bold uppercase tracking-wider text-zinc-400">
-                        Required Trait Categories (5 of 5)
-                      </span>
-                      <span className="font-bold text-amber-400">
-                        {heldCategories.length} / 5 Collected
-                      </span>
+                  <div className="space-y-2.5">
+                    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between border-b border-gray-800/80 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-xs tracking-wider uppercase text-white font-bold">
+                          Required Trait Categories (5 of 5)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 font-mono-street text-[10px] font-bold text-amber-300 shadow-sm">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          <span>{heldCategories.length} / 5 Collected</span>
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                    {/* Micro Progress Bar */}
+                    <div className="h-1.5 w-full bg-black/80 rounded-full overflow-hidden border border-gray-800/80">
+                      <div
+                        className="h-full bg-gradient-to-r from-cyan-400 via-amber-400 to-yellow-300 transition-all duration-500 rounded-full"
+                        style={{ width: `${(heldCategories.length / 5) * 100}%` }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                       {TRAIT_CATEGORIES.map((cat) => {
                         const isHeld = heldCategories.includes(cat);
                         const theme = CATEGORY_THEMES[cat];
                         return (
                           <div
                             key={cat}
-                            className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
+                            className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all ${
                               isHeld
-                                ? `${theme.heldClass} font-bold`
-                                : "border-zinc-700/50 bg-[#0e0f14] text-zinc-400 grayscale opacity-60"
+                                ? `${theme.heldClass} font-bold backdrop-blur-xs`
+                                : "border-gray-800/80 bg-[#090b10] text-gray-500 grayscale opacity-50"
                             }`}
                           >
                             <div className="mb-1">
                               {isHeld ? (
-                                <CheckCircle2 className={`h-4 w-4 ${theme.checkColor}`} />
+                                <CheckCircle2 className={`h-3.5 w-3.5 ${theme.checkColor}`} />
                               ) : (
-                                <XCircle className="h-4 w-4 text-zinc-600" />
+                                <XCircle className="h-3.5 w-3.5 text-gray-600" />
                               )}
                             </div>
-                            <span className="text-[11px] font-mono-street font-bold">{cat}</span>
-                            <span className="text-[9px] font-mono-street mt-0.5">
+                            <span className="text-[10px] sm:text-[11px] font-mono-street font-bold tracking-tight">
+                              {cat}
+                            </span>
+                            <span className="text-[9px] font-mono-street mt-0.5 opacity-90">
                               {isHeld ? "Owned ✓" : "Missing"}
                             </span>
                           </div>
@@ -1718,34 +1752,51 @@ export default function WhitelistPage() {
                 )}
 
                 {/* Inventory Summary (Total items and duplicates) */}
-                <div className="rounded-xl border border-zinc-700/50 bg-[#0e0f14] p-3.5 space-y-1.5 text-xs font-mono-street">
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-400 font-medium">Total Inventory Items:</span>
-                    <span className="font-mono font-bold text-white">
-                      {inventoryItems.length}
-                    </span>
+                <div className="rounded-2xl border border-gray-800/80 bg-gradient-to-b from-[#10121a]/90 to-[#08090e]/95 p-4 space-y-3 font-mono-street shadow-inner">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="rounded-xl border border-gray-800/90 bg-black/50 p-2.5 text-center">
+                      <span className="block text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+                        Total Items
+                      </span>
+                      <span className="font-display text-xl font-bold text-white mt-0.5 block">
+                        {inventoryItems.length}
+                      </span>
+                    </div>
+                    <div className="rounded-xl border border-gray-800/90 bg-black/50 p-2.5 text-center">
+                      <span className="block text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+                        Duplicates / Extra
+                      </span>
+                      <span className="font-display text-xl font-bold text-cyan-300 mt-0.5 block">
+                        {duplicateCount}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-400 font-medium">Extra / Duplicate Copies:</span>
-                    <span className="font-mono font-bold text-white">
-                      {duplicateCount}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-zinc-500 pt-1 border-t border-zinc-700/50">
+                  <p className="text-[10px] text-gray-400 leading-relaxed border-t border-gray-800/80 pt-2.5">
                     Duplicates remain in your backpack. Qualification requires 1 item in each of the 5 distinct categories.
                   </p>
                 </div>
 
                 {/* Trait Lootbox Drops CTA */}
-                <div className="rounded-xl border border-amber-400/40 bg-amber-950/30 p-3.5 flex items-center justify-between gap-2 text-xs font-mono-street">
-                  <div>
-                    <p className="font-bold text-white">Trait Lootbox Drops</p>
-                    <p className="text-[11px] text-zinc-400">Need more traits to complete your collection?</p>
+                <div className="relative rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-[#0e1018] to-amber-500/5 p-4 flex items-center justify-between gap-3 font-mono-street overflow-hidden shadow-sm">
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                      <p className="font-display text-xs uppercase tracking-wider text-white truncate">
+                        Trait Lootbox Drops
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-gray-400 truncate">
+                      Need more traits to complete your collection?
+                    </p>
                   </div>
-                  <Link href="/drops">
-                    <Button variant="primary" size="sm" className="rounded-xl text-xs font-mono-street font-bold uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 shrink-0">
-                      Go to Drops
-                      <ExternalLink className="ml-1 h-3 w-3" />
+                  <Link href="/drops" className="shrink-0">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street text-xs font-black uppercase tracking-wider text-black shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    >
+                      <span>Go to Drops</span>
+                      <ExternalLink className="ml-1.5 h-3 w-3" />
                     </Button>
                   </Link>
                 </div>
@@ -1846,7 +1897,7 @@ export default function WhitelistPage() {
                         </Badge>
                         <button
                           onClick={() => setShowTasksInViewB((prev) => !prev)}
-                          className="flex items-center text-[10px] font-semibold text-zinc-400 hover:text-white"
+                          className="flex items-center text-[10px] font-medium text-zinc-400 hover:text-white"
                         >
                           {showTasksInViewB ? (
                             <>
@@ -2086,7 +2137,7 @@ export default function WhitelistPage() {
                                onClick={() => setIsShareModalOpen(true)}
                                variant="outline"
                                size="lg"
-                               className="w-full gap-2 rounded-xl border-amber-400/50 bg-amber-950/30 text-amber-300 hover:bg-amber-900/40 hover:border-amber-400 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                               className="w-full gap-2 rounded-xl border-amber-400/50 bg-amber-950/30 text-amber-300 hover:bg-amber-900/40 hover:border-amber-400 font-mono-street font-medium text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
                              >
                                <Download className="h-4 w-4 text-amber-400" />
                                <span>Download Pass Card</span>
@@ -2095,7 +2146,7 @@ export default function WhitelistPage() {
                                <Button
                                  variant="primary"
                                  size="lg"
-                                 className="w-full gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:bg-amber-300 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                 className="w-full gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 text-black hover:bg-amber-300 font-mono-street font-medium text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
                                >
                                  <XLogo className="h-3.5 w-3.5 fill-black" />
                                  <span>Share on X</span>
@@ -2271,7 +2322,7 @@ export default function WhitelistPage() {
                                  onClick={() => setIsShareModalOpen(true)}
                                  variant="outline"
                                  size="lg"
-                                 className="w-full gap-2 rounded-xl border-cyan-400/50 bg-cyan-950/30 text-cyan-300 hover:bg-cyan-900/40 hover:border-cyan-400 font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                 className="w-full gap-2 rounded-xl border-cyan-400/50 bg-cyan-950/30 text-cyan-300 hover:bg-cyan-900/40 hover:border-cyan-400 font-mono-street font-medium text-xs uppercase tracking-wider py-3.5 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
                                >
                                  <Download className="h-4 w-4 text-cyan-400" />
                                  <span>Download Pass Card</span>
@@ -2280,7 +2331,7 @@ export default function WhitelistPage() {
                                  <Button
                                    variant="primary"
                                    size="lg"
-                                   className="w-full gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono-street font-bold text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                   className="w-full gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono-street font-medium text-xs uppercase tracking-wider py-3.5 shadow-brutal-sm cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
                                  >
                                    <XLogo className="h-3.5 w-3.5 fill-black" />
                                    <span>Share on X</span>

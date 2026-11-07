@@ -1,711 +1,933 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  Sparkles,
   Layers,
   Box,
-  Clock,
   Gift,
-  Share2,
   ShieldCheck,
+  FileText,
+  Lock,
+  ArrowRight,
+  ExternalLink,
+  Clock,
+  Zap,
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Lock,
   ShieldAlert,
-  FileText,
   Users,
-  ArrowRight,
-  ExternalLink,
-  Terminal,
-  Zap,
   Check,
+  ChevronRight,
+  Sparkles,
+  RefreshCw,
+  Sliders,
+  Share2,
 } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+
+// ============================================================================
+// BESPOKE SVG ART CANVASES (FungoLabs Minimalist Aesthetic)
+// ============================================================================
+
+function TraitsArtCanvas() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center">
+      {/* Background Radial Glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.12)_0%,transparent_70%)]" />
+      
+      {/* 5-Slot Matrix Layout */}
+      <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
+        {/* Subtle Background Grid Lines */}
+        <line x1="20" y1="55" x2="140" y2="55" stroke="rgba(255,255,255,0.05)" strokeDasharray="2 3" />
+        <line x1="20" y1="105" x2="140" y2="105" stroke="rgba(255,255,255,0.05)" strokeDasharray="2 3" />
+        <line x1="55" y1="20" x2="55" y2="140" stroke="rgba(255,255,255,0.05)" strokeDasharray="2 3" />
+        <line x1="105" y1="20" x2="105" y2="140" stroke="rgba(255,255,255,0.05)" strokeDasharray="2 3" />
+
+        {/* 1. Background (Top Left) */}
+        <rect x="22" y="24" width="34" height="34" rx="7" fill="#1b1d22" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
+        <path d="M28 48L36 38L42 45L46 40L51 48H28Z" fill="rgba(245,158,11,0.5)" />
+        <circle cx="47" cy="32" r="2.5" fill="#f59e0b" />
+
+        {/* 2. Fur (Top Right) */}
+        <rect x="104" y="24" width="34" height="34" rx="7" fill="#1b1d22" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
+        <circle cx="121" cy="37" r="6" fill="#f59e0b" fillOpacity="0.8" />
+        <path d="M113 49C113 45 117 43 121 43C125 43 129 45 129 49" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" />
+
+        {/* 3. Clothing / Apparel (Center Keypiece - Gold Highlight) */}
+        <rect x="63" y="63" width="34" height="34" rx="8" fill="#242217" stroke="#f59e0b" strokeWidth="1.5" />
+        <path d="M72 73L80 77L88 73L85 87H75L72 73Z" fill="#f59e0b" />
+        <path d="M80 77V87" stroke="#16171a" strokeWidth="1.2" />
+
+        {/* 4. Headwear (Bottom Left) */}
+        <rect x="22" y="102" width="34" height="34" rx="7" fill="#1b1d22" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
+        <path d="M30 123C30 116 35 113 39 113H45C49 113 52 116 52 123H30Z" fill="rgba(245,158,11,0.5)" />
+        <line x1="28" y1="123" x2="56" y2="123" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" />
+
+        {/* 5. Eyewear (Bottom Right) */}
+        <rect x="104" y="102" width="34" height="34" rx="7" fill="#1b1d22" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
+        <rect x="110" y="115" width="9" height="7" rx="2" fill="#f59e0b" />
+        <rect x="123" y="115" width="9" height="7" rx="2" fill="#f59e0b" />
+        <line x1="119" y1="118.5" x2="123" y2="118.5" stroke="#f59e0b" strokeWidth="1.5" />
+      </svg>
+    </div>
+  );
+}
+
+function DropsArtCanvas() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.14)_0%,transparent_70%)]" />
+      
+      <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
+        {/* Outer Circular UTC 2-Hour Clock Dial */}
+        <circle cx="80" cy="80" r="58" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" strokeDasharray="3 4" />
+        
+        {/* Active 30-Minute Sector Arc (Highlighted Gold) */}
+        <path
+          d="M80 22 A 58 58 0 0 1 138 80"
+          stroke="#f59e0b"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+        />
+
+        {/* Hour Notch Ticks */}
+        <line x1="80" y1="18" x2="80" y2="25" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
+        <line x1="142" y1="80" x2="135" y2="80" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
+        <line x1="80" y1="142" x2="80" y2="135" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="18" y1="80" x2="25" y2="80" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
+
+        {/* Center Contraband Mystery Pod */}
+        <rect x="58" y="58" width="44" height="44" rx="10" fill="#1e1d17" stroke="#f59e0b" strokeWidth="1.5" />
+        
+        {/* Pod Aperture Core */}
+        <circle cx="80" cy="80" r="12" fill="#2d2919" stroke="#f59e0b" strokeWidth="1.2" />
+        <circle cx="80" cy="80" r="5" fill="#f59e0b" />
+        
+        {/* Radar Scanning Line */}
+        <line x1="80" y1="80" x2="118" y2="42" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="118" cy="42" r="2.5" fill="#f59e0b" />
+      </svg>
+    </div>
+  );
+}
+
+function GiftsArtCanvas() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(236,72,153,0.12)_0%,transparent_70%)]" />
+      
+      <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
+        {/* Sender Vault Box (Left) */}
+        <rect x="24" y="56" width="38" height="48" rx="8" fill="#1b1c20" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
+        <circle cx="43" cy="74" r="5" fill="#f59e0b" fillOpacity="0.4" />
+        <circle cx="43" cy="74" r="2" fill="#f59e0b" />
+        <rect x="35" y="87" width="16" height="4" rx="2" fill="rgba(255,255,255,0.15)" />
+
+        {/* Recipient Vault Box (Right) */}
+        <rect x="98" y="56" width="38" height="48" rx="8" fill="#1b1c20" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
+        <circle cx="117" cy="74" r="5" fill="#ec4899" fillOpacity="0.3" />
+        <circle cx="117" cy="74" r="2" fill="#ec4899" />
+        <rect x="109" y="87" width="16" height="4" rx="2" fill="rgba(255,255,255,0.15)" />
+
+        {/* Transfer Beam & Direction */}
+        <path d="M62 70 H98" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeDasharray="3 3" />
+        <path d="M90 66L97 70L90 74" fill="rgba(255,255,255,0.4)" />
+
+        {/* Floating Capsule with Retention Lock Emblem */}
+        <circle cx="80" cy="70" r="14" fill="#241b21" stroke="#ec4899" strokeWidth="1.5" />
+        {/* Retention Lock Icon */}
+        <rect x="74" y="68" width="12" height="9" rx="2" fill="#ec4899" />
+        <path d="M76 68V64C76 61.8 77.8 60 80 60C82.2 60 84 61.8 84 64V68" stroke="#ec4899" strokeWidth="1.2" />
+        
+        {/* +1 Duplicate Indicator */}
+        <text x="80" y="118" textAnchor="middle" fill="#ec4899" fontSize="10" fontFamily="monospace" fontWeight="bold">
+          KEEP &gt;= 1
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+function WhitelistArtCanvas() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.12)_0%,transparent_70%)]" />
+      
+      <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
+        {/* Tier 1 GTD Pass (Gold - Foreground) */}
+        <g transform="translate(24, 34)">
+          <rect x="0" y="0" width="70" height="92" rx="10" fill="#221e14" stroke="#f59e0b" strokeWidth="1.6" />
+          {/* Chip Emblem */}
+          <rect x="12" y="14" width="16" height="13" rx="3" fill="#f59e0b" />
+          <path d="M12 20.5H28" stroke="#16171a" strokeWidth="1" />
+          <path d="M20 14V27" stroke="#16171a" strokeWidth="1" />
+          {/* Tier Label */}
+          <text x="12" y="46" fill="#f59e0b" fontSize="8" fontFamily="monospace" fontWeight="bold">TIER 1</text>
+          <text x="12" y="58" fill="#ffffff" fontSize="11" fontFamily="sans-serif" fontWeight="800">GTD</text>
+          <text x="12" y="74" fill="#a1a1aa" fontSize="7" fontFamily="monospace">1,000 CAP</text>
+        </g>
+
+        {/* Tier 2 FCFS Pass (Cyan - Offset Behind) */}
+        <g transform="translate(68, 44)">
+          <rect x="0" y="0" width="68" height="84" rx="10" fill="#132024" stroke="#06b6d4" strokeWidth="1.2" strokeOpacity="0.8" />
+          <circle cx="50" cy="22" r="6" fill="#06b6d4" fillOpacity="0.3" stroke="#06b6d4" strokeWidth="1" />
+          <text x="12" y="38" fill="#06b6d4" fontSize="8" fontFamily="monospace" fontWeight="bold">TIER 2</text>
+          <text x="12" y="50" fill="#ffffff" fontSize="10" fontFamily="sans-serif" fontWeight="800">FCFS</text>
+          <text x="12" y="66" fill="#a1a1aa" fontSize="7" fontFamily="monospace">OPENSEA</text>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function TasksArtCanvas() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.12)_0%,transparent_70%)]" />
+      
+      <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
+        {/* Dossier Document Sheet */}
+        <rect x="36" y="22" width="88" height="116" rx="8" fill="#171920" stroke="rgba(255,255,255,0.12)" strokeWidth="1.2" />
+        
+        {/* Dossier Top Bar */}
+        <rect x="44" y="32" width="40" height="6" rx="3" fill="rgba(255,255,235,0.3)" />
+        <circle cx="112" cy="35" r="3" fill="#06b6d4" />
+
+        {/* Line Items with Status Checkpoints */}
+        {/* Item 1: Verified */}
+        <line x1="44" y1="52" x2="88" y2="52" stroke="rgba(255,255,255,0.15)" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="106" cy="52" r="5" fill="#10b981" />
+        <path d="M104 52L105.5 53.5L108 50.5" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
+
+        {/* Item 2: Verified */}
+        <line x1="44" y1="68" x2="80" y2="68" stroke="rgba(255,255,255,0.15)" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="106" cy="68" r="5" fill="#10b981" />
+        <path d="M104 68L105.5 69.5L108 66.5" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
+
+        {/* Item 3: Pending Review */}
+        <line x1="44" y1="84" x2="72" y2="84" stroke="rgba(255,255,255,0.15)" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="106" cy="84" r="5" fill="#f59e0b" fillOpacity="0.4" stroke="#f59e0b" strokeWidth="1" />
+        <circle cx="106" cy="84" r="1.5" fill="#f59e0b" />
+
+        {/* Verification Stamp at Bottom */}
+        <rect x="44" y="102" width="72" height="24" rx="5" fill="#102d24" stroke="#10b981" strokeWidth="1.2" strokeDasharray="2 2" />
+        <text x="80" y="117" textAnchor="middle" fill="#10b981" fontSize="9" fontFamily="monospace" fontWeight="bold">
+          PROOF VERIFIED
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+function SecurityArtCanvas() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(244,63,94,0.12)_0%,transparent_70%)]" />
+      
+      <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
+        {/* Hexagonal Cryptographic Vault Crest */}
+        <path
+          d="M80 20 L126 46 V98 L80 124 L34 98 V46 Z"
+          fill="#1c181d"
+          stroke="rgba(255,255,255,0.12)"
+          strokeWidth="1.4"
+        />
+
+        {/* SIWE Key Shield Core */}
+        <path
+          d="M80 34 L114 54 V90 L80 110 L46 90 V54 Z"
+          fill="#271920"
+          stroke="#f43f5e"
+          strokeWidth="1.5"
+        />
+
+        {/* Inner Lock Emblem */}
+        <rect x="71" y="70" width="18" height="16" rx="3.5" fill="#f43f5e" />
+        <circle cx="80" cy="77" r="2" fill="#16171a" />
+        <path d="M80 79V83" stroke="#16171a" strokeWidth="1.5" strokeLinecap="round" />
+        <path
+          d="M74 70V64C74 60.7 76.7 58 80 58C83.3 58 86 60.7 86 64V70"
+          stroke="#f43f5e"
+          strokeWidth="1.8"
+        />
+
+        {/* 1:1 Social Anchor Node */}
+        <circle cx="80" cy="138" r="8" fill="#191a20" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+        <path d="M80 124V130" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" strokeDasharray="2 2" />
+        <text x="80" y="141" textAnchor="middle" fill="#ffffff" fontSize="7" fontFamily="sans-serif" fontWeight="bold">𝕏</text>
+      </svg>
+    </div>
+  );
+}
+
+// ============================================================================
+// MAIN DOCS PAGE COMPONENT (SYNCHRONIZED WITH CHIMPHOOD TYPOGRAPHY SYSTEM)
+// ============================================================================
 
 export default function DocsPage() {
-  const sections = [
-    { id: "traits", num: "01", label: "Traits & Inventory", icon: Layers, color: "text-purple-400" },
-    { id: "drops", num: "02", label: "Drops & Lootbox", icon: Box, color: "text-amber-400" },
-    { id: "gifts", num: "03", label: "Syndicate Gifts", icon: Gift, color: "text-pink-400" },
-    { id: "whitelist", num: "04", label: "Allowlist & GTD", icon: ShieldCheck, color: "text-emerald-400" },
-    { id: "tasks", num: "05", label: "Quests & Review", icon: FileText, color: "text-cyan-400" },
-    { id: "security", num: "06", label: "Security & SIWE", icon: Lock, color: "text-rose-400" },
+  const [activeSection, setActiveSection] = useState("traits");
+
+  const navSections = [
+    { id: "traits", title: "Trait Collection & Inventory", short: "Traits & Inventory" },
+    { id: "drops", title: "Contraband Drops & Lootbox", short: "Drops & Lootbox" },
+    { id: "gifts", title: "Syndicate Gifting & Transfer", short: "Syndicate Gifts" },
+    { id: "whitelist", title: "Whitelist: GTD & FCFS Tiers", short: "Allowlist Tiers" },
+    { id: "tasks", title: "Campaign Tasks & Verification", short: "Quests & Review" },
+    { id: "security", title: "Wallet Security & SIWE", short: "Security & SIWE" },
   ];
 
+  // Active section scrollspy
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      {
+        rootMargin: "-20% 0px -70% 0px",
+        threshold: 0,
+      }
+    );
+
+    navSections.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      const topOffset = 80;
+      const elementPosition = el.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - topOffset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+      setActiveSection(id);
+    }
+  };
+
   return (
-    <div className="relative mx-auto max-w-7xl px-4 py-6 sm:py-12 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Background Ambient Glows */}
-      <div className="pointer-events-none absolute top-10 right-10 h-72 w-72 sm:h-96 sm:w-96 rounded-full bg-amber-500/10 blur-[130px]" />
-      <div className="pointer-events-none absolute top-96 left-10 h-64 w-64 sm:h-80 sm:w-80 rounded-full bg-cyan-500/10 blur-[140px]" />
+    <div className="min-h-screen bg-[#0a0b0e] text-[#f2f0e9] antialiased selection:bg-amber-400 selection:text-black">
+      {/* Top Subtle Ambient Atmosphere */}
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[420px] w-full max-w-7xl bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.06)_0%,transparent_70%)]" />
 
-      {/* Hero Header - GTA 6 Brutalist Streetwear Style */}
-      <div className="mb-8 sm:mb-12 border-b-2 border-gray-800 pb-6 sm:pb-8 space-y-4">
-        {/* Eyebrow Badges */}
-        <div className="flex flex-wrap items-center gap-2 font-mono-street text-[10px] sm:text-[11px] uppercase tracking-wider">
-          <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2 sm:px-2.5 py-0.5 font-bold text-amber-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
-            LEONIDA FIELD MANUAL
-          </span>
-          <span className="border border-cyan-400/40 bg-cyan-400/10 px-2 sm:px-2.5 py-0.5 font-bold text-cyan-300">
-            Elysium L2 // Hyperliquid
-          </span>
-          <span className="border border-emerald-400/40 bg-emerald-400/10 px-2 sm:px-2.5 py-0.5 font-bold text-emerald-300">
-            Official Protocol Dossier
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <h1 className="font-display text-3xl sm:text-5xl lg:text-7xl uppercase tracking-tight text-white leading-tight sm:leading-[0.9] break-words">
-              Elychimp Community Guide
-            </h1>
-            <p className="max-w-3xl font-mono-street text-xs sm:text-sm text-gray-300 leading-relaxed uppercase tracking-wide">
-              The definitive operational guide for contraband drops, trait assembly, syndicate gifting, guaranteed allowlist criteria, and non-custodial security.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full sm:w-auto">
-            <Link href="/drops" className="w-full sm:w-auto">
-              <Button
-                variant="primary"
-                size="sm"
-                className="w-full sm:w-auto justify-center border border-black bg-amber-400 font-display uppercase tracking-wider text-black hover:bg-amber-300 shadow-brutal-sm text-xs px-4 py-2.5"
-              >
-                <span>Claim Drops</span>
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-              </Button>
-            </Link>
-            <Link href="/whitelist" className="w-full sm:w-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full sm:w-auto justify-center border-2 border-gray-700 bg-gray-900 font-mono-street uppercase text-xs text-gray-300 hover:border-amber-400 hover:text-white px-4 py-2.5"
-              >
-                <span>Check Allowlist</span>
-                <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Sticky Horizontal Jump Bar (Visible only on mobile < lg) */}
-      <div className="lg:hidden -mx-4 px-4 py-2.5 border-y border-gray-800 bg-[#08090d]/95 backdrop-blur-md sticky top-16 z-30 mb-8 overflow-x-auto scrollbar-none">
-        <div className="flex items-center gap-2 min-w-max font-mono-street text-xs">
-          <span className="text-[10px] uppercase font-bold text-gray-500 mr-1 flex items-center gap-1">
-            <Terminal className="h-3 w-3 text-amber-400" /> Jump:
-          </span>
-          {sections.map((sec) => (
-            <a
-              key={sec.id}
-              href={`#${sec.id}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-800 bg-gray-900/80 px-2.5 py-1 text-[11px] font-bold text-gray-300 hover:border-amber-400 hover:text-white transition-colors"
-            >
-              <span className="text-amber-400 font-extrabold">{sec.num}</span>
-              <span>{sec.label}</span>
-            </a>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Grid: Sticky Sidebar Index (Desktop) + Content Panels */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
-        {/* Desktop Sticky Sidebar Directory (Visible only on lg+) */}
-        <aside className="hidden lg:block lg:col-span-4 lg:sticky lg:top-24 space-y-5">
-          <div className="rounded-2xl border-2 border-gray-800 bg-[#0c0d15] p-5 shadow-brutal-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Terminal className="h-4 w-4 text-amber-400" />
-                <span className="font-display text-xs uppercase tracking-wider text-white">
-                  Dossier Directory
+      <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+        {/* ===================================================================
+            HEADER: ChimpHood System Typography + FungoLabs Layout
+        =================================================================== */}
+        <header className="mb-10 sm:mb-14 border-b border-neutral-800/80 pb-8 sm:pb-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-4 max-w-3xl">
+              {/* Site-wide Eyebrow Badges */}
+              <div className="flex flex-wrap items-center gap-2 font-mono-street text-[10px] sm:text-[11px] uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 font-bold text-amber-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
+                  Leonida Protocol Guide
+                </span>
+                <span className="border border-neutral-700 bg-neutral-900/80 px-2.5 py-1 font-bold text-neutral-300">
+                  Elysium L2 // Hyperliquid
+                </span>
+                <span className="border border-neutral-700 bg-neutral-900/80 px-2.5 py-1 font-bold text-neutral-300">
+                  Official Dossier
                 </span>
               </div>
-              <span className="font-mono-street text-[10px] text-amber-400 font-bold uppercase tracking-widest">
-                6 Sections
-              </span>
+
+              {/* Main Headline with font-display (Anton / Syne) */}
+              <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl uppercase tracking-tight text-white leading-none">
+                How Elychimp Works
+              </h1>
+
+              {/* Subtitle with site-wide font-mono-street */}
+              <p className="font-mono-street text-xs sm:text-sm text-neutral-400 leading-relaxed uppercase tracking-wide max-w-2xl">
+                The comprehensive architectural manual for trait assembly, synchronized contraband drops, syndicate peer gifting, guaranteed whitelist allocation, and non-custodial security.
+              </p>
             </div>
 
-            <nav className="space-y-1.5 font-mono-street text-xs uppercase">
-              {sections.map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <a
-                    key={item.id}
-                    href={`#${item.id}`}
-                    className="group flex items-center justify-between rounded-xl border border-gray-800/80 bg-gray-900/40 p-2.5 transition-all hover:border-amber-400/60 hover:bg-gray-800/60"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="font-bold text-gray-500 group-hover:text-amber-400 text-[11px]">
-                        {item.num}
-                      </span>
-                      <IconComponent className={`h-3.5 w-3.5 shrink-0 ${item.color}`} />
-                      <span className="text-gray-300 group-hover:text-white truncate font-medium text-[11px]">
-                        {item.label}
-                      </span>
-                    </div>
-                    <ArrowRight className="h-3 w-3 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
-                  </a>
-                );
-              })}
-            </nav>
-
-            {/* Tactical Protocol Quick Specs */}
-            <div className="rounded-xl border border-gray-800/80 bg-[#08090d] p-3.5 space-y-2 text-[11px] font-mono-street">
-              <div className="flex items-center justify-between text-gray-400">
-                <span>GTD Slot Cap</span>
-                <span className="font-bold text-emerald-400">1,000 Slots</span>
-              </div>
-              <div className="flex items-center justify-between text-gray-400">
-                <span>Cycle Frequency</span>
-                <span className="font-bold text-amber-400">2-Hour UTC</span>
-              </div>
-              <div className="flex items-center justify-between text-gray-400">
-                <span>Claim Window</span>
-                <span className="font-bold text-cyan-400">30 Minutes</span>
-              </div>
-              <div className="flex items-center justify-between text-gray-400">
-                <span>Fit Assembly</span>
-                <span className="font-bold text-purple-400">5 Categories</span>
-              </div>
+            {/* Quick Action Buttons with font-display / font-mono-street */}
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href="/drops"
+                className="inline-flex items-center gap-2 rounded-xl border border-black bg-amber-400 px-4 py-2.5 font-display text-xs uppercase tracking-wider text-black hover:bg-amber-300 shadow-brutal-sm transition-all"
+              >
+                <span>Claim Drops</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <Link
+                href="/whitelist"
+                className="inline-flex items-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900 font-mono-street text-xs uppercase tracking-wider text-neutral-300 hover:border-amber-400 hover:text-white px-4 py-2.5 transition-colors"
+              >
+                <span>Check Allowlist</span>
+                <ExternalLink className="h-3.5 w-3.5 text-neutral-400" />
+              </Link>
             </div>
           </div>
-        </aside>
+        </header>
 
-        {/* Content Panels (12 cols on mobile, 8 cols on lg) */}
-        <div className="lg:col-span-8 space-y-10 sm:space-y-12">
-          {/* =======================================================================
-              SECTION 1: TRAIT COLLECTION & INVENTORY
-          ======================================================================= */}
-          <section id="traits" className="scroll-mt-24 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-purple-400/40 bg-purple-400/10 text-purple-400">
-                  <Layers className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="font-mono-street text-[10px] font-bold text-purple-400 uppercase tracking-widest">
-                    Section 01 // Wardrobe
-                  </span>
-                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
-                    1. Trait Collection &amp; Inventory
-                  </h2>
-                </div>
-              </div>
-              <Badge variant="outline" className="self-start sm:self-auto border-purple-400/40 bg-purple-400/10 text-purple-300 font-mono-street text-[10px] uppercase">
-                5 Pieces
-              </Badge>
-            </div>
-
-            <p className="font-mono-street text-xs sm:text-sm text-gray-300 leading-relaxed uppercase">
-              Assemble the five essential streetwear gear categories to complete your full Elychimp fit and unlock guaranteed allowlist eligibility on Elysium L2.
-            </p>
-
-            {/* Five Trait Cards Bento */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[
-                { name: "BG (Background)", category: "Environment", desc: "Atmospheric Vice City backdrops, ambient neon horizons, and street environments.", border: "border-cyan-400/40", text: "text-cyan-300", bg: "bg-cyan-950/20" },
-                { name: "FUR", category: "Base Character", desc: "Primate base coat variants, cybernetic finishes, and raw fur textures.", border: "border-amber-400/40", text: "text-amber-300", bg: "bg-amber-950/20" },
-                { name: "CLOTHING", category: "Apparel", desc: "Tactical jackets, varsity hoodies, mafia suits, and signature Leonida streetwear pieces.", border: "border-purple-400/40", text: "text-purple-300", bg: "bg-purple-950/20" },
-                { name: "HEADWEAR", category: "Head Gear", desc: "Snapback caps, tactical beanies, cyber halos, and headpiece accessories.", border: "border-emerald-400/40", text: "text-emerald-300", bg: "bg-emerald-950/20" },
-                { name: "EYEWEAR", category: "Optics", desc: "Laser visors, dark contraband shades, and tactical augmented-reality goggles.", border: "border-pink-400/40", text: "text-pink-300", bg: "bg-pink-950/20" },
-              ].map((c) => (
-                <div
-                  key={c.name}
-                  className={`border-2 ${c.border} ${c.bg} p-4 rounded-xl space-y-2`}
+        {/* ===================================================================
+            MOBILE HORIZONTAL JUMP BAR (Visible < lg)
+        =================================================================== */}
+        <div className="lg:hidden sticky top-16 z-30 -mx-4 px-4 py-2.5 mb-8 border-y border-neutral-800 bg-[#0a0b0e]/95 backdrop-blur-md overflow-x-auto scrollbar-none font-mono-street text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 min-w-max">
+            {navSections.map((sec, idx) => {
+              const isSelected = activeSection === sec.id;
+              return (
+                <a
+                  key={sec.id}
+                  href={`#${sec.id}`}
+                  onClick={(e) => scrollToSection(e, sec.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all text-xs ${
+                    isSelected
+                      ? "bg-amber-400 text-neutral-950 font-bold shadow-sm"
+                      : "bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200"
+                  }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className={`font-display text-sm uppercase tracking-wider ${c.text}`}>
-                      {c.name}
-                    </span>
-                    <span className="font-mono-street text-[10px] uppercase tracking-wider text-gray-400">
-                      {c.category}
-                    </span>
+                  <span className={isSelected ? "text-neutral-950 font-bold" : "text-amber-400 font-bold"}>
+                    0{idx + 1}
+                  </span>
+                  <span>{sec.short}</span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ===================================================================
+            MAIN 2-COLUMN LAYOUT: Content Cards + Sticky Aside
+        =================================================================== */}
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 items-start">
+          {/* =================================================================
+              LEFT COLUMN: Stacked Modular Section Cards (lg:col-span-8)
+          ================================================================= */}
+          <main className="lg:col-span-8 space-y-6 sm:space-y-8">
+            {/* -------------------------------------------------------------
+                SECTION 1: TRAIT COLLECTION & INVENTORY
+            ------------------------------------------------------------- */}
+            <section
+              id="traits"
+              className="scroll-mt-24 rounded-2xl border border-neutral-800/80 bg-[#121316] p-6 sm:p-8 transition-colors hover:border-neutral-700/80 shadow-sm"
+            >
+              <div className="flex flex-col md:flex-row items-start gap-6 lg:gap-8">
+                {/* Left Visual Art Canvas */}
+                <div className="w-full md:w-56 h-48 sm:h-52 shrink-0 rounded-xl bg-[#17181c] border border-white/[0.06] flex items-center justify-center p-3 relative overflow-hidden group">
+                  <TraitsArtCanvas />
+                </div>
+
+                {/* Right Content */}
+                <div className="flex-1 min-w-0 space-y-3.5">
+                  <div className="flex items-center gap-2 font-mono-street text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-amber-400">
+                    <Layers className="h-3.5 w-3.5" />
+                    <span>Section 01 // Wardrobe Assembly</span>
                   </div>
-                  <p className="font-mono-street text-[11px] text-gray-300 leading-relaxed">
-                    {c.desc}
-                  </p>
-                </div>
-              ))}
 
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 rounded-xl flex flex-col justify-between space-y-3">
-                <div>
-                  <span className="font-display text-sm uppercase tracking-wider text-white">
-                    Full Set Qualification
-                  </span>
-                  <p className="font-mono-street text-[11px] text-gray-400 mt-1 leading-relaxed">
-                    Own at least 1 item in each of the 5 categories simultaneously to trigger full trait qualification.
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 font-mono-street text-[10px] text-amber-400 font-bold uppercase">
-                  <Check className="h-3.5 w-3.5" />
-                  <span>Real-time on-chain check</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Key Mechanics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-purple-400">
-                  <Sparkles className="h-4 w-4" />
-                  <h4 className="font-display text-base uppercase tracking-wider text-white">
-                    Sequential Edition Serial Numbers
-                  </h4>
-                </div>
-                <p className="font-mono-street text-xs text-gray-300 leading-relaxed">
-                  Every trait minted through the drop engine carries an immutable, strictly sequential edition number (e.g. Edition #1, Edition #2). Earlier claimants secure lower serial numbers permanently tied to their lootbox claim.
-                </p>
-              </div>
-
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-cyan-400">
-                  <Layers className="h-4 w-4" />
-                  <h4 className="font-display text-base uppercase tracking-wider text-white">
-                    Auto-Equip &amp; Avatar Composition
-                  </h4>
-                </div>
-                <p className="font-mono-street text-xs text-gray-300 leading-relaxed">
-                  Your Profile inspects your inventory and automatically layers your owned items into a high-res 240x240 pixel composite avatar. Traits currently equipped as your active avatar cannot be transferred via gifts.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* =======================================================================
-              SECTION 2: DROPS & LOOTBOX
-          ======================================================================= */}
-          <section id="drops" className="scroll-mt-24 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-amber-400/40 bg-amber-400/10 text-amber-400">
-                  <Box className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="font-mono-street text-[10px] font-bold text-amber-400 uppercase tracking-widest">
-                    Section 02 // Contraband Engine
-                  </span>
-                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
-                    2. Drops &amp; Lootbox
+                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                    Trait Collection &amp; Inventory
                   </h2>
-                </div>
-              </div>
-              <Badge variant="outline" className="self-start sm:self-auto border-amber-400/40 bg-amber-400/10 text-amber-300 font-mono-street text-[10px] uppercase">
-                Cycle Protocol
-              </Badge>
-            </div>
 
-            <p className="font-mono-street text-xs sm:text-sm text-gray-300 leading-relaxed uppercase">
-              Periodic contraband lootbox drops open on a synchronized global clock. Grab mystery pods during the active claim window to collect missing traits.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
-                <div className="flex h-9 w-9 items-center justify-center border border-amber-400/30 bg-amber-400/10 text-amber-400 rounded-lg">
-                  <Clock className="h-4 w-4" />
-                </div>
-                <h4 className="font-display text-base uppercase tracking-wider text-white">
-                  2-Hour Global UTC Cycle
-                </h4>
-                <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
-                  Drop cycles run continuously every 2 hours, anchored to global UTC time (00:00, 02:00, 04:00, etc.). The clock is identical worldwide for fair international access.
-                </p>
-              </div>
-
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
-                <div className="flex h-9 w-9 items-center justify-center border border-amber-400/30 bg-amber-400/10 text-amber-400 rounded-lg">
-                  <Zap className="h-4 w-4" />
-                </div>
-                <h4 className="font-display text-base uppercase tracking-wider text-white">
-                  30-Minute Claim Window
-                </h4>
-                <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
-                  Claims unlock strictly for the first <strong className="text-amber-300">30 minutes</strong> of each interval (minute :00 to :30). Once the window closes, cooling mode activates until the next cycle.
-                </p>
-              </div>
-
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
-                <div className="flex h-9 w-9 items-center justify-center border border-amber-400/30 bg-amber-400/10 text-amber-400 rounded-lg">
-                  <ShieldCheck className="h-4 w-4" />
-                </div>
-                <h4 className="font-display text-base uppercase tracking-wider text-white">
-                  1 Claim Per Period
-                </h4>
-                <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
-                  Each authenticated wallet can claim at most <strong className="text-amber-300">one lootbox per period</strong>. Duplicate claims are blocked by database integrity constraints.
-                </p>
-              </div>
-            </div>
-
-            {/* Key Drops Safeguards */}
-            <div className="border-2 border-amber-400/40 bg-amber-950/20 p-4 sm:p-6 rounded-2xl space-y-3">
-              <div className="flex items-center gap-2 text-amber-400">
-                <AlertCircle className="h-5 w-5" />
-                <h4 className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
-                  Drop Protection Rules
-                </h4>
-              </div>
-              <ul className="space-y-2 font-mono-street text-xs text-gray-300">
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-400 font-bold shrink-0">• GTD Holder Exclusion:</span>
-                  <span>Operatives who have already secured an active Guaranteed Whitelist (GTD) slot are prohibited from claiming drops. This preserves crates for hunters still completing their 5-category set.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-400 font-bold shrink-0">• Stock Depletion:</span>
-                  <span>Lootbox stock is allocated per period. If period stock is fully claimed before 30 minutes expire, the portal shows <code className="text-amber-300 font-bold">Stock Exhausted</code> until the next schedule.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-400 font-bold shrink-0">• Dual Rate Limiting:</span>
-                  <span>Claim endpoints enforce strict rate limits (5 requests / 120s per wallet and 10 requests / 60s per IP) to prevent bot exploitation.</span>
-                </li>
-              </ul>
-            </div>
-          </section>
-
-          {/* =======================================================================
-              SECTION 3: GIFTS & DUPLICATE SHARING
-          ======================================================================= */}
-          <section id="gifts" className="scroll-mt-24 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-pink-400/40 bg-pink-400/10 text-pink-400">
-                  <Gift className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="font-mono-street text-[10px] font-bold text-pink-400 uppercase tracking-widest">
-                    Section 03 // Peer Transfer
-                  </span>
-                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
-                    3. Gifts &amp; Duplicate Sharing
-                  </h2>
-                </div>
-              </div>
-              <Badge variant="outline" className="self-start sm:self-auto border-pink-400/40 bg-pink-400/10 text-pink-300 font-mono-street text-[10px] uppercase">
-                Syndicate Gifting
-              </Badge>
-            </div>
-
-            <p className="font-mono-street text-xs sm:text-sm text-gray-300 leading-relaxed uppercase">
-              Transfer duplicate traits to fellow syndicate members to help them complete their sets without putting your own allowlist qualification at risk.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Category Retention Rule */}
-              <div className="border-2 border-pink-400/40 bg-pink-950/20 p-4 sm:p-5 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-pink-400">
-                  <Share2 className="h-5 w-5" />
-                  <h4 className="font-display text-base uppercase tracking-wider text-white">
-                    Category Retention Rule
-                  </h4>
-                </div>
-                <p className="font-mono-street text-xs text-gray-300 leading-relaxed">
-                  To protect operatives from accidentally breaking their 5-trait set, the system strictly enforces the <strong className="text-pink-300">Category Retention Rule</strong>:
-                </p>
-                <div className="rounded-xl border border-pink-500/30 bg-[#08090d] p-3 space-y-1.5 font-mono-street text-xs">
-                  <p className="text-emerald-400 font-bold">✓ Must own at least 2 items in that category to gift one.</p>
-                  <p className="text-emerald-400 font-bold">✓ Must retain at least 1 item in the category after transfer.</p>
-                  <p className="text-rose-400 font-bold">✕ Cannot gift the trait currently equipped on your Profile.</p>
-                </div>
-              </div>
-
-              {/* Gifting Lifecycle Rules */}
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-pink-400">
-                  <Clock className="h-5 w-5" />
-                  <h4 className="font-display text-base uppercase tracking-wider text-white">
-                    Gifting Lifecycle Rules
-                  </h4>
-                </div>
-                <ul className="space-y-2 font-mono-street text-xs text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <span className="text-pink-400 font-bold shrink-0">• 1 Gift / Day:</span>
-                    <span>Max 1 outgoing gift per wallet per calendar day (UTC 00:00 - 23:59:59).</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-pink-400 font-bold shrink-0">• 24h Expiration:</span>
-                    <span>Unclaimed gifts expire in 24 hours and revert automatically back to the sender.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-pink-400 font-bold shrink-0">• Manual Claim:</span>
-                    <span>Recipient must visit Profile &gt; Gifts to inspect and accept the transfer.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-pink-400 font-bold shrink-0">• Recipient Eligibility:</span>
-                    <span>GTD Allowlist holders cannot receive gifts, and recipients cannot already own the specific trait.</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* =======================================================================
-              SECTION 4: WHITELIST: GTD & FCFS
-          ======================================================================= */}
-          <section id="whitelist" className="scroll-mt-24 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-emerald-400/40 bg-emerald-400/10 text-emerald-400">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="font-mono-street text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                    Section 04 // Allocation Tiers
-                  </span>
-                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
-                    4. Whitelist: GTD &amp; FCFS
-                  </h2>
-                </div>
-              </div>
-              <Badge variant="outline" className="self-start sm:self-auto border-emerald-400/40 bg-emerald-400/10 text-emerald-300 font-mono-street text-[10px] uppercase">
-                Tier Allocation
-              </Badge>
-            </div>
-
-            <p className="font-mono-street text-xs sm:text-sm text-gray-300 leading-relaxed uppercase">
-              Understanding the 5 mandatory qualification criteria, Guaranteed (GTD) allocation cap, and the FCFS Allowlist directory on Elysium.
-            </p>
-
-            {/* 5 Qualification Criteria */}
-            <div className="border-2 border-emerald-400/40 bg-emerald-950/20 p-4 sm:p-5 rounded-2xl space-y-4">
-              <div className="flex items-center gap-2 text-emerald-400">
-                <CheckCircle2 className="h-5 w-5" />
-                <h4 className="font-display text-base uppercase tracking-wider text-white">
-                  The Five Mandatory Qualification Criteria
-                </h4>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs font-mono-street">
-                <div className="border border-emerald-500/30 bg-[#08090d] p-3 rounded-xl space-y-1">
-                  <span className="font-bold text-emerald-400">1. EVM WALLET</span>
-                  <p className="text-gray-400 text-[11px]">Connected EVM wallet with verified SIWE session.</p>
-                </div>
-                <div className="border border-emerald-500/30 bg-[#08090d] p-3 rounded-xl space-y-1">
-                  <span className="font-bold text-emerald-400">2. LINKED X</span>
-                  <p className="text-gray-400 text-[11px]">OAuth 2.0 PKCE connected and verified X profile.</p>
-                </div>
-                <div className="border border-emerald-500/30 bg-[#08090d] p-3 rounded-xl space-y-1">
-                  <span className="font-bold text-emerald-400">3. 5-TRAIT SET</span>
-                  <p className="text-gray-400 text-[11px]">At least 1 item owned across all 5 categories.</p>
-                </div>
-                <div className="border border-emerald-500/30 bg-[#08090d] p-3 rounded-xl space-y-1">
-                  <span className="font-bold text-emerald-400">4. MANDATORY TASKS</span>
-                  <p className="text-gray-400 text-[11px]">100% completion of all required campaign quests.</p>
-                </div>
-                <div className="border border-emerald-500/30 bg-[#08090d] p-3 rounded-xl space-y-1">
-                  <span className="font-bold text-emerald-400">5. CLEAN STANDING</span>
-                  <p className="text-gray-400 text-[11px]">Zero active fraud flags, bans, or Sybil restrictions.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* GTD vs FCFS Comparison */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-2 border-emerald-500/50 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
-                <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-                  <span className="border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 font-mono-street text-[10px] font-bold text-emerald-300 uppercase">
-                    TIER 1 ALLOCATION
-                  </span>
-                  <span className="font-mono-street text-xs font-bold text-emerald-400">
-                    Capped at 1,000 Slots
-                  </span>
-                </div>
-                <h4 className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
-                  Guaranteed Whitelist (GTD)
-                </h4>
-                <div className="space-y-2 font-mono-street text-xs text-gray-300 leading-relaxed">
-                  <p>
-                    <strong className="text-white">Instant Automated Allocation:</strong> Fulfilling all five criteria allocates a GTD slot immediately if capacity remains (&lt; 1,000 slots). No admin intervention required.
+                  <p className="font-mono-street text-xs sm:text-sm text-neutral-300 leading-relaxed uppercase">
+                    Assemble the five essential streetwear gear categories to complete your full Elychimp outfit and unlock guaranteed allowlist eligibility on Elysium L2.
                   </p>
-                  <p>
-                    <strong className="text-white">Strict Concurrency Locks:</strong> Allocation executes within a pessimistic database row transaction, guaranteeing zero over-allocation even during peak traffic spikes.
-                  </p>
-                </div>
-              </div>
 
-              <div className="border-2 border-cyan-500/50 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
-                <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-                  <span className="border border-cyan-400/40 bg-cyan-400/10 px-2.5 py-0.5 font-mono-street text-[10px] font-bold text-cyan-300 uppercase">
-                    TIER 2 DIRECTORY
-                  </span>
-                  <span className="font-mono-street text-xs font-bold text-cyan-400">
-                    Phase 2 Allowlist
-                  </span>
-                </div>
-                <h4 className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
-                  FCFS Directory &amp; OpenSea Export
-                </h4>
-                <div className="space-y-2 font-mono-street text-xs text-gray-300 leading-relaxed">
-                  <p>
-                    <strong className="text-white">Master Registry:</strong> Connecting a wallet and linking X registers your timestamp (<code className="text-cyan-300">joinedAt</code>) and deterministic queue index.
-                  </p>
-                  <p>
-                    <strong className="text-white">Export Invariant:</strong> The OpenSea SeaDrop export includes strictly participants who are fully qualified and not holding an active GTD slot. Unqualified accounts never enter the export.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
+                  {/* 5 Trait Categories Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
+                    {[
+                      { name: "BG (Background)", desc: "Vice City horizons & street environments." },
+                      { name: "FUR (Character)", desc: "Base coat variants & cybernetic finishes." },
+                      { name: "CLOTHING (Apparel)", desc: "Jackets, hoodies, & signature streetwear." },
+                      { name: "HEADWEAR (Head Gear)", desc: "Snapback caps, tactical beanies, & halos." },
+                      { name: "EYEWEAR (Optics)", desc: "Laser visors, shades, & AR goggles." },
+                    ].map((item) => (
+                      <div
+                        key={item.name}
+                        className="rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-2.5 space-y-0.5"
+                      >
+                        <span className="font-display text-xs uppercase tracking-wider text-white">{item.name}</span>
+                        <p className="font-mono-street text-[11px] text-neutral-400 leading-normal">{item.desc}</p>
+                      </div>
+                    ))}
 
-          {/* =======================================================================
-              SECTION 5: CAMPAIGN TASKS & EVIDENCE REVIEW
-          ======================================================================= */}
-          <section id="tasks" className="scroll-mt-24 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-cyan-400/40 bg-cyan-400/10 text-cyan-400">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="font-mono-street text-[10px] font-bold text-cyan-400 uppercase tracking-widest">
-                    Section 05 // Quest Protocol
-                  </span>
-                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
-                    5. Campaign Tasks &amp; Evidence Review
-                  </h2>
-                </div>
-              </div>
-              <Badge variant="outline" className="self-start sm:self-auto border-cyan-400/40 bg-cyan-400/10 text-cyan-300 font-mono-street text-[10px] uppercase">
-                Quests &amp; Proof
-              </Badge>
-            </div>
+                    <div className="rounded-lg border border-amber-400/30 bg-amber-400/5 p-2.5 flex flex-col justify-center space-y-1">
+                      <div className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-amber-300">
+                        <Check className="h-3.5 w-3.5 text-amber-400" />
+                        <span>Full Set Requirement</span>
+                      </div>
+                      <p className="font-mono-street text-[11px] text-neutral-300">
+                        Own at least 1 item across all 5 categories simultaneously to qualify.
+                      </p>
+                    </div>
+                  </div>
 
-            <p className="font-mono-street text-xs sm:text-sm text-gray-300 leading-relaxed uppercase">
-              Submit proof for social and community quests, track review states in real-time, and unlock whitelist status upon verification.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
-                <div className="flex h-8 w-8 items-center justify-center border border-amber-400/40 bg-amber-400/10 text-amber-400 rounded-lg">
-                  <Clock className="h-4 w-4" />
-                </div>
-                <h4 className="font-display text-base uppercase tracking-wider text-amber-300">
-                  Pending Review
-                </h4>
-                <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
-                  Upon submission (URL, screenshot link, or text), your task enters <strong className="text-amber-300">PENDING_REVIEW</strong>. Evidence is queued for moderator inspection.
-                </p>
-              </div>
-
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
-                <div className="flex h-8 w-8 items-center justify-center border border-emerald-400/40 bg-emerald-400/10 text-emerald-400 rounded-lg">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
-                <h4 className="font-display text-base uppercase tracking-wider text-emerald-300">
-                  Approved (Verified)
-                </h4>
-                <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
-                  Once confirmed, progress updates to <strong className="text-emerald-300">VERIFIED</strong>, awarding campaign status and triggering an instant allowlist check.
-                </p>
-              </div>
-
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-2.5">
-                <div className="flex h-8 w-8 items-center justify-center border border-rose-400/40 bg-rose-400/10 text-rose-400 rounded-lg">
-                  <XCircle className="h-4 w-4" />
-                </div>
-                <h4 className="font-display text-base uppercase tracking-wider text-rose-300">
-                  Rejected &amp; Retry
-                </h4>
-                <p className="font-mono-street text-xs text-gray-400 leading-relaxed">
-                  If proof is invalid, the reviewer leaves notes. The task form unlocks immediately, allowing you to <strong className="text-rose-300">resubmit correct evidence instantly</strong>.
-                </p>
-              </div>
-            </div>
-
-            <div className="border border-gray-800 bg-[#08090d] p-4 rounded-xl space-y-2 font-mono-street text-xs text-gray-300 break-words">
-              <span className="font-bold text-white uppercase tracking-wider">Submission Payload Specifications:</span>
-              <p>• Accepted formats: Valid HTTP/HTTPS URLs (X/Twitter post links, verified screenshots) or concise text.</p>
-              <p>• Maximum payload cap: 2,048 characters per task submission.</p>
-              <p>• Active campaign enforcement: Only tasks within their active dates can accept evidence.</p>
-            </div>
-          </section>
-
-          {/* =======================================================================
-              SECTION 6: WALLET SECURITY & IDENTITY
-          ======================================================================= */}
-          <section id="security" className="scroll-mt-24 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-2 border-gray-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-rose-400/40 bg-rose-400/10 text-rose-400">
-                  <Lock className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="font-mono-street text-[10px] font-bold text-rose-400 uppercase tracking-widest">
-                    Section 06 // Cyber Safeguards
-                  </span>
-                  <h2 className="font-display text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-white">
-                    6. Wallet Security &amp; Identity
-                  </h2>
-                </div>
-              </div>
-              <Badge variant="outline" className="self-start sm:self-auto border-rose-400/40 bg-rose-400/10 text-rose-300 font-mono-street text-[10px] uppercase">
-                Non-Custodial
-              </Badge>
-            </div>
-
-            <p className="font-mono-street text-xs sm:text-sm text-gray-300 leading-relaxed uppercase">
-              Decentralized, non-custodial architecture with cryptographic SIWE authentication and anti-Sybil 1:1 binding.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-rose-400">
-                  <ShieldCheck className="h-5 w-5" />
-                  <h4 className="font-display text-base uppercase tracking-wider text-white">
-                    Sign-In with Ethereum (SIWE)
-                  </h4>
-                </div>
-                <div className="space-y-2 font-mono-street text-xs text-gray-300 leading-relaxed">
-                  <p>
-                    Authentication uses <strong className="text-white">EIP-4361 (SIWE)</strong> via standard <code className="text-rose-300">personal_sign</code> cryptographic challenge.
-                  </p>
-                  <div className="rounded-xl border border-gray-800 bg-[#08090d] p-3 space-y-1.5">
-                    <p className="text-emerald-400 font-bold">✓ Zero gas fees to sign in or manage inventory.</p>
-                    <p className="text-emerald-400 font-bold">✓ Zero token spending approvals or contract permissions.</p>
-                    <p className="text-emerald-400 font-bold">✓ Supported: MetaMask, Rabby, Phantom, Coinbase Wallet.</p>
+                  {/* Serial & Auto-Equip Details */}
+                  <div className="space-y-2 pt-2 border-t border-neutral-800/80 font-mono-street text-xs text-neutral-300">
+                    <p className="flex items-start gap-2">
+                      <span className="text-amber-400 font-bold shrink-0">• Sequential Serial Numbers:</span>
+                      <span>Every trait carries an immutable, strictly sequential edition number (e.g., Edition #1, Edition #2) permanently bound to your claim.</span>
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="text-amber-400 font-bold shrink-0">• Auto-Equip Avatar:</span>
+                      <span>Your Profile automatically composites owned items into a high-res 240×240 avatar. Equipped active items cannot be transferred via gifts.</span>
+                    </p>
                   </div>
                 </div>
               </div>
+            </section>
 
-              <div className="border-2 border-gray-800 bg-[#0c0d15] p-4 sm:p-5 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-rose-400">
-                  <Users className="h-5 w-5" />
-                  <h4 className="font-display text-base uppercase tracking-wider text-white">
-                    1:1 Anti-Sybil Social Binding
-                  </h4>
+            {/* -------------------------------------------------------------
+                SECTION 2: DROPS & LOOTBOX
+            ------------------------------------------------------------- */}
+            <section
+              id="drops"
+              className="scroll-mt-24 rounded-2xl border border-neutral-800/80 bg-[#121316] p-6 sm:p-8 transition-colors hover:border-neutral-700/80 shadow-sm"
+            >
+              <div className="flex flex-col md:flex-row items-start gap-6 lg:gap-8">
+                {/* Left Visual Art Canvas */}
+                <div className="w-full md:w-56 h-48 sm:h-52 shrink-0 rounded-xl bg-[#17181c] border border-white/[0.06] flex items-center justify-center p-3 relative overflow-hidden group">
+                  <DropsArtCanvas />
                 </div>
-                <div className="space-y-2 font-mono-street text-xs text-gray-300 leading-relaxed">
-                  <p>
-                    Each EVM wallet maintains a strict 1:1 binding to a single X (Twitter) profile authenticated through OAuth 2.0 PKCE.
+
+                {/* Right Content */}
+                <div className="flex-1 min-w-0 space-y-3.5">
+                  <div className="flex items-center gap-2 font-mono-street text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-amber-400">
+                    <Box className="h-3.5 w-3.5" />
+                    <span>Section 02 // Contraband Engine</span>
+                  </div>
+
+                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                    Contraband Drops &amp; Lootbox
+                  </h2>
+
+                  <p className="font-mono-street text-xs sm:text-sm text-neutral-300 leading-relaxed uppercase">
+                    Periodic mystery crates open on a synchronized global schedule. Claim lootboxes during active drop windows to collect missing streetwear traits.
                   </p>
-                  <p>
-                    An X profile cannot be linked to multiple wallets simultaneously. This prevents multi-wallet farming and protects genuine community allocations.
+
+                  {/* 3 Core Drop Mechanics */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
+                    <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-3 space-y-1">
+                      <div className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-amber-300">
+                        <Clock className="h-3.5 w-3.5 text-amber-400" />
+                        <span>2-Hour UTC Cycle</span>
+                      </div>
+                      <p className="font-mono-street text-[11px] text-neutral-400 leading-normal">
+                        Cycles run continuously every 2 hours anchored to UTC (00:00, 02:00, etc.) worldwide.
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-3 space-y-1">
+                      <div className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-amber-300">
+                        <Zap className="h-3.5 w-3.5 text-amber-400" />
+                        <span>30-Minute Window</span>
+                      </div>
+                      <p className="font-mono-street text-[11px] text-neutral-400 leading-normal">
+                        Claims unlock strictly for the first 30 minutes (:00 to :30) of each period.
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-3 space-y-1">
+                      <div className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-amber-300">
+                        <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+                        <span>1 Claim / Interval</span>
+                      </div>
+                      <p className="font-mono-street text-[11px] text-neutral-400 leading-normal">
+                        Each authenticated wallet is limited to one crate claim per cycle period.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Safeguards & Rules */}
+                  <div className="rounded-lg border border-neutral-800/90 bg-neutral-900/40 p-3.5 space-y-2 font-mono-street text-xs text-neutral-300">
+                    <span className="font-display text-xs uppercase tracking-wider text-white">
+                      Drop Protection Safeguards:
+                    </span>
+                    <ul className="space-y-1.5 text-neutral-400 text-[11px] leading-relaxed">
+                      <li>• <strong className="text-neutral-200">GTD Holder Exclusion:</strong> Operatives who already hold an active GTD slot cannot claim crates, preserving stock for hunters completing their 5-piece fit.</li>
+                      <li>• <strong className="text-neutral-200">Finite Period Stock:</strong> Each interval has an allocated quota. When exhausted, the portal enters rest mode until the next interval.</li>
+                      <li>• <strong className="text-neutral-200">Dual Rate Limiting:</strong> Enforced at 5 requests / 120s per wallet and 10 requests / 60s per IP to safeguard against bots.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* -------------------------------------------------------------
+                SECTION 3: SYNDICATE GIFTS & TRANSFER
+            ------------------------------------------------------------- */}
+            <section
+              id="gifts"
+              className="scroll-mt-24 rounded-2xl border border-neutral-800/80 bg-[#121316] p-6 sm:p-8 transition-colors hover:border-neutral-700/80 shadow-sm"
+            >
+              <div className="flex flex-col md:flex-row items-start gap-6 lg:gap-8">
+                {/* Left Visual Art Canvas */}
+                <div className="w-full md:w-56 h-48 sm:h-52 shrink-0 rounded-xl bg-[#17181c] border border-white/[0.06] flex items-center justify-center p-3 relative overflow-hidden group">
+                  <GiftsArtCanvas />
+                </div>
+
+                {/* Right Content */}
+                <div className="flex-1 min-w-0 space-y-3.5">
+                  <div className="flex items-center gap-2 font-mono-street text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-pink-400">
+                    <Gift className="h-3.5 w-3.5" />
+                    <span>Section 03 // Syndicate Gifting</span>
+                  </div>
+
+                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                    Syndicate Gifting &amp; Duplicate Sharing
+                  </h2>
+
+                  <p className="font-mono-street text-xs sm:text-sm text-neutral-300 leading-relaxed uppercase">
+                    Transfer duplicate traits to fellow syndicate members to help them assemble their 5-piece fit without putting your own allowlist eligibility at risk.
                   </p>
+
+                  {/* Category Retention Rule Highlight */}
+                  <div className="rounded-xl border border-pink-500/20 bg-pink-950/10 p-3.5 space-y-2">
+                    <div className="flex items-center gap-2 font-display text-xs uppercase tracking-wider text-pink-300">
+                      <Share2 className="h-4 w-4 text-pink-400" />
+                      <span>The Category Retention Rule</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono-street text-[11px]">
+                      <div className="flex items-center gap-2 text-emerald-400">
+                        <Check className="h-3.5 w-3.5 shrink-0" />
+                        <span>Must own at least 2 items in category to gift.</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-emerald-400">
+                        <Check className="h-3.5 w-3.5 shrink-0" />
+                        <span>Must retain at least 1 item after transfer.</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-rose-400 sm:col-span-2">
+                        <XCircle className="h-3.5 w-3.5 shrink-0" />
+                        <span>Cannot gift the active trait currently equipped on your avatar profile.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Lifecycle Rules */}
+                  <div className="space-y-1.5 pt-1 font-mono-street text-xs text-neutral-400 text-[11px] leading-relaxed">
+                    <p>• <strong className="text-neutral-200">1 Gift / Day:</strong> Maximum 1 outgoing gift per wallet per calendar day (UTC 00:00 - 23:59:59).</p>
+                    <p>• <strong className="text-neutral-200">24-Hour Expiration:</strong> Unclaimed gifts expire in 24 hours and revert automatically back to the sender.</p>
+                    <p>• <strong className="text-neutral-200">Recipient Eligibility:</strong> GTD allowlist holders cannot receive gifts, and recipients cannot already own the specific trait item.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* -------------------------------------------------------------
+                SECTION 4: WHITELIST: GTD & FCFS
+            ------------------------------------------------------------- */}
+            <section
+              id="whitelist"
+              className="scroll-mt-24 rounded-2xl border border-neutral-800/80 bg-[#121316] p-6 sm:p-8 transition-colors hover:border-neutral-700/80 shadow-sm"
+            >
+              <div className="flex flex-col md:flex-row items-start gap-6 lg:gap-8">
+                {/* Left Visual Art Canvas */}
+                <div className="w-full md:w-56 h-48 sm:h-52 shrink-0 rounded-xl bg-[#17181c] border border-white/[0.06] flex items-center justify-center p-3 relative overflow-hidden group">
+                  <WhitelistArtCanvas />
+                </div>
+
+                {/* Right Content */}
+                <div className="flex-1 min-w-0 space-y-3.5">
+                  <div className="flex items-center gap-2 font-mono-street text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-emerald-400">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Section 04 // Allocation Tiers</span>
+                  </div>
+
+                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                    Whitelist: GTD &amp; FCFS Allocation
+                  </h2>
+
+                  <p className="font-mono-street text-xs sm:text-sm text-neutral-300 leading-relaxed uppercase">
+                    Understand the 5 mandatory qualification criteria, Guaranteed (GTD) 1,000-slot allocation cap, and the Phase 2 FCFS directory on Elysium.
+                  </p>
+
+                  {/* 5 Mandatory Criteria Pills */}
+                  <div className="rounded-xl border border-neutral-800/90 bg-neutral-900/40 p-3.5 space-y-2">
+                    <span className="font-display text-xs uppercase tracking-wider text-emerald-300">
+                      5 Mandatory Qualification Criteria:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono-street text-[11px] text-neutral-300">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <span><strong>1. EVM Wallet:</strong> Verified SIWE session.</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <span><strong>2. Linked X:</strong> OAuth 2.0 PKCE profile.</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <span><strong>3. 5-Trait Set:</strong> 1+ item in all 5 categories.</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <span><strong>4. Quests:</strong> 100% campaign task completion.</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 sm:col-span-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <span><strong>5. Clean Standing:</strong> Zero fraud flags, active bans, or Sybil flags.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* GTD vs FCFS Breakdown */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 font-mono-street">
+                    <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-display text-xs uppercase tracking-wider text-amber-300">Tier 1: GTD</span>
+                        <span className="text-[10px] font-bold text-neutral-400">1,000 Slots</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-400 leading-normal">
+                        Fulfilling all 5 criteria grants instant allocation via pessimistic row locks while capacity remains.
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-display text-xs uppercase tracking-wider text-cyan-300">Tier 2: FCFS</span>
+                        <span className="text-[10px] font-bold text-neutral-400">OpenSea Export</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-400 leading-normal">
+                        Deterministic queue index for qualified operatives without GTD slots, exported cleanly to SeaDrop.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* -------------------------------------------------------------
+                SECTION 5: CAMPAIGN TASKS & EVIDENCE REVIEW
+            ------------------------------------------------------------- */}
+            <section
+              id="tasks"
+              className="scroll-mt-24 rounded-2xl border border-neutral-800/80 bg-[#121316] p-6 sm:p-8 transition-colors hover:border-neutral-700/80 shadow-sm"
+            >
+              <div className="flex flex-col md:flex-row items-start gap-6 lg:gap-8">
+                {/* Left Visual Art Canvas */}
+                <div className="w-full md:w-56 h-48 sm:h-52 shrink-0 rounded-xl bg-[#17181c] border border-white/[0.06] flex items-center justify-center p-3 relative overflow-hidden group">
+                  <TasksArtCanvas />
+                </div>
+
+                {/* Right Content */}
+                <div className="flex-1 min-w-0 space-y-3.5">
+                  <div className="flex items-center gap-2 font-mono-street text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-cyan-400">
+                    <FileText className="h-3.5 w-3.5" />
+                    <span>Section 05 // Quest Verification</span>
+                  </div>
+
+                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                    Campaign Tasks &amp; Evidence Review
+                  </h2>
+
+                  <p className="font-mono-street text-xs sm:text-sm text-neutral-300 leading-relaxed uppercase">
+                    Submit proof for social and community quests, track review states in real-time, and unlock allowlist eligibility upon verification.
+                  </p>
+
+                  {/* 3 Review States */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
+                    <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-3 space-y-1">
+                      <div className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-amber-300">
+                        <Clock className="h-3.5 w-3.5 text-amber-400" />
+                        <span>Pending Review</span>
+                      </div>
+                      <p className="font-mono-street text-[11px] text-neutral-400 leading-normal">
+                        Enters <code className="text-amber-300 font-bold">PENDING_REVIEW</code> immediately, queued for moderator inspection.
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-3 space-y-1">
+                      <div className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-emerald-300">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                        <span>Approved (Verified)</span>
+                      </div>
+                      <p className="font-mono-street text-[11px] text-neutral-400 leading-normal">
+                        Updates to <code className="text-emerald-300 font-bold">VERIFIED</code>, awarding quest completion status.
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/60 p-3 space-y-1">
+                      <div className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-rose-300">
+                        <RefreshCw className="h-3.5 w-3.5 text-rose-400" />
+                        <span>Rejected &amp; Retry</span>
+                      </div>
+                      <p className="font-mono-street text-[11px] text-neutral-400 leading-normal">
+                        Reviewer feedback is provided; the submission form unlocks immediately for resubmission.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Payload Specifications */}
+                  <div className="space-y-1 pt-1 font-mono-street text-xs text-neutral-400 text-[11px] leading-relaxed">
+                    <p>• <strong className="text-neutral-200">Accepted Formats:</strong> Valid HTTP/HTTPS URLs (X posts, verified screenshots) or concise text.</p>
+                    <p>• <strong className="text-neutral-200">Payload Cap:</strong> Maximum 2,048 characters per task submission.</p>
+                    <p>• <strong className="text-neutral-200">Campaign Schedule:</strong> Proof submissions are accepted strictly within active campaign dates.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* -------------------------------------------------------------
+                SECTION 6: WALLET SECURITY & IDENTITY
+            ------------------------------------------------------------- */}
+            <section
+              id="security"
+              className="scroll-mt-24 rounded-2xl border border-neutral-800/80 bg-[#121316] p-6 sm:p-8 transition-colors hover:border-neutral-700/80 shadow-sm"
+            >
+              <div className="flex flex-col md:flex-row items-start gap-6 lg:gap-8">
+                {/* Left Visual Art Canvas */}
+                <div className="w-full md:w-56 h-48 sm:h-52 shrink-0 rounded-xl bg-[#17181c] border border-white/[0.06] flex items-center justify-center p-3 relative overflow-hidden group">
+                  <SecurityArtCanvas />
+                </div>
+
+                {/* Right Content */}
+                <div className="flex-1 min-w-0 space-y-3.5">
+                  <div className="flex items-center gap-2 font-mono-street text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-rose-400">
+                    <Lock className="h-3.5 w-3.5" />
+                    <span>Section 06 // Cyber Safeguards</span>
+                  </div>
+
+                  <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                    Wallet Security &amp; Non-Custodial SIWE
+                  </h2>
+
+                  <p className="font-mono-street text-xs sm:text-sm text-neutral-300 leading-relaxed uppercase">
+                    Decentralized, non-custodial architecture powered by cryptographic Sign-In with Ethereum (SIWE) and strict 1:1 anti-Sybil social binding.
+                  </p>
+
+                  {/* Security Highlights */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
+                    <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3 space-y-1.5">
+                      <span className="font-display text-xs uppercase tracking-wider text-white">Sign-In with Ethereum (EIP-4361)</span>
+                      <p className="font-mono-street text-[11px] text-neutral-400 leading-normal">
+                        Cryptographic <code className="text-rose-300 font-bold">personal_sign</code> authentication. Zero gas fees, zero token approvals, and zero contract spending permissions.
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3 space-y-1.5">
+                      <span className="font-display text-xs uppercase tracking-wider text-white">1:1 Anti-Sybil Social Binding</span>
+                      <p className="font-mono-street text-[11px] text-neutral-400 leading-normal">
+                        Each EVM wallet maintains a strict 1:1 binding to an X account via OAuth 2.0 PKCE, preventing multi-wallet farming.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Non-Custodial Advisory Box */}
+                  <div className="rounded-lg border border-rose-500/30 bg-rose-950/10 p-3.5 space-y-1.5 font-mono-street text-xs text-neutral-300">
+                    <div className="flex items-center gap-1.5 font-display text-xs uppercase tracking-wider text-rose-400">
+                      <ShieldAlert className="h-4 w-4" />
+                      <span>Critical Non-Custodial Advisory</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-300 leading-relaxed">
+                      Elychimp is completely non-custodial. We will never request private keys or seed phrases. Lost wallet keys cannot be recovered by administrators. Official contracts and announcements are published exclusively via official channels (<code className="text-rose-300 font-bold">@Enter_elysium</code>).
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </main>
+
+          {/* =================================================================
+              RIGHT COLUMN: Sticky Sidebar TOC + Action CTA (lg:col-span-4)
+          ================================================================= */}
+          <aside className="hidden lg:block lg:col-span-4 lg:sticky lg:top-24 space-y-5">
+            {/* Table of Contents Card (FungoLabs 'On this page' Style) */}
+            <div className="rounded-2xl border border-neutral-800/80 bg-[#121316] p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
+                <span className="font-display text-xs uppercase tracking-wider text-neutral-400">
+                  On this page
+                </span>
+                <span className="font-mono-street text-[10px] text-amber-400 font-bold uppercase tracking-widest">
+                  6 Topics
+                </span>
+              </div>
+
+              <nav className="space-y-1 font-mono-street text-xs uppercase tracking-wider">
+                {navSections.map((item, index) => {
+                  const isCurrent = activeSection === item.id;
+                  return (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      onClick={(e) => scrollToSection(e, item.id)}
+                      className={`group flex items-center justify-between rounded-xl px-3 py-2 text-xs transition-all ${
+                        isCurrent
+                          ? "bg-amber-400/10 text-amber-300 font-bold border border-amber-400/20"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-800/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 truncate">
+                        <span
+                          className={`font-mono-street text-[11px] font-bold ${
+                            isCurrent ? "text-amber-400" : "text-neutral-500 group-hover:text-neutral-300"
+                          }`}
+                        >
+                          0{index + 1}
+                        </span>
+                        <span className="truncate">{item.title}</span>
+                      </div>
+                      <ChevronRight
+                        className={`h-3 w-3 shrink-0 transition-transform ${
+                          isCurrent
+                            ? "text-amber-400 translate-x-0.5"
+                            : "text-neutral-600 group-hover:text-neutral-300"
+                        }`}
+                      />
+                    </a>
+                  );
+                })}
+              </nav>
+
+              {/* Quick Protocol Snapshot */}
+              <div className="rounded-xl border border-neutral-800/80 bg-neutral-900/60 p-3 space-y-2 text-[11px] font-mono-street">
+                <div className="flex items-center justify-between text-neutral-400">
+                  <span>GTD Slot Cap</span>
+                  <span className="font-bold text-emerald-400">1,000 Slots</span>
+                </div>
+                <div className="flex items-center justify-between text-neutral-400">
+                  <span>Cycle Frequency</span>
+                  <span className="font-bold text-amber-400">2-Hour UTC</span>
+                </div>
+                <div className="flex items-center justify-between text-neutral-400">
+                  <span>Claim Window</span>
+                  <span className="font-bold text-cyan-400">30 Minutes</span>
+                </div>
+                <div className="flex items-center justify-between text-neutral-400">
+                  <span>Wardrobe Fit</span>
+                  <span className="font-bold text-purple-400">5 Categories</span>
                 </div>
               </div>
             </div>
 
-            {/* Critical Security Warning */}
-            <div className="border-2 border-rose-500/40 bg-rose-950/20 p-4 sm:p-6 rounded-2xl space-y-3">
-              <div className="flex items-center gap-2 text-rose-400">
-                <ShieldAlert className="h-5 w-5" />
-                <h4 className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
-                  Critical Non-Custodial Advisory
-                </h4>
-              </div>
-              <div className="space-y-2 font-mono-street text-xs text-gray-300 leading-relaxed">
-                <p>
-                  <strong className="text-rose-300">Guarding Your Seed Phrase:</strong> Elychimp is non-custodial. We will never ask for your private keys or seed phrase.
+            {/* High-Contrast Action Banner (FungoLabs Signature CTA) */}
+            <div className="rounded-2xl bg-amber-400 p-6 text-neutral-950 shadow-lg shadow-amber-400/10 relative overflow-hidden space-y-3">
+              <div className="relative z-10 space-y-1">
+                <p className="font-display text-2xl uppercase tracking-tight text-neutral-950 leading-tight">
+                  Ready to step into Leonida?
                 </p>
-                <p>
-                  <strong className="text-rose-300">Key Loss Advisory:</strong> If you lose access to your EVM wallet, your traits and allowlist slot cannot be recovered by administrators.
-                </p>
-                <p>
-                  <strong className="text-rose-300">Official Links Only:</strong> Deployment and mint contracts are announced exclusively on official syndicate channels (<code className="text-rose-300 font-bold">@Enter_elysium</code>). Beware of scam mint sites or phishing DMs.
+                <p className="font-mono-street text-xs text-neutral-900/90 leading-relaxed uppercase">
+                  Claim your contraband lootbox crate or verify your allowlist qualification in real-time.
                 </p>
               </div>
+
+              <div className="relative z-10 pt-1">
+                <Link
+                  href="/drops"
+                  className="inline-flex items-center gap-2 rounded-xl bg-neutral-950 px-5 py-2.5 font-display text-xs uppercase tracking-wider text-white shadow-brutal-sm transition-all hover:bg-neutral-800 hover:-translate-x-0.5 hover:-translate-y-0.5"
+                >
+                  <span>See the drops</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+
+              {/* Decorative Subtle Background Corner Graphic */}
+              <div className="pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 rounded-full bg-amber-300/40 blur-xl" />
             </div>
-          </section>
+          </aside>
         </div>
       </div>
     </div>

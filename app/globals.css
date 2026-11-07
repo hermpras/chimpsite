@@ -18,6 +18,11 @@ body {
   min-height: 100vh;
 }
 
+button,
+[role="button"] {
+  font-weight: 500;
+}
+
 /* Typography Utility Classes */
 .font-display {
   font-family: "Anton", "Syne", impact, sans-serif;

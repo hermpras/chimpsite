@@ -371,7 +371,7 @@ export function AdminTraits() {
           <button
             type="button"
             onClick={() => setSelectedCategory("ALL")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               selectedCategory === "ALL"
                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                 : "bg-gray-900/60 text-gray-400 hover:text-white border border-gray-800"
@@ -386,7 +386,7 @@ export function AdminTraits() {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                   selectedCategory === cat
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                     : "bg-gray-900/60 text-gray-400 hover:text-white border border-gray-800"
@@ -405,7 +405,7 @@ export function AdminTraits() {
               key={filter}
               type="button"
               onClick={() => setStatusFilter(filter)}
-              className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+              className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 statusFilter === filter
                   ? "bg-gray-800 text-white shadow-sm"
                   : "text-gray-400 hover:text-gray-200"
@@ -996,7 +996,7 @@ export function AdminTraits() {
                 type="button"
                 onClick={handleDeleteSubmit}
                 disabled={isDeleting}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-600/40 bg-rose-600/20 px-3.5 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-600/30 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-600/40 bg-rose-600/20 px-3.5 py-2 text-xs font-medium text-rose-300 hover:bg-rose-600/30 disabled:opacity-50 transition-colors"
               >
                 {isDeleting ? (
                   <>

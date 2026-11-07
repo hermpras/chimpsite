@@ -343,6 +343,13 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
         if (typeof tx.user?.findUnique === "function") {
           const eligibility = await checkUserDropEligibility(tx, input.userId, now);
           if (!eligibility.isEligible) {
+            if (eligibility.hasAllocatedSlot) {
+              throw new DropClaimError(
+                "WL_HOLDER_CLAIM_PROHIBITED",
+                "Users holding an allocated Whitelist slot cannot claim drops.",
+                403,
+              );
+            }
             if (!eligibility.hasLinkedX) {
               throw new DropClaimError(
                 "X_IDENTITY_REQUIRED",

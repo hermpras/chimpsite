@@ -674,7 +674,7 @@ function ProfileContent() {
                       size="sm"
                       disabled={isLinking || status !== "authenticated"}
                       onClick={handleLinkX}
-                      className="rounded-lg text-xs font-display uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 font-bold shrink-0 self-start sm:self-auto cursor-pointer shadow-brutal-sm"
+                      className="rounded-lg text-xs font-display uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 font-medium shrink-0 self-start sm:self-auto cursor-pointer shadow-brutal-sm"
                     >
                       {isLinking ? "Connecting..." : "Link X Account"}
                     </Button>
@@ -888,7 +888,7 @@ function ProfileContent() {
                         <div className="pt-1">
                           <Link
                             href="/whitelist"
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400 text-black px-3.5 py-1.5 text-xs font-display uppercase tracking-wider hover:bg-amber-300 transition-colors shadow-brutal-sm font-bold"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400 text-black px-3.5 py-1.5 text-xs font-display uppercase tracking-wider hover:bg-amber-300 transition-colors shadow-brutal-sm font-medium"
                           >
                             Go to Whitelist Portal
                           </Link>
@@ -1176,7 +1176,7 @@ function ProfileContent() {
                       <div className="pt-2">
                         <Link
                           href="/drops"
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400 text-black px-4 py-2 text-xs font-display uppercase tracking-wider font-bold hover:bg-amber-300 transition-colors shadow-brutal-sm"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400 text-black px-4 py-2 text-xs font-display uppercase tracking-wider font-medium hover:bg-amber-300 transition-colors shadow-brutal-sm"
                         >
                           Go to Drops & Claim
                         </Link>

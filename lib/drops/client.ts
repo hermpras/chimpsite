@@ -10,6 +10,8 @@ export interface CurrentDropResponse {
     totalMandatoryTasksCount: number;
     completedMandatoryTasksCount: number;
     areMandatoryTasksCompleted: boolean;
+    isBanned?: boolean;
+    hasAllocatedSlot?: boolean;
     missingRequirements: string[];
   };
   drop?: {

@@ -202,7 +202,7 @@ export function AdminOverview({
                 className="group flex items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-900 px-2.5 py-1 text-white hover:border-amber-400 transition-colors"
                 title="Click to copy full address"
               >
-                <span className="font-bold text-amber-300">{shortenAddress(address || "0x0000000000000000000000000000000000000000")}</span>
+                <span className="font-medium text-amber-300">{shortenAddress(address || "0x0000000000000000000000000000000000000000")}</span>
                 {copiedWallet ? (
                   <Check className="h-3 w-3 text-emerald-400" />
                 ) : (

@@ -111,7 +111,7 @@ export function WalletButton({
               className="h-9 w-9 rounded-xl border border-zinc-700/80 [image-rendering:pixelated] shrink-0"
             />
             <div className="flex flex-col min-w-0 pr-0.5">
-              <span className="truncate text-xs font-bold text-white max-w-[130px] leading-tight">
+              <span className="truncate text-xs font-medium text-white max-w-[130px] leading-tight">
                 {displayName}
               </span>
               <div className="flex items-center gap-1 text-[10px] text-zinc-400 font-mono-street leading-tight mt-0.5">
@@ -175,7 +175,7 @@ export function WalletButton({
                   setMenuOpen(false);
                   onAction?.();
                 }}
-                className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-xs font-mono-street uppercase font-bold text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+                className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-xs font-mono-street uppercase font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
               >
                 <User className="h-4 w-4 text-zinc-400" />
                 <span>Profile</span>
@@ -190,7 +190,7 @@ export function WalletButton({
                   onAction?.();
                   void logout();
                 }}
-                className="flex items-center gap-3 w-full rounded-xl px-3 py-2 text-left font-mono-street text-xs uppercase font-bold text-rose-400 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
+                className="flex items-center gap-3 w-full rounded-xl px-3 py-2 text-left font-mono-street text-xs uppercase font-medium text-rose-400 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
               >
                 <LogOut className="h-4 w-4 text-rose-400" />
                 <span>Sign out</span>
@@ -211,7 +211,7 @@ export function WalletButton({
       );
     }
     return (
-      <div className="flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 font-display text-sm tracking-wider uppercase text-black font-bold shadow-sm">
+      <div className="flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 font-display text-sm tracking-wider uppercase text-black font-medium shadow-sm">
         <Loader2 className="h-4 w-4 animate-spin text-black" />
         <span>{busyMessage ?? "Signing in…"}</span>
       </div>
@@ -226,8 +226,8 @@ export function WalletButton({
           aria-label="Sign in"
           className={
             compact
-              ? "flex items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-1.5 font-display text-xs tracking-wider uppercase text-black font-bold shadow-sm transition-all hover:bg-amber-300 active:scale-95"
-              : "flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 font-display text-sm tracking-wider uppercase text-black font-bold shadow-sm transition-all hover:bg-amber-300 hover:shadow-md active:scale-95"
+              ? "flex items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-1.5 font-display text-xs tracking-wider uppercase text-black font-medium shadow-sm transition-all hover:bg-amber-300 active:scale-95"
+              : "flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 font-display text-sm tracking-wider uppercase text-black font-medium shadow-sm transition-all hover:bg-amber-300 hover:shadow-md active:scale-95"
           }
         >
           <LogIn className="h-4 w-4 shrink-0 text-black stroke-[2.5]" />
@@ -254,8 +254,8 @@ export function WalletButton({
           aria-label="Sign in"
           className={
             compact
-              ? "flex items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-1.5 font-display text-xs tracking-wider uppercase text-black font-bold shadow-sm transition-all hover:bg-amber-300 active:scale-95"
-              : "flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 font-display text-sm tracking-wider uppercase text-black font-bold shadow-sm transition-all hover:bg-amber-300 hover:shadow-md active:scale-95"
+              ? "flex items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-1.5 font-display text-xs tracking-wider uppercase text-black font-medium shadow-sm transition-all hover:bg-amber-300 active:scale-95"
+              : "flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 font-display text-sm tracking-wider uppercase text-black font-medium shadow-sm transition-all hover:bg-amber-300 hover:shadow-md active:scale-95"
           }
         >
           <LogIn className="h-4 w-4 shrink-0 text-black stroke-[2.5]" />

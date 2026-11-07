@@ -100,7 +100,7 @@ export function WalletModal({
             {onDismissError && (
               <button
                 onClick={onDismissError}
-                className="text-xs text-red-400 hover:text-red-200 uppercase font-mono-street font-bold"
+                className="text-xs text-red-400 hover:text-red-200 uppercase font-mono-street font-medium"
               >
                 Dismiss
               </button>
@@ -147,7 +147,7 @@ export function WalletModal({
                       />
                     </div>
                     <div>
-                      <p className="font-syne text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+                      <p className="font-syne text-sm font-medium text-white group-hover:text-amber-300 transition-colors">
                         {connector.name}
                       </p>
                       <p className="font-mono-street text-[10px] text-gray-400 uppercase">
@@ -158,7 +158,7 @@ export function WalletModal({
                     </div>
                   </div>
 
-                  <span className="font-mono-street text-[11px] font-bold text-gray-400 group-hover:text-amber-400 transition-colors">
+                  <span className="font-mono-street text-[11px] font-medium text-gray-400 group-hover:text-amber-400 transition-colors">
                     CONNECT →
                   </span>
                 </button>

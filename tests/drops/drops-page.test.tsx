@@ -869,5 +869,43 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         expect(screen.queryByRole("button", { name: /Claim Trait Now/i })).not.toBeInTheDocument();
       });
     });
+
+    it("renders disabled 'Whitelist Slot Secured' and Backpack gifting link when user already holds an allocated Whitelist slot", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
+        ...mockActiveDrop,
+        userEligibility: {
+          isEligible: false,
+          hasWallet: true,
+          hasLinkedX: true,
+          xUsername: "chimphood_user",
+          totalMandatoryTasksCount: 2,
+          completedMandatoryTasksCount: 2,
+          areMandatoryTasksCompleted: true,
+          hasAllocatedSlot: true,
+          missingRequirements: [
+            "Users holding an allocated Whitelist slot cannot claim drops.",
+          ],
+        },
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        const slotBtn = screen.getByRole("button", { name: /Whitelist Slot Secured/i });
+        expect(slotBtn).toBeInTheDocument();
+        expect(slotBtn).toBeDisabled();
+
+        expect(screen.getByText(/Whitelist Allocation Secured/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Trait drops are reserved for participants still qualifying/i),
+        ).toBeInTheDocument();
+
+        const giftLink = screen.getByRole("link", { name: /Go to Backpack to Gift/i });
+        expect(giftLink).toBeInTheDocument();
+        expect(giftLink).toHaveAttribute("href", "/profile");
+
+        expect(screen.queryByRole("button", { name: /Claim Trait Now/i })).not.toBeInTheDocument();
+      });
+    });
   });
 });

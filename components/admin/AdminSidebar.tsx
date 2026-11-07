@@ -136,7 +136,7 @@ export function AdminSidebar({
             }}
             className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all font-mono-street ${
               isActive
-                ? "border border-amber-400/60 bg-amber-400/10 text-amber-300 shadow-sm font-bold"
+                ? "border border-amber-400/60 bg-amber-400/10 text-amber-300 shadow-sm"
                 : "text-gray-300 hover:bg-gray-800/60 hover:text-white border border-transparent"
             }`}
           >
@@ -153,7 +153,7 @@ export function AdminSidebar({
 
             <div className="flex items-center gap-1.5">
               {item.id === "evidence" && pendingEvidenceCount > 0 && (
-                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300">
+                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-300">
                   {pendingEvidenceCount}
                 </span>
               )}

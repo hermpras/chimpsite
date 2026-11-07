@@ -51,71 +51,101 @@ const RARITY_THEME: Record<
     glow: string;
     prefix: string;
     barColor: string;
+    sheen: string;
+    ambientGlow: string;
+    pedestalBorder: string;
+    pedestalBg: string;
+    halo: string;
   }
 > = {
   LEGENDARY: {
-    border: "border-amber-500/50 hover:border-amber-400",
-    bg: "bg-gradient-to-r from-amber-950/40 via-amber-900/15 to-[#0c0e17]",
+    border: "border-amber-400/50 hover:border-amber-300",
+    bg: "bg-gradient-to-b from-amber-950/40 via-[#0e1019] to-[#07080e]",
     text: "text-amber-300 font-extrabold",
-    badgeBg: "bg-amber-500/20",
-    badgeBorder: "border-amber-500/50",
-    badgeText: "text-amber-300 font-bold",
-    glow: "shadow-sm shadow-amber-500/20",
+    badgeBg: "bg-gradient-to-r from-amber-500/30 to-yellow-500/20",
+    badgeBorder: "border-amber-400/70",
+    badgeText: "text-amber-200 font-bold",
+    glow: "shadow-[0_8px_30px_rgba(251,191,36,0.15)] hover:shadow-[0_12px_42px_rgba(251,191,36,0.3)]",
     prefix: "★ ",
-    barColor: "bg-gradient-to-r from-amber-500 to-yellow-300",
+    barColor: "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300",
+    sheen: "from-transparent via-amber-400/80 to-transparent",
+    ambientGlow: "bg-amber-500/20",
+    pedestalBorder: "border-amber-500/30 group-hover:border-amber-400/60",
+    pedestalBg: "bg-gradient-to-b from-amber-950/25 via-[#090b12] to-[#05060a]",
+    halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-500/25 via-transparent to-transparent",
   },
   EPIC: {
-    border: "border-purple-500/40 hover:border-purple-400/80",
-    bg: "bg-gradient-to-r from-purple-950/35 via-purple-900/15 to-[#0c0e17]",
+    border: "border-purple-500/50 hover:border-purple-400",
+    bg: "bg-gradient-to-b from-purple-950/40 via-[#0e1019] to-[#07080e]",
     text: "text-purple-300 font-bold",
-    badgeBg: "bg-purple-500/20",
-    badgeBorder: "border-purple-500/40",
-    badgeText: "text-purple-300 font-semibold",
-    glow: "shadow-sm shadow-purple-500/15",
+    badgeBg: "bg-gradient-to-r from-purple-500/30 to-fuchsia-500/20",
+    badgeBorder: "border-purple-400/70",
+    badgeText: "text-purple-200 font-semibold",
+    glow: "shadow-[0_8px_30px_rgba(168,85,247,0.15)] hover:shadow-[0_12px_42px_rgba(168,85,247,0.3)]",
     prefix: "◆ ",
-    barColor: "bg-gradient-to-r from-purple-500 to-fuchsia-400",
+    barColor: "bg-gradient-to-r from-purple-500 via-fuchsia-400 to-pink-400",
+    sheen: "from-transparent via-purple-400/80 to-transparent",
+    ambientGlow: "bg-purple-500/20",
+    pedestalBorder: "border-purple-500/30 group-hover:border-purple-400/60",
+    pedestalBg: "bg-gradient-to-b from-purple-950/25 via-[#090b12] to-[#05060a]",
+    halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500/25 via-transparent to-transparent",
   },
   RARE: {
-    border: "border-sky-500/40 hover:border-sky-400/80",
-    bg: "bg-gradient-to-r from-sky-950/30 via-sky-900/10 to-[#0c0e17]",
+    border: "border-sky-500/50 hover:border-sky-400",
+    bg: "bg-gradient-to-b from-sky-950/35 via-[#0e1019] to-[#07080e]",
     text: "text-sky-300 font-semibold",
-    badgeBg: "bg-sky-500/20",
-    badgeBorder: "border-sky-500/40",
-    badgeText: "text-sky-300 font-semibold",
-    glow: "shadow-sm shadow-sky-500/10",
+    badgeBg: "bg-gradient-to-r from-sky-500/30 to-cyan-500/20",
+    badgeBorder: "border-sky-400/70",
+    badgeText: "text-sky-200 font-semibold",
+    glow: "shadow-[0_8px_30px_rgba(56,189,248,0.12)] hover:shadow-[0_12px_42px_rgba(56,189,248,0.25)]",
     prefix: "▲ ",
-    barColor: "bg-gradient-to-r from-sky-500 to-cyan-300",
+    barColor: "bg-gradient-to-r from-sky-500 via-cyan-400 to-teal-300",
+    sheen: "from-transparent via-sky-400/80 to-transparent",
+    ambientGlow: "bg-sky-500/18",
+    pedestalBorder: "border-sky-500/30 group-hover:border-sky-400/60",
+    pedestalBg: "bg-gradient-to-b from-sky-950/25 via-[#090b12] to-[#05060a]",
+    halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-500/22 via-transparent to-transparent",
   },
   UNCOMMON: {
-    border: "border-emerald-500/30 hover:border-emerald-400/70",
-    bg: "bg-gradient-to-r from-emerald-950/25 via-emerald-900/10 to-[#0c0e17]",
+    border: "border-emerald-500/40 hover:border-emerald-400",
+    bg: "bg-gradient-to-b from-emerald-950/30 via-[#0e1019] to-[#07080e]",
     text: "text-emerald-300 font-medium",
-    badgeBg: "bg-emerald-500/15",
-    badgeBorder: "border-emerald-500/30",
-    badgeText: "text-emerald-400",
-    glow: "",
+    badgeBg: "bg-gradient-to-r from-emerald-500/25 to-teal-500/15",
+    badgeBorder: "border-emerald-400/60",
+    badgeText: "text-emerald-400 font-medium",
+    glow: "shadow-[0_8px_24px_rgba(52,211,153,0.1)] hover:shadow-[0_12px_36px_rgba(52,211,153,0.22)]",
     prefix: "● ",
-    barColor: "bg-gradient-to-r from-emerald-500 to-teal-400",
+    barColor: "bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400",
+    sheen: "from-transparent via-emerald-400/70 to-transparent",
+    ambientGlow: "bg-emerald-500/15",
+    pedestalBorder: "border-emerald-500/30 group-hover:border-emerald-400/50",
+    pedestalBg: "bg-gradient-to-b from-emerald-950/20 via-[#090b12] to-[#05060a]",
+    halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-500/20 via-transparent to-transparent",
   },
   COMMON: {
-    border: "border-gray-800 hover:border-gray-700",
-    bg: "bg-gray-900/50",
-    text: "text-gray-400 font-medium",
-    badgeBg: "bg-gray-800/80",
-    badgeBorder: "border-gray-700",
-    badgeText: "text-gray-400",
-    glow: "",
+    border: "border-zinc-800 hover:border-zinc-700",
+    bg: "bg-gradient-to-b from-zinc-900/40 via-[#0e1019] to-[#07080e]",
+    text: "text-zinc-300 font-medium",
+    badgeBg: "bg-zinc-800/80",
+    badgeBorder: "border-zinc-700",
+    badgeText: "text-zinc-400",
+    glow: "shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_8px_28px_rgba(148,163,184,0.12)]",
     prefix: "",
-    barColor: "bg-gradient-to-r from-gray-500 to-gray-400",
+    barColor: "bg-gradient-to-r from-zinc-500 via-zinc-400 to-zinc-300",
+    sheen: "from-transparent via-zinc-600/40 to-transparent",
+    ambientGlow: "bg-zinc-500/10",
+    pedestalBorder: "border-zinc-800 group-hover:border-zinc-700",
+    pedestalBg: "bg-[#090b12]",
+    halo: "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-600/15 via-transparent to-transparent",
   },
 };
 
 const CATEGORY_BADGE_STYLES: Record<string, string> = {
-  BG: "border-sky-500/30 bg-sky-500/10 text-sky-400",
-  FUR: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-  CLOTHING: "border-violet-500/30 bg-violet-500/10 text-violet-400",
-  HEADWEAR: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-  EYEWEAR: "border-teal-500/30 bg-teal-500/10 text-teal-400",
+  BG: "border-sky-500/40 bg-sky-500/15 text-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.2)]",
+  FUR: "border-amber-500/40 bg-amber-500/15 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.2)]",
+  CLOTHING: "border-violet-500/40 bg-violet-500/15 text-violet-400 shadow-[0_0_10px_rgba(139,92,246,0.2)]",
+  HEADWEAR: "border-emerald-500/40 bg-emerald-500/15 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]",
+  EYEWEAR: "border-teal-500/40 bg-teal-500/15 text-teal-400 shadow-[0_0_10px_rgba(20,184,166,0.2)]",
 };
 
 export default function DropsPage() {
@@ -164,6 +194,7 @@ export default function DropsPage() {
   const totalTasks = userEligibility?.totalMandatoryTasksCount ?? 0;
   const completedTasks = userEligibility?.completedMandatoryTasksCount ?? 0;
   const isUserEligible = Boolean(userEligibility?.isEligible);
+  const hasAllocatedSlot = Boolean(userEligibility?.hasAllocatedSlot);
 
   // Fetch current drop data
   const loadDropData = useCallback(async () => {
@@ -380,13 +411,22 @@ export default function DropsPage() {
 
       <div className="space-y-8">
         {/* Drops Cycle Status Card */}
-        <div className="relative border-2 border-gray-800 bg-gradient-to-b from-[#11131c] via-[#0c0d15] to-[#08090d] p-6 sm:p-8 shadow-brutal transition-all">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-800 pb-5">
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#131626]/90 via-[#0a0d16]/95 to-[#06080e]/98 p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl transition-all">
+          {/* Top Luxury Gold Accent Sheen */}
+          <div className="pointer-events-none absolute inset-x-12 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.08] pb-5">
             <div>
-              <h2 className="font-display text-2xl uppercase tracking-wider text-white">
-                Periodic Drop Cycle
-              </h2>
-              <p className="font-mono-street text-xs text-gray-400 uppercase tracking-wide mt-0.5">
+              <div className="flex items-center gap-2.5">
+                <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                  Periodic Drop Cycle
+                </h2>
+                <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 font-mono-street text-[10px] font-bold text-amber-300 uppercase tracking-widest">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24] animate-pulse" />
+                  Synced Engine
+                </span>
+              </div>
+              <p className="font-mono-street text-xs text-gray-400 uppercase tracking-wide mt-1">
                 1 claim per EVM wallet per period cycle. Distributed with provable off-chain RNG and unique serial editions.
               </p>
             </div>
@@ -395,7 +435,7 @@ export default function DropsPage() {
               <button
                 onClick={loadDropData}
                 disabled={isLoading}
-                className="flex items-center justify-center border-2 border-gray-800 bg-gray-900 p-2.5 text-gray-400 hover:border-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-gray-300 hover:border-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 hover:shadow-[0_0_15px_rgba(251,191,36,0.2)] transition-all duration-300 disabled:opacity-50"
                 title="Refresh Drop Status"
                 aria-label="Refresh Drop Status"
               >
@@ -412,9 +452,9 @@ export default function DropsPage() {
             {fetchError && dropData && (
               <div
                 role="alert"
-                className="flex flex-col gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 sm:flex-row sm:items-center sm:justify-between text-xs text-rose-300"
+                className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 sm:flex-row sm:items-center sm:justify-between text-xs text-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
                   <span>{fetchError}</span>
                 </div>
@@ -423,7 +463,7 @@ export default function DropsPage() {
                   size="sm"
                   onClick={() => void loadDropData()}
                   disabled={isLoading}
-                  className="border-rose-500/40 text-xs text-rose-300 hover:bg-rose-500/20 shrink-0"
+                  className="border-rose-500/40 text-xs text-rose-300 hover:bg-rose-500/20 shrink-0 rounded-lg"
                 >
                   {isLoading ? (
                     <ElychimpSpinner size="xs" className="mr-1.5" />
@@ -436,18 +476,18 @@ export default function DropsPage() {
             )}
 
             {isLoading && !dropData ? (
-              <div className="py-16 text-center text-sm text-gray-400 flex flex-col items-center justify-center">
-                <ElychimpSpinner size="lg" className="mb-4 filter drop-shadow-[0_0_20px_rgba(251,191,36,0.35)]" />
-                <span className="font-mono-street text-xs uppercase tracking-wider text-amber-400 animate-pulse">
+              <div className="py-20 text-center text-sm text-gray-400 flex flex-col items-center justify-center">
+                <ElychimpSpinner size="lg" className="mb-4 filter drop-shadow-[0_0_25px_rgba(251,191,36,0.5)]" />
+                <span className="font-mono-street text-xs uppercase tracking-widest text-amber-400 animate-pulse">
                   Loading drop event and stock data...
                 </span>
               </div>
             ) : fetchError && !dropData ? (
               <div
                 role="alert"
-                className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-8 text-center"
+                className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 sm:p-10 text-center shadow-[0_0_30px_rgba(244,63,94,0.15)]"
               >
-                <AlertCircle className="mx-auto mb-3 h-8 w-8 text-rose-400" />
+                <AlertCircle className="mx-auto mb-3 h-9 w-9 text-rose-400" />
                 <h3 className="text-base font-bold text-white">Failed to Load Drop Event</h3>
                 <p className="mt-1 text-sm text-rose-300">
                   {fetchError}
@@ -458,7 +498,7 @@ export default function DropsPage() {
                     size="sm"
                     onClick={() => void loadDropData()}
                     disabled={isLoading}
-                    className="gap-2 font-semibold"
+                    className="gap-2 font-medium rounded-xl border border-rose-400/40 bg-rose-500 hover:bg-rose-600 text-white shadow-lg"
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                     Try Again
@@ -469,53 +509,85 @@ export default function DropsPage() {
               <div className="space-y-6">
                 {/* 3 Metric Cards */}
                 <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
-                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm flex flex-col justify-center items-center text-center">
-                    <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
-                      Period Cycle
+                  {/* Period Cycle Card */}
+                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#0d101a] to-[#07090f] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-center items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
+                    <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
+                    <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-amber-500/15 blur-xl" />
+                    <span className="font-mono-street text-xs font-bold text-amber-300/90 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-400" /> Period Cycle
                     </span>
-                    <p className="my-1.5 font-display text-4xl font-black text-amber-400">
+                    <p className="my-2 font-display text-4xl sm:text-5xl font-black bg-gradient-to-br from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]">
                       #{displayPeriodIndex}
                     </p>
-                    <span className="block font-mono-street text-[10px] text-gray-400 uppercase">
+                    <span className="inline-flex items-center gap-1.5 font-mono-street text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-white/[0.04] border border-white/[0.06] rounded-full px-3 py-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse" />
                       UTC Interval Synchronized
                     </span>
                   </div>
 
-                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm flex flex-col justify-center items-center text-center">
-                    <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
-                      Remaining Stock
+                  {/* Remaining Stock Card */}
+                  <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#0d101a] to-[#07090f] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-center items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
+                    <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+                    <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-cyan-500/15 blur-xl" />
+                    <span className="font-mono-street text-xs font-bold text-cyan-300/90 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                      <Layers className="h-3.5 w-3.5 text-cyan-400" /> Remaining Stock
                     </span>
-                    <p className="my-1.5 font-mono-street text-2xl sm:text-3xl font-black text-cyan-300">
-                      {displayRemainingStock}{" "}
-                      <span className="text-xs font-normal text-gray-400">
+                    <p className="my-2 font-mono-street text-2xl sm:text-3xl font-black text-white">
+                      <span className="bg-gradient-to-r from-cyan-100 via-cyan-300 to-sky-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(6,182,212,0.3)]">
+                        {displayRemainingStock}
+                      </span>{" "}
+                      <span className="text-xs font-semibold text-gray-400">
                         / {displayAllocatedStock} Units
                       </span>
                     </p>
-                    <div className="mt-2 h-2 w-full max-w-[220px] bg-black overflow-hidden border border-gray-800">
+                    <div className="mt-2 h-2.5 w-full max-w-[220px] rounded-full bg-black/80 overflow-hidden border border-cyan-500/30 p-[1px] shadow-inner">
                       <div
-                        className="h-full bg-gradient-to-r from-cyan-500 to-amber-400 transition-all duration-500"
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-teal-300 to-amber-300 shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-all duration-500"
                         style={{
                           width: `${displayStockPercentage}%`,
                         }}
                       />
                     </div>
+                    <span className="mt-2 inline-flex items-center gap-1 font-mono-street text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
+                      {displayStockPercentage}% Available
+                    </span>
                   </div>
 
-                  <div className="border-2 border-gray-800 bg-[#090b12] p-5 shadow-brutal-sm flex flex-col justify-between text-center">
+                  {/* Claim Window / Countdown Card */}
+                  <div
+                    className={`relative overflow-hidden rounded-2xl border ${
+                      isWindowActive
+                        ? "border-amber-500/40 bg-gradient-to-b from-amber-950/25 via-[#0d101a] to-[#07090f] shadow-[0_8px_24px_rgba(245,158,11,0.15),inset_0_1px_0_rgba(251,191,36,0.2)] hover:border-amber-400/60"
+                        : "border-white/10 bg-gradient-to-b from-white/[0.03] via-[#0d101a] to-[#07090f] shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-white/20"
+                    } p-5 sm:p-6 flex flex-col justify-between text-center group transition-all duration-300`}
+                  >
+                    <div
+                      className={`absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent ${
+                        isWindowActive ? "via-amber-400/70" : "via-cyan-400/50"
+                      } to-transparent`}
+                    />
                     <div>
                       <div className="flex items-center justify-center gap-2">
                         <span
                           className={`inline-block h-2 w-2 rounded-full ${
-                            isWindowActive ? "bg-amber-400 animate-ping" : "bg-cyan-400"
+                            isWindowActive
+                              ? "bg-amber-400 shadow-[0_0_8px_#fbbf24] animate-ping"
+                              : "bg-cyan-400 shadow-[0_0_8px_#22d3ee]"
                           }`}
                         />
-                        <span className="font-mono-street text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        <span
+                          className={`font-mono-street text-xs font-bold uppercase tracking-widest ${
+                            isWindowActive ? "text-amber-300" : "text-gray-300"
+                          }`}
+                        >
                           {isWindowActive ? "Claim Window Active" : "Next Drop Window"}
                         </span>
                       </div>
                       <p
-                        className={`my-1.5 font-mono-street text-2xl sm:text-3xl font-black ${
-                          isWindowActive ? "text-amber-400" : "text-amber-300"
+                        className={`my-2 font-mono-street text-2xl sm:text-3xl font-black ${
+                          isWindowActive
+                            ? "bg-gradient-to-r from-amber-100 via-yellow-300 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]"
+                            : "text-amber-300"
                         }`}
                       >
                         {isWindowActive
@@ -523,23 +595,23 @@ export default function DropsPage() {
                           : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
                       </p>
                       {isWindowActive && dropData.claimWindow?.endsAt && (
-                        <span className="block font-mono-street text-[10px] text-gray-400 uppercase">
+                        <span className="block font-mono-street text-[10px] text-gray-400 uppercase tracking-wider">
                           Closes at {formatTimeWithUtc(dropData.claimWindow.endsAt)}
                         </span>
                       )}
                       {!isWindowActive && periodEndsMs > 0 && (
-                        <span className="block font-mono-street text-[10px] text-gray-400 uppercase">
+                        <span className="block font-mono-street text-[10px] text-gray-400 uppercase tracking-wider">
                           Cycle starts at {formatTimeWithUtc(periodEndsMs)}
                         </span>
                       )}
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-gray-800/80">
+                    <div className="mt-4 pt-3 border-t border-white/[0.08]">
                       {claimLoading ? (
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] py-2.5"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -551,7 +623,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] py-2.5"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -563,7 +635,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5"
                             onClick={() => void login()}
                           >
                             Sign In with Ethereum
@@ -572,7 +644,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5"
                             onClick={() => void login()}
                           >
                             Connect Wallet to Register
@@ -581,7 +653,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm cursor-wait"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-wait py-2.5"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -589,11 +661,21 @@ export default function DropsPage() {
                               Verifying Registration...
                             </span>
                           </Button>
+                        ) : hasAllocatedSlot ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full rounded-xl border border-amber-500/50 bg-gradient-to-r from-amber-500/20 via-amber-600/15 to-transparent font-mono-street text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-90 py-2.5 shadow-sm"
+                            disabled
+                          >
+                            <ShieldCheck className="h-4 w-4 text-amber-400 shrink-0" />
+                            <span>Whitelist Slot Secured</span>
+                          </Button>
                         ) : !hasLinkedX ? (
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-cyan-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-cyan-300 flex items-center justify-center gap-2"
+                            className="w-full rounded-xl border border-cyan-400/50 bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(6,182,212,0.35)] hover:from-cyan-300 hover:to-blue-400 flex items-center justify-center gap-2 transition-all py-2.5"
                             onClick={handleConnectX}
                             disabled={isConnectingX}
                           >
@@ -603,7 +685,7 @@ export default function DropsPage() {
                         ) : !areTasksDone ? (
                           <Link
                             href="/whitelist#tasks"
-                            className="w-full inline-flex items-center justify-center gap-1.5 border border-black bg-amber-400 font-mono-street font-bold text-xs uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300 py-2 px-3 text-center"
+                            className="w-full rounded-xl inline-flex items-center justify-center gap-1.5 border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-400 font-mono-street font-bold text-xs uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 py-2.5 px-3 text-center transition-all"
                           >
                             <Flame className="h-4 w-4 text-black shrink-0" />
                             <span>Complete Quests on Whitelist ({completedTasks}/{totalTasks})</span>
@@ -612,7 +694,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full border border-emerald-500/40 bg-emerald-950/30 font-mono-street text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-90 py-2.5"
+                            className="w-full rounded-xl border border-emerald-500/40 bg-emerald-950/40 font-mono-street text-xs font-semibold text-emerald-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-95 py-2.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
                             disabled
                           >
                             <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -622,7 +704,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full border border-red-500/30 bg-red-500/10 font-mono-street text-[11px] font-bold text-red-300 uppercase tracking-wider cursor-not-allowed opacity-70"
+                            className="w-full rounded-xl border border-red-500/30 bg-red-500/10 font-mono-street text-[11px] font-medium text-red-300 uppercase tracking-wider cursor-not-allowed opacity-75 py-2.5"
                             disabled
                           >
                             Period Stock Exhausted
@@ -631,7 +713,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full border border-black bg-amber-400 font-mono-street font-bold text-sm uppercase tracking-wider text-black shadow-brutal-sm hover:bg-amber-300 cursor-pointer"
+                            className="w-full rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-mono-street font-black text-sm uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.4)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.6)] hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer py-2.5"
                             onClick={handleClaim}
                           >
                             Claim Trait Now
@@ -640,12 +722,34 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full border border-gray-800 bg-gray-900/60 font-mono-street text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed py-2.5"
+                            className="w-full rounded-xl border border-white/10 bg-white/[0.04] font-mono-street text-xs font-medium text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed py-2.5"
                             disabled
                           >
                             <Clock className="h-4 w-4 text-amber-400 shrink-0" />
                             <span>Opens in {formatRemaining(nextDropRemainingMs)}</span>
                           </Button>
+                        )}
+
+                        {hasAllocatedSlot && (
+                          <div className="mt-2.5 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-center space-y-2 shadow-sm">
+                            <p className="font-mono-street text-[11px] text-amber-300 font-bold uppercase flex items-center justify-center gap-1.5">
+                              <ShieldCheck className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                              <span>Whitelist Allocation Secured</span>
+                            </p>
+                            <p className="font-mono-street text-[10px] text-gray-300 leading-normal">
+                              Trait drops are reserved for participants still qualifying. You can gift duplicate traits to friends from your Backpack.
+                            </p>
+                            <div className="pt-0.5">
+                              <Link
+                                href="/profile"
+                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-3 py-1.5 font-mono-street text-[10px] font-bold uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/25 transition-colors"
+                              >
+                                <Gift className="h-3.5 w-3.5 text-cyan-400" />
+                                <span>Go to Backpack to Gift</span>
+                                <ArrowRight className="h-3 w-3 text-cyan-400" />
+                              </Link>
+                            </div>
+                          </div>
                         )}
 
                         {connectXError && (
@@ -655,27 +759,27 @@ export default function DropsPage() {
                           </p>
                         )}
                         {claimMessage && (
-                          <div className="mt-2.5 rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-center">
+                          <div className="mt-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-center shadow-[0_0_15px_rgba(16,185,129,0.2)]">
                             <p className="font-mono-street text-xs font-semibold text-emerald-300">
                               {claimMessage}
                             </p>
                           </div>
                         )}
-                        {claimError && !isAlreadyClaimed && (
+                        {claimError && !isAlreadyClaimed && !hasAllocatedSlot && (
                           <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400 font-mono-street">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
                             <span>{claimError}</span>
                           </p>
                         )}
                         {isAlreadyClaimed && !claimMessage && (
-                          <div className="mt-2.5 rounded border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-center">
+                          <div className="mt-2.5 rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-center">
                             <span className="font-mono-street text-[10px] text-gray-400 uppercase">
                               You have claimed your 1 trait allocation for Period #{dropData.period.periodIndex}. Next drop cycle begins in {formatRemaining(nextDropRemainingMs)}.
                             </span>
                           </div>
                         )}
-                        {!isWindowActive && isUserEligible && (
-                          <div className="mt-2.5 rounded border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-center">
+                        {!isWindowActive && isUserEligible && !hasAllocatedSlot && (
+                          <div className="mt-2.5 rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-center">
                             <span className="font-mono-street text-[10px] text-gray-400 uppercase">
                               Registered &amp; Ready for Period #{displayPeriodIndex}
                             </span>
@@ -686,13 +790,16 @@ export default function DropsPage() {
                 </div>
 
                 {/* Trait Inventory Pool */}
-                <div className="space-y-4 pt-2">
+                <div className="space-y-4 pt-4 border-t border-white/[0.08]">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h3 className="text-xs font-bold tracking-wider text-white uppercase">
-                        Drop Pool Inventory ({dropData.stock?.poolItems?.length ?? 0} Available Traits)
+                      <h3 className="text-xs font-bold tracking-wider text-white uppercase flex items-center gap-2">
+                        <span>Drop Pool Inventory ({dropData.stock?.poolItems?.length ?? 0} Available Traits)</span>
+                        <span className="rounded bg-amber-400/10 px-2 py-0.5 text-[10px] font-mono text-amber-300 border border-amber-400/30">
+                          PROVABLY FAIR RNG
+                        </span>
                       </h3>
-                      <p className="text-[11px] text-gray-400">
+                      <p className="text-[11px] text-gray-400 mt-0.5">
                         Real-time trait stock and distribution directly from drop service
                       </p>
                     </div>
@@ -700,7 +807,7 @@ export default function DropsPage() {
 
                   {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 ? (
                     /* Trait Card Grid */
-                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                       {dropData.stock.poolItems.map((item) => {
                         const rarity = item.rarity?.toUpperCase() || "COMMON";
                         const theme = RARITY_THEME[rarity] || RARITY_THEME.COMMON;
@@ -712,51 +819,29 @@ export default function DropsPage() {
                         return (
                           <div
                             key={item.poolItemId}
-                            className={`group relative flex flex-col justify-between rounded-xl border p-2.5 transition-all hover:scale-[1.01] ${theme.border} ${theme.bg} ${theme.glow} ${isSoldOut ? "opacity-75" : ""}`}
+                            className={`group relative flex flex-col justify-between rounded-2xl border p-4 transition-all duration-300 hover:-translate-y-1.5 overflow-hidden backdrop-blur-md ${theme.border} ${theme.bg} ${theme.glow} ${isSoldOut ? "opacity-75" : ""}`}
                           >
-                            <div className="flex items-center gap-2.5">
-                              {/* Trait Thumbnail Preview */}
-                              <div
-                                className={`relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-[#0a0d14] ${
-                                  rarity === "LEGENDARY"
-                                    ? "border-amber-500/40"
-                                    : rarity === "EPIC"
-                                      ? "border-purple-500/30"
-                                      : rarity === "RARE"
-                                        ? "border-sky-500/30"
-                                        : rarity === "UNCOMMON"
-                                          ? "border-emerald-500/30"
-                                          : "border-gray-800"
-                                }`}
-                              >
-                                {item.imageUrl ? (
-                                  /* eslint-disable-next-line @next/next/no-img-element */
-                                  <img
-                                    src={item.imageUrl}
-                                    alt={item.traitName}
-                                    className="h-full w-full object-contain [image-rendering:pixelated] transition-transform group-hover:scale-110"
-                                  />
-                                ) : (
-                                  <Sparkles className="h-5 w-5 text-gray-600" />
-                                )}
-                              </div>
+                            {/* Top Luxury Foil Sheen */}
+                            <div
+                              className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${theme.sheen}`}
+                            />
 
-                              {/* Trait Info & Badges */}
-                              <div className="min-w-0 flex-1">
-                                <p
-                                  className="truncate text-xs font-bold tracking-wide text-white"
-                                  title={item.traitName}
-                                >
-                                  {item.traitName}
-                                </p>
-                                <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                            {/* Ambient Back Glow on Hover */}
+                            <div
+                              className={`pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full ${theme.ambientGlow} blur-2xl transition-opacity duration-300 opacity-60 group-hover:opacity-100`}
+                            />
+
+                            <div>
+                              {/* Card Top: Badges & Drop Probability */}
+                              <div className="relative z-10 flex items-center justify-between gap-1.5 pb-2.5 border-b border-white/[0.08]">
+                                <div className="flex flex-wrap items-center gap-1.5">
                                   <span
-                                    className={`rounded border px-1.5 py-0.5 text-[8px] font-mono uppercase font-semibold ${categoryStyle}`}
+                                    className={`rounded-md border px-2 py-0.5 text-[9px] font-mono uppercase font-bold tracking-wider ${categoryStyle}`}
                                   >
                                     {item.category}
                                   </span>
                                   <span
-                                    className={`rounded border px-1.5 py-0.5 text-[8px] font-bold uppercase ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText}`}
+                                    className={`rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText} shadow-sm`}
                                   >
                                     {theme.prefix}
                                     {rarity}
@@ -764,23 +849,61 @@ export default function DropsPage() {
                                   {isSoldOut && (
                                     <span
                                       data-testid="badge-sold-out"
-                                      className="rounded border border-rose-500/40 bg-rose-500/20 px-1.5 py-0.5 text-[8px] font-bold uppercase text-rose-300"
+                                      className="rounded-md border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
                                     >
                                       Sold Out
                                     </span>
                                   )}
                                 </div>
+
+                                {/* Probability Drop Rate */}
+                                <div className="shrink-0 flex items-center gap-1 rounded-md border border-white/10 bg-black/60 px-2 py-0.5 shadow-inner">
+                                  <span className="text-[10px] text-amber-400 font-mono">✦</span>
+                                  <span className={`font-mono text-xs font-extrabold ${theme.text}`}>
+                                    {item.probabilityPercent}%
+                                  </span>
+                                </div>
                               </div>
 
-                              {/* Probability */}
-                              <div className="shrink-0 text-right">
-                                <span className={`font-mono text-xs ${theme.text}`}>
-                                  {item.probabilityPercent}%
-                                </span>
+                              {/* Showcase Pedestal: Centerpiece Trait Art */}
+                              <div
+                                className={`relative my-3 flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border ${theme.pedestalBorder} ${theme.pedestalBg} p-2 transition-all duration-300 group-hover:scale-[1.02] shadow-inner`}
+                              >
+                                {/* Radial Light Halo */}
+                                <div
+                                  className={`pointer-events-none absolute inset-0 ${theme.halo}`}
+                                />
+
+                                {/* Luxury Metallic Corner Brackets */}
+                                <div className="absolute top-1.5 left-1.5 h-2 w-2 border-t border-l border-white/20" />
+                                <div className="absolute top-1.5 right-1.5 h-2 w-2 border-t border-r border-white/20" />
+                                <div className="absolute bottom-1.5 left-1.5 h-2 w-2 border-b border-l border-white/20" />
+                                <div className="absolute bottom-1.5 right-1.5 h-2 w-2 border-b border-r border-white/20" />
+
+                                {item.imageUrl ? (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img
+                                    src={item.imageUrl}
+                                    alt={item.traitName}
+                                    className="relative z-10 h-24 w-24 object-contain [image-rendering:pixelated] transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
+                                  />
+                                ) : (
+                                  <Sparkles className="relative z-10 h-8 w-8 text-gray-500" />
+                                )}
+                              </div>
+
+                              {/* Trait Title */}
+                              <div className="relative z-10">
+                                <p
+                                  className="truncate text-sm font-bold tracking-wide text-white group-hover:text-amber-200 transition-colors"
+                                  title={item.traitName}
+                                >
+                                  {item.traitName}
+                                </p>
                               </div>
                             </div>
 
-                            {/* Stock Progress Bar */}
+                            {/* Stock Meter & Counter */}
                             {(() => {
                               const allocated =
                                 item.allocatedStock && item.allocatedStock > 0
@@ -799,9 +922,9 @@ export default function DropsPage() {
                                 (stockPercent <= 20 || currentRemaining <= 2);
 
                               return (
-                                <div className="mt-2.5 border-t border-gray-800/60 pt-1.5">
-                                  <div className="mb-1 flex items-center justify-between text-[9px] font-mono">
-                                    <span className="flex items-center gap-1">
+                                <div className="relative z-10 mt-3 border-t border-white/[0.08] pt-2.5">
+                                  <div className="mb-1.5 flex items-center justify-between text-[10px] font-mono">
+                                    <span className="flex items-center gap-1.5">
                                       {isLowStock && (
                                         <span className="h-1.5 w-1.5 animate-ping rounded-full bg-rose-500" />
                                       )}
@@ -811,7 +934,7 @@ export default function DropsPage() {
                                             ? "font-bold text-rose-400"
                                             : isLowStock
                                               ? "font-bold text-rose-400"
-                                              : "text-gray-400"
+                                              : "text-gray-400 font-semibold"
                                         }
                                       >
                                         {isSoldOut ? "Sold Out" : isLowStock ? "Low Stock" : "Stock"}
@@ -819,29 +942,29 @@ export default function DropsPage() {
                                     </span>
                                     <span className="text-gray-400">
                                       <span
-                                        className={`font-semibold ${
+                                        className={`font-bold ${
                                           isSoldOut
                                             ? "text-rose-400"
                                             : isLowStock
                                               ? "text-rose-300"
-                                              : "text-gray-200"
+                                              : "text-white"
                                         }`}
                                       >
                                         {currentRemaining}
                                       </span>
-                                      <span className="text-gray-500">
+                                      <span className="text-gray-500 font-medium">
                                         /{allocated} left
                                       </span>
                                     </span>
                                   </div>
-                                  <div className="h-1.5 w-full overflow-hidden rounded-full border border-gray-800/80 bg-gray-950/80">
+                                  <div className="h-2 w-full overflow-hidden rounded-full border border-white/10 bg-black/80 p-[1px]">
                                     <div
                                       className={`h-full rounded-full transition-all duration-500 ${
                                         isSoldOut
                                           ? "bg-rose-500/40"
                                           : isLowStock
-                                            ? "bg-gradient-to-r from-rose-500 to-amber-500"
-                                            : theme.barColor
+                                            ? "bg-gradient-to-r from-rose-500 via-amber-500 to-yellow-400 shadow-[0_0_10px_rgba(244,63,94,0.5)]"
+                                            : `${theme.barColor} shadow-[0_0_10px_rgba(255,255,255,0.25)]`
                                       }`}
                                       style={{ width: `${stockPercent}%` }}
                                     />
@@ -856,13 +979,15 @@ export default function DropsPage() {
                   ) : (
                     <div
                       data-testid="empty-drop-pool"
-                      className="rounded-xl border border-dashed border-gray-800 bg-gray-900/30 p-8 text-center"
+                      className="relative overflow-hidden rounded-2xl border border-dashed border-white/10 bg-gradient-to-b from-white/[0.03] via-transparent to-transparent p-10 text-center backdrop-blur-sm"
                     >
-                      <Sparkles className="mx-auto mb-2 h-6 w-6 text-gray-500" />
-                      <p className="text-sm font-semibold text-gray-300">
+                      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.15)]">
+                        <Sparkles className="mx-auto h-7 w-7 text-amber-400 animate-pulse" />
+                      </div>
+                      <p className="text-base font-bold text-white">
                         No traits currently available in this drop pool
                       </p>
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1.5 text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
                         This drop period does not have any items allocated in its pool yet or stock is being prepared for the upcoming cycle.
                       </p>
                     </div>
@@ -870,38 +995,51 @@ export default function DropsPage() {
                 </div>
               </div>
             ) : (
-              <p className="font-mono-street text-sm text-gray-400 uppercase">
-                No active drop event currently in progress. Cycles renew on UTC schedule.
-              </p>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-8 text-center backdrop-blur-sm">
+                <p className="font-mono-street text-sm text-gray-400 uppercase tracking-wider">
+                  No active drop event currently in progress. Cycles renew on UTC schedule.
+                </p>
+              </div>
             )}
           </div>
         </div>
 
         {/* Duplicate Trait Gifting Card */}
-        <div className="border-2 border-gray-800 bg-[#0b0d14] p-6 shadow-brutal">
-          <div className="flex items-center gap-3.5 border-b border-gray-800 pb-4">
-            <div className="flex h-10 w-10 items-center justify-center border border-cyan-400/30 bg-cyan-400/10 text-cyan-400">
-              <Gift className="h-5 w-5" />
+        <div className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-b from-[#121626]/90 via-[#0a0d18]/95 to-[#060810]/98 p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(6,182,212,0.15)] backdrop-blur-2xl">
+          {/* Top Cyan Accent Sheen */}
+          <div className="pointer-events-none absolute inset-x-12 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+
+          <div className="flex items-center gap-4 border-b border-white/[0.08] pb-5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/50 bg-gradient-to-br from-cyan-500/20 to-blue-900/30 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+              <Gift className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-display text-lg uppercase tracking-wider text-white">
-                Gifts &amp; Duplicate Trait Exchange
-              </h3>
-              <p className="font-mono-street text-[11px] text-gray-400 uppercase">
+              <div className="flex items-center gap-2">
+                <h3 className="font-display text-xl uppercase tracking-wider text-white">
+                  Gifts &amp; Duplicate Trait Exchange
+                </h3>
+                <span className="hidden sm:inline-block rounded-md border border-cyan-400/40 bg-cyan-400/10 px-2 py-0.5 text-[9px] font-mono text-cyan-300 font-bold uppercase">
+                  Syndicate Escrow
+                </span>
+              </div>
+              <p className="font-mono-street text-[11px] text-gray-400 uppercase mt-0.5">
                 Help fellow community members complete their 5 required trait categories
               </p>
             </div>
           </div>
-          <div className="mt-4 space-y-3 border border-gray-800/80 bg-black/60 p-4 text-xs font-mono-street text-gray-300">
+          <div className="mt-5 space-y-3.5 rounded-2xl border border-white/[0.08] bg-black/60 p-5 text-xs font-mono-street text-gray-300 shadow-inner">
             <p className="leading-relaxed">
               Hold duplicate traits? You can gift them to peers directly from your{" "}
-              <Link href="/profile" className="text-amber-400 underline hover:text-amber-300 font-bold">
+              <Link href="/profile" className="font-bold text-amber-400 hover:text-yellow-300 underline underline-offset-4 decoration-amber-400/50 hover:decoration-amber-300 transition-colors">
                 User Inventory
               </Link>
               . Senders must retain at least 1 trait in the category; limited to 1 gift per wallet per UTC day.
             </p>
-            <div className="flex items-center justify-between border-t border-gray-800/80 pt-2 text-[10px] text-gray-400 uppercase">
-              <span>Gift Resolution Window</span>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-t border-white/[0.08] pt-3 text-[10px] text-gray-400 uppercase tracking-wider">
+              <span className="flex items-center gap-1.5 text-cyan-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                Gift Resolution Window
+              </span>
               <span>24 Hours UTC (Lazy validation upon acceptance)</span>
             </div>
           </div>
