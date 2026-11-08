@@ -160,12 +160,19 @@ function getWhitelistSummaryBadge(
         </Badge>
       );
     case "FCFS_REGISTERED":
-      return (
+      return status.isFullyQualified ? (
         <Badge
           variant="default"
-          className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs"
+          className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase tracking-wide"
         >
-          {`WL Status: FCFS Directory #${status.queueNumber}`}
+          WL Status: Whitelisted
+        </Badge>
+      ) : (
+        <Badge
+          variant="default"
+          className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs tracking-wide"
+        >
+          WL Status: In Progress
         </Badge>
       );
     case "REVOKED":
@@ -628,14 +635,9 @@ function ProfileContent() {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white text-sm sm:text-base truncate">
-                            @{currentXUsername}
-                          </span>
-                          <span className="text-xs text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 px-2 py-0.5 rounded font-semibold">
-                            Connected
-                          </span>
-                        </div>
+                        <span className="font-bold text-white text-sm sm:text-base truncate block">
+                          @{currentXUsername}
+                        </span>
                         <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">
                           Status: Connected
                         </p>
@@ -688,9 +690,7 @@ function ProfileContent() {
                     </CardDescription>
                   </div>
                   <div>
-                    {status !== "authenticated" ? (
-                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-300 text-xs sm:text-sm font-semibold">Tier Unassigned</Badge>
-                    ) : wlData?.status?.phase === "SLOT_ALLOCATED" ? (
+                    {status !== "authenticated" ? null : wlData?.status?.phase === "SLOT_ALLOCATED" ? (
                       <Badge
                         variant="default"
                         className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs sm:text-sm uppercase"
@@ -698,12 +698,21 @@ function ProfileContent() {
                         WL Slot #{wlData.status.slotNumber}
                       </Badge>
                     ) : wlData?.status?.phase === "FCFS_REGISTERED" ? (
-                      <Badge
-                        variant="default"
-                        className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs sm:text-sm"
-                      >
-                        FCFS Directory #{wlData.status.queueNumber}
-                      </Badge>
+                      wlData.status.isFullyQualified ? (
+                        <Badge
+                          variant="default"
+                          className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs sm:text-sm uppercase tracking-wide"
+                        >
+                          Whitelisted
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="default"
+                          className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs sm:text-sm tracking-wide"
+                        >
+                          In Progress
+                        </Badge>
+                      )
                     ) : wlData?.status?.phase === "REVOKED" ? (
                       <Badge
                         variant="outline"
@@ -711,13 +720,7 @@ function ProfileContent() {
                       >
                         REVOKED
                       </Badge>
-                    ) : wlData?.status?.phase === "NONE" ? (
-                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-300 text-xs sm:text-sm font-semibold">
-                        Not Registered
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-300 text-xs sm:text-sm font-semibold">Tier Unassigned</Badge>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </CardHeader>
@@ -789,7 +792,9 @@ function ProfileContent() {
                       >
                         <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-zinc-200">
                           <span className="font-bold text-white">
-                            FCFS Directory Participant #{wlData.status.queueNumber}
+                            {wlData.status.isFullyQualified
+                              ? "Whitelist Application Approved"
+                              : "Whitelist Application in Progress"}
                           </span>
                           {wlData.status.joinedAt && (
                             <>
@@ -804,10 +809,10 @@ function ProfileContent() {
                         {wlData.status.isFullyQualified ? (
                           <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/50 p-3.5 text-xs sm:text-sm text-emerald-200">
                             <div className="font-bold text-emerald-300 text-sm sm:text-base">
-                              Eligible for OpenSea FCFS Allowlist
+                              Whitelist Qualified
                             </div>
                             <p className="mt-1 text-zinc-300">
-                              All 5 qualification requirements are satisfied! Your wallet will be included in the OpenSea FCFS allowlist export.
+                              All 5 qualification requirements are satisfied! Your wallet will be included in the official allowlist for minting.
                             </p>
                           </div>
                         ) : (
@@ -816,17 +821,10 @@ function ProfileContent() {
                               Action Required — Incomplete Requirements
                             </div>
                             <p className="mt-1 text-zinc-300">
-                              You are registered in the directory, but must satisfy all 5 requirements below to be included in the OpenSea FCFS allowlist export.
+                              Complete all 5 requirements below to qualify for the official allowlist.
                             </p>
                           </div>
                         )}
-
-                        <div className="rounded-lg border border-[#163B44] bg-[#0B2026]/80 p-3.5 text-xs sm:text-sm text-zinc-400">
-                          <p className="font-semibold text-zinc-200 text-sm">FCFS Directory Notice</p>
-                          <p className="mt-1 text-[#8AA8B2]">
-                            Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed (GTD) slot or an allocation. GTD slots are never automatically filled.
-                          </p>
-                        </div>
                       </div>
                     )}
 
@@ -848,21 +846,21 @@ function ProfileContent() {
                             In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program.
                           </p>
                           <p className="text-rose-400 font-semibold">
-                            Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the OpenSea FCFS allowlist export.
+                            Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the allowlist export.
                           </p>
                         </div>
                       </div>
                     )}
 
-                    {/* 4. NONE (Not Registered in FCFS Directory) */}
+                    {/* 4. NONE (Not Registered) */}
                     {(!wlData?.status || wlData?.status?.phase === "NONE") && (
                       <div
                         className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-sm sm:text-base text-zinc-300 space-y-2.5"
                         data-testid="none-status-card"
                       >
-                        <p className="font-bold text-white text-base sm:text-lg">Not Registered in FCFS Directory</p>
+                        <p className="font-bold text-white text-base sm:text-lg">Whitelist Application</p>
                         <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
-                          You are not currently registered in the FCFS Directory. Connect your EVM wallet and X (Twitter) account to automatically register in the FCFS Directory, and complete the 5 trait categories and mandatory tasks to qualify for the OpenSea FCFS allowlist.
+                          Connect your EVM wallet and X (Twitter) account, and complete the 5 trait categories and mandatory tasks to qualify for the allowlist.
                         </p>
                         <div className="pt-2">
                           <Link
