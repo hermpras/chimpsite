@@ -229,11 +229,12 @@ export function WalletButton({
           aria-label="Sign in"
           className={
             compact
-              ? "flex items-center gap-1.5 rounded-xl bg-[#34B7DD] px-3 py-1.5 font-display text-xs tracking-wider uppercase text-[#04181C] font-semibold shadow-[0_0_15px_rgba(52,183,221,0.25)] transition-all hover:bg-[#6FCDE8] active:scale-95"
-              : "flex items-center gap-2 rounded-xl bg-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-semibold shadow-[0_0_15px_rgba(52,183,221,0.25)] transition-all hover:bg-[#6FCDE8] hover:shadow-[0_0_20px_rgba(52,183,221,0.4)] active:scale-95"
+              ? "group relative overflow-hidden flex items-center gap-1.5 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-3.5 py-1.5 font-display text-xs tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_15px_rgba(52,183,221,0.3)] transition-all duration-300 hover:shadow-[0_0_24px_rgba(52,183,221,0.6)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+              : "group relative overflow-hidden flex items-center gap-2 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_16px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_26px_rgba(52,183,221,0.65)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
           }
         >
-          <LogIn className="h-4 w-4 shrink-0 text-[#04181C] stroke-[2.5]" />
+          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+          <LogIn className="h-4 w-4 shrink-0 text-[#04181C] stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
           <span>Sign in</span>
         </button>
         {error && !compact && (
@@ -257,11 +258,12 @@ export function WalletButton({
           aria-label="Sign in"
           className={
             compact
-              ? "flex items-center gap-1.5 rounded-xl bg-[#34B7DD] px-3 py-1.5 font-display text-xs tracking-wider uppercase text-[#04181C] font-semibold shadow-[0_0_15px_rgba(52,183,221,0.25)] transition-all hover:bg-[#6FCDE8] active:scale-95"
-              : "flex items-center gap-2 rounded-xl bg-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-semibold shadow-[0_0_15px_rgba(52,183,221,0.25)] transition-all hover:bg-[#6FCDE8] hover:shadow-[0_0_20px_rgba(52,183,221,0.4)] active:scale-95"
+              ? "group relative overflow-hidden flex items-center gap-1.5 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-3.5 py-1.5 font-display text-xs tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_15px_rgba(52,183,221,0.3)] transition-all duration-300 hover:shadow-[0_0_24px_rgba(52,183,221,0.6)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+              : "group relative overflow-hidden flex items-center gap-2 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_16px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_26px_rgba(52,183,221,0.65)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
           }
         >
-          <LogIn className="h-4 w-4 shrink-0 text-[#04181C] stroke-[2.5]" />
+          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+          <LogIn className="h-4 w-4 shrink-0 text-[#04181C] stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
           <span>Sign in</span>
         </button>
         {error && !compact && (

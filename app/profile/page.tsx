@@ -662,9 +662,10 @@ function ProfileContent() {
                       size="sm"
                       disabled={isLinking || status !== "authenticated"}
                       onClick={handleLinkX}
-                      className="rounded-lg text-xs sm:text-sm font-display uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 font-bold shrink-0 self-start sm:self-auto cursor-pointer shadow-brutal-sm"
+                      className="group relative overflow-hidden rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 px-4 py-2 font-display text-xs sm:text-sm font-black uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.35)] transition-all duration-300 hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.6)] hover:scale-[1.02] active:scale-[0.98] shrink-0 self-start sm:self-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
                     >
-                      {isLinking ? "Connecting..." : "Link X Account"}
+                      <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+                      <span>{isLinking ? "Connecting..." : "Link X Account"}</span>
                     </Button>
                   </div>
                 )}
@@ -866,9 +867,10 @@ function ProfileContent() {
                         <div className="pt-2">
                           <Link
                             href="/whitelist"
-                            className="inline-flex items-center rounded-xl border border-amber-400/40 bg-amber-400 text-black px-4 py-2 text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors shadow-brutal-sm font-medium"
+                            className="group relative overflow-hidden inline-flex items-center rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black px-4 py-2 text-xs sm:text-sm font-black uppercase tracking-wider shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_28px_rgba(245,158,11,0.55)] hover:scale-[1.02] active:scale-[0.98] transition-all"
                           >
-                            Go to Whitelist Portal
+                            <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+                            <span>Go to Whitelist Portal</span>
                           </Link>
                         </div>
                       </div>
