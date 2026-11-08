@@ -407,5 +407,59 @@ describe("X OAuth 2.0 API Routes", () => {
       expect(data.error).toBe("X_ACCOUNT_ALREADY_LINKED");
       expect(res.headers.get("Set-Cookie")).toContain("Max-Age=0");
     });
+
+    it("redirects browser requests (Accept: text/html) to /social/x/error on XOAuthError (already linked)", async () => {
+      const { payload, cookieHeader } = await createValidCookieHeader();
+
+      mockAuthenticateRequest.mockResolvedValueOnce({
+        sessionId: "sess-1",
+        userId: "user-1",
+        address: "0x123",
+      });
+
+      mockLinkXAccountWithCode.mockRejectedValueOnce(
+        new XOAuthError(
+          "X_ACCOUNT_ALREADY_LINKED",
+          "This X account is already linked to another ChimpHood profile.",
+          409,
+        ),
+      );
+
+      const req = new Request(
+        `http://localhost:3000/api/social/x/callback?code=mock-code&state=${payload.state}`,
+        {
+          headers: {
+            Cookie: cookieHeader,
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          },
+        },
+      );
+
+      const res = await callbackGET(req);
+      expect(res.status).toBe(302);
+      const location = res.headers.get("Location");
+      expect(location).toContain("/social/x/error");
+      expect(location).toContain("error=X_ACCOUNT_ALREADY_LINKED");
+      expect(location).toContain("message=This+X+account+is+already+linked+to+another+ChimpHood+profile.");
+      expect(res.headers.get("Set-Cookie")).toContain("Max-Age=0");
+    });
+
+    it("redirects browser navigation (sec-fetch-dest: document) to /social/x/error on provider error", async () => {
+      const req = new Request(
+        "http://localhost:3000/api/social/x/callback?error=access_denied&error_description=The+user+denied+access",
+        {
+          headers: {
+            "sec-fetch-dest": "document",
+          },
+        },
+      );
+      const res = await callbackGET(req);
+      expect(res.status).toBe(302);
+      const location = res.headers.get("Location");
+      expect(location).toContain("/social/x/error");
+      expect(location).toContain("error=X_OAUTH_PROVIDER_ERROR");
+      expect(location).toContain("message=The+user+denied+access");
+      expect(res.headers.get("Set-Cookie")).toContain("Max-Age=0");
+    });
   });
 });

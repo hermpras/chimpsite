@@ -123,6 +123,25 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders dedicated conflict error banner when redirected with x_error=X_ACCOUNT_ALREADY_LINKED", () => {
+    mockSearchParams = new URLSearchParams("x_error=X_ACCOUNT_ALREADY_LINKED");
+
+    render(
+      <Providers>
+        <ProfilePage />
+      </Providers>,
+    );
+
+    const banner = screen.getByTestId("x-link-error-banner");
+    expect(banner).toBeInTheDocument();
+    expect(screen.getByText("X Authentication Failed")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This X account is already linked to another ChimpHood profile. Each X account can only be linked to a single wallet.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("disables Link X button and guides user to authenticate wallet first when unauthenticated", () => {
     mockUseSiweAuth.mockReturnValue({
       status: "unauthenticated",
