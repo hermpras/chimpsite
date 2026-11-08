@@ -1,6 +1,6 @@
 "use client";
 
-import { Wallet, AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { useConnectors } from "wagmi";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import { Button } from "@/components/ui/Button";
@@ -34,38 +34,33 @@ export function WalletConnectCard() {
   return (
     <Card className="rounded-2xl border border-[#163B44] bg-[#0B2026]/90 p-4 sm:p-5 shadow-sm">
       <CardHeader className="mb-3 space-y-0.5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#34B7DD]/10 text-[#34B7DD] border border-[#34B7DD]/30">
-            <Wallet className="h-4 w-4" />
-          </div>
-          <div>
-            <CardTitle className="font-display text-lg uppercase tracking-wider text-[#F8F7F4]">Web3 Wallet</CardTitle>
-            <CardDescription className="text-[11px] text-[#8AA8B2]">Gasless off-chain signature verification on Elysium L2</CardDescription>
-          </div>
+        <div>
+          <CardTitle className="font-display text-lg uppercase tracking-wider text-[#F8F7F4]">Web3 Wallet</CardTitle>
+          <CardDescription className="text-xs sm:text-sm text-[#8AA8B2] mt-0.5">Gasless off-chain signature verification on Elysium L2</CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 p-0">
         {status === "checking" && (
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22] p-3 text-xs text-[#8AA8B2]">
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22] p-3 text-xs sm:text-sm text-[#8AA8B2]">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-[#34B7DD]" />
             <span>Checking session…</span>
           </div>
         )}
 
         {status === "authenticated" && sessionAddress && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[#163B44] bg-[#051D22] p-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5">
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-[#F8F7F4] text-sm truncate">
+                  <span className="font-mono font-bold text-[#F8F7F4] text-sm sm:text-base truncate" title={sessionAddress}>
                     {shortenAddress(sessionAddress)}
                   </span>
-                  <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950/60 border border-emerald-500/40 px-1.5 py-0.2 rounded font-semibold">
+                  <span className="text-xs font-mono text-emerald-300 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded font-semibold">
                     Signed in
                   </span>
                 </div>
-                <p className="font-mono text-[11px] text-[#8AA8B2] truncate">
+                <p className="font-mono text-xs sm:text-[13px] text-[#8AA8B2] truncate mt-0.5">
                   {sessionAddress}
                 </p>
               </div>
@@ -74,7 +69,7 @@ export function WalletConnectCard() {
               variant="outline"
               size="sm"
               onClick={() => void logout()}
-              className="rounded-lg text-xs font-medium border-[#163B44] bg-[#102B33] hover:bg-[#163B44] hover:text-white text-[#DBF2F9] shrink-0 self-start sm:self-auto cursor-pointer"
+              className="rounded-lg text-xs sm:text-sm font-semibold border-[#163B44] bg-[#102B33] hover:bg-[#163B44] hover:text-white text-[#DBF2F9] shrink-0 self-start sm:self-auto cursor-pointer"
             >
               Sign out
             </Button>
@@ -84,8 +79,8 @@ export function WalletConnectCard() {
         {status === "wallet-only" && walletAddress && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[#163B44] bg-[#051D22] p-3">
             <div>
-              <p className="text-xs font-bold text-[#DBF2F9]">Wallet connected</p>
-              <p className="font-mono text-xs text-[#34B7DD] font-bold">
+              <p className="text-xs sm:text-sm font-bold text-[#DBF2F9]">Wallet connected</p>
+              <p className="font-mono text-xs sm:text-sm text-[#34B7DD] font-bold">
                 {shortenAddress(walletAddress)}
               </p>
             </div>
@@ -93,7 +88,7 @@ export function WalletConnectCard() {
               variant="primary"
               size="sm"
               onClick={() => void login()}
-              className="rounded-lg text-xs font-semibold uppercase tracking-wider bg-[#34B7DD] text-[#04181C] hover:bg-[#6FCDE8] shrink-0 self-start sm:self-auto cursor-pointer shadow-[0_0_15px_rgba(52,183,221,0.25)]"
+              className="rounded-lg text-xs sm:text-sm font-semibold uppercase tracking-wider bg-[#34B7DD] text-[#04181C] hover:bg-[#6FCDE8] shrink-0 self-start sm:self-auto cursor-pointer shadow-[0_0_15px_rgba(52,183,221,0.25)]"
             >
               Sign In with Ethereum
             </Button>
@@ -106,8 +101,8 @@ export function WalletConnectCard() {
             <div className="space-y-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#163B44] bg-[#051D22] p-3">
                 <div>
-                  <p className="text-xs font-bold text-[#DBF2F9]">Status: Not Connected</p>
-                  <p className="text-[11px] text-[#8AA8B2]">Connect wallet to sign in.</p>
+                  <p className="text-xs sm:text-sm font-bold text-[#DBF2F9]">Status: Not Connected</p>
+                  <p className="text-xs sm:text-[13px] text-[#8AA8B2]">Connect wallet to sign in.</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -116,7 +111,7 @@ export function WalletConnectCard() {
                     key={connector.uid}
                     variant="outline"
                     size="sm"
-                    className="flex-1 min-w-[120px] justify-center gap-2 py-2 rounded-lg border-[#163B44] bg-[#102B33]/80 hover:bg-[#163B44] hover:border-[#34B7DD]/60 text-xs text-[#DBF2F9] cursor-pointer"
+                    className="flex-1 min-w-[120px] justify-center gap-2 py-2 rounded-lg border-[#163B44] bg-[#102B33]/80 hover:bg-[#163B44] hover:border-[#34B7DD]/60 text-xs sm:text-sm text-[#DBF2F9] cursor-pointer"
                     onClick={() => void login(connector)}
                   >
                     <WalletIcon
@@ -124,11 +119,11 @@ export function WalletConnectCard() {
                       iconUrl={connector.icon}
                       className="h-4 w-4"
                     />
-                    <span className="font-semibold text-xs truncate">Connect {connector.name}</span>
+                    <span className="font-semibold text-xs sm:text-sm truncate">Connect {connector.name}</span>
                   </Button>
                 ))}
                 {connectors.length === 0 && (
-                  <p className="text-center text-xs text-[#8AA8B2] w-full py-1">
+                  <p className="text-center text-xs sm:text-sm text-[#8AA8B2] w-full py-1">
                     No wallet detected. Install MetaMask or another EVM wallet.
                   </p>
                 )}
@@ -137,7 +132,7 @@ export function WalletConnectCard() {
           )}
 
         {status === "signing" && (
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22] p-3 text-xs text-[#DBF2F9]">
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22] p-3 text-xs sm:text-sm text-[#DBF2F9]">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-[#34B7DD]" />
             <span>{busyMessage ?? "Working…"}</span>
           </div>

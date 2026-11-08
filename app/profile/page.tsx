@@ -3,16 +3,11 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import {
-  User,
-  Shield,
   AlertTriangle,
-  Sparkles,
   CheckCircle2,
-  XCircle,
   Clock,
   AlertCircle,
   Info,
-  Gift,
 } from "lucide-react";
 import * as navigation from "next/navigation";
 import { XLogo } from "@/components/icons/XLogo";
@@ -149,7 +144,7 @@ function getWhitelistSummaryBadge(
   }
   if (!status) {
     return (
-      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-[11px]">
+      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">
         WL Status: Loading...
       </Badge>
     );
@@ -159,25 +154,25 @@ function getWhitelistSummaryBadge(
       return (
         <Badge
           variant="default"
-          className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-[11px] uppercase tracking-wide"
+          className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase tracking-wide"
         >
-          WL Status: Guaranteed Slot #{status.slotNumber}
+          {`WL Status: Guaranteed Slot #${status.slotNumber}`}
         </Badge>
       );
     case "FCFS_REGISTERED":
       return (
         <Badge
           variant="default"
-          className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-[11px]"
+          className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs"
         >
-          WL Status: FCFS Directory #{status.queueNumber}
+          {`WL Status: FCFS Directory #${status.queueNumber}`}
         </Badge>
       );
     case "REVOKED":
       return (
         <Badge
           variant="outline"
-          className="border-rose-500/40 bg-rose-950/60 text-rose-300 font-bold text-[11px]"
+          className="border-rose-500/40 bg-rose-950/60 text-rose-300 font-bold text-xs"
         >
           WL Status: REVOKED
         </Badge>
@@ -185,7 +180,7 @@ function getWhitelistSummaryBadge(
     case "NONE":
     default:
       return (
-        <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-[11px]">
+        <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">
           WL Status: Not Registered
         </Badge>
       );
@@ -478,6 +473,7 @@ function ProfileContent() {
               <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-wider text-white">
                 {displayName}
               </h1>
+              {getWhitelistSummaryBadge(wlData?.status, status === "authenticated")}
             </div>
             <p className="text-xs sm:text-sm text-zinc-400">
               One account for your X account and wallets; allowlists, trait drops, and gear follow it.
@@ -546,13 +542,12 @@ function ProfileContent() {
               aria-selected={activeTab === "overview"}
               tabIndex={activeTab === "overview" ? 0 : -1}
               onClick={() => handleSelectTab("overview")}
-              className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
+              className={`flex items-center border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "overview"
                   ? "border-amber-400 text-amber-400"
                   : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
-              <User className="h-4 w-4" />
               <span>Overview</span>
             </button>
             <button
@@ -563,13 +558,12 @@ function ProfileContent() {
               aria-selected={activeTab === "collection"}
               tabIndex={activeTab === "collection" ? 0 : -1}
               onClick={() => handleSelectTab("collection")}
-              className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
+              className={`flex items-center border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "collection"
                   ? "border-amber-400 text-amber-400"
                   : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
-              <Sparkles className="h-4 w-4" />
               <span>Collection</span>
             </button>
             <button
@@ -580,13 +574,12 @@ function ProfileContent() {
               aria-selected={activeTab === "gifts"}
               tabIndex={activeTab === "gifts" ? 0 : -1}
               onClick={() => handleSelectTab("gifts")}
-              className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
+              className={`flex items-center border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "gifts"
                   ? "border-amber-400 text-amber-400"
                   : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
-              <Gift className="h-4 w-4" />
               <span>Gifts</span>
             </button>
           </div>
@@ -606,14 +599,9 @@ function ProfileContent() {
             {/* X (Twitter) Account Section */}
             <Card className="rounded-2xl border-[#163B44] bg-[#0B2026] shadow-brutal-sm p-4 sm:p-5">
               <CardHeader className="mb-3 space-y-0.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-400 border border-cyan-400/30">
-                    <XLogo className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <CardTitle className="font-display text-lg uppercase tracking-wider text-white">X (Twitter) Identity</CardTitle>
-                    <CardDescription className="text-[11px] text-zinc-400">Social account verification status</CardDescription>
-                  </div>
+                <div>
+                  <CardTitle className="font-display text-lg uppercase tracking-wider text-white">X (Twitter) Identity</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm text-[#8AA8B2] mt-0.5">Social account verification status</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3 p-0">
@@ -640,15 +628,15 @@ function ProfileContent() {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-white text-sm truncate">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white text-sm sm:text-base truncate">
                             @{currentXUsername}
                           </span>
-                          <span className="text-[10px] text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 px-1.5 py-0.2 rounded font-semibold">
+                          <span className="text-xs text-cyan-300 bg-cyan-950/60 border border-cyan-500/40 px-2 py-0.5 rounded font-semibold">
                             Connected
                           </span>
                         </div>
-                        <p className="text-[11px] text-zinc-500">
+                        <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">
                           Status: Connected
                         </p>
                       </div>
@@ -657,16 +645,16 @@ function ProfileContent() {
                       variant="outline"
                       size="sm"
                       disabled
-                      className="rounded-lg text-xs border-cyan-500/30 bg-cyan-950/40 text-cyan-300 shrink-0 self-start sm:self-auto cursor-default opacity-80"
+                      className="rounded-lg text-xs sm:text-sm font-semibold border-cyan-500/30 bg-cyan-950/40 text-cyan-300 shrink-0 self-start sm:self-auto cursor-default opacity-80"
                     >
                       X Account Connected
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3.5">
                     <div>
-                      <p className="text-xs font-bold text-zinc-300">Status: Not Connected</p>
-                      <p className="text-[11px] text-zinc-500">
+                      <p className="text-sm font-bold text-zinc-300">Status: Not Connected</p>
+                      <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
                         {currentXUsername ? `@${currentXUsername}` : "No X account linked"}
                       </p>
                     </div>
@@ -674,14 +662,14 @@ function ProfileContent() {
                       size="sm"
                       disabled={isLinking || status !== "authenticated"}
                       onClick={handleLinkX}
-                      className="rounded-lg text-xs font-display uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 font-medium shrink-0 self-start sm:self-auto cursor-pointer shadow-brutal-sm"
+                      className="rounded-lg text-xs sm:text-sm font-display uppercase tracking-wider bg-amber-400 text-black hover:bg-amber-300 font-bold shrink-0 self-start sm:self-auto cursor-pointer shadow-brutal-sm"
                     >
                       {isLinking ? "Connecting..." : "Link X Account"}
                     </Button>
                   </div>
                 )}
                 {status !== "authenticated" && (
-                  <p className="text-center text-[11px] text-zinc-500 pt-0.5">
+                  <p className="text-center text-xs sm:text-sm text-zinc-400 pt-0.5">
                     Connect and authenticate your Web3 wallet first to enable X linking.
                   </p>
                 )}
@@ -692,56 +680,51 @@ function ProfileContent() {
             <Card className="rounded-2xl border-[#163B44] bg-[#0B2026] shadow-brutal-sm md:col-span-2">
               <CardHeader>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-purple-400/10 p-2.5 text-purple-400 border border-purple-400/30">
-                      <Shield className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <CardTitle className="font-display text-xl uppercase tracking-wider text-white">Community Tier & Whitelist Status</CardTitle>
-                      <CardDescription className="text-xs text-zinc-400">
-                        Membership tier and Whitelist allocation associated with your account
-                      </CardDescription>
-                    </div>
+                  <div>
+                    <CardTitle className="font-display text-xl uppercase tracking-wider text-white">Community Tier & Whitelist Status</CardTitle>
+                    <CardDescription className="text-sm text-[#8AA8B2] mt-1">
+                      Membership tier and Whitelist allocation associated with your account
+                    </CardDescription>
                   </div>
                   <div>
                     {status !== "authenticated" ? (
-                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">Tier Unassigned</Badge>
+                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-300 text-xs sm:text-sm font-semibold">Tier Unassigned</Badge>
                     ) : wlData?.status?.phase === "SLOT_ALLOCATED" ? (
                       <Badge
                         variant="default"
-                        className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase"
+                        className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs sm:text-sm uppercase"
                       >
                         WL Slot #{wlData.status.slotNumber}
                       </Badge>
                     ) : wlData?.status?.phase === "FCFS_REGISTERED" ? (
                       <Badge
                         variant="default"
-                        className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs"
+                        className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs sm:text-sm"
                       >
                         FCFS Directory #{wlData.status.queueNumber}
                       </Badge>
                     ) : wlData?.status?.phase === "REVOKED" ? (
                       <Badge
                         variant="outline"
-                        className="border-rose-500/40 bg-rose-950/60 text-rose-300 font-bold text-xs"
+                        className="border-rose-500/40 bg-rose-950/60 text-rose-300 font-bold text-xs sm:text-sm"
                       >
                         REVOKED
                       </Badge>
                     ) : wlData?.status?.phase === "NONE" ? (
-                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">
+                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-300 text-xs sm:text-sm font-semibold">
                         Not Registered
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">Tier Unassigned</Badge>
+                      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-300 text-xs sm:text-sm font-semibold">Tier Unassigned</Badge>
                     )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {status !== "authenticated" ? (
-                  <div className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-center text-sm text-zinc-400">
-                    <p className="font-bold text-zinc-200">Wallet Not Authenticated</p>
-                    <p className="mt-1 text-xs text-zinc-500">
+                  <div className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-center text-sm sm:text-base text-zinc-300">
+                    <p className="font-bold text-white text-base sm:text-lg">Wallet Not Authenticated</p>
+                    <p className="mt-1 text-xs sm:text-sm text-[#8AA8B2]">
                       Sign in with your Web3 wallet above to view your Whitelist allocation status, trait collection progress, and campaign tasks.
                     </p>
                   </div>
@@ -750,7 +733,6 @@ function ProfileContent() {
                     {/* 1. SLOT_ALLOCATED (GTD aktif) */}
                     {wlData?.status?.phase === "SLOT_ALLOCATED" && (() => {
                       const review = getGtdReviewDetails(wlData.status.reviewStatus);
-                      const ReviewIcon = review.icon;
                       return (
                         <div
                           className="space-y-3 rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-4 text-emerald-200"
@@ -759,19 +741,19 @@ function ProfileContent() {
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                                <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-zinc-400">
                                   Allocation:
                                 </span>
-                                <span className="text-sm font-bold text-emerald-300">
+                                <span className="text-sm sm:text-base font-bold text-emerald-300">
                                   Guaranteed Whitelist Slot #{wlData.status.slotNumber} (Active)
                                 </span>
                               </div>
-                              <p className="text-xs text-zinc-400">
+                              <p className="text-xs sm:text-sm text-zinc-300">
                                 Your Guaranteed Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected.
                               </p>
                             </div>
                             {wlData.status.allocatedAt && (
-                              <span className="text-[11px] text-zinc-500 font-mono">
+                              <span className="text-xs sm:text-sm text-zinc-400 font-mono">
                                 Secured on {formatRegistrationDate(wlData.status.allocatedAt)}
                               </span>
                             )}
@@ -781,18 +763,17 @@ function ProfileContent() {
                           <div className="border-t border-emerald-500/20 pt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                                <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-zinc-400">
                                   Review Status:
                                 </span>
                                 <Badge
                                   variant={review.badgeVariant}
-                                  className={`text-xs ${review.colorClass}`}
+                                  className={`text-xs sm:text-sm font-semibold ${review.colorClass}`}
                                 >
-                                  <ReviewIcon className="mr-1 h-3 w-3 shrink-0" />
                                   {review.label}
                                 </Badge>
                               </div>
-                              <p className="text-xs text-zinc-400">{review.subtext}</p>
+                              <p className="text-xs sm:text-sm text-zinc-300">{review.subtext}</p>
                             </div>
                           </div>
                         </div>
@@ -805,14 +786,14 @@ function ProfileContent() {
                         className="space-y-3 rounded-xl border border-cyan-500/40 bg-cyan-950/40 p-4"
                         data-testid="fcfs-status-card"
                       >
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-300">
+                        <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-zinc-200">
                           <span className="font-bold text-white">
                             FCFS Directory Participant #{wlData.status.queueNumber}
                           </span>
                           {wlData.status.joinedAt && (
                             <>
                               <span className="text-zinc-600">•</span>
-                              <span className="text-zinc-400">
+                              <span className="text-zinc-400 text-xs sm:text-sm">
                                 Registered on {formatRegistrationDate(wlData.status.joinedAt)}
                               </span>
                             </>
@@ -820,9 +801,8 @@ function ProfileContent() {
                         </div>
 
                         {wlData.status.isFullyQualified ? (
-                          <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/50 p-3 text-xs text-emerald-200">
-                            <div className="flex items-center gap-2 font-bold text-emerald-300">
-                              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                          <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/50 p-3.5 text-xs sm:text-sm text-emerald-200">
+                            <div className="font-bold text-emerald-300 text-sm sm:text-base">
                               Eligible for OpenSea FCFS Allowlist
                             </div>
                             <p className="mt-1 text-zinc-300">
@@ -830,9 +810,8 @@ function ProfileContent() {
                             </p>
                           </div>
                         ) : (
-                          <div className="rounded-lg border border-amber-500/40 bg-amber-950/50 p-3 text-xs text-amber-200">
-                            <div className="flex items-center gap-2 font-bold text-amber-300">
-                              <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
+                          <div className="rounded-lg border border-amber-500/40 bg-amber-950/50 p-3.5 text-xs sm:text-sm text-amber-200">
+                            <div className="font-bold text-amber-300 text-sm sm:text-base">
                               Action Required — Incomplete Requirements
                             </div>
                             <p className="mt-1 text-zinc-300">
@@ -841,9 +820,9 @@ function ProfileContent() {
                           </div>
                         )}
 
-                        <div className="rounded-lg border border-[#163B44] bg-[#0B2026]/80 p-3 text-xs text-zinc-400">
-                          <p className="font-medium text-zinc-300">FCFS Directory Notice</p>
-                          <p className="mt-0.5 text-zinc-500">
+                        <div className="rounded-lg border border-[#163B44] bg-[#0B2026]/80 p-3.5 text-xs sm:text-sm text-zinc-400">
+                          <p className="font-semibold text-zinc-200 text-sm">FCFS Directory Notice</p>
+                          <p className="mt-1 text-[#8AA8B2]">
                             Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed (GTD) slot or an allocation. GTD slots are never automatically filled.
                           </p>
                         </div>
@@ -853,22 +832,21 @@ function ProfileContent() {
                     {/* 3. REVOKED Full Disqualification Alert (DEC-022) */}
                     {wlData?.status?.phase === "REVOKED" && (
                       <div
-                        className="space-y-3 rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-xs text-rose-200"
+                        className="space-y-3 rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-xs sm:text-sm text-rose-200"
                         data-testid="revoked-status-card"
                       >
-                        <div className="flex items-center gap-2 text-sm font-bold text-rose-300">
-                          <XCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                        <div className="text-base sm:text-lg font-bold text-rose-300">
                           Whitelist Status Revoked
                         </div>
-                        <p className="text-rose-200 font-medium">
+                        <p className="text-rose-200 font-medium text-sm sm:text-base">
                           {wlData.status.missingRequirements?.[0] ||
                             "Whitelist qualification has been revoked by an administrator."}
                         </p>
-                        <div className="border-t border-rose-500/20 pt-2 text-zinc-400 space-y-1">
+                        <div className="border-t border-rose-500/20 pt-2 text-zinc-400 space-y-1 text-xs sm:text-sm">
                           <p>
                             In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program.
                           </p>
-                          <p className="text-rose-400">
+                          <p className="text-rose-400 font-semibold">
                             Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the OpenSea FCFS allowlist export.
                           </p>
                         </div>
@@ -878,17 +856,17 @@ function ProfileContent() {
                     {/* 4. NONE (Not Registered in FCFS Directory) */}
                     {(!wlData?.status || wlData?.status?.phase === "NONE") && (
                       <div
-                        className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-4 text-xs text-zinc-400 space-y-2"
+                        className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-sm sm:text-base text-zinc-300 space-y-2.5"
                         data-testid="none-status-card"
                       >
-                        <p className="font-bold text-white">Not Registered in FCFS Directory</p>
-                        <p className="text-zinc-400 leading-relaxed">
+                        <p className="font-bold text-white text-base sm:text-lg">Not Registered in FCFS Directory</p>
+                        <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
                           You are not currently registered in the FCFS Directory. Connect your EVM wallet and X (Twitter) account to automatically register in the FCFS Directory, and complete the 5 trait categories and mandatory tasks to qualify for the OpenSea FCFS allowlist.
                         </p>
-                        <div className="pt-1">
+                        <div className="pt-2">
                           <Link
                             href="/whitelist"
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400 text-black px-3.5 py-1.5 text-xs font-display uppercase tracking-wider hover:bg-amber-300 transition-colors shadow-brutal-sm font-medium"
+                            className="inline-flex items-center rounded-xl border border-amber-400/40 bg-amber-400 text-black px-4 py-2 text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors shadow-brutal-sm font-medium"
                           >
                             Go to Whitelist Portal
                           </Link>
@@ -902,21 +880,21 @@ function ProfileContent() {
                         className="space-y-4 border-t border-[#163B44] pt-4"
                         data-testid="whitelist-progress-section"
                       >
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                        <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-zinc-200">
                           Whitelist Qualification Progress
                         </h3>
 
                         {/* 5 Trait Categories Checklist */}
                         <div>
-                          <div className="mb-2 flex items-center justify-between text-xs">
-                            <span className="text-zinc-400">
+                          <div className="mb-2.5 flex items-center justify-between text-sm sm:text-base">
+                            <span className="text-zinc-300 font-medium">
                               Required Trait Categories (5 of 5)
                             </span>
                             <span className="font-bold text-amber-400">
                               {heldCategoriesCount} / 5 Collected
                             </span>
                           </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                          <div className="grid grid-cols-2 gap-2.5 text-sm sm:text-base sm:grid-cols-5">
                             {TRAIT_CATEGORIES.map((cat) => {
                               const isHeld = heldCategoriesSet.has(cat);
                               const theme = CATEGORY_THEMES[cat];
@@ -924,19 +902,12 @@ function ProfileContent() {
                                 <div
                                   key={cat}
                                   data-testid={`profile-trait-${cat.toLowerCase()}`}
-                                  className={`flex items-center gap-1.5 rounded-xl border p-2.5 transition-colors ${
+                                  className={`flex items-center justify-center rounded-xl border py-2.5 px-3 text-center transition-colors ${
                                     isHeld
                                       ? theme?.heldClass || "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-bold"
                                       : theme?.unheldClass || "border-[#163B44] bg-[#051D22]/60 text-zinc-600 grayscale opacity-40"
                                   }`}
                                 >
-                                  {isHeld ? (
-                                    <CheckCircle2
-                                      className={`h-3.5 w-3.5 shrink-0 ${theme?.checkColor || "text-emerald-400"}`}
-                                    />
-                                  ) : (
-                                    <XCircle className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
-                                  )}
                                   <span className="font-bold">{cat}</span>
                                 </div>
                               );
@@ -945,16 +916,16 @@ function ProfileContent() {
                         </div>
 
                         {/* Mandatory Campaign Tasks Progress */}
-                        <div className="flex flex-col gap-2 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3 sm:flex-row sm:items-center sm:justify-between text-xs">
+                        <div className="flex flex-col gap-2.5 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-4 sm:flex-row sm:items-center sm:justify-between text-sm sm:text-base">
                           <div>
-                            <span className="font-bold text-zinc-200">Mandatory Campaign Tasks</span>
-                            <p className="text-[11px] text-zinc-500">
+                            <span className="font-bold text-zinc-100 text-sm sm:text-base">Mandatory Campaign Tasks</span>
+                            <p className="text-xs sm:text-sm text-[#8AA8B2] mt-0.5">
                               Complete all mandatory campaign quests to maintain whitelist eligibility
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2.5">
                             <span
-                              className={`font-mono font-bold ${
+                              className={`font-mono font-bold text-sm sm:text-base ${
                                 mandatoryTasksCompleted >= mandatoryTasksTotal && mandatoryTasksTotal > 0
                                   ? "text-emerald-400"
                                   : "text-amber-400"
@@ -965,14 +936,14 @@ function ProfileContent() {
                             {mandatoryTasksCompleted >= mandatoryTasksTotal && mandatoryTasksTotal > 0 ? (
                               <Badge
                                 variant="default"
-                                className="border-emerald-500/40 bg-emerald-950/50 text-emerald-300 text-[10px] font-bold"
+                                className="border-emerald-500/40 bg-emerald-950/50 text-emerald-300 text-xs font-bold"
                               >
                                 Complete
                               </Badge>
                             ) : (
                               <Badge
                                 variant="warning"
-                                className="border-amber-500/40 bg-amber-950/50 text-amber-300 text-[10px] font-bold"
+                                className="border-amber-500/40 bg-amber-950/50 text-amber-300 text-xs font-bold"
                               >
                                 Incomplete
                               </Badge>
@@ -985,9 +956,9 @@ function ProfileContent() {
                           wlData.status.missingRequirements.length > 0 &&
                           !wlData.status.isFullyQualified &&
                           wlData.status.phase !== "SLOT_ALLOCATED" && (
-                            <div className="space-y-1 rounded-xl border border-amber-500/40 bg-amber-950/40 p-3 text-xs text-amber-200">
-                              <p className="font-bold text-amber-300">Missing Requirements:</p>
-                              <ul className="list-inside list-disc space-y-0.5 text-amber-200/90 text-[11px]">
+                            <div className="space-y-1.5 rounded-xl border border-amber-500/40 bg-amber-950/40 p-4 text-sm text-amber-200">
+                              <p className="font-bold text-amber-300 text-sm sm:text-base">Missing Requirements:</p>
+                              <ul className="list-inside list-disc space-y-1 text-amber-200/90 text-xs sm:text-sm leading-relaxed">
                                 {wlData.status.missingRequirements.map((req, i) => (
                                   <li key={i}>{req}</li>
                                 ))}
@@ -1014,16 +985,11 @@ function ProfileContent() {
           <Card className="rounded-2xl border-[#163B44] bg-[#0B2026] shadow-brutal-sm w-full">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-amber-400/10 p-2.5 text-amber-400 border border-amber-400/30">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="font-display text-xl uppercase tracking-wider text-white">Collection & Inventory</CardTitle>
-                    <CardDescription className="text-xs text-zinc-400">
-                      Collected Elychimp Traits, items, and ecosystem collectibles
-                    </CardDescription>
-                  </div>
+                <div>
+                  <CardTitle className="font-display text-xl uppercase tracking-wider text-white">Collection &amp; Inventory</CardTitle>
+                  <CardDescription className="text-sm text-[#8AA8B2] mt-1">
+                    Collected Elychimp Traits, items, and ecosystem collectibles
+                  </CardDescription>
                 </div>
                 {isInventoryLoading ? (
                   <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">Loading...</Badge>
@@ -1065,7 +1031,7 @@ function ProfileContent() {
                 <div className="space-y-6">
                   {/* 5-Category Trait Collection Overview */}
                   <div
-                    className="space-y-3 pb-6 border-b border-[#163B44]"
+                    className="space-y-3 pb-6 border-b border-zinc-800"
                     data-testid="trait-collection-summary"
                   >
                     <div className="mb-3 flex items-center justify-between text-xs">
@@ -1120,7 +1086,7 @@ function ProfileContent() {
                 <div data-testid="inventory-empty" className="space-y-6">
                   {/* 5-Category Trait Collection Overview */}
                   <div
-                    className="space-y-3 pb-6 border-b border-[#163B44]"
+                    className="space-y-3 pb-6 border-b border-zinc-800"
                     data-testid="trait-collection-summary"
                   >
                     <div className="mb-3 flex items-center justify-between text-xs">
@@ -1207,22 +1173,17 @@ function ProfileContent() {
           ) : (
             <Card className="rounded-2xl border-[#163B44] bg-[#0B2026] shadow-brutal-sm w-full" data-testid="gifts-unauthenticated">
               <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-teal-400/10 p-2.5 text-teal-400 border border-teal-400/30">
-                    <Gift className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="font-display text-xl uppercase tracking-wider text-white">Gifts & Peer Transfers</CardTitle>
-                    <CardDescription className="text-xs text-zinc-400">
-                      Review incoming trait gifts and manage your outgoing transfers
-                    </CardDescription>
-                  </div>
+                <div>
+                  <CardTitle className="font-display text-xl uppercase tracking-wider text-white">Gifts &amp; Peer Transfers</CardTitle>
+                  <CardDescription className="text-sm text-[#8AA8B2] mt-1">
+                    Review incoming trait gifts and manage your outgoing transfers
+                  </CardDescription>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-center text-sm text-zinc-400">
-                  <p className="font-bold text-zinc-200">Wallet Not Authenticated</p>
-                  <p className="mt-1 text-xs text-zinc-500">
+                <div className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-center text-sm sm:text-base text-zinc-300">
+                  <p className="font-bold text-white text-base sm:text-lg">Wallet Not Authenticated</p>
+                  <p className="mt-1 text-xs sm:text-sm text-[#8AA8B2]">
                     Sign in with your Web3 wallet above to view and manage trait gifts.
                   </p>
                 </div>
