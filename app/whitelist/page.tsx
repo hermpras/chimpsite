@@ -167,7 +167,9 @@ export default function WhitelistPage() {
           setXConnectError(
             err === "access_denied"
               ? "Authorization was denied on X. Please try connecting again."
-              : `Failed to link X account (${err}). Please try again.`,
+              : err === "X_ACCOUNT_ALREADY_LINKED"
+                ? "This X account is already linked to another ChimpHood profile. Each X account can only be linked to a single wallet."
+                : `Failed to link X account (${err}). Please try again.`,
           );
         }
       } catch {
@@ -866,13 +868,36 @@ export default function WhitelistPage() {
             ? 4
             : 5;
 
+  // Step accessibility check for sequential progression & backward navigation
+  const isStepAccessible = useCallback(
+    (stepNum: number): boolean => {
+      if (isRevoked) return true;
+      // Step 1 is always accessible
+      if (stepNum === 1) return true;
+      // Step 2 requires wallet to be connected
+      if (stepNum === 2) return isWalletConnected;
+      // Step 3 requires wallet and linked X account
+      if (stepNum === 3) return isWalletConnected && isXLinked;
+      // Steps 4 and 5 require wallet, linked X, and all mandatory tasks completed
+      if (stepNum === 4 || stepNum === 5) {
+        return isWalletConnected && isXLinked && isTasksComplete;
+      }
+      return false;
+    },
+    [isRevoked, isWalletConnected, isXLinked, isTasksComplete],
+  );
+
+  // Determine if selectedStep is accessible; if not, ignore it so it falls back to calculatedStep
+  const isSelectedAccessible = selectedStep !== null && isStepAccessible(selectedStep);
+  const effectiveSelectedStep = isSelectedAccessible ? selectedStep : null;
+
   // Active step computation:
-  // 1. If explicit hash/step is targeted (e.g. #tasks from Drops page), honor it directly from frame 0.
+  // 1. If explicit hash/step is targeted and accessible, honor it directly.
   // 2. If session in progress and cached step is available, do not flash step 1 while background SIWE/status is resolving.
   // 3. Otherwise, use calculatedStep.
   const activeStepNumber =
-    selectedStep !== null
-      ? selectedStep
+    effectiveSelectedStep !== null
+      ? effectiveSelectedStep
       : (status === "checking" || (isWalletConnected && !statusResult)) && cachedActiveStep
         ? cachedActiveStep
         : calculatedStep;
@@ -887,12 +912,45 @@ export default function WhitelistPage() {
     }
   }, [calculatedStep, status, selectedStep]);
 
-  // Smooth scroll to target hash section if explicitly requested (e.g. #tasks)
+  // Guard URL hash: if hash points to a locked/inaccessible step, redirect to calculatedStep
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash === "#tasks") {
-      const el = document.getElementById("tasks");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (status !== "checking" && selectedStep !== null && !isStepAccessible(selectedStep)) {
+      setSelectedStep(null);
+      if (typeof window !== "undefined") {
+        const targetHash =
+          calculatedStep === 3
+            ? "#tasks"
+            : calculatedStep === 4
+              ? "#traits"
+              : calculatedStep === 5
+                ? "#status"
+                : calculatedStep === 2
+                  ? "#x"
+                  : "#wallet";
+        window.history.replaceState(null, "", targetHash);
+      }
+    }
+  }, [selectedStep, isStepAccessible, calculatedStep, status]);
+
+  // Smooth scroll to target hash section if explicitly requested (e.g. #tasks, #traits, #status)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const h = (window.location.hash || "").toLowerCase();
+      if (h === "#tasks" || h === "#task") {
+        const el = document.getElementById("tasks");
+        if (el && typeof el.scrollIntoView === "function") {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      } else if (h === "#traits" || h === "#trait") {
+        const el = document.getElementById("traits");
+        if (el && typeof el.scrollIntoView === "function") {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      } else if (h === "#status") {
+        const el = document.getElementById("status");
+        if (el && typeof el.scrollIntoView === "function") {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       }
     }
   }, [activeStepNumber]);
@@ -928,11 +986,24 @@ export default function WhitelistPage() {
                 { num: 5, label: "STATUS", done: isWhitelistSecured },
               ].map((step, idx) => {
                 const isActive = activeStepNumber === step.num;
+                const isAccessible = isStepAccessible(step.num);
+                const disabledTooltip = !isAccessible
+                  ? step.num === 2
+                    ? "Connect wallet first"
+                    : step.num === 3
+                      ? "Link X (Twitter) account first"
+                      : "Complete all mandatory tasks first"
+                  : undefined;
+
                 return (
                   <React.Fragment key={step.label}>
                     <button
                       type="button"
+                      disabled={!isAccessible}
+                      aria-disabled={!isAccessible}
+                      title={disabledTooltip}
                       onClick={() => {
+                        if (!isAccessible) return;
                         setSelectedStep(step.num);
                         const targetHash =
                           step.num === 3
@@ -948,21 +1019,25 @@ export default function WhitelistPage() {
                           window.history.replaceState(null, "", targetHash);
                         }
                       }}
-                      className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl border transition-all text-xs cursor-pointer hover:border-amber-400/80 ${
-                        step.done
-                          ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-medium"
-                          : isActive
-                            ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-medium shadow-[0_0_12px_rgba(251,191,36,0.2)]"
-                            : "border-[#163B44] bg-[#051D22] text-zinc-400 hover:text-white hover:border-cyan-500/50"
+                      className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl border transition-all text-xs ${
+                        !isAccessible
+                          ? "border-[#163B44]/40 bg-[#051D22]/40 text-zinc-600 cursor-not-allowed opacity-40 select-none"
+                          : step.done
+                            ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-medium cursor-pointer hover:border-emerald-400"
+                            : isActive
+                              ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-medium shadow-[0_0_12px_rgba(251,191,36,0.2)] cursor-pointer hover:border-amber-400/80"
+                              : "border-[#163B44] bg-[#051D22] text-zinc-400 cursor-pointer hover:text-white hover:border-cyan-500/50"
                       }`}
                     >
                       <span
                         className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
-                          step.done
-                            ? "bg-emerald-500 text-black font-bold"
-                            : isActive
-                              ? "bg-amber-400 text-black font-bold"
-                              : "bg-zinc-800 text-zinc-400"
+                          !isAccessible
+                            ? "bg-zinc-900 text-zinc-600"
+                            : step.done
+                              ? "bg-emerald-500 text-black font-bold"
+                              : isActive
+                                ? "bg-amber-400 text-black font-bold"
+                                : "bg-zinc-800 text-zinc-400"
                         }`}
                       >
                         {step.num}
@@ -1034,7 +1109,41 @@ export default function WhitelistPage() {
 
             {/* Connection Actions */}
             <div className="pt-2">
-              {status === "wallet-only" ? (
+              {isWalletConnected && status === "authenticated" ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-4 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2.5">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                      <div>
+                        <span className="font-bold text-white block text-sm">
+                          Wallet Already Connected
+                        </span>
+                        <span className="font-mono text-zinc-300 text-xs">
+                          {address ? shortenAddress(address) : "—"}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant="default" className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 text-xs font-bold">
+                      Verified
+                    </Badge>
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => {
+                      setSelectedStep(2);
+                      if (typeof window !== "undefined") {
+                        window.history.replaceState(null, "", "#x");
+                      }
+                    }}
+                    className="group relative overflow-hidden w-full rounded-xl border border-[#6FCDE8]/50 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] font-black uppercase tracking-wider py-3.5 text-sm sm:text-base text-[#04181C] shadow-[0_0_24px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_32px_rgba(52,183,221,0.65)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>Continue to Step 2 (X Sync)</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : status === "wallet-only" ? (
                 <div className="space-y-3">
                   <p className="text-xs sm:text-sm text-[#8AA8B2]">
                     Connected address: {address ? shortenAddress(address) : "—"}
@@ -1100,28 +1209,70 @@ export default function WhitelistPage() {
 
             {/* Direct Connect X Action */}
             <div className="pt-2 space-y-3">
-              {xConnectError && (
-                <div
-                  role="alert"
-                  className="rounded-xl border border-rose-500/40 bg-rose-950/50 p-3.5 text-xs sm:text-sm text-rose-300"
-                >
-                  <p className="font-semibold text-rose-200">Failed to connect X</p>
-                  <p className="text-xs sm:text-sm text-rose-400 mt-0.5">{xConnectError}</p>
-                </div>
-              )}
+              {isXLinked ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between rounded-xl border border-cyan-500/40 bg-cyan-950/30 p-4 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2.5">
+                      <CheckCircle2 className="h-5 w-5 text-cyan-400 shrink-0" />
+                      <div>
+                        <span className="font-bold text-white block text-sm">
+                          X Account Already Linked
+                        </span>
+                        <span className="font-mono text-cyan-200 text-xs font-semibold">
+                          {statusResult?.status?.details?.xUsername
+                            ? `@${statusResult.status.details.xUsername}`
+                            : xName
+                              ? `@${xName}`
+                              : "Connected"}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant="default" className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 text-xs font-bold">
+                      Connected
+                    </Badge>
+                  </div>
 
-              <Button
-                size="lg"
-                disabled={isConnectingX}
-                onClick={handleDirectConnectX}
-                className="group relative overflow-hidden w-full rounded-xl border border-white/60 bg-gradient-to-r from-white via-zinc-100 to-white text-black font-black uppercase tracking-wider py-3.5 text-sm sm:text-base shadow-[0_0_24px_rgba(255,255,255,0.25)] transition-all duration-300 hover:bg-zinc-200 hover:shadow-[0_0_32px_rgba(255,255,255,0.45)] hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center cursor-pointer"
-              >
-                {isConnectingX ? (
-                  <span>Connecting to X...</span>
-                ) : (
-                  <span>Connect X Account</span>
-                )}
-              </Button>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => {
+                      setSelectedStep(3);
+                      if (typeof window !== "undefined") {
+                        window.history.replaceState(null, "", "#tasks");
+                      }
+                    }}
+                    className="group relative overflow-hidden w-full rounded-xl border border-[#6FCDE8]/50 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] font-black uppercase tracking-wider py-3.5 text-sm sm:text-base text-[#04181C] shadow-[0_0_24px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_32px_rgba(52,183,221,0.65)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>Continue to Step 3 (Tasks)</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {xConnectError && (
+                    <div
+                      role="alert"
+                      className="rounded-xl border border-rose-500/40 bg-rose-950/50 p-3.5 text-xs sm:text-sm text-rose-300"
+                    >
+                      <p className="font-semibold text-rose-200">Failed to connect X</p>
+                      <p className="text-xs sm:text-sm text-rose-400 mt-0.5">{xConnectError}</p>
+                    </div>
+                  )}
+
+                  <Button
+                    size="lg"
+                    disabled={isConnectingX}
+                    onClick={handleDirectConnectX}
+                    className="group relative overflow-hidden w-full rounded-xl border border-white/60 bg-gradient-to-r from-white via-zinc-100 to-white text-black font-black uppercase tracking-wider py-3.5 text-sm sm:text-base shadow-[0_0_24px_rgba(255,255,255,0.25)] transition-all duration-300 hover:bg-zinc-200 hover:shadow-[0_0_32px_rgba(255,255,255,0.45)] hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center cursor-pointer"
+                  >
+                    {isConnectingX ? (
+                      <span>Connecting to X...</span>
+                    ) : (
+                      <span>Connect X Account</span>
+                    )}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -1583,7 +1734,7 @@ export default function WhitelistPage() {
             {/* ===================================================================
                 LEFT COLUMN: CHARACTER AND INVENTORY (5 Cols on LG)
             =================================================================== */}
-            <div className="lg:col-span-5 space-y-5">
+            <div id="traits" className="lg:col-span-5 space-y-5 scroll-mt-24">
               <div className="relative rounded-3xl border-2 border-gray-800 bg-gradient-to-b from-[#0B2026] via-[#0B2026] to-[#08090e] p-5 sm:p-6 shadow-[0_12px_40px_rgba(0,0,0,0.6)] space-y-5 overflow-hidden backdrop-blur-md">
                 {/* Luxury Foil Sheen Top Edge */}
                 <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/80 to-transparent" />
@@ -1755,7 +1906,7 @@ export default function WhitelistPage() {
                 RIGHT COLUMN: ACTIVE STEP PANEL (7 Cols on LG)
                 Compact information panel: Step 1-5
             =================================================================== */}
-            <div className="lg:col-span-7 space-y-5">
+            <div id="status" className="lg:col-span-7 space-y-5 scroll-mt-24">
               <div className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5">
                 <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
                   <div className="flex items-center gap-2">
