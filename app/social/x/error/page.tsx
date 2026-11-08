@@ -3,21 +3,10 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  ExternalLink,
-  HelpCircle,
-  Link2Off,
-  ShieldAlert,
-  User,
-  Wallet,
-} from "lucide-react";
+import { ArrowLeft, Link2Off, ShieldAlert } from "lucide-react";
 import { XLogo } from "@/components/icons/XLogo";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardContent } from "@/components/ui/Card";
 
 interface ErrorInfo {
   tag: string;
@@ -25,7 +14,6 @@ interface ErrorInfo {
   title: string;
   subtitle: string;
   explanation: string;
-  showConflictGuide: boolean;
 }
 
 function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): ErrorInfo {
@@ -38,7 +26,6 @@ function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): 
         subtitle: "This X (Twitter) profile is already connected to another wallet.",
         explanation:
           "To maintain fair allocations and prevent multi-accounting, each X account can only be linked to a single Elychimp wallet profile.",
-        showConflictGuide: true,
       };
 
     case "X_OAUTH_PROVIDER_ERROR":
@@ -50,7 +37,6 @@ function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): 
         subtitle: "The connection request was denied or cancelled on X.",
         explanation:
           "You declined the permissions request or closed the authorization window. No changes were made to your Elychimp profile.",
-        showConflictGuide: false,
       };
 
     case "OAUTH_STATE_EXPIRED":
@@ -61,7 +47,6 @@ function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): 
         subtitle: "The authorization window remained open too long and has expired.",
         explanation:
           "For your security, OAuth authorization tokens are valid for 10 minutes. Please return to your profile and initiate the link again.",
-        showConflictGuide: false,
       };
 
     case "SESSION_MISMATCH":
@@ -72,7 +57,6 @@ function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): 
         subtitle: "The active wallet session changed during authorization.",
         explanation:
           "The wallet connected when initiating the X link does not match your currently active wallet session. Please reconnect with the original wallet.",
-        showConflictGuide: false,
       };
 
     case "UNAUTHORIZED":
@@ -83,7 +67,6 @@ function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): 
         subtitle: "A verified wallet session is required to link an X account.",
         explanation:
           "Please connect and authenticate your Web3 wallet before attempting to link social accounts.",
-        showConflictGuide: false,
       };
 
     case "X_OAUTH_NOT_CONFIGURED":
@@ -94,7 +77,6 @@ function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): 
         subtitle: "X OAuth credentials are not configured in this environment.",
         explanation:
           "The X authentication service is temporarily unavailable. Please check back shortly or notify the team.",
-        showConflictGuide: false,
       };
 
     default:
@@ -104,8 +86,7 @@ function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): 
         title: "LINKING FAILED",
         subtitle: rawMessage || "Unable to complete X account verification at this time.",
         explanation:
-          "An unexpected error occurred during the OAuth authentication callback. Please review the details below and try again.",
-        showConflictGuide: false,
+          "An unexpected error occurred during the OAuth authentication callback. Please try again later.",
       };
   }
 }
@@ -155,110 +136,15 @@ function XErrorContent() {
           {info.explanation}
         </p>
 
-        {/* Actionable Solution Card for Account Conflict */}
-        {info.showConflictGuide && (
-          <Card className="mt-8 text-left border-rose-500/30 bg-[#0B2026]/95 backdrop-blur-md shadow-xl">
-            <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#163B44]">
-                <HelpCircle className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                <h2 className="text-sm font-display uppercase tracking-wider text-[#F8F7F4]">
-                  How to Resolve This:
-                </h2>
-              </div>
-
-              <div className="space-y-3.5 text-xs sm:text-sm">
-                <div className="flex items-start gap-3 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
-                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#34B7DD]/20 text-[#34B7DD] font-bold text-xs">
-                    1
-                  </div>
-                  <div>
-                    <p className="font-semibold text-[#F8F7F4]">
-                      Switch back to your previous wallet
-                    </p>
-                    <p className="mt-0.5 text-[#8AA8B2]">
-                      If you already started your journey with an existing wallet, switch your browser wallet (MetaMask, Rabby, etc.) back to that address to access your linked profile and whitelist progress.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
-                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-400 font-bold text-xs">
-                    2
-                  </div>
-                  <div>
-                    <p className="font-semibold text-[#F8F7F4]">
-                      Want to use this new wallet instead?
-                    </p>
-                    <p className="mt-0.5 text-[#8AA8B2]">
-                      Sign into Elychimp using your original wallet, navigate to your Profile to unlink your X account, and then reconnect with this wallet.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
-                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-rose-400/20 text-rose-400 font-bold text-xs">
-                    3
-                  </div>
-                  <div>
-                    <p className="font-semibold text-[#F8F7F4]">
-                      Use an alternate X account
-                    </p>
-                    <p className="mt-0.5 text-[#8AA8B2]">
-                      If this new wallet is dedicated to another member or persona, sign into a different X account before authorizing.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Technical Details (Collapsible or Discreet) */}
-        {(errorCode || rawMessage) && (
-          <div className="mt-6 rounded-xl border border-[#163B44] bg-[#051D22]/40 px-4 py-3 text-left">
-            <div className="flex items-center justify-between text-xs text-[#8AA8B2]">
-              <span className="font-mono uppercase">Status Code:</span>
-              <span className="font-mono text-rose-400 font-bold">{errorCode || "UNKNOWN"}</span>
-            </div>
-            {rawMessage && (
-              <p className="mt-1 text-xs text-zinc-400 font-mono break-words">
-                {rawMessage}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Navigation Action Buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
-          <Link href="/profile" className="w-full sm:w-auto">
-            <Button
-              size="lg"
-              className="w-full gap-2.5 bg-[#34B7DD] text-[#04181C] hover:bg-[#6FCDE8] font-bold text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(52,183,221,0.25)] px-6 py-3.5"
-            >
-              <User className="h-4 w-4" />
-              Go to Profile
-            </Button>
-          </Link>
-
-          <Link href="/whitelist" className="w-full sm:w-auto">
-            <Button
-              size="lg"
-              variant="secondary"
-              className="w-full gap-2.5 border border-[#163B44] bg-[#102B33] text-[#DBF2F9] hover:border-[#34B7DD]/60 hover:text-white font-semibold text-sm uppercase tracking-wider px-6 py-3.5"
-            >
-              <Wallet className="h-4 w-4 text-[#34B7DD]" />
-              Whitelist Portal
-            </Button>
-          </Link>
-
+        {/* Navigation Action Button */}
+        <div className="mt-10 flex items-center justify-center">
           <Link href="/" className="w-full sm:w-auto">
             <Button
               size="lg"
-              variant="outline"
-              className="w-full gap-2 border border-[#163B44] text-[#8AA8B2] hover:text-white font-semibold text-sm uppercase tracking-wider px-5 py-3.5"
+              className="w-full sm:w-auto gap-2.5 bg-[#34B7DD] text-[#04181C] hover:bg-[#6FCDE8] font-bold text-sm sm:text-base uppercase tracking-wider shadow-[0_0_20px_rgba(52,183,221,0.25)] px-8 py-4"
             >
               <ArrowLeft className="h-4 w-4" />
-              Return Home
+              Return to Home
             </Button>
           </Link>
         </div>

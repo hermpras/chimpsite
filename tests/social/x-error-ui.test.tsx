@@ -16,7 +16,7 @@ describe("XErrorPage UI (/social/x/error)", () => {
     mockSearchParams = new URLSearchParams();
   });
 
-  it("renders X_ACCOUNT_ALREADY_LINKED with conflict guidance and action buttons", () => {
+  it("renders X_ACCOUNT_ALREADY_LINKED cleanly without resolution cards or extra portal buttons", () => {
     mockSearchParams = new URLSearchParams(
       "error=X_ACCOUNT_ALREADY_LINKED&message=This+X+account+is+already+linked+to+another+Elychimp+profile.",
     );
@@ -28,27 +28,24 @@ describe("XErrorPage UI (/social/x/error)", () => {
       screen.getByText("This X (Twitter) profile is already connected to another wallet."),
     ).toBeInTheDocument();
     expect(screen.getByText("Account Conflict")).toBeInTheDocument();
-
-    // Verify troubleshooting steps
-    expect(screen.getByText("How to Resolve This:")).toBeInTheDocument();
-    expect(screen.getByText("Switch back to your previous wallet")).toBeInTheDocument();
-    expect(screen.getByText("Want to use this new wallet instead?")).toBeInTheDocument();
-    expect(screen.getByText("Use an alternate X account")).toBeInTheDocument();
-
-    // Verify technical details
-    expect(screen.getByText("X_ACCOUNT_ALREADY_LINKED")).toBeInTheDocument();
     expect(
-      screen.getByText("This X account is already linked to another Elychimp profile."),
+      screen.getByText(
+        "To maintain fair allocations and prevent multi-accounting, each X account can only be linked to a single Elychimp wallet profile.",
+      ),
     ).toBeInTheDocument();
 
-    // Verify navigation links
-    const profileLink = screen.getByRole("link", { name: /Go to Profile/i });
-    expect(profileLink).toHaveAttribute("href", "/profile");
+    // Verify removed conflict guide & technical code boxes
+    expect(screen.queryByText("How to Resolve This:")).not.toBeInTheDocument();
+    expect(screen.queryByText("Switch back to your previous wallet")).not.toBeInTheDocument();
+    expect(screen.queryByText(/STATUS CODE:/i)).not.toBeInTheDocument();
 
-    const whitelistLink = screen.getByRole("link", { name: /Whitelist Portal/i });
-    expect(whitelistLink).toHaveAttribute("href", "/whitelist");
+    // Verify removed profile and whitelist buttons
+    expect(screen.queryByRole("link", { name: /Go to Profile/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Whitelist Portal/i })).not.toBeInTheDocument();
 
-    const homeLink = screen.getByRole("link", { name: /Return Home/i });
+    // Verify single clean Return to Home button
+    const homeLink = screen.getByRole("link", { name: /Return to Home/i });
+    expect(homeLink).toBeInTheDocument();
     expect(homeLink).toHaveAttribute("href", "/");
   });
 
