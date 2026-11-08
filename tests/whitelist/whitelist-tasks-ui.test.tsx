@@ -449,7 +449,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Not Registered / Ineligible")).toBeInTheDocument();
+      expect(screen.getByText("Whitelist Application")).toBeInTheDocument();
     });
 
     expect(
@@ -554,7 +554,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     });
 
     expect(screen.getAllByText("#0015")[0]).toBeInTheDocument();
-    expect(screen.getByText(/eligible for inclusion in the OpenSea FCFS allowlist export/i)).toBeInTheDocument();
+    expect(screen.getByText(/eligible for inclusion in the official allowlist for minting/i)).toBeInTheDocument();
   });
 
   it("renders pending review status directly from latestSubmission status PENDING_REVIEW even when progress is null", async () => {

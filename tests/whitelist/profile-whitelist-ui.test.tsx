@@ -249,7 +249,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     });
 
     expect(
-      screen.getByText("FCFS Directory Participant #105"),
+      screen.getByText("Whitelist Application in Progress"),
     ).toBeInTheDocument();
     expect(screen.getByText("Registered on Oct 20, 2026")).toBeInTheDocument();
     expect(
@@ -257,15 +257,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "You are registered in the directory, but must satisfy all 5 requirements below to be included in the OpenSea FCFS allowlist export.",
-      ),
-    ).toBeInTheDocument();
-
-    // Clear DEC-018 Explanatory Notice
-    expect(screen.getByText("FCFS Directory Notice")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed \(GTD\) slot or an allocation\. GTD slots are never automatically filled\./,
+        "Complete all 5 requirements below to qualify for the official allowlist.",
       ),
     ).toBeInTheDocument();
 
@@ -307,18 +299,17 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
 
     await waitFor(() => {
       expect(
-        screen.getByText("Eligible for OpenSea FCFS Allowlist"),
+        screen.getByText("Whitelist Qualified"),
       ).toBeInTheDocument();
       expect(
         screen.getByText(
-          "All 5 qualification requirements are satisfied! Your wallet will be included in the OpenSea FCFS allowlist export.",
+          "All 5 qualification requirements are satisfied! Your wallet will be included in the official allowlist for minting.",
         ),
       ).toBeInTheDocument();
     });
 
     expect(screen.getByText("5 / 5 Collected")).toBeInTheDocument();
     expect(screen.getByText("2 / 2 Completed")).toBeInTheDocument();
-    expect(screen.getByText("Complete")).toBeInTheDocument();
   });
 
   // 4. Status: REVOKED (Disqualification)
@@ -364,7 +355,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /Revoked participants are not eligible for Guaranteed \(GTD\) slots and are excluded from the OpenSea FCFS allowlist export\./,
+        /Revoked participants are not eligible for Guaranteed \(GTD\) slots and are excluded from the allowlist export\./,
       ),
     ).toBeInTheDocument();
 
@@ -411,11 +402,11 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     });
 
     expect(
-      screen.getByText("Not Registered in FCFS Directory"),
+      screen.getByText("Whitelist Application"),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /You are not currently registered in the FCFS Directory\. Connect your EVM wallet and X \(Twitter\) account to automatically register in the FCFS Directory/,
+        /Connect your EVM wallet and X \(Twitter\) account, and complete the 5 trait categories and mandatory tasks to qualify for the allowlist\./,
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Go to Whitelist Portal" })).toHaveAttribute(

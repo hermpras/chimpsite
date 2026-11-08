@@ -43,3 +43,23 @@ export async function fetchUserInventory(
   }
   return data;
 }
+
+/**
+ * Client helper to equip an inventory item on the user's avatar.
+ */
+export async function equipUserTrait(
+  itemId: string,
+): Promise<{ success: boolean; itemId: string; category: string }> {
+  const res = await fetch("/api/user/inventory/equip", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itemId }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      data.message || data.error || `Failed to equip trait: ${res.statusText}`,
+    );
+  }
+  return data;
+}

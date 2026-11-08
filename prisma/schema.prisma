@@ -350,6 +350,7 @@ model InventoryItem {
   owner       User                    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   edition     Int                     // Copy/edition number per trait (1, 2, 3...)
   acquiredVia InventoryAcquisitionType @default(CLAIM)
+  isEquipped  Boolean                 @default(false)
   isLocked    Boolean                 @default(false) // Locked when involved in pending gift
   lockReason  String?
   createdAt   DateTime                @default(now())
@@ -362,6 +363,7 @@ model InventoryItem {
   @@index([ownerId])
   @@index([traitId])
   @@index([ownerId, isLocked])
+  @@index([ownerId, isEquipped])
 }
 
 // =============================================================================

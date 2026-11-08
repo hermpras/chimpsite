@@ -377,6 +377,7 @@ export async function acceptGift(prisma: PrismaClient, input: ResolveGiftInput) 
       data: {
         ownerId: input.userId,
         acquiredVia: "GIFT",
+        isEquipped: false,
         isLocked: false,
         lockReason: null,
       },

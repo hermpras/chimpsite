@@ -56,9 +56,6 @@ export function WalletConnectCard() {
                   <span className="font-mono font-bold text-[#F8F7F4] text-sm sm:text-base truncate" title={sessionAddress}>
                     {shortenAddress(sessionAddress)}
                   </span>
-                  <span className="text-xs font-mono text-emerald-300 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded font-semibold">
-                    Signed in
-                  </span>
                 </div>
                 <p className="font-mono text-xs sm:text-[13px] text-[#8AA8B2] truncate mt-0.5">
                   {sessionAddress}

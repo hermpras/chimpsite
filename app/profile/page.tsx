@@ -933,21 +933,6 @@ function ProfileContent() {
                             >
                               {mandatoryTasksCompleted} / {mandatoryTasksTotal} Completed
                             </span>
-                            {mandatoryTasksCompleted >= mandatoryTasksTotal && mandatoryTasksTotal > 0 ? (
-                              <Badge
-                                variant="default"
-                                className="border-emerald-500/40 bg-emerald-950/50 text-emerald-300 text-xs font-bold"
-                              >
-                                Complete
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant="warning"
-                                className="border-amber-500/40 bg-amber-950/50 text-amber-300 text-xs font-bold"
-                              >
-                                Incomplete
-                              </Badge>
-                            )}
                           </div>
                         </div>
 

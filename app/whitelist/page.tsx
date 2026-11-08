@@ -1784,7 +1784,7 @@ export default function WhitelistPage() {
                     )}
                     {statusResult?.status?.phase === "FCFS_REGISTERED" && (
                       <Badge variant="default" className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs">
-                        FCFS Directory (Registered)
+                        {statusResult.status.isFullyQualified ? "Whitelisted" : "In Progress"}
                       </Badge>
                     )}
                     <Badge variant="outline" className={`text-xs font-bold ${qualificationState.badgeClass}`}>
@@ -2250,7 +2250,7 @@ export default function WhitelistPage() {
                                <div className="space-y-0.5">
                                  <p className="text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider">All 5 Requirements Satisfied ✓</p>
                                  <p className="text-[#8AA8B2] text-xs sm:text-sm leading-relaxed">
-                                   Your wallet is eligible for inclusion in the OpenSea FCFS allowlist export.
+                                   Your wallet is eligible for inclusion in the official allowlist for minting.
                                  </p>
                                </div>
                              </div>
@@ -2259,7 +2259,7 @@ export default function WhitelistPage() {
                                <div className="space-y-0.5">
                                  <p className="text-xs sm:text-sm font-bold text-amber-300 uppercase tracking-wider">Action Required — Complete 5/5 Requirements</p>
                                  <p className="text-[#8AA8B2] text-xs sm:text-sm leading-relaxed">
-                                   Complete missing requirements to qualify for the OpenSea FCFS allowlist export.
+                                   Complete missing requirements to qualify for the official allowlist.
                                  </p>
                                </div>
                              </div>
@@ -2292,7 +2292,7 @@ export default function WhitelistPage() {
 
                            {/* Notice */}
                            <div className="text-xs sm:text-sm text-[#8AA8B2]">
-                             Registration is for the OpenSea FCFS allowlist minting stage and does not guarantee allocation.
+                             Official mint details, schedule, and stage announcements will be posted through official channels.
                            </div>
                          </div>
                        );
@@ -2307,16 +2307,16 @@ export default function WhitelistPage() {
                           {statusResult.status.missingRequirements[0] || "Whitelist qualification has been revoked."}
                         </p>
                         <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
-                          In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program. Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the OpenSea FCFS allowlist export.
+                          In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program. Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the allowlist export.
                         </p>
                       </div>
                     )}
 
                     {statusResult?.status?.phase === "NONE" && (
                       <div className="rounded-xl border border-[#163B44] bg-zinc-900/60 p-4 text-xs sm:text-sm text-zinc-400 space-y-1.5">
-                        <span className="font-bold text-white text-sm sm:text-base">Not Registered / Ineligible</span>
+                        <span className="font-bold text-white text-sm sm:text-base">Whitelist Application</span>
                         <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                          Connect your EVM wallet and X (Twitter) account to automatically register in the FCFS Directory, and complete the 5 trait categories and mandatory tasks to qualify for the OpenSea FCFS allowlist.
+                          Connect your EVM wallet and X (Twitter) account, and complete the 5 trait categories and mandatory tasks to qualify for the allowlist.
                         </p>
                       </div>
                     )}

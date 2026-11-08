@@ -305,6 +305,7 @@ export async function resolveUserEquippedTraits(
       id: true,
       edition: true,
       isLocked: true,
+      isEquipped: true,
       createdAt: true,
       traitId: true,
       trait: {
@@ -320,6 +321,26 @@ export async function resolveUserEquippedTraits(
   });
 
   const equippedMap = new Map<TraitCategory, UserEquippedTrait>();
+
+  // Pass 1: Explicitly equipped traits (user manual equip)
+  for (const item of items) {
+    if (item.isLocked) continue;
+    if (!item.trait || item.trait.isActive === false) continue;
+    if (item.isEquipped) {
+      const cat = item.trait.category as TraitCategory;
+      if (!equippedMap.has(cat)) {
+        equippedMap.set(cat, {
+          itemId: item.id || "",
+          traitId: item.traitId || item.trait?.id || "",
+          category: cat,
+          edition: item.edition,
+          imageUrl: item.trait.imageUrl,
+        });
+      }
+    }
+  }
+
+  // Pass 2: Fallback to lowest edition for any category not explicitly equipped
   for (const item of items) {
     if (item.isLocked) continue;
     if (!item.trait || item.trait.isActive === false) continue;
@@ -341,17 +362,17 @@ export async function resolveUserEquippedTraits(
 /**
  * In-memory helper to determine equipped item IDs from a list of inventory items.
  * Matches resolveUserEquippedTraits logic:
+ * - Explicit isEquipped === true takes priority per category.
+ * - For any category without isEquipped === true, fallback to lowest edition (edition ASC, createdAt ASC, id ASC).
  * - Must not be locked (isLocked === false).
  * - Must not be inactive (trait.isActive !== false).
- * - Lowest edition (edition ASC).
- * - Earliest acquisition (createdAt ASC).
- * - Deterministic ID (id ASC).
  */
 export function resolveEquippedItemIdsFromList<
   T extends {
     id: string;
     edition: number;
     isLocked?: boolean;
+    isEquipped?: boolean;
     createdAt?: Date | string;
     trait?: {
       category?: string;
@@ -359,6 +380,23 @@ export function resolveEquippedItemIdsFromList<
     };
   },
 >(items: T[]): Set<string> {
+  const equippedIds = new Set<string>();
+  const seenCategories = new Set<string>();
+
+  // Pass 1: Explicitly equipped items
+  for (const item of items) {
+    if (item.isLocked) continue;
+    if (item.trait && item.trait.isActive === false) continue;
+    if (item.isEquipped) {
+      const cat = item.trait?.category || "DEFAULT";
+      if (!seenCategories.has(cat)) {
+        seenCategories.add(cat);
+        if (item.id) equippedIds.add(item.id);
+      }
+    }
+  }
+
+  // Pass 2: Fallback lowest edition for remaining categories
   const sorted = [...items].sort((a, b) => {
     if (a.edition !== b.edition) {
       return a.edition - b.edition;
@@ -370,9 +408,6 @@ export function resolveEquippedItemIdsFromList<
     }
     return (a.id || "").localeCompare(b.id || "");
   });
-
-  const equippedIds = new Set<string>();
-  const seenCategories = new Set<string>();
 
   for (const item of sorted) {
     if (item.isLocked) continue;
