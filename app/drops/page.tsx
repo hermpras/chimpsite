@@ -535,7 +535,7 @@ export default function DropsPage() {
                         }}
                       />
                     </div>
-                    <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
+                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-cyan-400 uppercase tracking-wider">
                       {displayStockPercentage}% Available
                     </span>
                   </div>
@@ -582,12 +582,12 @@ export default function DropsPage() {
                           : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
                       </p>
                       {isWindowActive && dropData.claimWindow?.endsAt && (
-                        <span className="block text-[10px] text-gray-400 uppercase tracking-wider">
+                        <span className="block text-xs text-gray-400 uppercase tracking-wider">
                           Closes at {formatTimeWithUtc(dropData.claimWindow.endsAt)}
                         </span>
                       )}
                       {!isWindowActive && periodEndsMs > 0 && (
-                        <span className="block text-[10px] text-gray-400 uppercase tracking-wider">
+                        <span className="block text-xs text-gray-400 uppercase tracking-wider">
                           Cycle starts at {formatTimeWithUtc(periodEndsMs)}
                         </span>
                       )}
@@ -676,7 +676,7 @@ export default function DropsPage() {
                             className="w-full rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-xs sm:text-sm uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.55)] hover:scale-[1.01] active:scale-[0.99] py-2.5 px-3 flex items-center justify-center gap-2 transition-all"
                           >
                             <span>Complete Quests</span>
-                            <span className="rounded-md bg-black/15 px-1.5 py-0.5 text-[11px] font-black tracking-normal">
+                            <span className="rounded-md bg-black/15 px-1.5 py-0.5 text-xs font-black tracking-normal">
                               {completedTasks}/{totalTasks}
                             </span>
                           </Link>
@@ -684,7 +684,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-emerald-500/40 bg-emerald-950/40 text-xs font-semibold text-emerald-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-95 py-2.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                            className="w-full rounded-xl border border-emerald-500/40 bg-emerald-950/40 text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-95 py-2.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
                             disabled
                           >
                             <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -694,7 +694,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-red-500/30 bg-red-500/10 text-[11px] font-medium text-red-300 uppercase tracking-wider cursor-not-allowed opacity-75 py-2.5"
+                            className="w-full rounded-xl border border-red-500/30 bg-red-500/10 text-xs sm:text-sm font-bold text-red-300 uppercase tracking-wider cursor-not-allowed opacity-75 py-2.5"
                             disabled
                           >
                             Period Stock Exhausted
@@ -712,7 +712,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-[#163B44] bg-[#102B33]/50 text-xs font-medium text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed py-2.5"
+                            className="w-full rounded-xl border border-[#163B44] bg-[#102B33]/50 text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed py-2.5"
                             disabled
                           >
                             <Clock className="h-4 w-4 text-amber-400 shrink-0" />
@@ -721,56 +721,56 @@ export default function DropsPage() {
                         )}
 
                         {hasAllocatedSlot && (
-                          <div className="mt-2.5 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-center space-y-2 shadow-sm">
-                            <p className="text-[11px] text-amber-300 font-bold uppercase flex items-center justify-center gap-1.5">
-                              <ShieldCheck className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                          <div className="mt-2.5 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3.5 text-center space-y-2 shadow-sm">
+                            <p className="text-xs sm:text-sm text-amber-300 font-bold uppercase flex items-center justify-center gap-1.5">
+                              <ShieldCheck className="h-4 w-4 text-amber-400 shrink-0" />
                               <span>Whitelist Allocation Secured</span>
                             </p>
-                            <p className="text-[10px] text-gray-300 leading-normal">
+                            <p className="text-xs sm:text-sm text-gray-300 leading-normal">
                               Trait drops are reserved for participants still qualifying. You can gift duplicate traits to friends from your Backpack.
                             </p>
-                            <div className="pt-0.5">
+                            <div className="pt-1">
                               <Link
                                 href="/profile"
-                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/25 transition-colors"
+                                className="group relative overflow-hidden inline-flex items-center justify-center gap-1.5 rounded-xl border border-cyan-400/50 bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-cyan-500/20 px-4 py-2 text-xs sm:text-sm font-black uppercase tracking-wider text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:border-cyan-400 hover:shadow-[0_0_24px_rgba(6,182,212,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all"
                               >
-                                <Gift className="h-3.5 w-3.5 text-cyan-400" />
+                                <Gift className="h-4 w-4 text-cyan-400" />
                                 <span>Go to Backpack to Gift</span>
-                                <ArrowRight className="h-3 w-3 text-cyan-400" />
+                                <ArrowRight className="h-3.5 w-3.5 text-cyan-400" />
                               </Link>
                             </div>
                           </div>
                         )}
 
                         {connectXError && (
-                          <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400">
-                            <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
+                          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-rose-400">
+                            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
                             <span>{connectXError}</span>
                           </p>
                         )}
                         {claimMessage && (
                           <div className="mt-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-center shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                            <p className="text-xs font-semibold text-emerald-300">
+                            <p className="text-xs sm:text-sm font-semibold text-emerald-300">
                               {claimMessage}
                             </p>
                           </div>
                         )}
                         {claimError && !isAlreadyClaimed && !hasAllocatedSlot && (
-                          <p className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-rose-400">
-                            <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
+                          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-rose-400">
+                            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
                             <span>{claimError}</span>
                           </p>
                         )}
                         {isAlreadyClaimed && !claimMessage && (
-                          <div className="mt-2.5 rounded-xl border border-[#163B44] bg-black/60 px-3 py-1.5 text-center">
-                            <span className="text-[10px] text-gray-400 uppercase">
+                          <div className="mt-2.5 rounded-xl border border-[#163B44] bg-black/60 px-3 py-2 text-center">
+                            <span className="text-xs text-gray-400 uppercase">
                               You have claimed your 1 trait allocation for Period #{dropData.period.periodIndex}. Next drop cycle begins in {formatRemaining(nextDropRemainingMs)}.
                             </span>
                           </div>
                         )}
                         {!isWindowActive && isUserEligible && !hasAllocatedSlot && (
-                          <div className="mt-2.5 rounded-xl border border-[#163B44] bg-black/60 px-3 py-1.5 text-center">
-                            <span className="text-[10px] text-gray-400 uppercase">
+                          <div className="mt-2.5 rounded-xl border border-[#163B44] bg-black/60 px-3 py-2 text-center">
+                            <span className="text-xs text-gray-400 uppercase">
                               Registered &amp; Ready for Period #{displayPeriodIndex}
                             </span>
                           </div>
@@ -823,12 +823,12 @@ export default function DropsPage() {
                               <div className="relative z-10 flex items-center justify-between gap-1.5 pb-2.5 border-b border-[#163B44]">
                                 <div className="flex flex-wrap items-center gap-1.5">
                                   <span
-                                    className={`rounded-md border px-2 py-0.5 text-[9px] font-mono uppercase font-bold tracking-wider ${categoryStyle}`}
+                                    className={`rounded-md border px-2 py-0.5 text-xs font-mono uppercase font-bold tracking-wider ${categoryStyle}`}
                                   >
                                     {item.category}
                                   </span>
                                   <span
-                                    className={`rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText} shadow-sm`}
+                                    className={`rounded-md border px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText} shadow-sm`}
                                   >
                                     {theme.prefix}
                                     {rarity}
@@ -836,7 +836,7 @@ export default function DropsPage() {
                                   {isSoldOut && (
                                     <span
                                       data-testid="badge-sold-out"
-                                      className="rounded-md border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
+                                      className="rounded-md border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
                                     >
                                       Sold Out
                                     </span>
@@ -845,8 +845,8 @@ export default function DropsPage() {
 
                                 {/* Probability Drop Rate */}
                                 <div className="shrink-0 flex items-center gap-1 rounded-md border border-[#163B44] bg-black/60 px-2 py-0.5 shadow-inner">
-                                  <span className="text-[10px] text-amber-400 font-mono">✦</span>
-                                  <span className={`font-mono text-xs font-extrabold ${theme.text}`}>
+                                  <span className="text-xs text-amber-400 font-mono">✦</span>
+                                  <span className={`font-mono text-xs sm:text-sm font-extrabold ${theme.text}`}>
                                     {item.probabilityPercent}%
                                   </span>
                                 </div>
@@ -910,10 +910,10 @@ export default function DropsPage() {
 
                               return (
                                 <div className="relative z-10 mt-3 border-t border-[#163B44] pt-2.5">
-                                  <div className="mb-1.5 flex items-center justify-between text-xs sm:text-[13px] font-mono">
+                                  <div className="mb-1.5 flex items-center justify-between text-xs sm:text-sm font-mono">
                                     <span className="flex items-center gap-1.5">
                                       {isLowStock && (
-                                        <span className="h-1.5 w-1.5 animate-ping rounded-full bg-rose-500" />
+                                        <span className="h-2 w-2 animate-ping rounded-full bg-rose-500" />
                                       )}
                                       <span
                                         className={
@@ -921,15 +921,15 @@ export default function DropsPage() {
                                             ? "font-bold text-rose-400"
                                             : isLowStock
                                               ? "font-bold text-rose-400"
-                                              : "text-gray-400 font-semibold"
+                                              : "text-gray-300 font-bold"
                                         }
                                       >
                                         {isSoldOut ? "Sold Out" : isLowStock ? "Low Stock" : "Stock"}
                                       </span>
                                     </span>
-                                    <span className="text-gray-400">
+                                    <span className="text-gray-300 text-xs sm:text-sm font-medium">
                                       <span
-                                        className={`font-bold ${
+                                        className={`font-black ${
                                           isSoldOut
                                             ? "text-rose-400"
                                             : isLowStock
@@ -939,7 +939,7 @@ export default function DropsPage() {
                                       >
                                         {currentRemaining}
                                       </span>
-                                      <span className="text-gray-500 font-medium">
+                                      <span className="text-gray-400 font-semibold">
                                         /{allocated} left
                                       </span>
                                     </span>

@@ -114,7 +114,7 @@ export function WalletButton({
               <span className="truncate text-xs font-semibold text-[#F8F7F4] max-w-[130px] leading-tight">
                 {displayName}
               </span>
-              <div className="flex items-center gap-1.5 text-[10px] text-[#8AA8B2] leading-tight mt-0.5">
+              <div className="flex items-center gap-1.5 text-xs text-[#8AA8B2] leading-tight mt-0.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34D399] shrink-0" />
                 <span>Signed in</span>
                 <ChevronDown className="h-3 w-3 text-[#8AA8B2] transition-transform group-hover:translate-y-0.5" />
@@ -149,20 +149,20 @@ export function WalletButton({
                 {xUsername ? (
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-                    <p className="truncate font-mono text-[11px] text-[#DBF2F9]">
+                    <p className="truncate font-mono text-xs text-[#DBF2F9]">
                       @{xUsername} on X
                     </p>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="h-2 w-2 rounded-full bg-[#34B7DD] shrink-0" />
-                    <p className="truncate text-[11px] text-[#8AA8B2]">
+                    <p className="truncate text-xs text-[#8AA8B2]">
                       Wallet connected
                     </p>
                   </div>
                 )}
                 <p
-                  className="font-mono text-[10px] text-[#8AA8B2] mt-0.5 truncate"
+                  className="font-mono text-xs text-[#8AA8B2] mt-0.5 truncate"
                   title={sessionAddress}
                 >
                   {shortenAddress(sessionAddress)}
@@ -178,7 +178,7 @@ export function WalletButton({
                   setMenuOpen(false);
                   onAction?.();
                 }}
-                className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-xs uppercase font-medium text-[#DBF2F9] transition-colors hover:bg-[#102B33] hover:text-white"
+                className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-xs sm:text-sm uppercase font-semibold text-[#DBF2F9] transition-colors hover:bg-[#102B33] hover:text-white"
               >
                 <User className="h-4 w-4 text-[#8AA8B2]" />
                 <span>Profile</span>
@@ -193,7 +193,7 @@ export function WalletButton({
                   onAction?.();
                   void logout();
                 }}
-                className="flex items-center gap-3 w-full rounded-xl px-3 py-2 text-left text-xs uppercase font-medium text-rose-400 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
+                className="flex items-center gap-3 w-full rounded-xl px-3 py-2 text-left text-xs sm:text-sm uppercase font-semibold text-rose-400 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
               >
                 <LogOut className="h-4 w-4 text-rose-400" />
                 <span>Sign out</span>
@@ -240,7 +240,7 @@ export function WalletButton({
         {error && !compact && (
           <button
             onClick={dismissError}
-            className={`max-w-56 text-[11px] text-red-400 hover:text-red-300 ${align === "center" ? "text-center" : "text-right"}`}
+            className={`max-w-56 text-xs text-red-400 hover:text-red-300 ${align === "center" ? "text-center" : "text-right"}`}
             title="Dismiss"
           >
             {error}
@@ -269,7 +269,7 @@ export function WalletButton({
         {error && !compact && (
           <button
             onClick={dismissError}
-            className={`max-w-56 text-[11px] text-red-400 hover:text-red-300 ${align === "center" ? "text-center" : "text-right"}`}
+            className={`max-w-56 text-xs text-red-400 hover:text-red-300 ${align === "center" ? "text-center" : "text-right"}`}
             title="Dismiss"
           >
             {error}

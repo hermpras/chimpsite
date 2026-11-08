@@ -76,7 +76,7 @@ export function WalletModal({
             <h3 className="font-display text-2xl uppercase tracking-wider text-[#F8F7F4]">
               CONNECT WALLET
             </h3>
-            <p className="text-[10px] text-[#8AA8B2] uppercase tracking-widest mt-0.5">
+            <p className="text-xs text-[#8AA8B2] uppercase tracking-wider mt-0.5">
               Select your Ethereum identity provider
             </p>
           </div>
@@ -150,7 +150,7 @@ export function WalletModal({
                       <p className="text-sm font-semibold text-[#F8F7F4] group-hover:text-[#6FCDE8] transition-colors">
                         {connector.name}
                       </p>
-                      <p className="text-[10px] text-[#8AA8B2] uppercase">
+                      <p className="text-xs text-[#8AA8B2] uppercase">
                         {connector.name.toLowerCase().includes("injected")
                           ? "Default Browser Provider"
                           : "EIP-6963 Verified"}
@@ -158,7 +158,7 @@ export function WalletModal({
                     </div>
                   </div>
 
-                  <span className="text-[11px] font-semibold text-[#8AA8B2] group-hover:text-[#34B7DD] transition-colors">
+                  <span className="text-xs font-bold text-[#8AA8B2] group-hover:text-[#34B7DD] transition-colors">
                     CONNECT →
                   </span>
                 </button>
@@ -169,7 +169,7 @@ export function WalletModal({
 
         {/* Footer info */}
         <div className="mt-5 border-t border-[#163B44] pt-3.5 text-center">
-          <p className="text-[10px] text-[#8AA8B2] uppercase">
+          <p className="text-xs text-[#8AA8B2] uppercase tracking-wider">
             NON-CUSTODIAL • POWERED BY SIWE & ELYSIUM L2
           </p>
         </div>

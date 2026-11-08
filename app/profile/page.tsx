@@ -137,7 +137,7 @@ function getWhitelistSummaryBadge(
 ) {
   if (!isAuthenticated) {
     return (
-      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-[11px]">
+      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">
         Wallet Not Connected
       </Badge>
     );
@@ -1036,7 +1036,7 @@ function ProfileContent() {
                     className="space-y-3 pb-6 border-b border-zinc-800"
                     data-testid="trait-collection-summary"
                   >
-                    <div className="mb-3 flex items-center justify-between text-xs">
+                    <div className="mb-3 flex items-center justify-between text-xs sm:text-sm">
                       <h4 className="font-bold tracking-wider text-zinc-300 uppercase">
                         Trait Collection (
                         {TRAIT_CATEGORIES.filter((c) => ownedCategories.has(c)).length}/5
@@ -1056,7 +1056,7 @@ function ProfileContent() {
                           <div
                             key={category}
                             data-testid={`collection-category-${category.toLowerCase()}`}
-                            className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs transition-colors ${
+                            className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs sm:text-sm transition-colors ${
                               isHeld
                                 ? `${theme?.heldClass || "border-emerald-500/40 bg-emerald-950/40 text-emerald-300"} font-bold`
                                 : "border-[#163B44] bg-[#051D22]/60 text-zinc-600 grayscale opacity-40"
@@ -1074,8 +1074,8 @@ function ProfileContent() {
                         );
                       })}
                     </div>
-                    <div className="mt-3 flex items-start gap-1.5 text-xs text-zinc-400">
-                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                    <div className="mt-3 flex items-start gap-1.5 text-xs sm:text-sm text-[#8AA8B2]">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
                       <p>
                         Your avatar automatically equips the lowest edition trait in each category. Equipped traits cannot be transferred as gifts.
                       </p>
@@ -1091,7 +1091,7 @@ function ProfileContent() {
                     className="space-y-3 pb-6 border-b border-zinc-800"
                     data-testid="trait-collection-summary"
                   >
-                    <div className="mb-3 flex items-center justify-between text-xs">
+                    <div className="mb-3 flex items-center justify-between text-xs sm:text-sm">
                       <h4 className="font-bold tracking-wider text-zinc-300 uppercase">
                         Trait Collection (0/5 Categories Owned)
                       </h4>
@@ -1104,15 +1104,15 @@ function ProfileContent() {
                         <div
                           key={category}
                           data-testid={`collection-category-${category.toLowerCase()}`}
-                          className="flex items-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22]/60 p-2.5 text-xs text-zinc-600 grayscale opacity-40"
+                          className="flex items-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22]/60 p-2.5 text-xs sm:text-sm text-zinc-600 grayscale opacity-40"
                         >
                           <div className="h-4 w-4 shrink-0 rounded-full border border-[#163B44] bg-[#102B33]" />
                           <span className="font-bold tracking-wide">{category}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="mt-3 flex items-start gap-1.5 text-xs text-zinc-400">
-                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                    <div className="mt-3 flex items-start gap-1.5 text-xs sm:text-sm text-[#8AA8B2]">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
                       <p>
                         Your avatar automatically equips the lowest edition trait in each category. Equipped traits cannot be transferred as gifts.
                       </p>
@@ -1130,23 +1130,24 @@ function ProfileContent() {
                           className="h-full w-full object-cover [image-rendering:pixelated]"
                         />
                       </div>
-                      <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-[#163B44] bg-[#0B2026] px-3 py-1 text-[11px] font-bold text-zinc-200 uppercase tracking-wider shadow-md">
+                      <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-[#163B44] bg-[#0B2026] px-3.5 py-1 text-xs font-bold text-zinc-200 uppercase tracking-wider shadow-md">
                         Base Chimp
                       </span>
                     </div>
-                    <div className="space-y-2">
-                      <h3 className="font-display text-xl uppercase tracking-wider text-white">
+                    <div className="space-y-3">
+                      <h3 className="font-display text-xl sm:text-2xl uppercase tracking-wider text-white">
                         No items or traits found in your inventory
                       </h3>
-                      <p className="max-w-md text-xs text-zinc-400 leading-relaxed">
+                      <p className="max-w-md text-sm sm:text-base text-[#8AA8B2] leading-relaxed">
                         This is your Base Chimp canvas. Claim traits during active drops or receive gifts from peers to reveal your colored Elychimp avatar and qualify for the Whitelist!
                       </p>
                       <div className="pt-2">
                         <Link
                           href="/drops"
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400 text-black px-4 py-2 text-xs font-display uppercase tracking-wider font-medium hover:bg-amber-300 transition-colors shadow-brutal-sm"
+                          className="group relative overflow-hidden inline-flex items-center rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-black uppercase tracking-wider shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >
-                          Go to Drops & Claim
+                          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
+                          <span>Go to Drops &amp; Claim</span>
                         </Link>
                       </div>
                     </div>

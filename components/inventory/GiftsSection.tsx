@@ -220,17 +220,17 @@ export function GiftsSection({
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-semibold text-gray-400 uppercase">
+                            <span className="text-xs font-bold text-gray-400 uppercase">
                               {gift.inventoryItem.trait.category}
                             </span>
-                            <span className="font-mono text-[10px] text-gray-500">
+                            <span className="font-mono text-xs text-gray-400">
                               #{gift.inventoryItem.edition}
                             </span>
                           </div>
                           <p className="line-clamp-1 text-sm font-semibold text-white">
                             {gift.inventoryItem.trait.name}
                           </p>
-                          <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
                             <span title={senderAddr}>
                               From: {gift.sender?.xIdentity?.username ? `@${gift.sender.xIdentity.username} (${shortenAddress(senderAddr)})` : shortenAddress(senderAddr)}
                             </span>
@@ -328,17 +328,17 @@ export function GiftsSection({
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-semibold text-gray-400 uppercase">
+                            <span className="text-xs font-bold text-gray-400 uppercase">
                               {gift.inventoryItem.trait.category}
                             </span>
-                            <span className="font-mono text-[10px] text-gray-500">
+                            <span className="font-mono text-xs text-gray-400">
                               #{gift.inventoryItem.edition}
                             </span>
                           </div>
                           <p className="line-clamp-1 text-sm font-semibold text-white">
                             {gift.inventoryItem.trait.name}
                           </p>
-                          <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
                             <span title={receiverAddr}>
                               To: {gift.receiver?.xIdentity?.username ? `@${gift.receiver.xIdentity.username} (${shortenAddress(receiverAddr)})` : shortenAddress(receiverAddr)}
                             </span>

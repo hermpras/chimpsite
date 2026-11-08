@@ -118,7 +118,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
               {isEquipped ? (
                 <div
                   data-testid={`equipped-badge-${item.id}`}
-                  className="absolute top-2 left-2 flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 backdrop-blur shadow-sm"
+                  className="absolute top-2 left-2 flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/80 px-2.5 py-0.5 text-xs font-semibold text-emerald-300 backdrop-blur shadow-sm"
                 >
                   <Sparkles className="h-3 w-3" />
                   <span>Equipped</span>
@@ -127,7 +127,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                 /* Category Extra / Duplicate Indicator */
                 <div
                   data-testid={`duplicate-badge-${item.id}`}
-                  className="absolute top-2 left-2 rounded-full border border-teal-500/30 bg-teal-950/80 px-2 py-0.5 text-[10px] font-medium text-teal-300 backdrop-blur"
+                  className="absolute top-2 left-2 rounded-full border border-teal-500/30 bg-teal-950/80 px-2.5 py-0.5 text-xs font-medium text-teal-300 backdrop-blur"
                 >
                   {isDuplicateTrait
                     ? `Duplicate (${traitCounts[item.trait.id]}x)`
@@ -146,7 +146,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
               <div>
                 <div className="mb-1.5 flex items-center justify-between gap-1">
                   <span
-                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase ${
                       CATEGORY_BADGE_STYLES[item.trait.category] || "border-[#163B44] bg-[#102B33] text-gray-300"
                     }`}
                   >
@@ -159,11 +159,11 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between border-t border-[#163B44] pt-1 text-[11px] text-gray-500">
+                <div className="flex items-center justify-between border-t border-[#163B44] pt-1 text-xs text-gray-400">
                   <span>Via {item.acquiredVia.toLowerCase()}</span>
                   {item.isLocked && item.lockReason && (
                     <span
-                      className="max-w-[100px] truncate text-[10px] text-amber-400/80"
+                      className="max-w-[120px] truncate text-xs text-amber-400/80"
                       title={item.lockReason}
                     >
                       {item.lockReason}
@@ -175,7 +175,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                 {!onGiftItem || totalCategoryCount < 2 ? (
                   <div
                     data-testid={`single-copy-badge-${item.id}`}
-                    className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-[10px] text-gray-500"
+                    className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-xs text-gray-400 font-medium px-2 text-center"
                     title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
                   >
                     Keep 1 in {item.trait.category} (Category minimum)
@@ -184,7 +184,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                   availableCount >= 2 ? (
                     <div
                       data-testid={`equipped-action-${item.id}`}
-                      className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-950/40 text-[11px] font-medium text-emerald-400"
+                      className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-950/40 text-xs font-semibold text-emerald-400"
                       title="This trait is currently equipped on your Profile avatar and cannot be gifted."
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
@@ -193,7 +193,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                   ) : (
                     <div
                       data-testid={`single-copy-badge-${item.id}`}
-                      className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-[10px] text-gray-500"
+                      className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-xs text-gray-400 font-medium px-2 text-center"
                       title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
                     >
                       Keep 1 in {item.trait.category} (Category minimum)
@@ -214,7 +214,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 w-full border-teal-500/30 text-xs text-teal-400 hover:border-teal-500/50 hover:bg-teal-500/10 cursor-pointer"
+                    className="h-8 w-full border-teal-500/40 text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all"
                     onClick={() => onGiftItem(item)}
                     data-testid={`gift-button-${item.id}`}
                   >
@@ -224,7 +224,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                 ) : (
                   <div
                     data-testid={`single-copy-badge-${item.id}`}
-                    className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-[10px] text-gray-500"
+                    className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-xs text-gray-400 font-medium px-2 text-center"
                     title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
                   >
                     Keep 1 in {item.trait.category} (Category minimum)

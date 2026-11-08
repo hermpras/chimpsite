@@ -238,13 +238,13 @@ export function GiftModal({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span
-                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase ${
                   CATEGORY_BADGE_STYLES[item.trait.category] || "border-[#163B44] bg-[#102B33] text-gray-300"
                 }`}
               >
                 {item.trait.category}
               </span>
-              <span className="rounded bg-[#102B33] px-1.5 py-0.5 font-mono text-[10px] text-gray-300">
+              <span className="rounded bg-[#102B33] px-2 py-0.5 font-mono text-xs text-gray-300">
                 #{item.edition}
               </span>
             </div>
@@ -253,12 +253,12 @@ export function GiftModal({
         </div>
 
         {/* Established Gifting Rules Banner */}
-        <div className="mb-5 space-y-1.5 rounded-lg border border-teal-500/20 bg-teal-950/20 p-3 text-xs text-teal-200">
+        <div className="mb-5 space-y-1.5 rounded-lg border border-teal-500/20 bg-teal-950/20 p-3.5 text-xs sm:text-sm text-teal-200">
           <div className="flex items-center gap-1.5 font-semibold text-teal-400">
             <ShieldAlert className="h-4 w-4" />
             <span>Gifting Invariants & Rules:</span>
           </div>
-          <ul className="list-inside list-disc space-y-0.5 text-[11px] text-gray-300">
+          <ul className="list-inside list-disc space-y-1 text-xs sm:text-sm text-gray-300">
             <li>You must retain at least 1 item in the {item.trait.category} category.</li>
             <li>Maximum 1 gift sent per wallet per UTC day.</li>
             <li>Recipient must not already own this trait.</li>
@@ -347,7 +347,7 @@ export function GiftModal({
               {trimmed && clientValidationError && (
                 <p
                   data-testid="gift-validation-message"
-                  className="mt-1.5 text-[11px] text-amber-400"
+                  className="mt-1.5 text-xs text-amber-400"
                 >
                   {clientValidationError}
                 </p>
@@ -390,7 +390,7 @@ export function GiftModal({
                           </span>
                         )}
                       </div>
-                      <p className="font-mono text-[10px] text-gray-400">
+                      <p className="font-mono text-xs text-gray-400">
                         {verifiedRecipient.address
                           ? shortenAddress(verifiedRecipient.address)
                           : "No wallet"}
@@ -400,12 +400,12 @@ export function GiftModal({
 
                   <div>
                     {verifiedRecipient.canReceive ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
-                        <CheckCircle2 className="h-3 w-3" />
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
                         Verified
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[10px] font-medium text-rose-400">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-xs font-semibold text-rose-400">
                         Ineligible
                       </span>
                     )}
@@ -414,7 +414,7 @@ export function GiftModal({
               )}
 
               {senderAddress && (
-                <p className="mt-1 text-[11px] text-gray-500">
+                <p className="mt-1 text-xs text-gray-400">
                   Sending from: {shortenAddress(senderAddress)}
                 </p>
               )}

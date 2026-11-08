@@ -116,7 +116,7 @@ export function UserAvatar({
           title={renderError}
         >
           <AlertTriangle className="h-6 w-6 text-rose-400" />
-          <span className="mt-1 text-[10px] font-medium text-rose-300">Error</span>
+          <span className="mt-1 text-xs font-semibold text-rose-300">Error</span>
         </div>
         {showRefreshButton && (
           <button
