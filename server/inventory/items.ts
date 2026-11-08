@@ -183,9 +183,10 @@ export async function equipInventoryItem(
   }
 
   // Trigger avatar re-render
+  let renderUpdatedAt: number | null = null;
   try {
     const { renderUserAvatar } = await import("./avatar-renderer");
-    await renderUserAvatar(prisma, userId).catch((err: unknown) => {
+    const rendered = await renderUserAvatar(prisma, userId).catch((err: unknown) => {
       console.warn(`[equipInventoryItem] Background avatar render failed for user ${userId}:`, err);
     });
   } catch (renderErr: unknown) {

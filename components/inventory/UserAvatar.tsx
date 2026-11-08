@@ -41,7 +41,36 @@ export function UserAvatar({
   showRefreshButton = false,
   onRefresh,
 }: UserAvatarProps) {
-  const currentKey = `${identifier || ""}-${version || ""}`;
+  const [internalVersion, setInternalVersion] = useState<number | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("chimphood_avatar_version");
+        if (stored) return Number(stored);
+      } catch {}
+    }
+    return null;
+  });
+
+  React.useEffect(() => {
+    const handleAvatarUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ version?: number }>;
+      setInternalVersion(customEvent.detail?.version ?? Date.now());
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "chimphood_avatar_version" && e.newValue) {
+        setInternalVersion(Number(e.newValue));
+      }
+    };
+    window.addEventListener("avatar-updated", handleAvatarUpdate);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("avatar-updated", handleAvatarUpdate);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  const effectiveVersion = version ?? internalVersion;
+  const currentKey = `${identifier || ""}-${effectiveVersion || ""}`;
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [isReRendering, setIsReRendering] = useState(false);
@@ -60,6 +89,15 @@ export function UserAvatar({
     setRenderError(null);
     try {
       await triggerAvatarRender();
+      const v = Date.now();
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("chimphood_avatar_version", String(v));
+          window.dispatchEvent(
+            new CustomEvent("avatar-updated", { detail: { version: v } }),
+          );
+        } catch {}
+      }
       if (onRefresh) {
         await onRefresh();
       }
@@ -150,7 +188,7 @@ export function UserAvatar({
     );
   }
 
-  const avatarUrl = getAvatarPublicUrl(identifier, version);
+  const avatarUrl = getAvatarPublicUrl(identifier, effectiveVersion);
 
   // State 4: Loading & Loaded Image
   return (

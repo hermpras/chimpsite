@@ -1,5 +1,4 @@
 import React from "react";
-import { Lock, Sparkles, Gift, CheckCircle2 } from "lucide-react";
 import type { InventoryItemData } from "@/lib/inventory/client";
 import { Button } from "@/components/ui/Button";
 
@@ -109,8 +108,8 @@ export function TraitGrid({
                   loading="lazy"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-gray-600">
-                  <Sparkles className="h-10 w-10 opacity-40" />
+                <div className="flex h-full w-full items-center justify-center text-xs font-mono uppercase text-gray-500">
+                  No Image
                 </div>
               )}
 
@@ -118,9 +117,8 @@ export function TraitGrid({
               {item.isLocked && (
                 <div
                   data-testid="locked-badge"
-                  className="absolute top-2 right-2 flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-950/80 px-2 py-0.5 text-xs font-medium text-amber-300 backdrop-blur"
+                  className="absolute top-2 right-2 rounded-full border border-amber-500/30 bg-amber-950/80 px-2.5 py-0.5 text-xs font-medium text-amber-300 backdrop-blur"
                 >
-                  <Lock className="h-3 w-3" />
                   <span>Locked</span>
                 </div>
               )}
@@ -129,9 +127,8 @@ export function TraitGrid({
               {isEquipped ? (
                 <div
                   data-testid={`equipped-badge-${item.id}`}
-                  className="absolute top-2 left-2 flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/80 px-2.5 py-0.5 text-xs font-semibold text-emerald-300 backdrop-blur shadow-sm"
+                  className="absolute top-2 left-2 rounded-full border border-emerald-500/40 bg-emerald-950/80 px-2.5 py-0.5 text-xs font-semibold text-emerald-300 backdrop-blur shadow-sm"
                 >
-                  <Sparkles className="h-3 w-3" />
                   <span>Equipped</span>
                 </div>
               ) : isEligible ? (
@@ -186,25 +183,23 @@ export function TraitGrid({
                 {isEquipped ? (
                   <div
                     data-testid={`equipped-action-${item.id}`}
-                    className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-950/50 text-xs font-semibold text-emerald-300 shadow-sm"
+                    className="flex h-8 w-full items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-950/50 text-xs font-semibold text-emerald-300 shadow-sm uppercase tracking-wide"
                     title={
                       availableCount < 2
                         ? `This trait is currently equipped on your Profile avatar. You must retain at least 1 item in the ${item.trait.category} category.`
                         : "This trait is currently equipped on your Profile avatar and cannot be gifted."
                     }
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                     <span>In Use on Profile</span>
                   </div>
                 ) : item.isLocked ? (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 w-full border-amber-500/30 text-xs text-amber-400 opacity-60 cursor-not-allowed"
+                    className="h-8 w-full border-amber-500/30 text-xs text-amber-400 opacity-60 cursor-not-allowed uppercase tracking-wide"
                     disabled
                     data-testid={totalCategoryCount < 2 ? `locked-badge-${item.id}` : `gift-button-${item.id}`}
                   >
-                    <Lock className="mr-1.5 h-3.5 w-3.5" />
                     Locked in Gift
                   </Button>
                 ) : (
@@ -212,8 +207,8 @@ export function TraitGrid({
                     {onEquipItem && (
                       <Button
                         size="sm"
-                        variant="gold"
-                        className={`h-8 ${isEligible && onGiftItem ? "flex-1" : "w-full"} bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs uppercase tracking-wide cursor-pointer shadow-sm transition-all`}
+                        variant="outline"
+                        className={`h-8 ${isEligible && onGiftItem ? "flex-1" : "w-full"} border-teal-500/40 text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all uppercase tracking-wide`}
                         onClick={() => onEquipItem(item)}
                         disabled={isEquipping}
                         data-testid={`equip-button-${item.id}`}
@@ -225,12 +220,11 @@ export function TraitGrid({
                       <Button
                         size="sm"
                         variant="outline"
-                        className={`h-8 ${onEquipItem ? "flex-1" : "w-full"} border-teal-500/40 text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all`}
+                        className={`h-8 ${onEquipItem ? "flex-1" : "w-full"} border-teal-500/40 text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all uppercase tracking-wide`}
                         onClick={() => onGiftItem(item)}
                         data-testid={`gift-button-${item.id}`}
                       >
-                        <Gift className="mr-1 h-3.5 w-3.5" />
-                        <span>Gift Trait</span>
+                        Gift Trait
                       </Button>
                     )}
                     {!onEquipItem && !isEligible && (

@@ -116,7 +116,7 @@ export async function GET(
         status: 304,
         headers: {
           ETag: etag,
-          "Cache-Control": "public, max-age=3600, must-revalidate",
+          "Cache-Control": "no-cache, must-revalidate",
         },
       });
     }
@@ -127,7 +127,7 @@ export async function GET(
         "Content-Type": "image/png",
         "Content-Length": String(record.pngBuffer.length),
         ETag: etag,
-        "Cache-Control": "public, max-age=3600, must-revalidate",
+        "Cache-Control": "no-cache, must-revalidate",
       },
     });
   } catch (err) {
