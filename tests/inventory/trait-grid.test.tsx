@@ -132,6 +132,111 @@ describe("TraitGrid Component & Profile Inventory States", () => {
       // t-2 has only 1 copy (item-2) -> does NOT have Gift button
       expect(screen.queryByTestId("gift-button-item-2")).not.toBeInTheDocument();
     });
+
+    it("renders In Use on Profile for single copy equipped item instead of category minimum text", () => {
+      // sampleItems[0] is item-1 (FUR #1, only 1 FUR copy) -> automatically candidate and equipped
+      render(<TraitGrid items={[sampleItems[0]]} />);
+
+      expect(screen.getByTestId("equipped-action-item-1")).toBeInTheDocument();
+      expect(screen.getByTestId("equipped-action-item-1")).toHaveTextContent("In Use on Profile");
+      expect(screen.queryByText(/Keep 1 in FUR/)).not.toBeInTheDocument();
+    });
+
+    it("renders Equip button on unequipped items when onEquipItem is provided and handles click", () => {
+      const extraItem: InventoryItemData = {
+        id: "item-extra-1",
+        edition: 2,
+        acquiredVia: "CLAIM",
+        acquiredAt: "2026-10-15T12:00:00.000Z",
+        isLocked: false,
+        lockReason: null,
+        isEquipped: false,
+        trait: {
+          id: "t-1",
+          name: "Diamond Grill",
+          category: "FUR",
+          rarity: "LEGENDARY",
+          imageUrl: "https://assets.chimphood.io/traits/grill.png",
+        },
+      };
+
+      const equippedItem: InventoryItemData = {
+        id: "item-equipped-1",
+        edition: 1,
+        acquiredVia: "CLAIM",
+        acquiredAt: "2026-10-15T10:00:00.000Z",
+        isLocked: false,
+        lockReason: null,
+        isEquipped: true,
+        trait: {
+          id: "t-1",
+          name: "Diamond Grill",
+          category: "FUR",
+          rarity: "LEGENDARY",
+          imageUrl: "https://assets.chimphood.io/traits/grill.png",
+        },
+      };
+
+      const onEquipSpy = vi.fn();
+      const onGiftSpy = vi.fn();
+
+      render(
+        <TraitGrid
+          items={[equippedItem, extraItem]}
+          onGiftItem={onGiftSpy}
+          onEquipItem={onEquipSpy}
+        />,
+      );
+
+      // Equipped item displays In Use on Profile
+      expect(screen.getByTestId("equipped-action-item-equipped-1")).toBeInTheDocument();
+      expect(screen.getByTestId("equipped-action-item-equipped-1")).toHaveTextContent("In Use on Profile");
+
+      // Unequipped item has Equip button and Gift button
+      const equipBtn = screen.getByTestId("equip-button-item-extra-1");
+      expect(equipBtn).toBeInTheDocument();
+      expect(equipBtn).toHaveTextContent("Equip");
+
+      const giftBtn = screen.getByTestId("gift-button-item-extra-1");
+      expect(giftBtn).toBeInTheDocument();
+
+      // Click Equip
+      equipBtn.click();
+      expect(onEquipSpy).toHaveBeenCalledWith(extraItem);
+    });
+
+    it("displays Equipping... and disables Equip button when equippingItemId matches", () => {
+      const extraItem: InventoryItemData = {
+        id: "item-extra-loading",
+        edition: 2,
+        acquiredVia: "CLAIM",
+        acquiredAt: "2026-10-15T12:00:00.000Z",
+        isLocked: false,
+        lockReason: null,
+        isEquipped: false,
+        trait: {
+          id: "t-1",
+          name: "Diamond Grill",
+          category: "FUR",
+          rarity: "LEGENDARY",
+          imageUrl: "",
+        },
+      };
+
+      const onEquipSpy = vi.fn();
+
+      render(
+        <TraitGrid
+          items={[sampleItems[0], extraItem]}
+          onEquipItem={onEquipSpy}
+          equippingItemId="item-extra-loading"
+        />,
+      );
+
+      const equipBtn = screen.getByTestId("equip-button-item-extra-loading");
+      expect(equipBtn).toHaveTextContent("Equipping...");
+      expect(equipBtn).toBeDisabled();
+    });
   });
 
   describe("ProfilePage Inventory States", () => {

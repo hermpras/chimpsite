@@ -216,8 +216,8 @@ describe("Gifting UI (I-1) Test Suite", () => {
       expect(
         screen.queryByTestId(`gift-button-${singleItem.id}`),
       ).not.toBeInTheDocument();
-      expect(screen.getByTestId(`single-copy-badge-${singleItem.id}`)).toHaveTextContent(
-        "Keep 1 in HEADWEAR (Category minimum)",
+      expect(screen.getByTestId(`equipped-action-${singleItem.id}`)).toHaveTextContent(
+        "In Use on Profile",
       );
 
       // dupItem1 is edition 10 (equipped on Profile) -> protected, cannot be gifted
@@ -247,10 +247,10 @@ describe("Gifting UI (I-1) Test Suite", () => {
       expect(lockedBtn).toBeDisabled();
       expect(lockedBtn).toHaveTextContent("Locked in Gift");
 
-      // dupItem1 is the only available copy remaining -> cannot be gifted, shows category minimum
+      // dupItem1 is the only available copy remaining -> cannot be gifted, in use on profile
       expect(screen.queryByTestId(`gift-button-${dupItem1.id}`)).not.toBeInTheDocument();
-      expect(screen.getByTestId(`single-copy-badge-${dupItem1.id}`)).toHaveTextContent(
-        "Keep 1 in EYEWEAR (Category minimum)",
+      expect(screen.getByTestId(`equipped-action-${dupItem1.id}`)).toHaveTextContent(
+        "In Use on Profile",
       );
     });
 
@@ -341,8 +341,8 @@ describe("Gifting UI (I-1) Test Suite", () => {
       // DUSK must NOT have Gift button: it is equipped and the last available BG
       expect(screen.queryByTestId(`gift-button-${duskItem.id}`)).not.toBeInTheDocument();
       expect(screen.getByTestId(`equipped-badge-${duskItem.id}`)).toHaveTextContent("Equipped");
-      expect(screen.getByTestId(`single-copy-badge-${duskItem.id}`)).toHaveTextContent(
-        "Keep 1 in BG (Category minimum)",
+      expect(screen.getByTestId(`equipped-action-${duskItem.id}`)).toHaveTextContent(
+        "In Use on Profile",
       );
 
       // SKY is locked in gift

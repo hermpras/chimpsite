@@ -213,10 +213,10 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
       expect(screen.getByTestId(`duplicate-badge-${duplicateItem2.id}`)).toHaveTextContent("Duplicate (2x)");
     });
 
-    // 2. Item tunggal menampilkan keterangan bahwa item harus disimpan
+    // 2. Item tunggal menampilkan keterangan bahwa item sedang digunakan di profil
     expect(screen.queryByTestId(`gift-button-${singleCopyItem.id}`)).not.toBeInTheDocument();
-    expect(screen.getByTestId(`single-copy-badge-${singleCopyItem.id}`)).toHaveTextContent(
-      "Keep 1 in HEADWEAR (Category minimum)",
+    expect(screen.getByTestId(`equipped-action-${singleCopyItem.id}`)).toHaveTextContent(
+      "In Use on Profile",
     );
 
     // 3. Modal Gift bisa dibuka dari item ekstra, username X dicari, dan penerima dikonfirmasi
@@ -368,10 +368,10 @@ describe("Profile Page Gift UI - End-to-End Verification", () => {
       expect(screen.getByTestId(`duplicate-badge-${skyItem.id}`)).toHaveTextContent("Extra BG (2 avail)");
     });
 
-    // FUR category only has 1 item -> Gift button is NOT present, category minimum badge shown
+    // FUR category only has 1 item -> Gift button is NOT present, equipped on profile
     expect(screen.queryByTestId(`gift-button-${solitaryFurItem.id}`)).not.toBeInTheDocument();
-    expect(screen.getByTestId(`single-copy-badge-${solitaryFurItem.id}`)).toHaveTextContent(
-      "Keep 1 in FUR (Category minimum)",
+    expect(screen.getByTestId(`equipped-action-${solitaryFurItem.id}`)).toHaveTextContent(
+      "In Use on Profile",
     );
 
     // Gifting unequipped extra SKY opens modal and confirms BG category requirement

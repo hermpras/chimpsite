@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/Button";
 interface TraitGridProps {
   items: InventoryItemData[];
   onGiftItem?: (item: InventoryItemData) => void;
+  onEquipItem?: (item: InventoryItemData) => void;
+  equippingItemId?: string | null;
 }
 
 const CATEGORY_BADGE_STYLES: Record<string, string> = {
@@ -16,8 +18,13 @@ const CATEGORY_BADGE_STYLES: Record<string, string> = {
   EYEWEAR: "border-teal-500/30 bg-teal-500/10 text-teal-400",
 };
 
-export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
-  // 1. Identify equipped item per category (lowest edition among available/unlocked items)
+export function TraitGrid({
+  items,
+  onGiftItem,
+  onEquipItem,
+  equippingItemId,
+}: TraitGridProps) {
+  // 1. Identify equipped item per category
   const equippedItemIds = new Set<string>();
   const categoryEquippedCandidate: Record<string, InventoryItemData> = {};
 
@@ -40,10 +47,13 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
     }
   }
 
-  // If items do not already have isEquipped pre-computed, populate from candidate mapping
-  if (equippedItemIds.size === 0) {
-    for (const item of Object.values(categoryEquippedCandidate)) {
-      equippedItemIds.add(item.id);
+  // For any category that does not have an explicitly equipped item, fallback to candidate
+  for (const [cat, candidate] of Object.entries(categoryEquippedCandidate)) {
+    const hasCategoryEquipped = items.some(
+      (it) => it.trait.category === cat && equippedItemIds.has(it.id),
+    );
+    if (!hasCategoryEquipped) {
+      equippedItemIds.add(candidate.id);
     }
   }
 
@@ -80,6 +90,7 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
         const totalCategoryCount = totalCategoryCounts[item.trait.category] || 0;
         const isEligible = !isEquipped && !item.isLocked && availableCount >= 2;
         const isDuplicateTrait = (traitCounts[item.trait.id] || 0) >= 2;
+        const isEquipping = equippingItemId === item.id;
 
         return (
           <div
@@ -172,62 +183,65 @@ export function TraitGrid({ items, onGiftItem }: TraitGridProps) {
                 </div>
 
                 {/* Bottom Action / Status Indicator */}
-                {!onGiftItem || totalCategoryCount < 2 ? (
+                {isEquipped ? (
                   <div
-                    data-testid={`single-copy-badge-${item.id}`}
-                    className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-xs text-gray-400 font-medium px-2 text-center"
-                    title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
+                    data-testid={`equipped-action-${item.id}`}
+                    className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-950/50 text-xs font-semibold text-emerald-300 shadow-sm"
+                    title={
+                      availableCount < 2
+                        ? `This trait is currently equipped on your Profile avatar. You must retain at least 1 item in the ${item.trait.category} category.`
+                        : "This trait is currently equipped on your Profile avatar and cannot be gifted."
+                    }
                   >
-                    Keep 1 in {item.trait.category} (Category minimum)
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                    <span>In Use on Profile</span>
                   </div>
-                ) : isEquipped ? (
-                  availableCount >= 2 ? (
-                    <div
-                      data-testid={`equipped-action-${item.id}`}
-                      className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-950/40 text-xs font-semibold text-emerald-400"
-                      title="This trait is currently equipped on your Profile avatar and cannot be gifted."
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>In Use on Profile</span>
-                    </div>
-                  ) : (
-                    <div
-                      data-testid={`single-copy-badge-${item.id}`}
-                      className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-xs text-gray-400 font-medium px-2 text-center"
-                      title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
-                    >
-                      Keep 1 in {item.trait.category} (Category minimum)
-                    </div>
-                  )
                 ) : item.isLocked ? (
                   <Button
                     size="sm"
                     variant="outline"
                     className="h-8 w-full border-amber-500/30 text-xs text-amber-400 opacity-60 cursor-not-allowed"
                     disabled
-                    data-testid={`gift-button-${item.id}`}
+                    data-testid={totalCategoryCount < 2 ? `locked-badge-${item.id}` : `gift-button-${item.id}`}
                   >
                     <Lock className="mr-1.5 h-3.5 w-3.5" />
                     Locked in Gift
                   </Button>
-                ) : isEligible ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 w-full border-teal-500/40 text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all"
-                    onClick={() => onGiftItem(item)}
-                    data-testid={`gift-button-${item.id}`}
-                  >
-                    <Gift className="mr-1.5 h-3.5 w-3.5" />
-                    Gift Trait
-                  </Button>
                 ) : (
-                  <div
-                    data-testid={`single-copy-badge-${item.id}`}
-                    className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-xs text-gray-400 font-medium px-2 text-center"
-                    title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
-                  >
-                    Keep 1 in {item.trait.category} (Category minimum)
+                  <div className="flex items-center gap-2 w-full">
+                    {onEquipItem && (
+                      <Button
+                        size="sm"
+                        variant="gold"
+                        className={`h-8 ${isEligible && onGiftItem ? "flex-1" : "w-full"} bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs uppercase tracking-wide cursor-pointer shadow-sm transition-all`}
+                        onClick={() => onEquipItem(item)}
+                        disabled={isEquipping}
+                        data-testid={`equip-button-${item.id}`}
+                      >
+                        {isEquipping ? "Equipping..." : "Equip"}
+                      </Button>
+                    )}
+                    {isEligible && onGiftItem && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={`h-8 ${onEquipItem ? "flex-1" : "w-full"} border-teal-500/40 text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all`}
+                        onClick={() => onGiftItem(item)}
+                        data-testid={`gift-button-${item.id}`}
+                      >
+                        <Gift className="mr-1 h-3.5 w-3.5" />
+                        <span>Gift Trait</span>
+                      </Button>
+                    )}
+                    {!onEquipItem && !isEligible && (
+                      <div
+                        data-testid={`single-copy-badge-${item.id}`}
+                        className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-xs text-gray-400 font-medium px-2 text-center"
+                        title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
+                      >
+                        Keep 1 in {item.trait.category} (Category minimum)
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -258,6 +258,8 @@ function ProfileContent() {
 
   // Avatar state (I-3)
   const [avatarVersion, setAvatarVersion] = useState<number>(() => Date.now());
+  const [equippingItemId, setEquippingItemId] = useState<string | null>(null);
+  const [equipError, setEquipError] = useState<string | null>(null);
   const ownedCategories = new Set(inventoryItems.map((item) => item.trait.category));
 
   const xErrorMessage =
@@ -345,6 +347,49 @@ function ProfileContent() {
   const handleOpenGiftModal = (item: InventoryItemData) => {
     setSelectedItemForGift(item);
     setIsGiftModalOpen(true);
+  };
+
+  const handleEquipItem = async (item: InventoryItemData) => {
+    if (equippingItemId || item.isLocked || item.isEquipped) return;
+    setEquippingItemId(item.id);
+    setEquipError(null);
+
+    // Optimistic UI update: mark this item as equipped and other items in same category as unequipped
+    const previousItems = [...inventoryItems];
+    const category = item.trait.category;
+    setInventoryItems((prev) =>
+      prev.map((it) => {
+        if (it.trait.category === category) {
+          return { ...it, isEquipped: it.id === item.id };
+        }
+        return it;
+      }),
+    );
+
+    try {
+      await inventoryClient.equipUserTrait(item.id);
+      // Bust avatar cache and trigger immediate visual update
+      setAvatarVersion(Date.now());
+      // Refresh inventory in the background to ensure consistency
+      if (address) {
+        inventoryClient
+          .fetchUserInventory(address)
+          .then((data) => {
+            if (data.items) {
+              setInventoryItems(data.items);
+            }
+          })
+          .catch(() => {});
+      }
+    } catch (err: unknown) {
+      console.error("Error equipping trait:", err);
+      // Revert optimistic update
+      setInventoryItems(previousItems);
+      const msg = err instanceof Error ? err.message : "Failed to equip trait.";
+      setEquipError(msg);
+    } finally {
+      setEquippingItemId(null);
+    }
   };
 
   useEffect(() => {
@@ -1060,12 +1105,33 @@ function ProfileContent() {
                     <div className="mt-3 flex items-start gap-1.5 text-xs sm:text-sm text-[#8AA8B2]">
                       <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
                       <p>
-                        Your avatar automatically equips the lowest edition trait in each category. Equipped traits cannot be transferred as gifts.
+                        Your avatar displays your active equipped traits. Click Equip on any trait to wear it on your avatar. Equipped traits cannot be transferred as gifts.
                       </p>
                     </div>
                   </div>
 
-                  <TraitGrid items={inventoryItems} onGiftItem={handleOpenGiftModal} />
+                  {equipError && (
+                    <div
+                      role="alert"
+                      className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-xs sm:text-sm text-rose-200 flex items-center justify-between"
+                    >
+                      <span>{equipError}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEquipError(null)}
+                        className="text-xs text-rose-400 hover:text-rose-200 font-bold ml-2 cursor-pointer"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+
+                  <TraitGrid
+                    items={inventoryItems}
+                    onGiftItem={handleOpenGiftModal}
+                    onEquipItem={handleEquipItem}
+                    equippingItemId={equippingItemId}
+                  />
                 </div>
               ) : (
                 <div data-testid="inventory-empty" className="space-y-6">
@@ -1097,7 +1163,7 @@ function ProfileContent() {
                     <div className="mt-3 flex items-start gap-1.5 text-xs sm:text-sm text-[#8AA8B2]">
                       <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
                       <p>
-                        Your avatar automatically equips the lowest edition trait in each category. Equipped traits cannot be transferred as gifts.
+                        Your avatar displays your active equipped traits. Collect traits to assemble your Chimp. Equipped traits cannot be transferred as gifts.
                       </p>
                     </div>
                   </div>
