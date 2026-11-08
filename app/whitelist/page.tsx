@@ -504,7 +504,7 @@ export default function WhitelistPage() {
 
           setTaskSuccess((prev) => ({
             ...prev,
-            [task.id]: "Task verified & completed! +PTS awarded.",
+            [task.id]: "Task verified & completed!",
           }));
 
           await loadTasks();
@@ -1297,9 +1297,6 @@ export default function WhitelistPage() {
                                     <span className="text-[10px] font-semibold text-[#8AA8B2] uppercase">
                                       {taskMeta.label}
                                     </span>
-                                    <span className="text-xs font-bold text-emerald-400">
-                                      +{task.points} Pts
-                                    </span>
                                   </div>
                                   {task.description && (
                                     <p className="text-xs text-[#8AA8B2] line-clamp-1">
@@ -1464,9 +1461,6 @@ export default function WhitelistPage() {
                                   <h4 className="text-xs sm:text-sm font-bold text-[#F8F7F4]">
                                     {task.title}
                                   </h4>
-                                  <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/40 bg-emerald-950/30">
-                                    +{task.points} Pts
-                                  </Badge>
                                   <span className="text-[10px] text-zinc-500 uppercase">
                                     {task.taskType}
                                   </span>

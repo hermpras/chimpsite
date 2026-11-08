@@ -493,7 +493,7 @@ export function AdminOverview({
               <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
             <p className="mt-2 text-xs text-gray-400 leading-relaxed">
-              Review and approve or reject proof of work submitted by community members for quest points.
+              Review and approve or reject proof of work submitted by community members for task verification.
             </p>
           </div>
 

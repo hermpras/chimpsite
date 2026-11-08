@@ -125,8 +125,8 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     expect(screen.getByText("Follow Official X Handle")).toBeInTheDocument();
     expect(screen.getByText("Community Art Contest")).toBeInTheDocument();
     expect(screen.queryByText("Mandatory")).not.toBeInTheDocument();
-    expect(screen.getByText("+50 Pts")).toBeInTheDocument();
-    expect(screen.getByText("+100 Pts")).toBeInTheDocument();
+    expect(screen.queryByText("+50 Pts")).not.toBeInTheDocument();
+    expect(screen.queryByText("+100 Pts")).not.toBeInTheDocument();
 
     // Verify old hardcoded tasks are gone
     expect(screen.queryByText("Early Bird Community Quest")).not.toBeInTheDocument();

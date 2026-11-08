@@ -11,8 +11,6 @@ import {
   ExternalLink,
   Gift,
   ShieldCheck,
-  Layers,
-  Flame,
   Lock,
   ArrowRight,
 } from "lucide-react";
@@ -394,17 +392,14 @@ export default function DropsPage() {
             Claim periodic lootbox mystery pods to collect traits across all 5 categories.
           </p>
 
-          <div className="flex flex-wrap items-center gap-2.5 pt-1 text-[11px] uppercase tracking-wider">
-            <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 font-bold text-amber-300">
-              <span className="text-amber-400">⚡</span>
+          <div className="flex flex-wrap items-center gap-2.5 pt-1 text-sm sm:text-base font-medium text-zinc-300">
+            <span>
               {dropData?.drop?.cycleDurationHours === 5
                 ? "5-Hour Hype Control Cycle"
                 : "2-Hour Drop Cycles"}
             </span>
-            <span className="inline-flex items-center gap-1.5 border border-gray-700 bg-gray-900/80 px-2.5 py-1 font-bold text-gray-300">
-              <Clock className="h-3.5 w-3.5 text-cyan-400" />
-              30-Minute Claim Window
-            </span>
+            <span className="text-zinc-600 select-none">•</span>
+            <span>30-Minute Claim Window</span>
           </div>
         </div>
       </div>
@@ -422,7 +417,7 @@ export default function DropsPage() {
                   Periodic Drop Cycle
                 </h2>
               </div>
-              <p className="text-xs text-[#8AA8B2] mt-1">
+              <p className="text-sm sm:text-base text-[#8AA8B2] mt-1">
                 1 claim per EVM wallet per period cycle.
               </p>
             </div>
@@ -509,8 +504,8 @@ export default function DropsPage() {
                   <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#071F24] to-[#04181C] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-center items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-amber-500/15 blur-xl" />
-                    <span className="text-xs font-bold text-amber-300/90 uppercase tracking-widest flex items-center justify-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-amber-400" /> Period Cycle
+                    <span className="text-xs font-bold text-amber-300/90 uppercase tracking-widest flex items-center justify-center">
+                      Period Cycle
                     </span>
                     <p className="my-2 font-display text-4xl sm:text-5xl font-black bg-gradient-to-br from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]">
                       #{displayPeriodIndex}
@@ -521,8 +516,8 @@ export default function DropsPage() {
                   <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#071F24] to-[#04181C] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-center items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-cyan-500/15 blur-xl" />
-                    <span className="text-xs font-bold text-cyan-300/90 uppercase tracking-widest flex items-center justify-center gap-1.5">
-                      <Layers className="h-3.5 w-3.5 text-cyan-400" /> Remaining Stock
+                    <span className="text-xs font-bold text-cyan-300/90 uppercase tracking-widest flex items-center justify-center">
+                      Remaining Stock
                     </span>
                     <p className="my-2 font-mono text-2xl sm:text-3xl font-bold text-white">
                       <span className="bg-gradient-to-r from-cyan-100 via-cyan-300 to-sky-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(6,182,212,0.3)]">
@@ -677,10 +672,13 @@ export default function DropsPage() {
                         ) : !areTasksDone ? (
                           <Link
                             href="/whitelist#tasks"
-                            className="w-full rounded-xl inline-flex items-center justify-center gap-1.5 border border-amber-300/60 bg-gradient-to-r from-amber-400 to-yellow-400 font-bold text-xs uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 py-2.5 px-3 text-center transition-all"
+                            aria-label={`Complete Quests on Whitelist (${completedTasks}/${totalTasks})`}
+                            className="w-full rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-xs sm:text-sm uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.55)] hover:scale-[1.01] active:scale-[0.99] py-2.5 px-3 flex items-center justify-center gap-2 transition-all"
                           >
-                            <Flame className="h-4 w-4 text-black shrink-0" />
-                            <span>Complete Quests on Whitelist ({completedTasks}/{totalTasks})</span>
+                            <span>Complete Quests</span>
+                            <span className="rounded-md bg-black/15 px-1.5 py-0.5 text-[11px] font-black tracking-normal">
+                              {completedTasks}/{totalTasks}
+                            </span>
                           </Link>
                         ) : isAlreadyClaimed ? (
                           <Button
@@ -785,10 +783,10 @@ export default function DropsPage() {
                 <div className="space-y-4 pt-4 border-t border-[#163B44]">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h3 className="text-xs font-bold tracking-wider text-white uppercase">
+                      <h3 className="text-base sm:text-lg font-bold tracking-wider text-white uppercase">
                         Drop Pool Inventory ({dropData.stock?.poolItems?.length ?? 0} Available Traits)
                       </h3>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
+                      <p className="text-xs sm:text-sm text-[#8AA8B2] mt-1">
                         Real-time trait stock and distribution directly from drop service
                       </p>
                     </div>
@@ -912,7 +910,7 @@ export default function DropsPage() {
 
                               return (
                                 <div className="relative z-10 mt-3 border-t border-[#163B44] pt-2.5">
-                                  <div className="mb-1.5 flex items-center justify-between text-[10px] font-mono">
+                                  <div className="mb-1.5 flex items-center justify-between text-xs sm:text-[13px] font-mono">
                                     <span className="flex items-center gap-1.5">
                                       {isLowStock && (
                                         <span className="h-1.5 w-1.5 animate-ping rounded-full bg-rose-500" />
@@ -1006,12 +1004,12 @@ export default function DropsPage() {
               <h3 className="font-display text-xl uppercase tracking-wider text-white">
                 Gifts &amp; Duplicate Trait Exchange
               </h3>
-              <p className="text-xs text-[#8AA8B2] mt-0.5">
+              <p className="text-sm text-[#8AA8B2] mt-1">
                 Help fellow community members complete their 5 required trait categories
               </p>
             </div>
           </div>
-          <div className="mt-5 space-y-3.5 rounded-2xl border border-[#163B44] bg-[#051D22] p-5 text-xs text-[#DBF2F9] shadow-inner">
+          <div className="mt-5 space-y-3.5 rounded-2xl border border-[#163B44] bg-[#051D22] p-5 text-sm sm:text-base text-[#DBF2F9] shadow-inner">
             <p className="leading-relaxed">
               Hold duplicate traits? You can gift them to peers directly from your{" "}
               <Link href="/profile" className="font-bold text-[#34B7DD] hover:text-[#6FCDE8] underline underline-offset-4 decoration-[#34B7DD]/50 hover:decoration-[#6FCDE8] transition-colors">
