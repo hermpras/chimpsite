@@ -381,25 +381,37 @@ export default function DropsPage() {
       <div className="pointer-events-none absolute top-20 right-10 h-96 w-96 rounded-full bg-amber-500/10 blur-[130px]" />
       <div className="pointer-events-none absolute top-96 left-10 h-80 w-80 rounded-full bg-cyan-500/10 blur-[140px]" />
 
-      {/* Hero Banner - Brutalist Streetwear Style */}
-      <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between border-b-2 border-gray-800 pb-8">
-        <div className="space-y-3">
-          <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl uppercase tracking-tight text-white leading-[0.9]">
-            Trait Drops &amp; Lootbox Engine
-          </h1>
+      {/* Hero Banner — Elyzuma Luxury Aesthetic */}
+      <div className="relative mb-10 overflow-hidden rounded-[28px] sm:rounded-[32px] border border-cyan-500/25 bg-gradient-to-b from-[#0c2831]/90 via-[#071d24]/95 to-[#031116]/98 p-6 sm:p-8 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),inset_0_0_24px_rgba(52,183,221,0.05),0_24px_50px_-12px_rgba(0,0,0,0.7)] transition-all">
+        {/* Top rim highlight line */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
-          <p className="max-w-2xl text-sm sm:text-base leading-relaxed text-gray-300">
-            Claim periodic lootbox mystery pods to collect traits across all 5 categories.
-          </p>
+        {/* Ambient cyan glow orbs */}
+        <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-teal-500/10 blur-3xl" />
 
-          <div className="flex flex-wrap items-center gap-2.5 pt-1 text-sm sm:text-base font-medium text-zinc-300">
-            <span>
-              {dropData?.drop?.cycleDurationHours === 5
-                ? "5-Hour Hype Control Cycle"
-                : "2-Hour Drop Cycles"}
-            </span>
-            <span className="text-zinc-600 select-none">•</span>
-            <span>30-Minute Claim Window</span>
+        <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-3">
+            <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl uppercase tracking-tight text-white leading-[0.95]">
+              <span className="bg-gradient-to-r from-white via-[#dbf2f9] to-[#6fcde8] bg-clip-text text-transparent drop-shadow-sm">
+                Trait Drops &amp; Lootbox Engine
+              </span>
+            </h1>
+
+            <p className="max-w-2xl text-sm sm:text-base leading-relaxed text-[#8AA8B2]">
+              Claim periodic lootbox mystery pods to collect traits across all 5 categories.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs sm:text-sm font-medium text-cyan-200/80">
+              <span className="inline-flex items-center rounded-full border border-cyan-500/20 bg-[#071f27]/80 px-3 py-1 backdrop-blur-sm">
+                {dropData?.drop?.cycleDurationHours === 5
+                  ? "5-Hour Hype Control Cycle"
+                  : "2-Hour Drop Cycles"}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-cyan-500/20 bg-[#071f27]/80 px-3 py-1 backdrop-blur-sm">
+                30-Minute Claim Window
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -556,13 +568,6 @@ export default function DropsPage() {
                     <div>
                       <div className="flex items-center justify-center gap-2">
                         <span
-                          className={`inline-block h-2 w-2 rounded-full ${
-                            isWindowActive
-                              ? "bg-amber-400 shadow-[0_0_8px_#fbbf24] animate-ping"
-                              : "bg-cyan-400 shadow-[0_0_8px_#22d3ee]"
-                          }`}
-                        />
-                        <span
                           className={`text-xs font-bold uppercase tracking-widest ${
                             isWindowActive ? "text-amber-300" : "text-gray-300"
                           }`}
@@ -652,10 +657,9 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-amber-500/50 bg-gradient-to-r from-amber-500/20 via-amber-600/15 to-transparent text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-90 py-2.5 shadow-sm"
+                            className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center cursor-not-allowed py-2.5"
                             disabled
                           >
-                            <ShieldCheck className="h-4 w-4 text-amber-400 shrink-0" />
                             <span>Whitelist Slot Secured</span>
                           </Button>
                         ) : !hasLinkedX ? (
@@ -666,7 +670,6 @@ export default function DropsPage() {
                             onClick={handleConnectX}
                             disabled={isConnectingX}
                           >
-                            <XLogo className="h-4 w-4 shrink-0" />
                             <span>{isConnectingX ? "Connecting X..." : "Link X (Twitter) to Register"}</span>
                           </Button>
                         ) : !areTasksDone ? (
@@ -684,11 +687,10 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-emerald-500/40 bg-emerald-950/40 text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-95 py-2.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                            className="w-full rounded-xl border border-emerald-500/40 bg-emerald-950/40 text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider flex items-center justify-center cursor-not-allowed opacity-95 py-2.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
                             disabled
                           >
-                            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                            Claimed for Period #{dropData.period.periodIndex} (1/1)
+                            <span>Claimed for Period #{dropData.period.periodIndex} (1/1)</span>
                           </Button>
                         ) : isStockExhausted ? (
                           <Button
@@ -712,31 +714,27 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-[#163B44] bg-[#102B33]/50 text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed py-2.5"
+                            className="w-full rounded-xl border border-[#163B44] bg-[#102B33]/50 text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center cursor-not-allowed py-2.5"
                             disabled
                           >
-                            <Clock className="h-4 w-4 text-amber-400 shrink-0" />
                             <span>Opens in {formatRemaining(nextDropRemainingMs)}</span>
                           </Button>
                         )}
 
                         {hasAllocatedSlot && (
-                          <div className="mt-2.5 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3.5 text-center space-y-2 shadow-sm">
-                            <p className="text-xs sm:text-sm text-amber-300 font-bold uppercase flex items-center justify-center gap-1.5">
-                              <ShieldCheck className="h-4 w-4 text-amber-400 shrink-0" />
-                              <span>Whitelist Allocation Secured</span>
+                          <div className="mt-2.5 rounded-xl border border-amber-500/25 bg-amber-950/20 p-3.5 text-center space-y-2">
+                            <p className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                              Whitelist Allocation Secured
                             </p>
-                            <p className="text-xs sm:text-sm text-gray-300 leading-normal">
-                              Trait drops are reserved for participants still qualifying. You can gift duplicate traits to friends from your Backpack.
+                            <p className="text-xs text-gray-300 leading-normal">
+                              Trait drops are reserved for participants still qualifying. You can gift duplicate traits to friends from your Inventory.
                             </p>
                             <div className="pt-1">
                               <Link
                                 href="/profile"
-                                className="group relative overflow-hidden inline-flex items-center justify-center gap-1.5 rounded-xl border border-cyan-400/50 bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-cyan-500/20 px-4 py-2 text-xs sm:text-sm font-black uppercase tracking-wider text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:border-cyan-400 hover:shadow-[0_0_24px_rgba(6,182,212,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                className="group relative overflow-hidden inline-flex w-full items-center justify-center rounded-xl border border-cyan-400/50 bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-cyan-500/20 px-4 py-2 text-xs font-bold uppercase tracking-wider text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:border-cyan-400 hover:shadow-[0_0_24px_rgba(6,182,212,0.45)] hover:scale-[1.01] active:scale-[0.99] transition-all"
                               >
-                                <Gift className="h-4 w-4 text-cyan-400" />
-                                <span>Go to Backpack to Gift</span>
-                                <ArrowRight className="h-3.5 w-3.5 text-cyan-400" />
+                                <span>Go to Inventory to Gift</span>
                               </Link>
                             </div>
                           </div>

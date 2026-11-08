@@ -870,7 +870,7 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       });
     });
 
-    it("renders disabled 'Whitelist Slot Secured' and Backpack gifting link when user already holds an allocated Whitelist slot", async () => {
+    it("renders disabled 'Whitelist Slot Secured' and Inventory gifting link when user already holds an allocated Whitelist slot", async () => {
       vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue({
         ...mockActiveDrop,
         userEligibility: {
@@ -900,7 +900,7 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
           screen.getByText(/Trait drops are reserved for participants still qualifying/i),
         ).toBeInTheDocument();
 
-        const giftLink = screen.getByRole("link", { name: /Go to Backpack to Gift/i });
+        const giftLink = screen.getByRole("link", { name: /Go to (?:Inventory|Backpack) to Gift/i });
         expect(giftLink).toBeInTheDocument();
         expect(giftLink).toHaveAttribute("href", "/profile");
 
