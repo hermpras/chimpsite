@@ -3,27 +3,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
-  ShieldCheck,
   Clock,
-  Flame,
   CheckCircle2,
   XCircle,
-  Sparkles,
-  AlertCircle,
   Send,
   RefreshCw,
   ExternalLink,
-  Info,
   Heart,
   Repeat,
   MessageSquare,
   ArrowRight,
   Link2,
-  Check,
   ChevronDown,
   ChevronUp,
-  Palette,
-  Download,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -668,7 +660,6 @@ export default function WhitelistPage() {
           subtext: "Verified — All criteria confirmed by team.",
           badgeVariant: "default" as const,
           colorClass: "border-emerald-500/40 bg-emerald-950/50 text-emerald-300",
-          icon: CheckCircle2,
         };
       case "UNDER_REVIEW":
         return {
@@ -676,7 +667,6 @@ export default function WhitelistPage() {
           subtext: "Under Verification — Account details being audited.",
           badgeVariant: "warning" as const,
           colorClass: "border-amber-500/40 bg-amber-950/50 text-amber-300",
-          icon: Clock,
         };
       case "FLAGGED":
         return {
@@ -685,7 +675,6 @@ export default function WhitelistPage() {
             "Notice — Please review your linked accounts and task requirements. Slot remains active.",
           badgeVariant: "warning" as const,
           colorClass: "border-rose-500/40 bg-rose-950/50 text-rose-300",
-          icon: AlertCircle,
         };
       case "NOT_REVIEWED":
       default:
@@ -694,7 +683,6 @@ export default function WhitelistPage() {
           subtext: "Slot Confirmed — Routine verification in progress.",
           badgeVariant: "outline" as const,
           colorClass: "border-cyan-500/40 bg-cyan-950/50 text-cyan-300",
-          icon: Info,
         };
     }
   }
@@ -1699,23 +1687,24 @@ export default function WhitelistPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                    <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
                       {TRAIT_CATEGORIES.map((cat) => {
                         const isHeld = heldCategories.includes(cat);
                         const theme = CATEGORY_THEMES[cat];
                         return (
                           <div
                             key={cat}
-                            className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all ${
+                            title={`${cat}: ${isHeld ? "Owned" : "Missing"}`}
+                            className={`flex flex-col items-center justify-center min-w-0 py-2 sm:py-2.5 px-0.5 rounded-xl border text-center transition-all ${
                               isHeld
                                 ? `${theme.heldClass} font-bold backdrop-blur-xs`
                                 : "border-gray-800/80 bg-[#090b10] text-gray-500 grayscale opacity-50"
                             }`}
                           >
-                            <span className="text-xs sm:text-sm font-bold tracking-tight">
+                            <span className="text-[9px] min-[360px]:text-[9.5px] sm:text-[10px] xl:text-[10.5px] font-bold tracking-tight whitespace-nowrap leading-tight block">
                               {cat}
                             </span>
-                            <span className="text-xs mt-0.5 opacity-90 font-medium">
+                            <span className="text-[8.5px] min-[360px]:text-[9px] sm:text-[9.5px] mt-0.5 opacity-80 font-medium tracking-tight whitespace-nowrap leading-none block">
                               {isHeld ? "Owned" : "Missing"}
                             </span>
                           </div>
@@ -1751,12 +1740,12 @@ export default function WhitelistPage() {
                 </div>
 
                 {/* Trait Lootbox Drops CTA */}
-                <div className="relative rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-[#0e1018] to-amber-500/5 p-4 flex items-center justify-between gap-3 overflow-hidden shadow-sm">
-                  <div className="space-y-0.5 min-w-0">
-                    <p className="font-display text-xs uppercase tracking-wider text-white truncate">
+                <div className="relative rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-[#0e1018] to-amber-500/5 p-4 flex items-center justify-between gap-3 shadow-sm">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <p className="font-display text-xs uppercase tracking-wider text-white">
                       Trait Lootbox Drops
                     </p>
-                    <p className="text-xs sm:text-sm text-gray-400 truncate">
+                    <p className="text-xs text-gray-400 leading-snug">
                       Need more traits to complete your collection?
                     </p>
                   </div>
@@ -1764,7 +1753,7 @@ export default function WhitelistPage() {
                     <Button
                       variant="primary"
                       size="sm"
-                      className="group relative overflow-hidden rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-xs sm:text-sm font-black uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_28px_rgba(245,158,11,0.55)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                      className="group relative overflow-hidden rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-xs sm:text-sm font-black uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_28px_rgba(245,158,11,0.55)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                     >
                       <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                       <span>Go to Drops</span>
@@ -1949,7 +1938,6 @@ export default function WhitelistPage() {
                     {/* Detailed Backend Qualification Results */}
                     {statusResult?.status?.phase === "SLOT_ALLOCATED" && (() => {
                        const review = getGtdReviewDetails(statusResult.status.reviewStatus);
-                       const ReviewIcon = review.icon;
                        const slotNum = statusResult.status.slotNumber;
                        const paddedSlot = slotNum ? String(slotNum).padStart(4, "0") : "0001";
                        const gtdXUsername = statusResult?.status?.details?.xUsername;
@@ -2083,8 +2071,7 @@ export default function WhitelistPage() {
                            </div>
 
                            {/* Review Note */}
-                           <div className="flex items-start gap-2.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 text-xs sm:text-sm text-[#8AA8B2]">
-                             <ReviewIcon className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+                           <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 text-xs sm:text-sm text-[#8AA8B2]">
                              <div className="space-y-0.5 min-w-0">
                                <div className="flex items-center gap-2">
                                  <Badge variant={review.badgeVariant} className={`text-xs font-bold ${review.colorClass}`}>
@@ -2107,7 +2094,6 @@ export default function WhitelistPage() {
                                size="lg"
                                className="group relative overflow-hidden w-full gap-2 rounded-xl border-amber-400/50 bg-amber-950/40 text-amber-300 hover:bg-amber-900/40 hover:border-amber-400 font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 cursor-pointer shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
                              >
-                               <Download className="h-4 w-4 text-amber-400" />
                                <span>Download Pass Card</span>
                              </Button>
                              <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
@@ -2117,9 +2103,7 @@ export default function WhitelistPage() {
                                  className="group relative overflow-hidden w-full gap-2 rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 text-black font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 shadow-[0_0_24px_rgba(245,158,11,0.35)] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
                                >
                                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-                                 <XLogo className="h-4 w-4 fill-black" />
                                  <span>Share on X</span>
-                                 <ExternalLink className="h-3.5 w-3.5" />
                                </Button>
                              </a>
                            </div>
@@ -2262,8 +2246,7 @@ export default function WhitelistPage() {
 
                            {/* Eligibility Note */}
                            {statusResult.status.isFullyQualified ? (
-                             <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5">
-                               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+                             <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5">
                                <div className="space-y-0.5">
                                  <p className="text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider">All 5 Requirements Satisfied ✓</p>
                                  <p className="text-[#8AA8B2] text-xs sm:text-sm leading-relaxed">
@@ -2272,8 +2255,7 @@ export default function WhitelistPage() {
                                </div>
                              </div>
                            ) : (
-                             <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-950/40 p-3.5">
-                               <AlertCircle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                             <div className="rounded-xl border border-amber-500/30 bg-amber-950/40 p-3.5">
                                <div className="space-y-0.5">
                                  <p className="text-xs sm:text-sm font-bold text-amber-300 uppercase tracking-wider">Action Required — Complete 5/5 Requirements</p>
                                  <p className="text-[#8AA8B2] text-xs sm:text-sm leading-relaxed">
@@ -2293,7 +2275,6 @@ export default function WhitelistPage() {
                                  size="lg"
                                  className="group relative overflow-hidden w-full gap-2 rounded-xl border-cyan-400/50 bg-cyan-950/40 text-cyan-300 hover:bg-cyan-900/40 hover:border-cyan-400 font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 cursor-pointer shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
                                >
-                                 <Download className="h-4 w-4 text-cyan-400" />
                                  <span>Download Pass Card</span>
                                </Button>
                                <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
@@ -2303,9 +2284,7 @@ export default function WhitelistPage() {
                                    className="group relative overflow-hidden w-full gap-2 rounded-xl border border-cyan-300/70 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] hover:from-[#6FCDE8] hover:to-[#34B7DD] text-black font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 shadow-[0_0_24px_rgba(52,183,221,0.35)] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
                                  >
                                    <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-                                   <XLogo className="h-4 w-4 fill-black" />
                                    <span>Share on X</span>
-                                   <ExternalLink className="h-3.5 w-3.5" />
                                  </Button>
                                </a>
                              </div>
@@ -2321,8 +2300,7 @@ export default function WhitelistPage() {
 
                     {statusResult?.status?.phase === "REVOKED" && (
                       <div className="space-y-1.5 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3.5 text-xs sm:text-sm text-rose-200">
-                        <div className="flex items-center gap-1.5 font-bold text-rose-300">
-                          <XCircle className="h-4 w-4 text-rose-400" />
+                        <div className="font-bold text-rose-300">
                           Whitelist Status Revoked
                         </div>
                         <p className="text-rose-200 font-medium text-xs sm:text-sm">
