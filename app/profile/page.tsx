@@ -137,14 +137,20 @@ function getWhitelistSummaryBadge(
 ) {
   if (!isAuthenticated) {
     return (
-      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">
+      <Badge
+        variant="outline"
+        className="rounded-full border-[#163B44] bg-[#071f27]/70 text-zinc-400 text-xs px-3.5 py-1 font-medium backdrop-blur-sm"
+      >
         Wallet Not Connected
       </Badge>
     );
   }
   if (!status) {
     return (
-      <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">
+      <Badge
+        variant="outline"
+        className="rounded-full border-cyan-500/30 bg-[#071f27]/70 text-cyan-300 text-xs px-3.5 py-1 font-medium backdrop-blur-sm"
+      >
         WL Status: Loading...
       </Badge>
     );
@@ -154,7 +160,7 @@ function getWhitelistSummaryBadge(
       return (
         <Badge
           variant="default"
-          className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase tracking-wide"
+          className="rounded-full border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase tracking-wide px-3.5 py-1 shadow-[0_0_14px_rgba(16,185,129,0.25)] backdrop-blur-sm"
         >
           {`WL Status: Guaranteed Slot #${status.slotNumber}`}
         </Badge>
@@ -163,14 +169,14 @@ function getWhitelistSummaryBadge(
       return status.isFullyQualified ? (
         <Badge
           variant="default"
-          className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase tracking-wide"
+          className="rounded-full border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase tracking-wide px-3.5 py-1 shadow-[0_0_14px_rgba(16,185,129,0.25)] backdrop-blur-sm"
         >
           WL Status: Whitelisted
         </Badge>
       ) : (
         <Badge
           variant="default"
-          className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs tracking-wide"
+          className="rounded-full border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs tracking-wide px-3.5 py-1 shadow-[0_0_14px_rgba(52,183,221,0.25)] backdrop-blur-sm"
         >
           WL Status: In Progress
         </Badge>
@@ -179,7 +185,7 @@ function getWhitelistSummaryBadge(
       return (
         <Badge
           variant="outline"
-          className="border-rose-500/40 bg-rose-950/60 text-rose-300 font-bold text-xs"
+          className="rounded-full border-rose-500/40 bg-rose-950/60 text-rose-300 font-bold text-xs px-3.5 py-1 shadow-[0_0_14px_rgba(244,63,94,0.2)] backdrop-blur-sm"
         >
           WL Status: REVOKED
         </Badge>
@@ -187,7 +193,10 @@ function getWhitelistSummaryBadge(
     case "NONE":
     default:
       return (
-        <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">
+        <Badge
+          variant="outline"
+          className="rounded-full border-[#163B44] bg-[#071f27]/70 text-zinc-400 text-xs px-3.5 py-1 font-medium backdrop-blur-sm"
+        >
           WL Status: Not Registered
         </Badge>
       );
@@ -257,7 +266,37 @@ function ProfileContent() {
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
 
   // Avatar state (I-3)
-  const [avatarVersion, setAvatarVersion] = useState<number>(() => Date.now());
+  const [avatarVersion, setAvatarVersion] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("chimphood_avatar_version");
+        if (stored) return Number(stored);
+      } catch {}
+    }
+    return Date.now();
+  });
+
+  useEffect(() => {
+    const handleAvatarUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ version?: number }>;
+      if (customEvent.detail?.version) {
+        setAvatarVersion(customEvent.detail.version);
+      } else {
+        setAvatarVersion(Date.now());
+      }
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "chimphood_avatar_version" && e.newValue) {
+        setAvatarVersion(Number(e.newValue));
+      }
+    };
+    window.addEventListener("avatar-updated", handleAvatarUpdate);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("avatar-updated", handleAvatarUpdate);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
   const [equippingItemId, setEquippingItemId] = useState<string | null>(null);
   const [equipError, setEquipError] = useState<string | null>(null);
   const ownedCategories = new Set(inventoryItems.map((item) => item.trait.category));
@@ -343,7 +382,16 @@ function ProfileContent() {
 
   const handleRefreshAll = React.useCallback(async () => {
     await Promise.all([refreshInventory(), refreshGifts()]);
-    setAvatarVersion(Date.now());
+    const v = Date.now();
+    setAvatarVersion(v);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("chimphood_avatar_version", String(v));
+        window.dispatchEvent(
+          new CustomEvent("avatar-updated", { detail: { version: v } }),
+        );
+      } catch {}
+    }
   }, [refreshInventory, refreshGifts]);
 
   const handleOpenGiftModal = (item: InventoryItemData) => {
@@ -371,7 +419,16 @@ function ProfileContent() {
     try {
       await inventoryClient.equipUserTrait(item.id);
       // Bust avatar cache and trigger immediate visual update
-      setAvatarVersion(Date.now());
+      const newVersion = Date.now();
+      setAvatarVersion(newVersion);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("chimphood_avatar_version", String(newVersion));
+          window.dispatchEvent(
+            new CustomEvent("avatar-updated", { detail: { version: newVersion } }),
+          );
+        } catch {}
+      }
       // Refresh inventory in the background to ensure consistency
       if (address) {
         inventoryClient
@@ -511,27 +568,86 @@ function ProfileContent() {
   return (
     <div className="min-h-screen bg-[#04181C] text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
-        {/* Page Header with Character Avatar & Profile Overview */}
-        <div className="flex flex-col items-start gap-5 rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 shadow-brutal-sm sm:flex-row sm:items-center">
-          <UserAvatar
-            identifier={address}
-            hasInventory={inventoryItems.length > 0}
-            version={avatarVersion}
-            size="xl"
-            showRefreshButton={status === "authenticated" && inventoryItems.length > 0}
-            onRefresh={handleRefreshAll}
-            className="border-2 border-amber-400/50 rounded-2xl shadow-brutal-sm [image-rendering:pixelated]"
-          />
-          <div className="space-y-2 flex-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-wider text-white">
-                {displayName}
-              </h1>
-              {getWhitelistSummaryBadge(wlData?.status, status === "authenticated")}
+        {/* Page Header with Character Avatar & Profile Overview (Elyzuma Luxury Aesthetic) */}
+        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] border border-cyan-500/25 bg-gradient-to-b from-[#0c2831]/90 via-[#071d24]/95 to-[#031116]/98 p-6 sm:p-8 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),inset_0_0_24px_rgba(52,183,221,0.05),0_24px_50px_-12px_rgba(0,0,0,0.7)] transition-all">
+          {/* Top rim highlight line */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+
+          {/* Ambient cyan glow orbs */}
+          <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-teal-500/10 blur-3xl" />
+
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-8">
+            {/* Left Column: Badges, Title, Subtitle, Feature Chips */}
+            <div className="flex-1 space-y-4 min-w-0">
+              {/* WL Status Badge */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {getWhitelistSummaryBadge(wlData?.status, status === "authenticated")}
+              </div>
+
+              {/* Headline & Subtitle */}
+              <div className="space-y-1.5">
+                <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl uppercase tracking-wider text-white">
+                  <span className="bg-gradient-to-r from-white via-[#dbf2f9] to-[#6fcde8] bg-clip-text text-transparent drop-shadow-sm">
+                    {displayName}
+                  </span>
+                </h1>
+                <p className="text-xs sm:text-sm text-[#8AA8B2] leading-relaxed max-w-xl font-normal">
+                  One account for your X account and wallets; allowlists, trait drops, and gear follow it.
+                </p>
+              </div>
+
+              {/* Clean Micro-Pills (No icons) */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {/* Address Pill */}
+                {address ? (
+                  <div className="inline-flex items-center rounded-full border border-cyan-500/20 bg-[#071f27]/80 px-3 py-1 text-xs text-cyan-200/90 backdrop-blur-sm shadow-sm font-mono">
+                    {shortenAddress(address)}
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center rounded-full border border-slate-700/50 bg-[#071f27]/60 px-3 py-1 text-xs text-zinc-400">
+                    No Wallet
+                  </div>
+                )}
+
+                {/* X Identity Pill */}
+                {isXConnected && currentXUsername ? (
+                  <div className="inline-flex items-center rounded-full border border-sky-500/30 bg-sky-950/40 px-3 py-1 text-xs text-sky-300 backdrop-blur-sm shadow-sm">
+                    @{currentXUsername}
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center rounded-full border border-slate-700/50 bg-[#071f27]/60 px-3 py-1 text-xs text-zinc-400">
+                    X Not Linked
+                  </div>
+                )}
+
+                {/* Inventory Items Count Pill */}
+                <div className="inline-flex items-center rounded-full border border-cyan-500/20 bg-[#071f27]/80 px-3 py-1 text-xs text-cyan-200/90 backdrop-blur-sm shadow-sm">
+                  {inventoryItems.length} {inventoryItems.length === 1 ? "Item" : "Items"} Collected
+                </div>
+              </div>
             </div>
-            <p className="text-xs sm:text-sm text-zinc-400">
-              One account for your X account and wallets; allowlists, trait drops, and gear follow it.
-            </p>
+
+            {/* Right Column: Clean Collectible Avatar Showcase */}
+            <div className="shrink-0 flex justify-center sm:justify-end order-first sm:order-last">
+              <div className="relative group">
+                {/* Subtle ambient cyan glow behind the avatar card */}
+                <div className="pointer-events-none absolute -inset-1 rounded-[28px] bg-gradient-to-b from-cyan-400/25 via-cyan-600/10 to-transparent opacity-70 blur-md transition-opacity duration-300 group-hover:opacity-100" />
+
+                {/* The glass card container */}
+                <div className="relative rounded-[26px] border border-cyan-500/30 bg-gradient-to-b from-[#0e2c36]/90 via-[#071c23]/95 to-[#031116]/98 p-3 sm:p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-300 group-hover:border-cyan-400/50 group-hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),0_24px_48px_rgba(0,0,0,0.7),0_0_20px_rgba(52,183,221,0.2)]">
+                  <UserAvatar
+                    identifier={address}
+                    hasInventory={inventoryItems.length > 0}
+                    version={avatarVersion}
+                    size="xl"
+                    showRefreshButton={status === "authenticated" && inventoryItems.length > 0}
+                    onRefresh={handleRefreshAll}
+                    className="rounded-2xl border border-cyan-500/30 shadow-inner [image-rendering:pixelated] bg-[#05181e]"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1046,7 +1162,7 @@ function ProfileContent() {
                     Loading your inventory...
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Fetching collected traits and items from Elysium L2.
+                    Fetching collected traits and items from Elychimp.
                   </p>
                 </div>
               ) : inventoryError ? (
@@ -1072,11 +1188,6 @@ function ProfileContent() {
                         {TRAIT_CATEGORIES.filter((c) => ownedCategories.has(c)).length}/5
                         Categories Owned)
                       </h4>
-                      <span className="text-zinc-400">
-                        {TRAIT_CATEGORIES.every((c) => ownedCategories.has(c))
-                          ? "Full Character Set Complete ✨"
-                          : "Collect all 5 categories to complete avatar"}
-                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                       {TRAIT_CATEGORIES.map((category) => {
@@ -1086,26 +1197,18 @@ function ProfileContent() {
                           <div
                             key={category}
                             data-testid={`collection-category-${category.toLowerCase()}`}
-                            className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs sm:text-sm transition-colors ${
+                            className={`flex items-center justify-center rounded-xl border p-2.5 text-xs sm:text-sm transition-colors text-center ${
                               isHeld
                                 ? `${theme?.heldClass || "border-emerald-500/40 bg-emerald-950/40 text-emerald-300"} font-bold`
                                 : "border-[#163B44] bg-[#051D22]/60 text-zinc-600 grayscale opacity-40"
                             }`}
                           >
-                            {isHeld ? (
-                              <CheckCircle2
-                                className={`h-4 w-4 shrink-0 ${theme?.checkColor || "text-emerald-400"}`}
-                              />
-                            ) : (
-                              <div className="h-4 w-4 shrink-0 rounded-full border border-[#163B44] bg-[#102B33]" />
-                            )}
                             <span className="font-bold tracking-wide">{category}</span>
                           </div>
                         );
                       })}
                     </div>
-                    <div className="mt-3 flex items-start gap-1.5 text-xs sm:text-sm text-[#8AA8B2]">
-                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
+                    <div className="mt-3 text-xs sm:text-sm text-[#8AA8B2]">
                       <p>
                         Your avatar displays your active equipped traits. Click Equip on any trait to wear it on your avatar. Equipped traits cannot be transferred as gifts.
                       </p>
@@ -1146,24 +1249,19 @@ function ProfileContent() {
                       <h4 className="font-bold tracking-wider text-zinc-300 uppercase">
                         Trait Collection (0/5 Categories Owned)
                       </h4>
-                      <span className="text-amber-400 font-bold">
-                        Collect all 5 categories to assemble your Chimp
-                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                       {TRAIT_CATEGORIES.map((category) => (
                         <div
                           key={category}
                           data-testid={`collection-category-${category.toLowerCase()}`}
-                          className="flex items-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22]/60 p-2.5 text-xs sm:text-sm text-zinc-600 grayscale opacity-40"
+                          className="flex items-center justify-center rounded-xl border border-[#163B44] bg-[#051D22]/60 p-2.5 text-xs sm:text-sm text-zinc-600 grayscale opacity-40 text-center"
                         >
-                          <div className="h-4 w-4 shrink-0 rounded-full border border-[#163B44] bg-[#102B33]" />
                           <span className="font-bold tracking-wide">{category}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="mt-3 flex items-start gap-1.5 text-xs sm:text-sm text-[#8AA8B2]">
-                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
+                    <div className="mt-3 text-xs sm:text-sm text-[#8AA8B2]">
                       <p>
                         Your avatar displays your active equipped traits. Collect traits to assemble your Chimp. Equipped traits cannot be transferred as gifts.
                       </p>
