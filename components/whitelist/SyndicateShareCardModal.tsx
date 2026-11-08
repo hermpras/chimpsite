@@ -5,7 +5,6 @@ import {
   X,
   Download,
   ExternalLink,
-  Sparkles,
   Copy,
   Check,
 } from "lucide-react";
@@ -531,7 +530,7 @@ export function SyndicateShareCardModal({
       ctx.fillStyle = "#111827";
       ctx.font = "900 17px 'Space Mono', monospace";
       ctx.fillText(
-        `${formattedDate}  •  HYPERLIQUID L2`,
+        `${formattedDate}  •  ELYSIUM`,
         infoX,
         fieldY + 22
       );
@@ -669,7 +668,6 @@ export function SyndicateShareCardModal({
         {/* Modal Header */}
         <div className="space-y-1 pr-8">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-amber-400" />
             <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">
               OFFICIAL SYNDICATE ID BADGE
             </span>
@@ -799,7 +797,7 @@ export function SyndicateShareCardModal({
                       VISITING SINCE
                     </span>
                     <p className="text-[11px] sm:text-xs font-medium text-gray-900">
-                      {formattedDate} • HYPERLIQUID L2
+                      {formattedDate} • ELYSIUM
                     </p>
                   </div>
 

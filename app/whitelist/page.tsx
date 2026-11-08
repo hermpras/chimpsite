@@ -39,6 +39,7 @@ import {
   type InventoryItemData,
 } from "@/lib/inventory/client";
 import { UserAvatar } from "@/components/inventory/UserAvatar";
+import { getAvatarPublicUrl } from "@/lib/inventory/avatar-client";
 import { shortenAddress } from "@/lib/auth/address";
 
 import { XLogo } from "@/components/icons/XLogo";
@@ -221,7 +222,39 @@ export default function WhitelistPage() {
 
   // Inventory & Trait state
   const [inventoryItems, setInventoryItems] = useState<InventoryItemData[]>([]);
+  const [avatarVersion, setAvatarVersion] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("chimphood_avatar_version");
+        if (stored) return Number(stored);
+      } catch {}
+    }
+    return Date.now();
+  });
   const [showTasksInViewB, setShowTasksInViewB] = useState(false);
+
+  // Sync avatar version across components, events, and tabs
+  useEffect(() => {
+    const handleAvatarUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ version?: number }>;
+      if (customEvent.detail?.version) {
+        setAvatarVersion(customEvent.detail.version);
+      } else {
+        setAvatarVersion(Date.now());
+      }
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "chimphood_avatar_version" && e.newValue) {
+        setAvatarVersion(Number(e.newValue));
+      }
+    };
+    window.addEventListener("avatar-updated", handleAvatarUpdate);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("avatar-updated", handleAvatarUpdate);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   // Evidence submission state per task
   const [evidenceInputs, setEvidenceInputs] = useState<
@@ -275,6 +308,7 @@ export default function WhitelistPage() {
         .then((res) => {
           if (active && res.items) {
             setInventoryItems(res.items);
+            setAvatarVersion(Date.now());
           }
         })
         .catch(() => {
@@ -959,101 +993,112 @@ export default function WhitelistPage() {
     <div className="min-h-screen bg-[#04181C] text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
         {/* =======================================================================
-            HEADER & 5-STEP HORIZONTAL PROGRESS INDICATOR
+            HEADER & 5-STEP HORIZONTAL PROGRESS INDICATOR (Elyzuma Luxury Aesthetic)
         ======================================================================= */}
-        <header className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2.5">
-                <h1 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
-                  Whitelist Portal
-                </h1>
+        <header className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] border border-cyan-500/25 bg-gradient-to-b from-[#0c2831]/90 via-[#071d24]/95 to-[#031116]/98 p-6 sm:p-8 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),inset_0_0_24px_rgba(52,183,221,0.05),0_24px_50px_-12px_rgba(0,0,0,0.7)] transition-all">
+          {/* Top rim highlight line */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+
+          {/* Ambient cyan glow orbs */}
+          <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-teal-500/10 blur-3xl" />
+
+          <div className="relative z-10 space-y-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5">
+                  <h1 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                    <span className="bg-gradient-to-r from-white via-[#dbf2f9] to-[#6fcde8] bg-clip-text text-transparent drop-shadow-sm">
+                      Whitelist Portal
+                    </span>
+                  </h1>
+                </div>
+                <p className="text-xs sm:text-sm text-[#8AA8B2]">
+                  Check allocation eligibility, registration status, and Elychimp Whitelist distribution details.
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-[#8AA8B2]">
-                Check allocation eligibility, registration status, and Elychimp Whitelist distribution details.
-              </p>
             </div>
-          </div>
 
-          {/* Horizontal Five-Step Progress Indicator */}
-          <div className="border-t border-[#163B44] pt-4">
-            <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-1 text-xs">
-              {[
-                { num: 1, label: "WALLET", done: isWalletConnected },
-                { num: 2, label: "X SYNC", done: isXLinked },
-                { num: 3, label: "TASKS", done: isTasksComplete },
-                { num: 4, label: "TRAITS", done: isTraitsComplete },
-                { num: 5, label: "STATUS", done: isWhitelistSecured },
-              ].map((step, idx) => {
-                const isActive = activeStepNumber === step.num;
-                const isAccessible = isStepAccessible(step.num);
-                const disabledTooltip = !isAccessible
-                  ? step.num === 2
-                    ? "Connect wallet first"
-                    : step.num === 3
-                      ? "Link X (Twitter) account first"
-                      : "Complete all mandatory tasks first"
-                  : undefined;
+            {/* Horizontal Five-Step Progress Indicator */}
+            <div className="border-t border-cyan-500/20 pt-4">
+              <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-1 text-xs">
+                {[
+                  { num: 1, label: "WALLET", done: isWalletConnected },
+                  { num: 2, label: "X SYNC", done: isXLinked },
+                  { num: 3, label: "TASKS", done: isTasksComplete },
+                  { num: 4, label: "TRAITS", done: isTraitsComplete },
+                  { num: 5, label: "STATUS", done: isWhitelistSecured },
+                ].map((step, idx) => {
+                  const isActive = activeStepNumber === step.num;
+                  const isAccessible = isStepAccessible(step.num);
+                  const disabledTooltip = !isAccessible
+                    ? step.num === 2
+                      ? "Connect wallet first"
+                      : step.num === 3
+                        ? "Link X (Twitter) account first"
+                        : "Complete all mandatory tasks first"
+                    : undefined;
 
-                return (
-                  <React.Fragment key={step.label}>
-                    <button
-                      type="button"
-                      disabled={!isAccessible}
-                      aria-disabled={!isAccessible}
-                      title={disabledTooltip}
-                      onClick={() => {
-                        if (!isAccessible) return;
-                        setSelectedStep(step.num);
-                        const targetHash =
-                          step.num === 3
-                            ? "#tasks"
-                            : step.num === 4
-                              ? "#traits"
-                              : step.num === 5
-                                ? "#status"
-                                : step.num === 2
-                                  ? "#x"
-                                  : "#wallet";
-                        if (typeof window !== "undefined") {
-                          window.history.replaceState(null, "", targetHash);
-                        }
-                      }}
-                      className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl border transition-all text-xs ${
-                        !isAccessible
-                          ? "border-[#163B44]/40 bg-[#051D22]/40 text-zinc-600 cursor-not-allowed opacity-40 select-none"
-                          : step.done
-                            ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-medium cursor-pointer hover:border-emerald-400"
-                            : isActive
-                              ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-medium shadow-[0_0_12px_rgba(251,191,36,0.2)] cursor-pointer hover:border-amber-400/80"
-                              : "border-[#163B44] bg-[#051D22] text-zinc-400 cursor-pointer hover:text-white hover:border-cyan-500/50"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+                  return (
+                    <React.Fragment key={step.label}>
+                      <button
+                        type="button"
+                        disabled={!isAccessible}
+                        aria-disabled={!isAccessible}
+                        title={disabledTooltip}
+                        onClick={() => {
+                          if (!isAccessible) return;
+                          setSelectedStep(step.num);
+                          const targetHash =
+                            step.num === 3
+                              ? "#tasks"
+                              : step.num === 4
+                                ? "#traits"
+                                : step.num === 5
+                                  ? "#status"
+                                  : step.num === 2
+                                    ? "#x"
+                                    : "#wallet";
+                          if (typeof window !== "undefined") {
+                            window.history.replaceState(null, "", targetHash);
+                          }
+                        }}
+                        className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl border transition-all text-xs ${
                           !isAccessible
-                            ? "bg-zinc-900 text-zinc-600"
+                            ? "border-[#163B44]/40 bg-[#051D22]/40 text-zinc-600 cursor-not-allowed opacity-40 select-none"
                             : step.done
-                              ? "bg-emerald-500 text-black font-bold"
+                              ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-medium cursor-pointer hover:border-emerald-400"
                               : isActive
-                                ? "bg-amber-400 text-black font-bold"
-                                : "bg-zinc-800 text-zinc-400"
+                                ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-medium shadow-[0_0_12px_rgba(251,191,36,0.2)] cursor-pointer hover:border-amber-400/80"
+                                : "border-[#163B44] bg-[#051D22] text-zinc-400 cursor-pointer hover:text-white hover:border-cyan-500/50"
                         }`}
                       >
-                        {step.num}
-                      </span>
-                      <span className="tracking-wide uppercase">{step.label}</span>
-                    </button>
-                    {idx < 4 && (
-                      <div
-                        className={`hidden sm:block flex-1 h-0.5 min-w-3 ${
-                          step.done ? "bg-emerald-500/50" : "bg-zinc-700/60"
-                        }`}
-                      />
-                    )}
-                  </React.Fragment>
-                );
-              })}
+                        <span
+                          className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+                            !isAccessible
+                              ? "bg-zinc-900 text-zinc-600"
+                              : step.done
+                                ? "bg-emerald-500 text-black font-bold"
+                                : isActive
+                                  ? "bg-amber-400 text-black font-bold"
+                                  : "bg-zinc-800 text-zinc-400"
+                          }`}
+                        >
+                          {step.num}
+                        </span>
+                        <span className="tracking-wide uppercase">{step.label}</span>
+                      </button>
+                      {idx < 4 && (
+                        <div
+                          className={`hidden sm:block flex-1 h-0.5 min-w-3 ${
+                            step.done ? "bg-emerald-500/50" : "bg-zinc-700/60"
+                          }`}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </header>
@@ -1751,15 +1796,6 @@ export default function WhitelistPage() {
                       Character &amp; Wardrobe
                     </h3>
                   </div>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase ${
-                      isTraitsComplete
-                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
-                        : "border-gray-700 bg-gray-800/60 text-gray-300"
-                    }`}
-                  >
-                    {isTraitsComplete ? "Full Color ✨" : "In Progress"}
-                  </span>
                 </div>
 
                 {/* Character Pixel-Art Preview Frame */}
@@ -1771,6 +1807,7 @@ export default function WhitelistPage() {
                     <UserAvatar
                       identifier={address}
                       hasInventory={inventoryItems.length > 0}
+                      version={avatarVersion}
                       size="xl"
                       className={`border-2 rounded-2xl shadow-sm [image-rendering:pixelated] transition-all duration-300 ${
                         isTraitsComplete
@@ -1874,7 +1911,7 @@ export default function WhitelistPage() {
                     </div>
                   </div>
                   <p className="text-xs sm:text-sm text-gray-400 leading-relaxed border-t border-gray-800/80 pt-2.5">
-                    Duplicates remain in your backpack. Qualification requires 1 item in each of the 5 distinct categories.
+                    Duplicates remain in your inventory. Qualification requires 1 item in each of the 5 distinct categories.
                   </p>
                 </div>
 
@@ -1922,13 +1959,15 @@ export default function WhitelistPage() {
                       </Badge>
                     )}
                     {statusResult?.status?.phase === "FCFS_REGISTERED" && (
-                      <Badge variant="default" className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs">
-                        {statusResult.status.isFullyQualified ? "Whitelisted" : "In Progress"}
+                      <Badge variant="default" className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs uppercase">
+                        FCFS REGISTERED
                       </Badge>
                     )}
-                    <Badge variant="outline" className={`text-xs font-bold ${qualificationState.badgeClass}`}>
-                      {qualificationState.title}
-                    </Badge>
+                    {qualificationState.title !== "Whitelisted" && (
+                      <Badge variant="outline" className={`text-xs font-bold ${qualificationState.badgeClass}`}>
+                        {qualificationState.title}
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
@@ -2090,7 +2129,7 @@ export default function WhitelistPage() {
                        const allocatedDate = statusResult.status.allocatedAt
                          ? new Date(statusResult.status.allocatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                          : "—";
-                       const gtdAvatarUrl = address ? `/api/renders/avatar/${encodeURIComponent(address)}` : undefined;
+                       const gtdAvatarUrl = address ? getAvatarPublicUrl(address, avatarVersion) : undefined;
 
                        return (
                          <div className="space-y-3">
@@ -2178,7 +2217,7 @@ export default function WhitelistPage() {
                                      <div>
                                        <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">VISITING SINCE</span>
                                        <p className="text-[9px] sm:text-[11px] font-medium text-gray-900 truncate">
-                                         {allocatedDate} • HYPERLIQUID L2
+                                         {allocatedDate} • ELYSIUM
                                        </p>
                                      </div>
                                      {/* Barcode */}
@@ -2264,7 +2303,7 @@ export default function WhitelistPage() {
                        const joinedDate = statusResult.status.joinedAt
                          ? new Date(statusResult.status.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                          : "—";
-                       const fcfsAvatarUrl = address ? `/api/renders/avatar/${encodeURIComponent(address)}` : undefined;
+                       const fcfsAvatarUrl = address ? getAvatarPublicUrl(address, avatarVersion) : undefined;
 
                        return (
                          <div className="space-y-3">
@@ -2352,7 +2391,7 @@ export default function WhitelistPage() {
                                      <div>
                                        <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">VISITING SINCE</span>
                                        <p className="text-[9px] sm:text-[11px] font-medium text-gray-900 truncate">
-                                         {joinedDate} • HYPERLIQUID L2
+                                         {joinedDate} • ELYSIUM
                                        </p>
                                      </div>
                                      {/* Barcode */}
@@ -2494,7 +2533,7 @@ export default function WhitelistPage() {
         address={address ?? undefined}
         xUsername={statusResult?.status?.details?.xUsername}
         xName={xName ?? undefined}
-        avatarUrl={address ? `/api/renders/avatar/${encodeURIComponent(address)}` : undefined}
+        avatarUrl={address ? getAvatarPublicUrl(address, avatarVersion) : undefined}
         heldCategoriesCount={heldCategories.length}
         allocatedAt={statusResult?.status?.allocatedAt ?? statusResult?.status?.joinedAt}
       />
