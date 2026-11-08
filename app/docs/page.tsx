@@ -2,29 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-  Layers,
-  Box,
-  Gift,
-  ShieldCheck,
-  FileText,
-  Lock,
-  ArrowRight,
-  ExternalLink,
-  Clock,
-  Zap,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  ShieldAlert,
-  Users,
-  Check,
-  ChevronRight,
-  Sparkles,
-  RefreshCw,
-  Sliders,
-  Share2,
-} from "lucide-react";
 
 // ============================================================================
 // BESPOKE SVG ART CANVASES (FungoLabs Minimalist Aesthetic)
@@ -97,7 +74,7 @@ function DropsArtCanvas() {
         <line x1="80" y1="142" x2="80" y2="135" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
         <line x1="18" y1="80" x2="25" y2="80" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
 
-        {/* Center Contraband Mystery Pod */}
+        {/* Center Mystery Pod */}
         <rect x="58" y="58" width="44" height="44" rx="10" fill="#1e1d17" stroke="#f59e0b" strokeWidth="1.5" />
         
         {/* Pod Aperture Core */}
@@ -155,26 +132,29 @@ function WhitelistArtCanvas() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(52,183,221,0.12)_0%,transparent_70%)]" />
       
       <svg viewBox="0 0 160 160" className="h-36 w-36 sm:h-40 sm:w-40" fill="none">
-        {/* Tier 1 GTD Pass (Gold - Foreground) */}
-        <g transform="translate(24, 34)">
-          <rect x="0" y="0" width="70" height="92" rx="10" fill="#1C180E" stroke="#f59e0b" strokeWidth="1.6" />
+        {/* Verified Allowlist Pass Card */}
+        <g transform="translate(36, 26)">
+          <rect x="0" y="0" width="88" height="108" rx="10" fill="#071F24" stroke="#34B7DD" strokeWidth="1.5" />
+          {/* Header strip */}
+          <rect x="0" y="0" width="88" height="24" rx="10" fill="#0B2026" />
+          <line x1="0" y1="24" x2="88" y2="24" stroke="#163B44" strokeWidth="1" />
+          
           {/* Chip Emblem */}
-          <rect x="12" y="14" width="16" height="13" rx="3" fill="#f59e0b" />
-          <path d="M12 20.5H28" stroke="#051D22" strokeWidth="1" />
-          <path d="M20 14V27" stroke="#051D22" strokeWidth="1" />
-          {/* Tier Label */}
-          <text x="12" y="46" fill="#f59e0b" fontSize="8" fontFamily="monospace" fontWeight="bold">TIER 1</text>
-          <text x="12" y="58" fill="#ffffff" fontSize="11" fontFamily="sans-serif" fontWeight="800">GTD</text>
-          <text x="12" y="74" fill="#a1a1aa" fontSize="7" fontFamily="monospace">1,000 CAP</text>
-        </g>
-
-        {/* Tier 2 FCFS Pass (Cyan - Offset Behind) */}
-        <g transform="translate(68, 44)">
-          <rect x="0" y="0" width="68" height="84" rx="10" fill="#071F24" stroke="#34B7DD" strokeWidth="1.2" strokeOpacity="0.8" />
-          <circle cx="50" cy="22" r="6" fill="#34B7DD" fillOpacity="0.3" stroke="#34B7DD" strokeWidth="1" />
-          <text x="12" y="38" fill="#34B7DD" fontSize="8" fontFamily="monospace" fontWeight="bold">TIER 2</text>
-          <text x="12" y="50" fill="#ffffff" fontSize="10" fontFamily="sans-serif" fontWeight="800">FCFS</text>
-          <text x="12" y="66" fill="#a1a1aa" fontSize="7" fontFamily="monospace">OPENSEA</text>
+          <rect x="12" y="8" width="14" height="9" rx="2.5" fill="#34B7DD" />
+          <path d="M12 12.5H26" stroke="#051D22" strokeWidth="1" />
+          
+          {/* 5-Star / 5-Piece Complete Indicator */}
+          <circle cx="64" cy="12.5" r="2.5" fill="#34B7DD" />
+          <circle cx="72" cy="12.5" r="2.5" fill="#34B7DD" />
+          
+          {/* Pass Body Labels */}
+          <text x="12" y="44" fill="#34B7DD" fontSize="8" fontFamily="monospace" fontWeight="bold">STATUS: 5/5</text>
+          <text x="12" y="58" fill="#ffffff" fontSize="11" fontFamily="sans-serif" fontWeight="800">WHITELIST</text>
+          <text x="12" y="74" fill="#F59E0B" fontSize="8" fontFamily="monospace" fontWeight="bold">QUALIFIED</text>
+          
+          {/* Micro Barcode / Serial Strip */}
+          <line x1="12" y1="88" x2="76" y2="88" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeDasharray="3 2" />
+          <text x="12" y="98" fill="#8AA8B2" fontSize="6.5" fontFamily="monospace">VERIFIED ID</text>
         </g>
       </svg>
     </div>
@@ -234,7 +214,7 @@ function SecurityArtCanvas() {
           strokeWidth="1.4"
         />
 
-        {/* SIWE Key Shield Core */}
+        {/* Cryptographic Key Shield Core */}
         <path
           d="M80 34 L114 54 V90 L80 110 L46 90 V54 Z"
           fill="#0B2026"
@@ -270,11 +250,11 @@ export default function DocsPage() {
 
   const navSections = [
     { id: "traits", title: "Trait Collection & Inventory", short: "Traits & Inventory" },
-    { id: "drops", title: "Contraband Drops & Lootbox", short: "Drops & Lootbox" },
-    { id: "gifts", title: "Syndicate Gifting & Transfer", short: "Syndicate Gifts" },
-    { id: "whitelist", title: "Whitelist: GTD & FCFS Tiers", short: "Allowlist Tiers" },
+    { id: "drops", title: "Drops & Lootbox", short: "Drops & Lootbox" },
+    { id: "gifts", title: "Peer Gifting & Transfer", short: "Peer Gifts" },
+    { id: "whitelist", title: "Whitelist Qualification Criteria", short: "Qualification" },
     { id: "tasks", title: "Campaign Tasks & Verification", short: "Quests & Review" },
-    { id: "security", title: "Wallet Security & SIWE", short: "Security & SIWE" },
+    { id: "security", title: "Wallet Security & Verification", short: "Security & Auth" },
   ];
 
   // Active section scrollspy
@@ -323,16 +303,25 @@ export default function DocsPage() {
 
       <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         {/* ===================================================================
-            HEADER: Protocol Architecture & Overview
+            HEADER: Protocol Architecture & Overview (Elyzuma Luxury Aesthetic)
         =================================================================== */}
-        <header className="mb-10 sm:mb-14 border-b border-[#163B44] pb-8 sm:pb-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <header className="relative mb-10 sm:mb-14 overflow-hidden rounded-[28px] sm:rounded-[32px] border border-cyan-500/25 bg-gradient-to-b from-[#0c2831]/90 via-[#071d24]/95 to-[#031116]/98 p-6 sm:p-8 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),inset_0_0_24px_rgba(52,183,221,0.05),0_24px_50px_-12px_rgba(0,0,0,0.7)] transition-all">
+          {/* Top rim highlight line */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+
+          {/* Ambient cyan glow orbs */}
+          <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-teal-500/10 blur-3xl" />
+
+          <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3 max-w-3xl">
               <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl uppercase tracking-tight text-white leading-none">
-                How Elychimp Works
+                <span className="bg-gradient-to-r from-white via-[#dbf2f9] to-[#6fcde8] bg-clip-text text-transparent drop-shadow-sm">
+                  How Elychimp Works
+                </span>
               </h1>
-              <p className="text-sm sm:text-base text-[#B8D7E0] leading-relaxed max-w-2xl font-normal">
-                The comprehensive architectural guide for wardrobe trait assembly, synchronized cycle drops, peer gifting, guaranteed allowlist allocation, and security on Elysium L2.
+              <p className="text-sm sm:text-base text-[#8AA8B2] leading-relaxed max-w-2xl font-normal">
+                The comprehensive architectural guide for wardrobe trait assembly, synchronized cycle drops, peer gifting, guaranteed allowlist allocation, and security on Elychimp.
               </p>
             </div>
 
@@ -340,17 +329,15 @@ export default function DocsPage() {
             <div className="flex items-center gap-3 shrink-0">
               <Link
                 href="/drops"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#34B7DD] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[#04181C] hover:bg-[#6FCDE8] shadow-[0_0_15px_rgba(52,183,221,0.25)] transition-all"
+                className="inline-flex items-center justify-center rounded-xl bg-[#34B7DD] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[#04181C] hover:bg-[#6FCDE8] shadow-[0_0_15px_rgba(52,183,221,0.25)] transition-all"
               >
-                <span>Claim Drops</span>
-                <ArrowRight className="h-3.5 w-3.5" />
+                Claim Drops
               </Link>
               <Link
                 href="/whitelist"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#163B44] bg-[#0B2026] text-xs font-semibold uppercase tracking-wider text-[#DBF2F9] hover:border-[#34B7DD]/60 hover:text-white px-5 py-2.5 transition-colors"
+                className="inline-flex items-center justify-center rounded-xl border border-cyan-500/30 bg-[#071f27]/80 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-cyan-200 hover:text-white hover:border-cyan-400/60 backdrop-blur-sm transition-all"
               >
-                <span>Check Allowlist</span>
-                <ExternalLink className="h-3.5 w-3.5 text-[#8AA8B2]" />
+                Check Allowlist
               </Link>
             </div>
           </div>
@@ -407,8 +394,8 @@ export default function DocsPage() {
 
                 {/* Right Content */}
                 <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#F59E0B]">
-                    <Layers className="h-4 w-4" />
+                  <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#F59E0B]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
                     <span>01. Wardrobe Assembly</span>
                   </div>
 
@@ -417,7 +404,7 @@ export default function DocsPage() {
                   </h2>
 
                   <p className="text-sm sm:text-base text-[#DBF2F9] leading-relaxed font-normal">
-                    Assemble the five essential streetwear gear categories to complete your full Elychimp outfit and unlock guaranteed allowlist eligibility on Elysium L2.
+                    Assemble the five essential streetwear gear categories to complete your full Elychimp outfit and unlock guaranteed allowlist eligibility on Elychimp.
                   </p>
 
                   {/* 5 Trait Categories Grid */}
@@ -439,10 +426,9 @@ export default function DocsPage() {
                     ))}
 
                     <div className="rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 p-3.5 flex flex-col justify-center space-y-1">
-                      <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm uppercase tracking-wide text-[#F59E0B]">
-                        <Check className="h-4 w-4 text-[#F59E0B]" />
-                        <span>Full Set Requirement</span>
-                      </div>
+                      <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-[#F59E0B]">
+                        Full Set Requirement
+                      </span>
                       <p className="text-xs sm:text-[13px] text-[#DBF2F9] leading-snug">
                         Own at least 1 item across all 5 categories simultaneously to qualify.
                       </p>
@@ -479,13 +465,13 @@ export default function DocsPage() {
 
                 {/* Right Content */}
                 <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#F59E0B]">
-                    <Box className="h-4 w-4" />
+                  <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#F59E0B]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
                     <span>02. Drop Engine</span>
                   </div>
 
                   <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
-                    Contraband Drops &amp; Lootbox
+                    Trait Drops &amp; Lootbox
                   </h2>
 
                   <p className="text-sm sm:text-base text-[#DBF2F9] leading-relaxed font-normal">
@@ -495,8 +481,8 @@ export default function DocsPage() {
                   {/* 3 Core Drop Mechanics - Elongated Horizontal Cards */}
                   <div className="space-y-2.5 pt-1">
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] shrink-0 mt-0.5">
-                        <Clock className="h-4 w-4" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/20 text-[#F59E0B] font-mono text-xs font-bold shrink-0">
+                        01
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
                         <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">2-Hour UTC Cycle</span>
@@ -507,8 +493,8 @@ export default function DocsPage() {
                     </div>
 
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] shrink-0 mt-0.5">
-                        <Zap className="h-4 w-4" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/20 text-[#F59E0B] font-mono text-xs font-bold shrink-0">
+                        02
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
                         <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">30-Minute Window</span>
@@ -519,8 +505,8 @@ export default function DocsPage() {
                     </div>
 
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] shrink-0 mt-0.5">
-                        <ShieldCheck className="h-4 w-4" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/20 text-[#F59E0B] font-mono text-xs font-bold shrink-0">
+                        03
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
                         <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">1 Claim / Interval</span>
@@ -531,13 +517,15 @@ export default function DocsPage() {
                     </div>
                   </div>
 
-                  {/* Safeguards & Rules */}
+                  {/* Prerequisites & Safeguards */}
                   <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-4 space-y-2 text-xs sm:text-sm text-[#B8D7E0]">
                     <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white">
-                      Drop Protection Safeguards:
+                      Drop Prerequisites &amp; Safeguards:
                     </span>
                     <ul className="space-y-1.5 text-[#B8D7E0] leading-relaxed">
-                      <li>• <strong className="text-white">GTD Holder Exclusion:</strong> Operatives who already hold an active GTD slot cannot claim crates, preserving stock for hunters completing their 5-piece fit.</li>
+                      <li>• <strong className="text-white">Linked X Account Required:</strong> Operatives must link an X (Twitter) profile via OAuth 2.0 before unlocking crate claims.</li>
+                      <li>• <strong className="text-white">Mandatory Quests Required:</strong> All mandatory campaign tasks (100%) must be completed and verified before claiming.</li>
+                      <li>• <strong className="text-white">Whitelist Holder Exclusion:</strong> Operatives who already hold an allocated allowlist slot cannot claim crates, preserving stock for hunters completing their 5-piece outfit.</li>
                       <li>• <strong className="text-white">Finite Period Stock:</strong> Each interval has an allocated quota. When exhausted, the portal enters rest mode until the next interval.</li>
                     </ul>
                   </div>
@@ -546,7 +534,7 @@ export default function DocsPage() {
             </section>
 
             {/* -------------------------------------------------------------
-                SECTION 3: SYNDICATE GIFTS & TRANSFER
+                SECTION 3: PEER GIFTS & TRANSFER
             ------------------------------------------------------------- */}
             <section
               id="gifts"
@@ -560,37 +548,48 @@ export default function DocsPage() {
 
                 {/* Right Content */}
                 <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#34B7DD]">
-                    <Gift className="h-4 w-4 text-[#34B7DD]" />
+                  <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#34B7DD]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#34B7DD]" />
                     <span>03. Peer Gifting</span>
                   </div>
 
                   <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
-                    Syndicate Gifting &amp; Duplicate Sharing
+                    Peer Gifting &amp; Duplicate Sharing
                   </h2>
 
                   <p className="text-sm sm:text-base text-[#DBF2F9] leading-relaxed font-normal">
-                    Transfer duplicate traits to fellow syndicate members to help them assemble their 5-piece fit without putting your own allowlist eligibility at risk.
+                    Transfer duplicate traits to peers and community members to help them assemble their 5-piece fit without putting your own allowlist eligibility at risk.
                   </p>
 
                   {/* Category Retention Rule Highlight */}
-                  <div className="rounded-xl border border-[#34B7DD]/30 bg-[#34B7DD]/10 p-4 space-y-2.5">
-                    <div className="flex items-center gap-2 font-bold text-xs sm:text-sm uppercase tracking-wide text-[#34B7DD]">
-                      <Share2 className="h-4 w-4 text-[#34B7DD]" />
-                      <span>The Category Retention Rule</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-[13px]">
-                      <div className="flex items-center gap-2 text-[#DBF2F9]">
-                        <Check className="h-4 w-4 shrink-0 text-[#34B7DD]" />
-                        <span>Must own at least 2 items in category to gift.</span>
+                  <div className="rounded-xl border border-[#34B7DD]/30 bg-[#34B7DD]/10 p-4 space-y-3">
+                    <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-[#34B7DD] block">
+                      The Category Retention Rule
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-[13px]">
+                      <div className="rounded-lg border border-[#34B7DD]/20 bg-[#071F24]/60 p-2.5">
+                        <span className="font-mono text-[11px] font-bold text-[#34B7DD] block uppercase tracking-wider mb-1">
+                          Threshold
+                        </span>
+                        <span className="text-[#DBF2F9] leading-snug block">
+                          Must own at least 2 items in category to gift.
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 text-[#DBF2F9]">
-                        <Check className="h-4 w-4 shrink-0 text-[#34B7DD]" />
-                        <span>Must retain at least 1 item after transfer.</span>
+                      <div className="rounded-lg border border-[#34B7DD]/20 bg-[#071F24]/60 p-2.5">
+                        <span className="font-mono text-[11px] font-bold text-[#34B7DD] block uppercase tracking-wider mb-1">
+                          Retention
+                        </span>
+                        <span className="text-[#DBF2F9] leading-snug block">
+                          Must retain at least 1 item after transfer.
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 text-[#DBF2F9] sm:col-span-2">
-                        <AlertCircle className="h-4 w-4 shrink-0 text-[#F59E0B]" />
-                        <span>Cannot gift the active trait currently equipped on your avatar profile.</span>
+                      <div className="rounded-lg border border-[#F59E0B]/30 bg-[#071F24]/60 p-2.5 sm:col-span-2">
+                        <span className="font-mono text-[11px] font-bold text-[#F59E0B] block uppercase tracking-wider mb-1">
+                          Equipped Trait Lock
+                        </span>
+                        <span className="text-[#DBF2F9] leading-snug block">
+                          Cannot gift the active trait currently equipped on your avatar profile.
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -599,14 +598,14 @@ export default function DocsPage() {
                   <div className="space-y-2 pt-2 text-xs sm:text-sm text-[#B8D7E0] leading-relaxed">
                     <p>• <strong className="text-white">1 Gift / Day:</strong> Maximum 1 outgoing gift per wallet per calendar day (UTC 00:00 - 23:59:59).</p>
                     <p>• <strong className="text-white">24-Hour Expiration:</strong> Unclaimed gifts expire in 24 hours and revert automatically back to the sender.</p>
-                    <p>• <strong className="text-white">Recipient Eligibility:</strong> GTD allowlist holders cannot receive gifts, and recipients cannot already own the specific trait item.</p>
+                    <p>• <strong className="text-white">Recipient Eligibility:</strong> Recipients cannot already own the specific trait item (preventing duplicate trait delivery) and must have an active, non-restricted account.</p>
                   </div>
                 </div>
               </div>
             </section>
 
             {/* -------------------------------------------------------------
-                SECTION 4: WHITELIST: GTD & FCFS
+                SECTION 4: WHITELIST QUALIFICATION CRITERIA
             ------------------------------------------------------------- */}
             <section
               id="whitelist"
@@ -620,68 +619,60 @@ export default function DocsPage() {
 
                 {/* Right Content */}
                 <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#F59E0B]">
-                    <ShieldCheck className="h-4 w-4 text-[#F59E0B]" />
-                    <span>04. Whitelist Allocation</span>
+                  <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#F59E0B]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
+                    <span>04. Whitelist Criteria</span>
                   </div>
 
                   <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
-                    Whitelist: GTD &amp; FCFS Allocation
+                    Whitelist Qualification Criteria
                   </h2>
 
                   <p className="text-sm sm:text-base text-[#DBF2F9] leading-relaxed font-normal">
-                    Understand the 5 mandatory qualification criteria, Guaranteed (GTD) 1,000-slot allocation cap, and the Phase 2 FCFS directory on Elysium.
+                    Fulfill all 5 mandatory qualification criteria to automatically secure your allowlist allocation on Elychimp.
                   </p>
 
-                  {/* 5 Mandatory Criteria Pills */}
+                  {/* 5 Mandatory Criteria Grid */}
                   <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-4 space-y-3">
-                    <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white">
+                    <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">
                       5 Mandatory Qualification Criteria:
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-[13px] text-[#DBF2F9]">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
-                        <span><strong className="text-white">1. EVM Wallet:</strong> Verified SIWE session.</span>
+                      <div className="flex items-start gap-2.5 rounded-lg border border-[#163B44] bg-[#071F24] p-2.5">
+                        <span className="font-mono text-xs font-bold text-[#34B7DD] shrink-0">01</span>
+                        <div>
+                          <strong className="text-white block uppercase text-[11px] tracking-wider mb-0.5">EVM Wallet</strong>
+                          <span className="text-[#B8D7E0]">Verified cryptographic session.</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
-                        <span><strong className="text-white">2. Linked X:</strong> OAuth 2.0 PKCE profile.</span>
+                      <div className="flex items-start gap-2.5 rounded-lg border border-[#163B44] bg-[#071F24] p-2.5">
+                        <span className="font-mono text-xs font-bold text-[#34B7DD] shrink-0">02</span>
+                        <div>
+                          <strong className="text-white block uppercase text-[11px] tracking-wider mb-0.5">Linked X Account</strong>
+                          <span className="text-[#B8D7E0]">OAuth 2.0 PKCE profile.</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
-                        <span><strong className="text-white">3. 5-Trait Set:</strong> 1+ item in all 5 categories.</span>
+                      <div className="flex items-start gap-2.5 rounded-lg border border-[#163B44] bg-[#071F24] p-2.5">
+                        <span className="font-mono text-xs font-bold text-[#34B7DD] shrink-0">03</span>
+                        <div>
+                          <strong className="text-white block uppercase text-[11px] tracking-wider mb-0.5">5-Piece Trait Set</strong>
+                          <span className="text-[#B8D7E0]">1+ item in all 5 categories.</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
-                        <span><strong className="text-white">4. Quests:</strong> 100% campaign task completion.</span>
+                      <div className="flex items-start gap-2.5 rounded-lg border border-[#163B44] bg-[#071F24] p-2.5">
+                        <span className="font-mono text-xs font-bold text-[#34B7DD] shrink-0">04</span>
+                        <div>
+                          <strong className="text-white block uppercase text-[11px] tracking-wider mb-0.5">Quests Complete</strong>
+                          <span className="text-[#B8D7E0]">100% campaign task completion.</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 sm:col-span-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#34B7DD] shrink-0" />
-                        <span><strong className="text-white">5. Clean Standing:</strong> Zero fraud flags, active bans, or Sybil flags.</span>
+                      <div className="flex items-start gap-2.5 rounded-lg border border-[#163B44] bg-[#071F24] p-2.5 sm:col-span-2">
+                        <span className="font-mono text-xs font-bold text-[#34B7DD] shrink-0">05</span>
+                        <div>
+                          <strong className="text-white block uppercase text-[11px] tracking-wider mb-0.5">Clean Standing</strong>
+                          <span className="text-[#B8D7E0]">Zero fraud flags, active bans, or Sybil flags.</span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* GTD vs FCFS Breakdown */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-4 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-[#F59E0B]">Tier 1: GTD</span>
-                        <span className="text-xs font-bold text-[#F59E0B] font-mono">1,000 Slots</span>
-                      </div>
-                      <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-snug">
-                        Fulfilling all 5 criteria grants instant allocation via pessimistic row locks while capacity remains.
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-4 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-[#34B7DD]">Tier 2: FCFS</span>
-                        <span className="text-xs font-bold text-[#34B7DD] font-mono">OpenSea Export</span>
-                      </div>
-                      <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-snug">
-                        Deterministic queue index for qualified operatives without GTD slots, exported cleanly to SeaDrop.
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -703,8 +694,8 @@ export default function DocsPage() {
 
                 {/* Right Content */}
                 <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#34B7DD]">
-                    <FileText className="h-4 w-4" />
+                  <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#34B7DD]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#34B7DD]" />
                     <span>05. Quest Verification</span>
                   </div>
 
@@ -713,43 +704,49 @@ export default function DocsPage() {
                   </h2>
 
                   <p className="text-sm sm:text-base text-[#DBF2F9] leading-relaxed font-normal">
-                    Submit proof for social and community quests, track review states in real-time, and unlock allowlist eligibility upon verification.
+                    Complete social tasks with automated instant verification or submit manual proof for community quests, tracked in real-time toward allowlist qualification.
                   </p>
 
-                  {/* 3 Review States - Elongated Horizontal Cards */}
+                  {/* 3 Verification States - Elongated Horizontal Cards */}
                   <div className="space-y-2.5 pt-1">
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] shrink-0 mt-0.5">
-                        <Clock className="h-4 w-4" />
+                      <div className="shrink-0 mt-0.5">
+                        <span className="inline-block px-2.5 py-1 rounded-md bg-[#34B7DD]/10 border border-[#34B7DD]/30 text-[#34B7DD] font-mono text-[11px] font-bold uppercase tracking-wider">
+                          Auto-Verify
+                        </span>
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
-                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Pending Review</span>
+                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Instant Social Verification</span>
                         <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-relaxed text-left">
-                          Enters <code className="text-[#F59E0B] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">PENDING_REVIEW</code> immediately, queued for moderator inspection.
+                          Standard X actions (Follow @Elychimp, Like, Repost) auto-verify via an interactive 10-second inspection timer, granting instant <code className="text-[#34B7DD] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">VERIFIED</code> status.
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#34B7DD]/10 border border-[#34B7DD]/30 text-[#34B7DD] shrink-0 mt-0.5">
-                        <CheckCircle2 className="h-4 w-4" />
+                      <div className="shrink-0 mt-0.5">
+                        <span className="inline-block px-2.5 py-1 rounded-md bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] font-mono text-[11px] font-bold uppercase tracking-wider">
+                          Pending Review
+                        </span>
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
-                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Approved (Verified)</span>
+                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Manual Evidence Queue</span>
                         <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-relaxed text-left">
-                          Updates to <code className="text-[#34B7DD] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">VERIFIED</code>, awarding quest completion status.
+                          Quests requiring external proof links (Quote tweets, replies, or custom tasks) enter <code className="text-[#F59E0B] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">PENDING_REVIEW</code> upon submission, queued for moderator inspection.
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#163B44]/60 border border-[#1E4D5A] text-[#8AA8B2] shrink-0 mt-0.5">
-                        <RefreshCw className="h-4 w-4" />
+                      <div className="shrink-0 mt-0.5">
+                        <span className="inline-block px-2.5 py-1 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-300 font-mono text-[11px] font-bold uppercase tracking-wider">
+                          Rejected &amp; Retry
+                        </span>
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
-                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Rejected &amp; Retry</span>
+                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Moderator Feedback &amp; Resubmission</span>
                         <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-relaxed text-left">
-                          Reviewer feedback is provided; the submission form unlocks immediately for resubmission.
+                          If submitted evidence is invalid, reviewer notes explain the rejection and the task form unlocks immediately for corrected resubmission.
                         </p>
                       </div>
                     </div>
@@ -757,9 +754,9 @@ export default function DocsPage() {
 
                   {/* Payload Specifications */}
                   <div className="space-y-2 pt-2 text-xs sm:text-sm text-[#B8D7E0] leading-relaxed">
-                    <p>• <strong className="text-white">Accepted Formats:</strong> Valid HTTP/HTTPS URLs (X posts, verified screenshots) or concise text.</p>
+                    <p>• <strong className="text-white">Accepted Proof Formats:</strong> Valid HTTP/HTTPS URLs (X reply/quote links, screenshot posts) or concise text.</p>
                     <p>• <strong className="text-white">Payload Cap:</strong> Maximum 2,048 characters per task submission.</p>
-                    <p>• <strong className="text-white">Campaign Schedule:</strong> Proof submissions are accepted strictly within active campaign dates.</p>
+                    <p>• <strong className="text-white">Active Campaign Window:</strong> Proof submissions and verification are active strictly within published campaign dates.</p>
                   </div>
                 </div>
               </div>
@@ -780,36 +777,36 @@ export default function DocsPage() {
 
                 {/* Right Content */}
                 <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#34B7DD]">
-                    <Lock className="h-4 w-4 text-[#34B7DD]" />
+                  <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#34B7DD]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#34B7DD]" />
                     <span>06. Platform Security</span>
                   </div>
 
                   <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
-                    Wallet Security &amp; Non-Custodial SIWE
+                    Wallet Security &amp; Non-Custodial Verification
                   </h2>
 
                   <p className="text-sm sm:text-base text-[#DBF2F9] leading-relaxed font-normal">
-                    Decentralized, non-custodial architecture powered by cryptographic Sign-In with Ethereum (SIWE) and strict 1:1 anti-Sybil social binding.
+                    Decentralized, non-custodial architecture powered by cryptographic wallet signatures (EIP-4361) and strict 1:1 anti-Sybil social binding.
                   </p>
 
                   {/* Security Highlights - Elongated Horizontal Cards */}
                   <div className="space-y-2.5 pt-1">
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#34B7DD]/10 border border-[#34B7DD]/30 text-[#34B7DD] shrink-0 mt-0.5">
-                        <Lock className="h-4 w-4" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#34B7DD]/10 border border-[#34B7DD]/20 text-[#34B7DD] font-mono text-xs font-bold shrink-0">
+                        01
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
-                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Sign-In with Ethereum (EIP-4361)</span>
+                        <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">Cryptographic Authentication</span>
                         <p className="text-xs sm:text-[13px] text-[#B8D7E0] leading-relaxed text-left">
-                          Cryptographic <code className="text-[#34B7DD] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">personal_sign</code> authentication. Zero gas fees, zero token approvals, and zero contract spending permissions.
+                          Standard <code className="text-[#34B7DD] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">personal_sign</code> verification. Zero gas fees, zero token approvals, and zero contract spending permissions.
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-start gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 hover:border-[#1E4D5A] transition-colors">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#34B7DD]/10 border border-[#34B7DD]/30 text-[#34B7DD] shrink-0 mt-0.5">
-                        <ShieldCheck className="h-4 w-4" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#34B7DD]/10 border border-[#34B7DD]/20 text-[#34B7DD] font-mono text-xs font-bold shrink-0">
+                        02
                       </div>
                       <div className="space-y-0.5 min-w-0 flex-1">
                         <span className="font-bold text-xs sm:text-sm uppercase tracking-wide text-white block">1:1 Anti-Sybil Social Binding</span>
@@ -822,12 +819,11 @@ export default function DocsPage() {
 
                   {/* Non-Custodial Advisory Box */}
                   <div className="rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 p-4 space-y-2 text-xs sm:text-sm text-[#DBF2F9]">
-                    <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm uppercase tracking-wide text-[#F59E0B]">
-                      <ShieldAlert className="h-4 w-4 text-[#F59E0B]" />
-                      <span>Critical Non-Custodial Advisory</span>
+                    <div className="font-bold text-xs sm:text-sm uppercase tracking-wide text-[#F59E0B]">
+                      Critical Non-Custodial Advisory
                     </div>
                     <p className="text-xs sm:text-sm text-[#DBF2F9] leading-relaxed font-normal">
-                      Elychimp is completely non-custodial. We will never request private keys or seed phrases. Lost wallet keys cannot be recovered by administrators. Official contracts and announcements are published exclusively via official channels (<code className="text-[#34B7DD] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">@Enter_elysium</code>).
+                      Elychimp is completely non-custodial. We will never request private keys or seed phrases. Lost wallet keys cannot be recovered by administrators. Official contracts and announcements are published exclusively via official channels (<code className="text-[#34B7DD] font-bold font-mono px-1.5 py-0.5 rounded bg-black/40 border border-[#163B44]">@Elychimp</code>).
                     </p>
                   </div>
                 </div>
@@ -860,13 +856,13 @@ export default function DocsPage() {
                       onClick={(e) => scrollToSection(e, item.id)}
                       className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs sm:text-sm transition-all ${
                         isCurrent
-                          ? "bg-[#34B7DD]/10 text-[#34B7DD] font-bold border border-[#34B7DD]/30"
+                          ? "bg-[#34B7DD]/10 text-[#34B7DD] font-bold border border-[#34B7DD]/30 shadow-sm"
                           : "text-[#8AA8B2] hover:text-white hover:bg-[#102B33]"
                       }`}
                     >
                       <div className="flex items-center gap-2.5 truncate">
                         <span
-                          className={`text-xs font-bold ${
+                          className={`font-mono text-xs font-bold ${
                             isCurrent ? "text-[#34B7DD]" : "text-[#8AA8B2] group-hover:text-[#DBF2F9]"
                           }`}
                         >
@@ -874,13 +870,9 @@ export default function DocsPage() {
                         </span>
                         <span className="truncate">{item.title}</span>
                       </div>
-                      <ChevronRight
-                        className={`h-3.5 w-3.5 shrink-0 transition-transform ${
-                          isCurrent
-                            ? "text-[#34B7DD] translate-x-0.5"
-                            : "text-[#8AA8B2] group-hover:text-white"
-                        }`}
-                      />
+                      {isCurrent && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#34B7DD] shrink-0" />
+                      )}
                     </a>
                   );
                 })}
@@ -888,10 +880,6 @@ export default function DocsPage() {
 
               {/* Quick Protocol Snapshot */}
               <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 space-y-2.5 text-xs">
-                <div className="flex items-center justify-between text-[#8AA8B2]">
-                  <span>GTD Slot Cap</span>
-                  <span className="font-bold text-[#F59E0B] font-mono">1,000 Slots</span>
-                </div>
                 <div className="flex items-center justify-between text-[#8AA8B2]">
                   <span>Cycle Frequency</span>
                   <span className="font-bold text-white font-mono">2-Hour UTC</span>
@@ -914,17 +902,16 @@ export default function DocsPage() {
                   Ready to step into Leonida?
                 </p>
                 <p className="text-xs sm:text-sm text-[#B8D7E0] leading-snug">
-                  Claim your contraband lootbox crate or verify your allowlist qualification in real-time.
+                  Claim your mystery lootbox crate or verify your allowlist qualification in real-time.
                 </p>
               </div>
 
               <div className="relative z-10 pt-1">
                 <Link
                   href="/drops"
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#34B7DD] px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#04181C] hover:bg-[#6FCDE8] shadow-[0_0_20px_rgba(52,183,221,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="inline-flex items-center justify-center w-full rounded-xl bg-[#34B7DD] px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#04181C] hover:bg-[#6FCDE8] shadow-[0_0_20px_rgba(52,183,221,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  <span>See the drops</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  See the drops
                 </Link>
               </div>
 

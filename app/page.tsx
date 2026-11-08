@@ -370,7 +370,7 @@ export default function HomePage() {
               </h3>
               <p className="mt-3 text-sm leading-snug text-[#B8D7E0]">
                 Continuous cycle drops with atomic inventory minting. Unpack
-                random traits from Common to Legendary, manage your backpack, and
+                random traits from Common to Legendary, manage your inventory, and
                 gift duplicate gear to peers.
               </p>
 
