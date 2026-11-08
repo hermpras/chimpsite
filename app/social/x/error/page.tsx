@@ -37,7 +37,7 @@ function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): 
         title: "X ACCOUNT ALREADY LINKED",
         subtitle: "This X (Twitter) profile is already connected to another wallet.",
         explanation:
-          "To maintain fair allocations and prevent multi-accounting, each X account can only be linked to a single ChimpHood wallet profile.",
+          "To maintain fair allocations and prevent multi-accounting, each X account can only be linked to a single Elychimp wallet profile.",
         showConflictGuide: true,
       };
 
@@ -49,7 +49,7 @@ function resolveErrorInfo(errorCode: string | null, rawMessage: string | null): 
         title: "AUTHORIZATION CANCELLED",
         subtitle: "The connection request was denied or cancelled on X.",
         explanation:
-          "You declined the permissions request or closed the authorization window. No changes were made to your ChimpHood profile.",
+          "You declined the permissions request or closed the authorization window. No changes were made to your Elychimp profile.",
         showConflictGuide: false,
       };
 
@@ -190,7 +190,7 @@ function XErrorContent() {
                       Want to use this new wallet instead?
                     </p>
                     <p className="mt-0.5 text-[#8AA8B2]">
-                      Sign into ChimpHood using your original wallet, navigate to your Profile to unlink your X account, and then reconnect with this wallet.
+                      Sign into Elychimp using your original wallet, navigate to your Profile to unlink your X account, and then reconnect with this wallet.
                     </p>
                   </div>
                 </div>

@@ -137,7 +137,7 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
     expect(screen.getByText("X Authentication Failed")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "This X account is already linked to another ChimpHood profile. Each X account can only be linked to a single wallet.",
+        "This X account is already linked to another Elychimp profile. Each X account can only be linked to a single wallet.",
       ),
     ).toBeInTheDocument();
   });

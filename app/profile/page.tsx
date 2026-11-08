@@ -268,7 +268,7 @@ function ProfileContent() {
       ? xError === "access_denied"
         ? "Authorization was denied by user. Please try connecting your X account again."
         : xError === "X_ACCOUNT_ALREADY_LINKED"
-          ? "This X account is already linked to another ChimpHood profile. Each X account can only be linked to a single wallet."
+          ? "This X account is already linked to another Elychimp profile. Each X account can only be linked to a single wallet."
           : `Failed to link X account (${xError}). Please try again.`
       : null);
 

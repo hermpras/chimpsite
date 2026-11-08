@@ -18,7 +18,7 @@ describe("XErrorPage UI (/social/x/error)", () => {
 
   it("renders X_ACCOUNT_ALREADY_LINKED with conflict guidance and action buttons", () => {
     mockSearchParams = new URLSearchParams(
-      "error=X_ACCOUNT_ALREADY_LINKED&message=This+X+account+is+already+linked+to+another+ChimpHood+profile.",
+      "error=X_ACCOUNT_ALREADY_LINKED&message=This+X+account+is+already+linked+to+another+Elychimp+profile.",
     );
 
     render(<XErrorPage />);
@@ -38,7 +38,7 @@ describe("XErrorPage UI (/social/x/error)", () => {
     // Verify technical details
     expect(screen.getByText("X_ACCOUNT_ALREADY_LINKED")).toBeInTheDocument();
     expect(
-      screen.getByText("This X account is already linked to another ChimpHood profile."),
+      screen.getByText("This X account is already linked to another Elychimp profile."),
     ).toBeInTheDocument();
 
     // Verify navigation links

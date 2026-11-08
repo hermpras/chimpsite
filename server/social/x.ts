@@ -450,7 +450,7 @@ export async function linkXAccountWithCode(
   if (existingWithXId && existingWithXId.userId !== input.userId) {
     throw new XOAuthError(
       "X_ACCOUNT_ALREADY_LINKED",
-      "This X account is already linked to another ChimpHood profile.",
+      "This X account is already linked to another Elychimp profile.",
       409,
     );
   }

@@ -133,6 +133,8 @@ describe("X OAuth 2.0 API Routes", () => {
   });
 
   describe("GET /api/social/x/callback", () => {
+    const JSON_HEADERS = { Accept: "application/json" };
+
     async function createValidCookieHeader(overrides?: Partial<XOAuthStatePayload>) {
       const now = Date.now();
       const payload: XOAuthStatePayload = {
@@ -156,6 +158,7 @@ describe("X OAuth 2.0 API Routes", () => {
 
       const req = new Request(
         "http://localhost:3000/api/social/x/callback?code=abc&state=xyz",
+        { headers: JSON_HEADERS },
       );
       const res = await callbackGET(req);
       expect(res.status).toBe(503);
@@ -165,6 +168,7 @@ describe("X OAuth 2.0 API Routes", () => {
     it("rejects provider errors (e.g. user denied access) and clears cookie", async () => {
       const req = new Request(
         "http://localhost:3000/api/social/x/callback?error=access_denied&error_description=The+user+denied+access",
+        { headers: JSON_HEADERS },
       );
       const res = await callbackGET(req);
       expect(res.status).toBe(400);
@@ -177,6 +181,7 @@ describe("X OAuth 2.0 API Routes", () => {
     it("rejects missing code or state parameter and clears cookie", async () => {
       const req = new Request(
         "http://localhost:3000/api/social/x/callback?code=onlycode",
+        { headers: JSON_HEADERS },
       );
       const res = await callbackGET(req);
       expect(res.status).toBe(400);
@@ -189,6 +194,7 @@ describe("X OAuth 2.0 API Routes", () => {
       // Query param has code_verifier, but no valid cookie exists
       const req = new Request(
         "http://localhost:3000/api/social/x/callback?code=abc&state=xyz&code_verifier=evil-verifier",
+        { headers: JSON_HEADERS },
       );
       const res = await callbackGET(req);
       expect(res.status).toBe(400);
@@ -205,7 +211,7 @@ describe("X OAuth 2.0 API Routes", () => {
       const req = new Request(
         `http://localhost:3000/api/social/x/callback?code=abc&state=${payload.state}`,
         {
-          headers: { Cookie: cookieHeader },
+          headers: { Cookie: cookieHeader, ...JSON_HEADERS },
         },
       );
       const res = await callbackGET(req);
@@ -221,7 +227,7 @@ describe("X OAuth 2.0 API Routes", () => {
       const req = new Request(
         "http://localhost:3000/api/social/x/callback?code=abc&state=wrong-state",
         {
-          headers: { Cookie: cookieHeader },
+          headers: { Cookie: cookieHeader, ...JSON_HEADERS },
         },
       );
       const res = await callbackGET(req);
@@ -249,7 +255,7 @@ describe("X OAuth 2.0 API Routes", () => {
       const makeReq = () =>
         new Request(
           `http://localhost:3000/api/social/x/callback?code=abc&state=${payload.state}`,
-          { headers: { Cookie: cookieHeader } },
+          { headers: { Cookie: cookieHeader, ...JSON_HEADERS } },
         );
 
       // First call succeeds
@@ -274,7 +280,7 @@ describe("X OAuth 2.0 API Routes", () => {
       const { payload, cookieHeader } = await createValidCookieHeader();
       const req = new Request(
         `http://localhost:3000/api/social/x/callback?code=abc&state=${payload.state}`,
-        { headers: { Cookie: cookieHeader } },
+        { headers: { Cookie: cookieHeader, ...JSON_HEADERS } },
       );
       const res = await callbackGET(req);
       expect(res.status).toBe(500);
@@ -289,7 +295,7 @@ describe("X OAuth 2.0 API Routes", () => {
       const { payload, cookieHeader } = await createValidCookieHeader();
       const req = new Request(
         `http://localhost:3000/api/social/x/callback?code=abc&state=${payload.state}`,
-        { headers: { Cookie: cookieHeader } },
+        { headers: { Cookie: cookieHeader, ...JSON_HEADERS } },
       );
       const res = await callbackGET(req);
       expect(res.status).toBe(500);
@@ -304,7 +310,7 @@ describe("X OAuth 2.0 API Routes", () => {
 
       const req = new Request(
         `http://localhost:3000/api/social/x/callback?code=abc&state=${payload.state}`,
-        { headers: { Cookie: cookieHeader } },
+        { headers: { Cookie: cookieHeader, ...JSON_HEADERS } },
       );
       const res = await callbackGET(req);
       expect(res.status).toBe(401);
@@ -326,7 +332,7 @@ describe("X OAuth 2.0 API Routes", () => {
 
       const req = new Request(
         `http://localhost:3000/api/social/x/callback?code=abc&state=${payload.state}`,
-        { headers: { Cookie: cookieHeader } },
+        { headers: { Cookie: cookieHeader, ...JSON_HEADERS } },
       );
       const res = await callbackGET(req);
       expect(res.status).toBe(403);
@@ -391,20 +397,21 @@ describe("X OAuth 2.0 API Routes", () => {
       mockLinkXAccountWithCode.mockRejectedValueOnce(
         new XOAuthError(
           "X_ACCOUNT_ALREADY_LINKED",
-          "This X account is already linked to another profile.",
+          "This X account is already linked to another Elychimp profile.",
           409,
         ),
       );
 
       const req = new Request(
         `http://localhost:3000/api/social/x/callback?code=mock-code&state=${payload.state}`,
-        { headers: { Cookie: cookieHeader } },
+        { headers: { Cookie: cookieHeader, ...JSON_HEADERS } },
       );
 
       const res = await callbackGET(req);
       expect(res.status).toBe(409);
       const data = await res.json();
       expect(data.error).toBe("X_ACCOUNT_ALREADY_LINKED");
+      expect(data.message).toBe("This X account is already linked to another Elychimp profile.");
       expect(res.headers.get("Set-Cookie")).toContain("Max-Age=0");
     });
 
@@ -420,7 +427,7 @@ describe("X OAuth 2.0 API Routes", () => {
       mockLinkXAccountWithCode.mockRejectedValueOnce(
         new XOAuthError(
           "X_ACCOUNT_ALREADY_LINKED",
-          "This X account is already linked to another ChimpHood profile.",
+          "This X account is already linked to another Elychimp profile.",
           409,
         ),
       );
@@ -440,7 +447,7 @@ describe("X OAuth 2.0 API Routes", () => {
       const location = res.headers.get("Location");
       expect(location).toContain("/social/x/error");
       expect(location).toContain("error=X_ACCOUNT_ALREADY_LINKED");
-      expect(location).toContain("message=This+X+account+is+already+linked+to+another+ChimpHood+profile.");
+      expect(location).toContain("message=This+X+account+is+already+linked+to+another+Elychimp+profile.");
       expect(res.headers.get("Set-Cookie")).toContain("Max-Age=0");
     });
 
@@ -452,6 +459,19 @@ describe("X OAuth 2.0 API Routes", () => {
             "sec-fetch-dest": "document",
           },
         },
+      );
+      const res = await callbackGET(req);
+      expect(res.status).toBe(302);
+      const location = res.headers.get("Location");
+      expect(location).toContain("/social/x/error");
+      expect(location).toContain("error=X_OAUTH_PROVIDER_ERROR");
+      expect(location).toContain("message=The+user+denied+access");
+      expect(res.headers.get("Set-Cookie")).toContain("Max-Age=0");
+    });
+
+    it("by default redirects standard requests without application/json to /social/x/error on error", async () => {
+      const req = new Request(
+        "http://localhost:3000/api/social/x/callback?error=access_denied&error_description=The+user+denied+access",
       );
       const res = await callbackGET(req);
       expect(res.status).toBe(302);

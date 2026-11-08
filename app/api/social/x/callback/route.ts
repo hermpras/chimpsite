@@ -17,32 +17,28 @@ function respondWithError(
   status: number,
   clearCookieHeader: Record<string, string>,
 ): Response {
+  const url = new URL(request.url);
   const accept = request.headers.get("accept") || "";
-  const secFetchDest = request.headers.get("sec-fetch-dest");
-  const secFetchMode = request.headers.get("sec-fetch-mode");
 
-  const isBrowser =
-    secFetchDest === "document" ||
-    secFetchMode === "navigate" ||
-    accept.includes("text/html");
-
-  if (isBrowser) {
-    const errorUrl = new URL("/social/x/error", request.url);
-    errorUrl.searchParams.set("error", errorCode);
-    errorUrl.searchParams.set("message", message);
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: errorUrl.toString(),
-        ...clearCookieHeader,
-      },
-    });
+  // If explicitly requested as JSON (e.g. automated API tests or programmatic callers)
+  if (accept.includes("application/json") || url.searchParams.get("format") === "json") {
+    return Response.json(
+      { error: errorCode, message },
+      { status, headers: clearCookieHeader },
+    );
   }
 
-  return Response.json(
-    { error: errorCode, message },
-    { status, headers: clearCookieHeader },
-  );
+  // By default, for all standard browser navigation, OAuth callbacks, etc., ALWAYS redirect!
+  const errorUrl = new URL("/social/x/error", request.url);
+  errorUrl.searchParams.set("error", errorCode);
+  errorUrl.searchParams.set("message", message);
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: errorUrl.toString(),
+      ...clearCookieHeader,
+    },
+  });
 }
 
 export async function GET(request: Request): Promise<Response> {
