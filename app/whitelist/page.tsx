@@ -997,7 +997,7 @@ export default function WhitelistPage() {
         ======================================================================= */}
         <div className={activeStepNumber === 1 ? "block" : "hidden"}>
           <div className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.45)] max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-[#163B44] pb-4">
+            <div className="border-b border-[#163B44] pb-4">
               <div>
                 <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#F59E0B]">
                   Step 1 of 5
@@ -1006,9 +1006,6 @@ export default function WhitelistPage() {
                   Connect EVM Wallet
                 </h2>
               </div>
-              <Badge variant="outline" className="border-amber-400/40 bg-amber-950/40 text-amber-300 text-xs sm:text-sm font-bold uppercase">
-                Current Step
-              </Badge>
             </div>
 
             {/* Notice / Instructions */}
@@ -1073,7 +1070,7 @@ export default function WhitelistPage() {
         ======================================================================= */}
         <div className={activeStepNumber === 2 ? "block" : "hidden"}>
           <div className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.45)] max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-[#163B44] pb-4">
+            <div className="border-b border-[#163B44] pb-4">
               <div>
                 <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#34B7DD]">
                   Step 2 of 5
@@ -1082,15 +1079,12 @@ export default function WhitelistPage() {
                   X (Twitter) Identity
                 </h2>
               </div>
-              <Badge variant="outline" className="border-cyan-500/40 bg-cyan-950/40 text-cyan-300 text-xs sm:text-sm font-bold uppercase">
-                Current Step
-              </Badge>
             </div>
 
             {/* Completed Step 1 Chip */}
             <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3.5 text-xs sm:text-sm text-emerald-300">
               <span>
-                Step 1 Completed: EVM Wallet <strong className="font-mono text-white">{address ? shortenAddress(address) : "—"}</strong> verified via SIWE.
+                Step 1 Completed: EVM Wallet <strong className="font-mono text-white">{address ? shortenAddress(address) : "—"}</strong> verified.
               </span>
             </div>
 
@@ -1128,12 +1122,6 @@ export default function WhitelistPage() {
                   <span>Connect X Account</span>
                 )}
               </Button>
-            </div>
-
-            <div className="border-t border-[#163B44]/80 pt-3 text-center">
-              <p className="text-xs sm:text-sm text-[#8AA8B2]">
-                Step 3 (Campaign Tasks) will unlock immediately once your X account is connected.
-              </p>
             </div>
           </div>
         </div>
