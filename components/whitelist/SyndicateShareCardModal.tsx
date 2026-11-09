@@ -122,8 +122,8 @@ export function SyndicateShareCardModal({
       });
 
   const tweetText = isGtd
-    ? `Verified by the @Elychimp Syndicate! 🐒🔥\n\nOfficial Clearance Pass secured on @Enter_elysium (Hyperliquid L2).\n\nRule the streets:`
-    : `Registered with the @Elychimp Syndicate! 🐒💨 Verified clearance on @Enter_elysium (Hyperliquid L2).\n\nRule the streets:`;
+    ? `Verified by the @Elychimp Syndicate! 🐒🔥\n\nOfficial Clearance Pass secured on @Enter_elysium (Hyperliquid).\n\nRule the streets:`
+    : `Registered with the @Elychimp Syndicate! 🐒💨 Verified clearance on @Enter_elysium (Hyperliquid).\n\nRule the streets:`;
 
   const shareUrl =
     typeof window !== "undefined"
@@ -821,13 +821,13 @@ export function SyndicateShareCardModal({
 
             {/* Playful Die-Cut Banana Stickers */}
             <BananaSticker
-              className="absolute top-10 right-24 sm:right-32 w-16 sm:w-24 h-8 sm:h-12 -rotate-12"
+              className="absolute top-8 sm:top-10 right-16 sm:right-32 w-14 sm:w-24 h-7 sm:h-12 -rotate-12 pointer-events-none"
             />
             <BananaSticker
-              className="absolute top-36 sm:top-40 -right-2 sm:right-2 w-14 sm:w-20 h-7 sm:h-10 rotate-24"
+              className="hidden sm:block absolute top-36 sm:top-40 -right-2 sm:right-2 w-14 sm:w-20 h-7 sm:h-10 rotate-24 pointer-events-none"
             />
             <BananaSticker
-              className="absolute bottom-10 sm:bottom-12 right-12 sm:right-16 w-18 sm:w-28 h-9 sm:h-14 rotate-6"
+              className="absolute bottom-4 sm:bottom-12 right-6 sm:right-16 w-14 sm:w-28 h-7 sm:h-14 rotate-6 pointer-events-none"
             />
 
             {/* Diagonal Plastic Glare Highlight */}

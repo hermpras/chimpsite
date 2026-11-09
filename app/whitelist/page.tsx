@@ -1021,7 +1021,7 @@ export default function WhitelistPage() {
 
             {/* Horizontal Five-Step Progress Indicator */}
             <div className="border-t border-cyan-500/20 pt-4">
-              <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-1 text-xs">
+              <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-1 text-xs scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
                 {[
                   { num: 1, label: "WALLET", done: isWalletConnected },
                   { num: 2, label: "X SYNC", done: isXLinked },
@@ -1063,7 +1063,7 @@ export default function WhitelistPage() {
                             window.history.replaceState(null, "", targetHash);
                           }
                         }}
-                        className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl border transition-all text-xs ${
+                        className={`flex items-center gap-1 sm:gap-1.5 shrink-0 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border transition-all text-[11px] sm:text-xs ${
                           !isAccessible
                             ? "border-[#163B44]/40 bg-[#051D22]/40 text-zinc-600 cursor-not-allowed opacity-40 select-none"
                             : step.done
@@ -1074,7 +1074,7 @@ export default function WhitelistPage() {
                         }`}
                       >
                         <span
-                          className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+                          className={`flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full text-[10px] sm:text-xs font-bold shrink-0 ${
                             !isAccessible
                               ? "bg-zinc-900 text-zinc-600"
                               : step.done
@@ -1086,7 +1086,7 @@ export default function WhitelistPage() {
                         >
                           {step.num}
                         </span>
-                        <span className="tracking-wide uppercase">{step.label}</span>
+                        <span className="tracking-wide uppercase font-semibold">{step.label}</span>
                       </button>
                       {idx < 4 && (
                         <div
@@ -1779,7 +1779,12 @@ export default function WhitelistPage() {
             {/* ===================================================================
                 LEFT COLUMN: CHARACTER AND INVENTORY (5 Cols on LG)
             =================================================================== */}
-            <div id="traits" className="lg:col-span-5 space-y-5 scroll-mt-24">
+            <div
+              id="traits"
+              className={`lg:col-span-5 space-y-5 scroll-mt-24 ${
+                activeStepNumber === 5 ? "order-2 lg:order-1" : "order-1"
+              }`}
+            >
               <div className="relative rounded-3xl border-2 border-gray-800 bg-gradient-to-b from-[#0B2026] via-[#0B2026] to-[#08090e] p-5 sm:p-6 shadow-[0_12px_40px_rgba(0,0,0,0.6)] space-y-5 overflow-hidden backdrop-blur-md">
                 {/* Luxury Foil Sheen Top Edge */}
                 <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/80 to-transparent" />
@@ -1943,7 +1948,12 @@ export default function WhitelistPage() {
                 RIGHT COLUMN: ACTIVE STEP PANEL (7 Cols on LG)
                 Compact information panel: Step 1-5
             =================================================================== */}
-            <div id="status" className="lg:col-span-7 space-y-5 scroll-mt-24">
+            <div
+              id="status"
+              className={`lg:col-span-7 space-y-5 scroll-mt-24 ${
+                activeStepNumber === 5 ? "order-1 lg:order-2" : "order-2"
+              }`}
+            >
               <div className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5">
                 <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
                   <div className="flex items-center gap-2">
@@ -2120,7 +2130,7 @@ export default function WhitelistPage() {
                        const paddedSlot = slotNum ? String(slotNum).padStart(4, "0") : "0001";
                        const gtdXUsername = statusResult?.status?.details?.xUsername;
                        const tweetText = encodeURIComponent(
-                         `Just secured Guaranteed Whitelist Slot #${slotNum} in the @Elychimp Syndicate! 🐒🔥\n\n5/5 Outfit Fit assembled on @Enter_elysium (Hyperliquid L2).\n\nRule the streets:`
+                         `Just secured Guaranteed Whitelist Slot #${slotNum} in the @Elychimp Syndicate! 🐒🔥\n\n5/5 Outfit Fit assembled on @Enter_elysium (Hyperliquid).\n\nRule the streets:`
                        );
                        const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
                        const tweetHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`;
@@ -2239,9 +2249,9 @@ export default function WhitelistPage() {
                                </div>
 
                                {/* Banana Stickers */}
-                               <BananaSticker className="absolute top-8 sm:top-10 right-20 sm:right-28 w-14 sm:w-20 h-7 sm:h-10 -rotate-12" />
-                               <BananaSticker className="absolute top-28 sm:top-36 -right-2 sm:right-1 w-12 sm:w-16 h-6 sm:h-8 rotate-24" />
-                               <BananaSticker className="absolute bottom-6 sm:bottom-8 right-6 sm:right-10 w-16 sm:w-22 h-8 sm:h-11 rotate-6" />
+                               <BananaSticker className="absolute top-6 sm:top-10 right-14 sm:right-28 w-12 sm:w-20 h-6 sm:h-10 -rotate-12 pointer-events-none" />
+                               <BananaSticker className="hidden sm:block absolute top-28 sm:top-36 -right-2 sm:right-1 w-12 sm:w-16 h-6 sm:h-8 rotate-24 pointer-events-none" />
+                               <BananaSticker className="absolute bottom-4 sm:bottom-8 right-4 sm:right-10 w-14 sm:w-22 h-7 sm:h-11 rotate-6 pointer-events-none" />
 
                                {/* Plastic Glare */}
                                <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rounded-[16px]" />
@@ -2294,7 +2304,7 @@ export default function WhitelistPage() {
                        const paddedQueue = queueNum ? String(queueNum).padStart(4, "0") : "0001";
                        const fcfsXUsername = statusResult?.status?.details?.xUsername;
                        const tweetText = encodeURIComponent(
-                         `Registered in the @Elychimp FCFS Whitelist Directory #${queueNum}! 🐒💨 Assembled 5/5 traits on @Enter_elysium (Hyperliquid L2).\n\nRule the streets:`
+                         `Registered in the @Elychimp FCFS Whitelist Directory #${queueNum}! 🐒💨 Assembled 5/5 traits on @Enter_elysium (Hyperliquid).\n\nRule the streets:`
                        );
                        const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
                        const tweetHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`;
@@ -2413,9 +2423,9 @@ export default function WhitelistPage() {
                                </div>
 
                                {/* Banana Stickers */}
-                               <BananaSticker className="absolute top-8 sm:top-10 right-20 sm:right-28 w-14 sm:w-20 h-7 sm:h-10 -rotate-12" />
-                               <BananaSticker className="absolute top-28 sm:top-36 -right-2 sm:right-1 w-12 sm:w-16 h-6 sm:h-8 rotate-24" />
-                               <BananaSticker className="absolute bottom-6 sm:bottom-8 right-6 sm:right-10 w-16 sm:w-22 h-8 sm:h-11 rotate-6" />
+                               <BananaSticker className="absolute top-6 sm:top-10 right-14 sm:right-28 w-12 sm:w-20 h-6 sm:h-10 -rotate-12 pointer-events-none" />
+                               <BananaSticker className="hidden sm:block absolute top-28 sm:top-36 -right-2 sm:right-1 w-12 sm:w-16 h-6 sm:h-8 rotate-24 pointer-events-none" />
+                               <BananaSticker className="absolute bottom-4 sm:bottom-8 right-4 sm:right-10 w-14 sm:w-22 h-7 sm:h-11 rotate-6 pointer-events-none" />
 
                                {/* Plastic Glare */}
                                <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rounded-[16px]" />
