@@ -159,7 +159,7 @@ export function Navbar() {
           {/* Mobile Menu Trigger Button */}
           <button
             type="button"
-            className={`group relative flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#34B7DD] md:hidden ${
+            className={`group relative flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#34B7DD] md:hidden ${
               mobileMenuOpen
                 ? "scale-105 border-[#34B7DD]/80 bg-[#0A262E] text-[#34B7DD] shadow-[0_0_18px_rgba(52,183,221,0.35)] ring-1 ring-[#34B7DD]/30"
                 : "border-[#163B44]/80 bg-[#071F24]/80 text-[#DBF2F9] hover:border-[#34B7DD]/60 hover:bg-[#102B33] active:scale-95"
@@ -247,7 +247,7 @@ export function Navbar() {
                   aria-label={link.label}
                   onClick={() => setMobileMenuOpen(false)}
                   style={{ animationDelay: `${50 + idx * 45}ms` }}
-                  className={`animate-mobile-item group relative flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-200 active:scale-[0.99] ${
+                  className={`animate-mobile-item group relative flex w-full items-center justify-start rounded-xl px-4 py-3 text-sm font-semibold tracking-wider uppercase transition-all duration-200 active:scale-[0.99] ${
                     isActive
                       ? "border border-[#34B7DD]/70 bg-gradient-to-r from-[#34B7DD]/20 via-[#103844]/60 to-[#34B7DD]/15 text-[#34B7DD] shadow-[0_0_20px_rgba(52,183,221,0.25)]"
                       : "border border-[#163B44]/80 bg-[#071F24]/70 text-[#DBF2F9] hover:border-[#34B7DD]/50 hover:bg-[#102B33]/90 hover:text-[#34B7DD]"
@@ -260,9 +260,6 @@ export function Navbar() {
                       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#163B44] transition-colors group-hover:bg-[#34B7DD]" />
                     )}
                     <span>{link.label}</span>
-                  </span>
-                  <span className="font-mono-street text-[11px] text-[#8AA8B2]/50 transition-colors group-hover:text-[#34B7DD]/70">
-                    0{idx + 1}
                   </span>
                 </Link>
               );
@@ -299,18 +296,13 @@ export function Navbar() {
             }}
             className="animate-mobile-item mt-5 flex flex-col items-center gap-3 border-t border-[#163B44]/80 pt-5"
           >
-            <div className="flex w-full items-center justify-between px-1">
+            <div className="flex w-full items-center px-1">
               <span className="font-mono-street text-[10px] tracking-wider text-[#8AA8B2]/70 uppercase">
                 Account & Wallet
               </span>
-              <span className="h-1.5 w-1.5 rounded-full bg-[#34B7DD]/40" />
             </div>
 
             <WalletButton align="center" onAction={() => setMobileMenuOpen(false)} />
-
-            <p className="font-mono-street mt-1 text-center text-[10px] tracking-widest text-[#8AA8B2]/40 uppercase">
-              ChimpHood • City of Elysium
-            </p>
           </div>
         </div>
       )}

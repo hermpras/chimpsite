@@ -88,7 +88,7 @@ export function WalletButton({
             aria-haspopup="true"
             aria-expanded={menuOpen}
             aria-label="Account menu"
-            className="flex items-center gap-1.5 rounded-xl border border-[#163B44]/90 bg-[#071F24]/90 p-1.5 transition-all hover:border-[#34B7DD]/80 hover:bg-[#102B33] active:scale-95 shadow-sm"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl border border-[#163B44]/90 bg-[#071F24]/90 px-2.5 py-1.5 transition-all hover:border-[#34B7DD]/80 hover:bg-[#102B33] active:scale-95 shadow-sm"
           >
             <UserAvatar
               identifier={sessionAddress}
@@ -125,11 +125,11 @@ export function WalletButton({
 
         {menuOpen && (
           <div
-            className={`absolute z-50 mt-2 w-72 max-w-[calc(100vw-32px)] rounded-2xl border border-[#1E4D5A] bg-[#04181C]/96 p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 duration-150 ${
+            className={`absolute z-50 mt-2 w-72 max-w-[calc(100vw-24px)] rounded-2xl border border-[#1E4D5A] bg-[#04181C]/96 p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-in fade-in-0 zoom-in-95 duration-150 ${
               align === "center"
                 ? "left-1/2 -translate-x-1/2"
                 : compact
-                ? "-right-12 sm:right-0"
+                ? "-right-10 sm:right-0"
                 : "right-0"
             }`}
           >
@@ -229,7 +229,7 @@ export function WalletButton({
           aria-label="Sign in"
           className={
             compact
-              ? "group relative overflow-hidden flex items-center gap-1.5 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-3.5 py-1.5 font-display text-xs tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_15px_rgba(52,183,221,0.3)] transition-all duration-300 hover:shadow-[0_0_24px_rgba(52,183,221,0.6)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+              ? "group relative overflow-hidden flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-3.5 py-2 font-display text-xs tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_15px_rgba(52,183,221,0.3)] transition-all duration-300 hover:shadow-[0_0_24px_rgba(52,183,221,0.6)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
               : "group relative overflow-hidden flex items-center gap-2 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_16px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_26px_rgba(52,183,221,0.65)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
           }
         >
@@ -258,7 +258,7 @@ export function WalletButton({
           aria-label="Sign in"
           className={
             compact
-              ? "group relative overflow-hidden flex items-center gap-1.5 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-3.5 py-1.5 font-display text-xs tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_15px_rgba(52,183,221,0.3)] transition-all duration-300 hover:shadow-[0_0_24px_rgba(52,183,221,0.6)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+              ? "group relative overflow-hidden flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-3.5 py-2 font-display text-xs tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_15px_rgba(52,183,221,0.3)] transition-all duration-300 hover:shadow-[0_0_24px_rgba(52,183,221,0.6)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
               : "group relative overflow-hidden flex items-center gap-2 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_16px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_26px_rgba(52,183,221,0.65)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
           }
         >
