@@ -1,14 +1,15 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { CoverflowCarousel } from "@/components/home/CoverflowCarousel";
 
 export default function HomePage() {
   return (
     <div className="relative w-full overflow-hidden">
       {/* ========================================================================= */}
-      {/* 1. HERO SECTION: Luxury Brutalist Editorial Gallery                       */}
+      {/* 1. HERO SECTION: Centerstage 3D Runway Exhibition                         */}
       {/* ========================================================================= */}
-      <section className="relative w-full overflow-hidden border-b border-[#163B44]/80 bg-[#04181C] pt-10 pb-16 sm:pt-14 sm:pb-24 lg:pt-18 lg:pb-28">
+      <section className="relative w-full overflow-hidden border-b border-[#163B44]/80 bg-[#04181C] pt-6 pb-14 sm:pt-8 sm:pb-18 lg:pt-10 lg:pb-22">
         {/* Subtle Architectural Grid Lines & Ambient Atmosphere */}
         <div className="pointer-events-none absolute inset-0 select-none">
           {/* Faint Grid Texture */}
@@ -29,245 +30,51 @@ export default function HomePage() {
             className="h-full w-full object-cover object-[75%_25%] opacity-15 filter grayscale contrast-125"
           />
 
-          {/* Precision Vignettes (Pure Dark Depth, Zero Blurry Rainbow Blobs) */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#04181C] via-[#04181C]/92 to-[#04181C]/75" />
+          {/* Precision Vignettes */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#04181C] via-[#04181C]/92 to-[#04181C]" />
           <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#04181C] to-transparent" />
           <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#04181C] to-transparent" />
         </div>
 
-        {/* Hero Content Container */}
+        {/* Hero Content Container (Centerstage Runway) */}
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-12">
-            {/* Left: Editorial Statement & Primary Actions */}
-            <div className="flex flex-col items-start lg:col-span-7">
-              {/* Overhead Monospace Spec Sheet Tag */}
-              <div className="mb-5 inline-flex items-center gap-3 border border-[#163B44] bg-[#071F24]/85 px-3.5 py-1.5 backdrop-blur-sm">
-                <span className="font-mono text-[11px] font-medium tracking-[0.22em] text-[#8AA8B2] uppercase">
-                  CHIMPHOOD ARCHIVE
-                </span>
-                <span className="text-[10px] text-[#163B44]">|</span>
-                <span className="font-mono text-[11px] font-medium tracking-[0.18em] text-[#34B7DD] uppercase">
-                  5-PIECE GEAR MATRIX
-                </span>
-              </div>
+          {/* Top Header Block: Subtitle matching user screenshot */}
+          <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+            {/* Screen-reader heading for SEO and accessibility */}
+            <h1 className="sr-only">Five Pieces. One Collective.</h1>
 
-              {/* Monolithic Editorial Headline */}
-              <h1 className="font-display text-4xl sm:text-6xl md:text-8xl lg:text-9xl uppercase tracking-tight leading-[0.88] text-[#F8F7F4]">
-                FIVE PIECES.
-                <br />
-                <span className="text-[#34B7DD]">ONE COLLECTIVE.</span>
-              </h1>
+            {/* High-Caliber Subheading (Hero opener) */}
+            <p className="max-w-2xl text-center text-sm leading-relaxed text-[#B8D7E0] sm:text-base font-normal">
+              A dynamic digital wardrobe engineered for Elysium. Collect modular apparel traits through cyclic drop periods, compose your signature specimen, and clear guaranteed allocation for OpenSea SeaDrop.
+            </p>
+          </div>
 
-              {/* Refined Luxury Subtitle */}
-              <p className="mt-6 max-w-xl text-base leading-relaxed text-[#B8D7E0] sm:text-lg font-normal">
-                Modular avatar compositing with zero gas friction. Collect five distinct
-                gear categories through drop cycles, assemble your signature specimen,
-                and clear guaranteed allocation for OpenSea SeaDrop.
-              </p>
+          {/* Middle Stage: 3D Coverflow Runway Carousel */}
+          <div className="mt-6 sm:mt-8 w-full">
+            <CoverflowCarousel />
+          </div>
 
-              {/* Action Buttons (Strictly Clean & Icon-Free) */}
-              <div className="mt-8 flex w-full flex-col gap-3.5 sm:w-auto sm:flex-row">
-                <Link href="/whitelist" className="w-full sm:w-auto">
-                  <Button
-                    size="lg"
-                    className="w-full border border-[#34B7DD] bg-[#34B7DD] font-semibold text-sm sm:text-base uppercase tracking-[0.14em] text-[#04181C] shadow-[0_0_24px_rgba(52,183,221,0.25)] transition-all hover:bg-[#6FCDE8] hover:shadow-[0_0_36px_rgba(52,183,221,0.4)] active:scale-[0.99] sm:w-auto px-8 py-4 sm:py-5"
-                  >
-                    GET ON THE LIST
-                  </Button>
-                </Link>
-                <Link href="/drops" className="w-full sm:w-auto">
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    className="w-full border border-[#163B44] bg-[#071F24]/80 backdrop-blur-md font-semibold text-sm sm:text-base uppercase tracking-[0.14em] text-[#DBF2F9] transition-all hover:border-[#34B7DD]/60 hover:text-white hover:bg-[#0B2A32] active:scale-[0.99] sm:w-auto px-8 py-4 sm:py-5"
-                  >
-                    OPEN CRATES
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Micro Telemetry Spec Row */}
-              <div className="mt-10 grid grid-cols-3 gap-6 border-t border-[#163B44]/80 pt-6 w-full max-w-lg">
-                <div>
-                  <div className="font-mono text-[10px] tracking-[0.18em] text-[#8AA8B2] uppercase">
-                    CAPACITY
-                  </div>
-                  <div className="mt-1 font-display text-xl text-[#F8F7F4] tracking-wide">
-                    1,000 SLOTS
-                  </div>
-                </div>
-                <div>
-                  <div className="font-mono text-[10px] tracking-[0.18em] text-[#8AA8B2] uppercase">
-                    ANATOMY
-                  </div>
-                  <div className="mt-1 font-display text-xl text-[#34B7DD] tracking-wide">
-                    5 TIERS
-                  </div>
-                </div>
-                <div>
-                  <div className="font-mono text-[10px] tracking-[0.18em] text-[#8AA8B2] uppercase">
-                    SETTLEMENT
-                  </div>
-                  <div className="mt-1 font-display text-xl text-[#F8F7F4] tracking-wide">
-                    SEADROP
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: The Exhibition Pedestal Frame */}
-            <div className="flex flex-col items-center justify-center lg:col-span-5">
-              <div className="relative w-full max-w-[380px] sm:max-w-[420px]">
-                {/* Minimalist Specimen Card */}
-                <div className="relative overflow-hidden border border-[#1E4D5A]/80 bg-[#071F24]/90 p-5 shadow-[0_24px_60px_rgba(2,10,12,0.9)] backdrop-blur-md">
-                  {/* Top Architectural Metadata Header */}
-                  <div className="mb-4 flex items-center justify-between border-b border-[#163B44] pb-3 font-mono text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold tracking-[0.16em] text-[#F8F7F4] uppercase">
-                        SPECIMEN
-                      </span>
-                      <span className="text-[#8AA8B2]">#0001</span>
-                    </div>
-                    <span className="border border-[#34B7DD]/40 bg-[#04181C] px-2 py-0.5 text-[10px] font-medium tracking-[0.14em] text-[#34B7DD] uppercase">
-                      ACTIVE FIT
-                    </span>
-                  </div>
-
-                  {/* High-Resolution Layered Canvas */}
-                  <div className="relative aspect-square w-full overflow-hidden border border-[#163B44] bg-[#04181C] shadow-inner">
-                    {/* Layer 0: Background */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/traits/sky.png"
-                      alt="Trait Background Sky"
-                      width={360}
-                      height={360}
-                      loading="eager"
-                      fetchPriority="high"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
-                    />
-
-                    {/* Layer 1: Base Chimp */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/images/chimp-base-bw.png"
-                      alt="Trait Base Structure"
-                      width={360}
-                      height={360}
-                      loading="eager"
-                      fetchPriority="high"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated] opacity-35"
-                    />
-
-                    {/* Layer 2: Fur */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/traits/gold.png"
-                      alt="Trait Fur Gold"
-                      width={360}
-                      height={360}
-                      loading="eager"
-                      fetchPriority="high"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
-                    />
-
-                    {/* Layer 3: Clothing */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/traits/varsity-jacket.png"
-                      alt="Trait Apparel Varsity Jacket"
-                      width={360}
-                      height={360}
-                      loading="eager"
-                      fetchPriority="high"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
-                    />
-
-                    {/* Layer 4: Headwear */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/traits/snapback.png"
-                      alt="Trait Headwear Snapback"
-                      width={360}
-                      height={360}
-                      loading="eager"
-                      fetchPriority="high"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
-                    />
-
-                    {/* Layer 5: Eyewear */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/traits/matrix-shades.png"
-                      alt="Trait Eyewear Matrix Shades"
-                      width={360}
-                      height={360}
-                      loading="eager"
-                      fetchPriority="high"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
-                    />
-
-                    {/* Subtle Studio Lighting Glare */}
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.04] to-transparent" />
-                  </div>
-
-                  {/* 5-Tier Apparel Specimen Grid */}
-                  <div className="mt-4 grid grid-cols-5 gap-1.5 font-mono text-[10px] text-center uppercase">
-                    <div className="border border-[#163B44] bg-[#04181C] py-2 px-1">
-                      <span className="block text-[8px] text-[#8AA8B2] tracking-wider">
-                        01 BG
-                      </span>
-                      <span className="mt-0.5 block font-semibold text-[#DBF2F9] truncate">
-                        SKY
-                      </span>
-                    </div>
-                    <div className="border border-[#163B44] bg-[#04181C] py-2 px-1">
-                      <span className="block text-[8px] text-[#8AA8B2] tracking-wider">
-                        02 FUR
-                      </span>
-                      <span className="mt-0.5 block font-semibold text-[#FBBF24] truncate">
-                        GOLD
-                      </span>
-                    </div>
-                    <div className="border border-[#163B44] bg-[#04181C] py-2 px-1">
-                      <span className="block text-[8px] text-[#8AA8B2] tracking-wider">
-                        03 FIT
-                      </span>
-                      <span className="mt-0.5 block font-semibold text-[#DBF2F9] truncate">
-                        VARSITY
-                      </span>
-                    </div>
-                    <div className="border border-[#163B44] bg-[#04181C] py-2 px-1">
-                      <span className="block text-[8px] text-[#8AA8B2] tracking-wider">
-                        04 HEAD
-                      </span>
-                      <span className="mt-0.5 block font-semibold text-[#DBF2F9] truncate">
-                        SNAP
-                      </span>
-                    </div>
-                    <div className="border border-[#163B44] bg-[#04181C] py-2 px-1">
-                      <span className="block text-[8px] text-[#8AA8B2] tracking-wider">
-                        05 EYE
-                      </span>
-                      <span className="mt-0.5 block font-semibold text-[#34B7DD] truncate">
-                        SHADES
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Bottom Verification Telemetry */}
-                  <div className="mt-3.5 flex items-center justify-between border-t border-[#163B44] pt-2.5 font-mono text-[9px] tracking-[0.14em] text-[#8AA8B2] uppercase">
-                    <span>LAYER MATRIX RESOLVED</span>
-                    <span className="text-[#34B7DD]">OPENSEA READY</span>
-                  </div>
-                </div>
-              </div>
+          {/* Bottom Action Console */}
+          <div className="mt-7 sm:mt-8 flex flex-col items-center">
+            {/* Actions (Strictly Clean & Icon-Free) */}
+            <div className="flex w-full flex-col gap-3.5 sm:w-auto sm:flex-row justify-center">
+              <Link href="/whitelist" className="w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  className="w-full border border-[#34B7DD] bg-[#34B7DD] font-semibold text-sm sm:text-base uppercase tracking-[0.14em] text-[#04181C] shadow-[0_0_24px_rgba(52,183,221,0.25)] transition-all hover:bg-[#6FCDE8] hover:shadow-[0_0_36px_rgba(52,183,221,0.4)] active:scale-[0.99] sm:w-auto px-8 py-3.5 sm:py-4"
+                >
+                  GET ON THE LIST
+                </Button>
+              </Link>
+              <Link href="/drops" className="w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-full border border-[#163B44] bg-[#071F24]/80 backdrop-blur-md font-semibold text-sm sm:text-base uppercase tracking-[0.14em] text-[#DBF2F9] transition-all hover:border-[#34B7DD]/60 hover:text-white hover:bg-[#0B2A32] active:scale-[0.99] sm:w-auto px-8 py-3.5 sm:py-4"
+                >
+                  OPEN CRATES
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

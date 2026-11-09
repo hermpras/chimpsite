@@ -11,5 +11,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## User Preferences & Rules
 
 - **JANGAN PERNAH ADA ICON**: Jangan pernah menambahkan icon (baik icon Lucide, icon dot/bullet, SVG icon, atau emoji) pada komponen UI kecuali diminta secara eksplisit oleh pengguna. Desain harus bersih, minimalis, dan mewah tanpa icon dekoratif.
+- **BRAND IDENTITAS RESMI: ELYSIUM**: Brand proyek ini telah resmi di-rebrand menjadi **ELYSIUM** (bukan ChimpHood). Selalu gunakan nama **ELYSIUM** sebagai nama resmi platform/brand di seluruh copy, UI, dan komunikasi.
 - **Top Profile Card**: Harus bersih tanpa teks atau badge berlebihan seperti `//`, `FULL CHARACTER SET`, `ELYCHIMP`, `SYNCED`, atau tombol navigasi tambahan. Tetap fokus pada judul, status whitelist, pills ringkas tanpa icon, dan avatar dalam bingkai kaca mewah.
 
