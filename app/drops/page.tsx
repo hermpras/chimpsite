@@ -9,7 +9,6 @@ import {
   AlertCircle,
   RefreshCw,
   ExternalLink,
-  Gift,
   ShieldCheck,
   Lock,
   ArrowRight,
@@ -511,35 +510,35 @@ export default function DropsPage() {
             ) : dropData?.active && dropData.period ? (
               <div className="space-y-6">
                 {/* 3 Metric Cards */}
-                <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 text-sm">
                   {/* Period Cycle Card */}
-                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#071F24] to-[#04181C] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-center items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
+                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#071F24] to-[#04181C] p-3.5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-center items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-amber-500/15 blur-xl" />
-                    <span className="text-xs font-bold text-amber-300/90 uppercase tracking-widest flex items-center justify-center">
+                    <span className="text-[10px] sm:text-xs font-bold text-amber-300/90 uppercase tracking-widest flex items-center justify-center">
                       Period Cycle
                     </span>
-                    <p className="my-2 font-display text-4xl sm:text-5xl font-black bg-gradient-to-br from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]">
+                    <p className="my-1 sm:my-2 font-display text-3xl sm:text-5xl font-black bg-gradient-to-br from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]">
                       #{displayPeriodIndex}
                     </p>
                   </div>
 
                   {/* Remaining Stock Card */}
-                  <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#071F24] to-[#04181C] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-center items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
+                  <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#071F24] to-[#04181C] p-3.5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-center items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-cyan-500/15 blur-xl" />
-                    <span className="text-xs font-bold text-cyan-300/90 uppercase tracking-widest flex items-center justify-center">
+                    <span className="text-[10px] sm:text-xs font-bold text-cyan-300/90 uppercase tracking-widest flex items-center justify-center">
                       Remaining Stock
                     </span>
-                    <p className="my-2 font-mono text-2xl sm:text-3xl font-bold text-white">
+                    <p className="my-1 sm:my-2 font-mono text-xl sm:text-3xl font-bold text-white">
                       <span className="bg-gradient-to-r from-cyan-100 via-cyan-300 to-sky-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(6,182,212,0.3)]">
                         {displayRemainingStock}
                       </span>{" "}
-                      <span className="text-xs font-semibold text-gray-400">
-                        / {displayAllocatedStock} Units
+                      <span className="text-[10px] sm:text-xs font-semibold text-gray-400">
+                        / {displayAllocatedStock}
                       </span>
                     </p>
-                    <div className="mt-2 h-2.5 w-full max-w-[220px] rounded-full bg-black/80 overflow-hidden border border-cyan-500/30 p-[1px] shadow-inner">
+                    <div className="mt-1 sm:mt-2 h-2 sm:h-2.5 w-full max-w-[220px] rounded-full bg-black/80 overflow-hidden border border-cyan-500/30 p-[1px] shadow-inner">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-teal-300 to-amber-300 shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-all duration-500"
                         style={{
@@ -547,18 +546,18 @@ export default function DropsPage() {
                         }}
                       />
                     </div>
-                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                    <span className="mt-1 sm:mt-2 inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-cyan-400 uppercase tracking-wider">
                       {displayStockPercentage}% Available
                     </span>
                   </div>
 
                   {/* Claim Window / Countdown Card */}
                   <div
-                    className={`relative overflow-hidden rounded-2xl border ${
+                    className={`col-span-2 sm:col-span-1 relative overflow-hidden rounded-2xl border ${
                       isWindowActive
                         ? "border-amber-500/40 bg-gradient-to-b from-amber-950/25 via-[#071F24] to-[#04181C] shadow-[0_8px_24px_rgba(245,158,11,0.15),inset_0_1px_0_rgba(251,191,36,0.2)] hover:border-amber-400/60"
                         : "border-[#163B44] bg-gradient-to-b from-white/[0.03] via-[#071F24] to-[#04181C] shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-white/20"
-                    } p-5 sm:p-6 flex flex-col justify-between text-center group transition-all duration-300`}
+                    } p-4 sm:p-6 flex flex-col justify-between text-center group transition-all duration-300`}
                   >
                     <div
                       className={`absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent ${
@@ -994,24 +993,19 @@ export default function DropsPage() {
           {/* Top Cyan Accent Sheen */}
           <div className="pointer-events-none absolute inset-x-12 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
-          <div className="flex items-center gap-4 border-b border-[#163B44] pb-5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-400/50 bg-gradient-to-br from-cyan-500/20 to-blue-900/30 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
-              <Gift className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="font-display text-xl uppercase tracking-wider text-white">
-                Gifts &amp; Duplicate Trait Exchange
-              </h3>
-              <p className="text-sm text-[#8AA8B2] mt-1">
-                Help fellow community members complete their 5 required trait categories
-              </p>
-            </div>
+          <div className="border-b border-[#163B44] pb-5">
+            <h3 className="font-display text-xl uppercase tracking-wider text-white">
+              Gifts &amp; Duplicate Trait Exchange
+            </h3>
+            <p className="text-sm text-[#8AA8B2] mt-1">
+              Help fellow community members complete their 5 required trait categories
+            </p>
           </div>
           <div className="mt-5 space-y-3.5 rounded-2xl border border-[#163B44] bg-[#051D22] p-5 text-sm sm:text-base text-[#DBF2F9] shadow-inner">
             <p className="leading-relaxed">
               Hold duplicate traits? You can gift them to peers directly from your{" "}
               <Link href="/profile" className="font-bold text-[#34B7DD] hover:text-[#6FCDE8] underline underline-offset-4 decoration-[#34B7DD]/50 hover:decoration-[#6FCDE8] transition-colors">
-                User Inventory
+                Inventory
               </Link>
               . Senders must retain at least 1 trait in the category; limited to 1 gift per wallet per day.
             </p>

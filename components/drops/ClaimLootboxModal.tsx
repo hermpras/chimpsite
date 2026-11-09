@@ -332,7 +332,7 @@ export function ClaimLootboxModal({
   // Share on X (Twitter) URL
   const tweetText = wonTrait
     ? encodeURIComponent(
-        `Just pulled ${wonTrait.name} (${wonRarity}) in the @Elychimp Drop! 🐒🔥 Edition #${claimedItem?.edition} • Deployed on @Enter_elysium (Hyperliquid L2).\n\nRule the streets:`,
+        `Just pulled ${wonTrait.name} (${wonRarity}) in the @Elychimp Drop! 🐒🔥 Edition #${claimedItem?.edition} • Deployed on @Enter_elysium (Hyperliquid).\n\nRule the streets:`,
       )
     : "";
   const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
@@ -346,7 +346,7 @@ export function ClaimLootboxModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="lootbox-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto overflow-x-hidden"
     >
       {/* Dynamic Keyframe & Particle Styles */}
       <style>{`
@@ -424,10 +424,10 @@ export function ClaimLootboxModal({
       </div>
 
       {/* Main Container */}
-      <div className="relative my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-[#1E4D5A] bg-gradient-to-b from-[#0B2026]/95 via-[#071F24]/98 to-[#04181C]/99 p-6 sm:p-7 text-center shadow-[0_25px_60px_rgba(4,24,28,0.9)] backdrop-blur-2xl">
+      <div className="relative my-auto w-full max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-2xl sm:rounded-3xl border border-[#1E4D5A] bg-gradient-to-b from-[#0B2026]/95 via-[#071F24]/98 to-[#04181C]/99 p-4 sm:p-7 text-center shadow-[0_25px_60px_rgba(4,24,28,0.9)] backdrop-blur-2xl">
         {/* ===================== PHASE 1: ROLLING ===================== */}
         {phase === "ROLLING" && (
-          <div className="flex flex-col items-center py-4">
+          <div className="flex flex-col items-center py-3 sm:py-4">
             {/* Ambient Back Glow */}
             <div className="absolute inset-0 bg-radial from-[#34B7DD]/10 via-transparent to-transparent pointer-events-none" />
 
@@ -441,13 +441,13 @@ export function ClaimLootboxModal({
 
             <h3
               id="lootbox-title"
-              className="mt-3 text-xl font-black tracking-wider uppercase text-white"
+              className="mt-3 text-lg sm:text-xl font-black tracking-wider uppercase text-white"
             >
               Unlocking Mystery Trait
             </h3>
 
             {/* Spinning Trait Roulette Pod */}
-            <div className="relative mt-6 flex h-52 w-52 items-center justify-center rounded-2xl border-2 border-[#34B7DD]/40 bg-[#051D22] p-3 shadow-[0_0_40px_rgba(52,183,221,0.2)] animate-pod-pulse">
+            <div className="relative mt-4 sm:mt-6 flex h-44 w-44 sm:h-52 sm:w-52 items-center justify-center rounded-2xl border-2 border-[#34B7DD]/40 bg-[#051D22] p-3 shadow-[0_0_40px_rgba(52,183,221,0.2)] animate-pod-pulse">
               {/* Rotating Corner Tech Brackets */}
               <div className="absolute top-1 left-1 h-3 w-3 border-t-2 border-l-2 border-emerald-400" />
               <div className="absolute top-1 right-1 h-3 w-3 border-t-2 border-r-2 border-emerald-400" />
@@ -503,7 +503,7 @@ export function ClaimLootboxModal({
           <div className="relative flex flex-col items-center py-2 animate-bounce-in">
             {/* Sunburst Rays Background */}
             <div
-              className="absolute -top-32 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full pointer-events-none animate-sunburst opacity-40 blur-md"
+              className="absolute -top-32 left-1/2 -translate-x-1/2 h-80 w-80 sm:h-96 sm:w-96 rounded-full pointer-events-none animate-sunburst opacity-40 blur-md overflow-hidden"
               style={{
                 background: `conic-gradient(from 0deg, ${wonTheme.rayColor} 0deg 20deg, transparent 20deg 40deg, ${wonTheme.rayColor} 40deg 60deg, transparent 60deg 80deg, ${wonTheme.rayColor} 80deg 100deg, transparent 100deg 120deg, ${wonTheme.rayColor} 120deg 140deg, transparent 140deg 160deg, ${wonTheme.rayColor} 160deg 180deg, transparent 180deg 200deg, ${wonTheme.rayColor} 200deg 220deg, transparent 220deg 240deg, ${wonTheme.rayColor} 240deg 260deg, transparent 260deg 280deg, ${wonTheme.rayColor} 280deg 300deg, transparent 300deg 320deg, ${wonTheme.rayColor} 320deg 340deg, transparent 340deg 360deg)`,
               }}
@@ -537,7 +537,7 @@ export function ClaimLootboxModal({
 
             {/* Trait Card */}
             <div
-              className={`relative mt-5 flex h-56 w-56 items-center justify-center overflow-hidden rounded-2xl border-2 ${wonTheme.border} ${wonTheme.bg} p-3 ${wonTheme.glow} transition-all duration-300 shadow-2xl group`}
+              className={`relative mt-4 sm:mt-5 flex h-48 w-48 sm:h-56 sm:w-56 items-center justify-center overflow-hidden rounded-2xl border-2 ${wonTheme.border} ${wonTheme.bg} p-2.5 sm:p-3 ${wonTheme.glow} transition-all duration-300 shadow-2xl group`}
             >
               {/* Top Shimmer Sheen */}
               <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
@@ -553,7 +553,7 @@ export function ClaimLootboxModal({
                 <img
                   src={wonTrait.imageUrl}
                   alt={wonTrait.name}
-                  className="h-44 w-44 object-contain transition-transform duration-300 hover:scale-105 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
+                  className="h-36 w-36 sm:h-44 sm:w-44 object-contain transition-transform duration-300 hover:scale-105 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
                   style={{ imageRendering: "pixelated" }}
                 />
               ) : (
