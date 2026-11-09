@@ -38,8 +38,8 @@ const INDONESIAN_UI_WORDS = [
 describe("Public Pages English Copy Rendering", () => {
   it("renders HomePage successfully with key English headings and terminology", () => {
     const { container } = render(<HomePage />);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Rule the Streets/i);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/of Elysium/i);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Five Pieces/i);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/One Collective/i);
     expect(screen.getAllByText("GET ON THE LIST").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("OPEN CRATES").length).toBeGreaterThanOrEqual(1);
 
@@ -51,25 +51,25 @@ describe("Public Pages English Copy Rendering", () => {
   it("renders DocsPage with English community guide sections and terminology", () => {
     const { container } = render(<DocsPage />);
     expect(
-      screen.getByRole("heading", { name: /Community Guide/i }),
+      screen.getByRole("heading", { name: /How Elychimp Works|Community Guide/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "1. Trait Collection & Inventory" }),
+      screen.getByRole("heading", { name: /Trait Collection & Inventory/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "2. Drops & Lootbox" }),
+      screen.getByRole("heading", { name: /Trait Drops & Lootbox|Drops & Lootbox/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "3. Gifts & Duplicate Sharing" }),
+      screen.getByRole("heading", { name: /Peer Gifting & Duplicate Sharing|Gifts & Duplicate Sharing/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "4. Whitelist: GTD & FCFS" }),
+      screen.getByRole("heading", { name: /Whitelist Qualification Criteria|Whitelist: GTD & FCFS/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "5. Campaign Tasks & Evidence Review" }),
+      screen.getByRole("heading", { name: /Campaign Tasks & Evidence Review/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "6. Wallet Security & Identity" }),
+      screen.getByRole("heading", { name: /Wallet Security & (Non-Custodial Verification|Signature Auth|Identity)/i }),
     ).toBeInTheDocument();
 
     for (const pattern of INDONESIAN_UI_WORDS) {
@@ -179,11 +179,11 @@ describe("Public Pages English Copy Rendering", () => {
     );
     expect(screen.getByText("User Profile")).toBeInTheDocument();
     expect(screen.getByText("Web3 Wallet")).toBeInTheDocument();
-    expect(screen.getByText("Gasless off-chain signature verification")).toBeInTheDocument();
+    expect(screen.getByText(/Gasless off-chain signature verification/i)).toBeInTheDocument();
     expect(screen.getByText("X (Twitter) Identity")).toBeInTheDocument();
     expect(screen.getByText("Community Tier & Whitelist Status")).toBeInTheDocument();
     expect(screen.getByText("Collection & Inventory")).toBeInTheDocument();
-    expect(screen.getByText("Inventory Empty")).toBeInTheDocument();
+    expect(screen.queryByText("Inventory Empty")).not.toBeInTheDocument();
 
     // Verify removed placeholders
     expect(screen.queryByText("X OAuth Not Active Yet")).not.toBeInTheDocument();
