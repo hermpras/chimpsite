@@ -38,8 +38,8 @@ const INDONESIAN_UI_WORDS = [
 describe("Public Pages English Copy Rendering", () => {
   it("renders HomePage successfully with key English headings and terminology", () => {
     const { container } = render(<HomePage />);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Five Pieces/i);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/One Collective/i);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Rule the streets/i);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Elysium/i);
     expect(screen.getAllByText("GET ON THE LIST").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("OPEN CRATES").length).toBeGreaterThanOrEqual(1);
 

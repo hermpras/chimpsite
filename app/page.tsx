@@ -9,42 +9,55 @@ export default function HomePage() {
       {/* ========================================================================= */}
       {/* 1. HERO SECTION: Centerstage 3D Runway Exhibition                         */}
       {/* ========================================================================= */}
-      <section className="relative w-full overflow-hidden border-b border-[#163B44]/80 bg-[#04181C] pt-6 pb-14 sm:pt-8 sm:pb-18 lg:pt-10 lg:pb-22">
+      <section className="relative w-full overflow-hidden border-b border-[#1A4550] bg-[#061F25] pt-6 pb-14 sm:pt-8 sm:pb-18 lg:pt-10 lg:pb-22">
         {/* Subtle Architectural Grid Lines & Ambient Atmosphere */}
         <div className="pointer-events-none absolute inset-0 select-none">
-          {/* Faint Grid Texture */}
+          {/* Top Edge Jewel Rim */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#34B7DD]/40 to-transparent" />
+
+          {/* Faint Precision Grid Texture */}
           <div
-            className="absolute inset-0 opacity-[0.03]"
+            className="absolute inset-0 opacity-[0.05]"
             style={{
               backgroundImage:
                 "linear-gradient(to right, #34B7DD 1px, transparent 1px), linear-gradient(to bottom, #34B7DD 1px, transparent 1px)",
-              backgroundSize: "64px 64px",
+              backgroundSize: "56px 56px",
             }}
           />
 
-          {/* Deep Muted Backdrop */}
+          {/* Atmospheric Starlet Motel Backdrop */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/bg-starlet-motel.jpg"
             alt="Atmospheric Background"
-            className="h-full w-full object-cover object-[75%_25%] opacity-15 filter grayscale contrast-125"
+            className="h-full w-full object-cover object-[75%_25%] opacity-25 filter contrast-110 saturate-[0.85]"
           />
 
-          {/* Precision Vignettes */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#04181C] via-[#04181C]/92 to-[#04181C]" />
-          <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#04181C] to-transparent" />
-          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#04181C] to-transparent" />
+          {/* Radiant Centerstage Ambient Lighting */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,rgba(52,183,221,0.18),transparent_75%)]" />
+
+          {/* Atmospheric Vignettes */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#061F25]/80 via-[#061F25]/60 to-[#061F25]" />
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#061F25] to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#061F25] to-transparent" />
         </div>
 
         {/* Hero Content Container (Centerstage Runway) */}
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Top Header Block: Subtitle matching user screenshot */}
-          <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-            {/* Screen-reader heading for SEO and accessibility */}
-            <h1 className="sr-only">Five Pieces. One Collective.</h1>
+          {/* Top Header Block: Monumental Headline & Subtitle */}
+          <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+            {/* Monumental Editorial Headline */}
+            <h1 className="font-display text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[0.98] text-center select-none">
+              <span className="block bg-gradient-to-b from-[#FFFFFF] via-[#F4FBFD] to-[#A2CDD9] bg-clip-text text-transparent drop-shadow-[0_4px_20px_rgba(0,0,0,0.85)]">
+                RULE THE STREETS
+              </span>
+              <span className="block bg-gradient-to-r from-[#4AE2FF] via-[#7DE8FF] to-[#2DA8CD] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(52,183,221,0.5)]">
+                OF ELYSIUM
+              </span>
+            </h1>
 
-            {/* High-Caliber Subheading (Hero opener) */}
-            <p className="max-w-2xl text-center text-sm leading-relaxed text-[#B8D7E0] sm:text-base font-normal">
+            {/* High-Caliber Subheading */}
+            <p className="mt-3 sm:mt-4 max-w-xl text-center text-xs sm:text-sm md:text-base leading-relaxed text-[#A8CCD7] font-normal">
               A dynamic digital wardrobe engineered for Elysium. Collect modular apparel traits through cyclic drop periods, compose your signature specimen, and clear guaranteed allocation for OpenSea SeaDrop.
             </p>
           </div>
@@ -56,24 +69,27 @@ export default function HomePage() {
 
           {/* Bottom Action Console */}
           <div className="mt-7 sm:mt-8 flex flex-col items-center">
-            {/* Actions (Strictly Clean & Icon-Free) */}
-            <div className="flex w-full flex-col gap-3.5 sm:w-auto sm:flex-row justify-center">
+            {/* Luxury Actions (Strictly Clean & Icon-Free) */}
+            <div className="flex w-full flex-col gap-3.5 sm:gap-4 sm:w-auto sm:flex-row justify-center items-center">
               <Link href="/whitelist" className="w-full sm:w-auto">
-                <Button
-                  size="lg"
-                  className="w-full border border-[#34B7DD] bg-[#34B7DD] font-semibold text-sm sm:text-base uppercase tracking-[0.14em] text-[#04181C] shadow-[0_0_24px_rgba(52,183,221,0.25)] transition-all hover:bg-[#6FCDE8] hover:shadow-[0_0_36px_rgba(52,183,221,0.4)] active:scale-[0.99] sm:w-auto px-8 py-3.5 sm:py-4"
+                <button
+                  type="button"
+                  className="group relative flex w-full sm:w-auto items-center justify-center overflow-hidden rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] px-8 sm:px-11 py-3.5 sm:py-4 font-sans text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_10px_32px_rgba(52,183,221,0.45)] transition-all duration-300 hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_14px_42px_rgba(52,183,221,0.7)] active:scale-[0.98] cursor-pointer"
                 >
-                  GET ON THE LIST
-                </Button>
+                  <span className="relative z-10 transition-transform duration-300 group-hover:scale-[1.02]">
+                    GET ON THE LIST
+                  </span>
+                </button>
               </Link>
               <Link href="/drops" className="w-full sm:w-auto">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="w-full border border-[#163B44] bg-[#071F24]/80 backdrop-blur-md font-semibold text-sm sm:text-base uppercase tracking-[0.14em] text-[#DBF2F9] transition-all hover:border-[#34B7DD]/60 hover:text-white hover:bg-[#0B2A32] active:scale-[0.99] sm:w-auto px-8 py-3.5 sm:py-4"
+                <button
+                  type="button"
+                  className="group relative flex w-full sm:w-auto items-center justify-center overflow-hidden rounded-xl border border-[#34B7DD]/60 bg-gradient-to-b from-[#0D343F]/95 via-[#07242C]/95 to-[#04191F]/95 px-8 sm:px-11 py-3.5 sm:py-4 font-sans text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-[#E0F5FA] shadow-[inset_0_1px_1px_rgba(255,255,255,0.35),inset_0_0_24px_rgba(52,183,221,0.12),0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-all duration-300 hover:border-[#6DE0FF] hover:from-[#134452] hover:via-[#0A2E38] hover:to-[#052129] hover:text-white hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.65),0_0_36px_rgba(52,183,221,0.45)] active:scale-[0.98] cursor-pointer"
                 >
-                  OPEN CRATES
-                </Button>
+                  <span className="relative z-10 transition-transform duration-300 group-hover:scale-[1.02]">
+                    OPEN CRATES
+                  </span>
+                </button>
               </Link>
             </div>
           </div>
