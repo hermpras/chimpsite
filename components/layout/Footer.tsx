@@ -32,14 +32,14 @@ export function Footer() {
 
             <p className="mt-4 max-w-sm text-xs leading-relaxed text-[#8AA8B2]">
               The next-generation digital syndicate and streetwear collective
-              forged on Elysium L2. High-speed trait assembly, algorithmic crate
+              forged on Elysium. High-speed trait assembly, algorithmic crate
               drops, and sovereign on-chain identity.
             </p>
 
             {/* Architectural Status Pills (Minimalist, No Icons) */}
             <div className="mt-6 flex flex-wrap items-center gap-2">
               <span className="font-mono-street rounded-md border border-[#34B7DD]/30 bg-[#34B7DD]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#34B7DD]">
-                Elysium L2
+                Elysium
               </span>
               <span className="font-mono-street rounded-md border border-[#163B44] bg-[#071F24]/70 px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#8AA8B2]">
                 Gasless SIWE
@@ -155,7 +155,7 @@ export function Footer() {
               </div>
               <div className="mt-1 flex items-center justify-between text-[#DBF2F9]/80 uppercase">
                 <span>Network</span>
-                <span className="text-[#8AA8B2]">Elysium L2</span>
+                <span className="text-[#8AA8B2]">Elysium</span>
               </div>
             </div>
           </div>
@@ -165,7 +165,7 @@ export function Footer() {
         <div className="mt-12 border-t border-[#163B44]/70 pt-6">
           <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
             <p className="font-mono-street text-[11px] uppercase tracking-widest text-[#8AA8B2]/90">
-              Leonida Syndicate on Elysium L2
+              Leonida Syndicate on Elysium
             </p>
 
             <p className="font-mono-street text-[11px] uppercase tracking-wider text-[#8AA8B2]/70">

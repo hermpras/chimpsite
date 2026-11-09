@@ -236,7 +236,7 @@ export function AdminSidebar({
                 </Badge>
               </div>
               <p className="mt-1 text-[11px] text-gray-400 uppercase tracking-wide">
-                Elysium L2 Admin Portal
+                Elysium Admin Portal
               </p>
             </div>
 

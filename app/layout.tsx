@@ -3,11 +3,12 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Providers } from "@/components/providers";
+import { PixelCurtain } from "@/components/layout/PixelCurtain";
 
 export const metadata: Metadata = {
-  title: "Elychimp — Rule the Streets of Elysium | Hyperliquid L2",
+  title: "Elychimp — Rule the Streets of Elysium | Hyperliquid",
   description:
-    "Leonida grit meets high-speed on-chain culture. Assemble your 5-piece fit, claim limited drop crates, and lock your syndicate pass on Elysium L2.",
+    "Leonida grit meets high-speed on-chain culture. Assemble your 5-piece fit, claim limited drop crates, and lock your syndicate pass on Elysium.",
   icons: {
     icon: "/favicon.png",
     apple: "/apple-touch-icon.png",
@@ -37,6 +38,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <Providers>
+          <PixelCurtain />
           <Navbar />
           <main id="main-content" className="flex-1">{children}</main>
           <Footer />

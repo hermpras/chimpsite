@@ -36,7 +36,7 @@ export function WalletConnectCard() {
       <CardHeader className="mb-3 space-y-0.5">
         <div>
           <CardTitle className="font-display text-lg uppercase tracking-wider text-[#F8F7F4]">Web3 Wallet</CardTitle>
-          <CardDescription className="text-xs sm:text-sm text-[#8AA8B2] mt-0.5">Gasless off-chain signature verification on Elysium L2</CardDescription>
+          <CardDescription className="text-xs sm:text-sm text-[#8AA8B2] mt-0.5">Gasless off-chain signature verification on Elysium</CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 p-0">

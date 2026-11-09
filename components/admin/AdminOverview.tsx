@@ -151,7 +151,7 @@ export function AdminOverview({
               COMMAND CONSOLE
             </span>
             <span className="border border-[#163B44] bg-[#0B2026] px-2.5 py-0.5 font-bold text-[#34B7DD]">
-              Elysium L2
+              Elysium
             </span>
             <span className="border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 font-bold text-emerald-300">
               Real-time Invariant Surveillance
@@ -229,7 +229,7 @@ export function AdminOverview({
           <div className="flex items-center gap-2 shrink-0 text-xs">
             <span className="inline-flex items-center gap-1.5 border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-1 text-[11px] font-bold text-emerald-300 rounded-lg">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Node: Elysium L2
+              Node: Elysium
             </span>
           </div>
         </div>

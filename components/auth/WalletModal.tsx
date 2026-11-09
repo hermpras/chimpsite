@@ -170,7 +170,7 @@ export function WalletModal({
         {/* Footer info */}
         <div className="mt-5 border-t border-[#163B44] pt-3.5 text-center">
           <p className="text-xs text-[#8AA8B2] uppercase tracking-wider">
-            NON-CUSTODIAL • POWERED BY SIWE & ELYSIUM L2
+            NON-CUSTODIAL • POWERED BY SIWE & ELYSIUM
           </p>
         </div>
       </div>
