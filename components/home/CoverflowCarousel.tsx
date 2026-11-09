@@ -238,12 +238,17 @@ export function CoverflowCarousel() {
     >
       {/* 3D Runway Stage Container */}
       <div
-        className="relative mx-auto h-[290px] sm:h-[360px] md:h-[400px] w-full max-w-5xl overflow-hidden touch-pan-y cursor-grab active:cursor-grabbing [perspective:1000px]"
+        className="relative mx-auto h-[290px] sm:h-[370px] md:h-[430px] w-full max-w-5xl overflow-hidden touch-pan-y cursor-grab active:cursor-grabbing [perspective:1000px]"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
+        {/* Centerstage Ambient Spotlight */}
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-72 w-full flex items-center justify-center">
+          <div className="h-64 w-80 rounded-full bg-[#34B7DD]/20 blur-3xl" />
+        </div>
+
         <div className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]">
           {SPECIMENS.map((specimen, idx) => {
             // Infinite looping offset calculation (wraps to shortest distance)
@@ -255,27 +260,45 @@ export function CoverflowCarousel() {
             const isCenter = offset === 0;
 
             // Responsive spacing & 3D focal geometry
-            const spacing = isMobile ? 84 : 165;
+            const spacing = isMobile ? 84 : 180;
             const translateX = offset * spacing + (isDragging ? dragOffset * 0.45 : 0);
             const translateZ = isCenter
               ? isMobile
-                ? 25
-                : 0
+                ? 30
+                : 65
               : isMobile
                 ? -Math.abs(offset) * 115
-                : -Math.abs(offset) * 85;
-            const rotateY = isCenter ? 0 : offset < 0 ? (isMobile ? 46 : 35) : (isMobile ? -46 : -35);
-            const scale = isCenter ? (isMobile ? 1.05 : 1.02) : isMobile ? 0.72 : 0.82;
+                : -Math.abs(offset) * 130;
+            const rotateY = isCenter
+              ? 0
+              : offset < 0
+                ? isMobile
+                  ? 46
+                  : 44
+                : isMobile
+                  ? -46
+                  : -44;
+            const scale = isCenter
+              ? isMobile
+                ? 1.05
+                : 1.08
+              : isMobile
+                ? 0.72
+                : Math.abs(offset) === 1
+                  ? 0.76
+                  : 0.62;
             const opacity = isCenter
               ? 1
               : isMobile
                 ? Math.abs(offset) === 1
                   ? 0.32
                   : 0
-                : Math.abs(offset) > 2
-                  ? 0
-                  : Math.max(0.32, 1 - Math.abs(offset) * 0.3);
-            const zIndex = 30 - Math.abs(offset);
+                : Math.abs(offset) === 1
+                  ? 0.45
+                  : Math.abs(offset) === 2
+                    ? 0.15
+                    : 0;
+            const zIndex = isCenter ? 50 : 30 - Math.abs(offset) * 10;
 
             // Smooth spring transition without glitch when wrapping
             const isWrapping = Math.abs(offset) >= 3;
@@ -293,7 +316,7 @@ export function CoverflowCarousel() {
                   transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
                   opacity,
                   zIndex,
-                  pointerEvents: isCenter ? "auto" : isMobile && Math.abs(offset) > 1 ? "none" : "auto",
+                  pointerEvents: isCenter ? "auto" : isMobile && Math.abs(offset) > 1 ? "none" : Math.abs(offset) > 2 ? "none" : "auto",
                   transformOrigin: "center center",
                   transition: isDragging
                     ? "none"
@@ -306,8 +329,8 @@ export function CoverflowCarousel() {
                 <div
                   className={`relative overflow-hidden rounded-2xl border p-2.5 sm:p-3.5 backdrop-blur-xl transition-all duration-300 ${
                     isCenter
-                      ? "border-2 border-[#4AE2FF] bg-[#07242C]/98 shadow-[0_0_36px_rgba(74,226,255,0.45),0_24px_55px_rgba(2,10,12,0.95)] ring-1 ring-[#7DE8FF]/30"
-                      : "border border-[#163B44]/60 bg-[#051D22]/65 shadow-[0_10px_25px_rgba(2,10,12,0.7)] brightness-65 contrast-90 hover:border-[#34B7DD]/60 hover:brightness-90"
+                      ? "border-2 border-[#54E4FF] bg-[#07242C] shadow-[0_0_45px_rgba(74,226,255,0.45),0_30px_70px_rgba(2,10,12,0.95)] ring-1 ring-white/30"
+                      : "border border-[#163B44]/60 bg-[#051D22]/65 shadow-[0_10px_25px_rgba(2,10,12,0.7)] [filter:brightness(0.55)_contrast(0.9)] hover:border-[#34B7DD]/60 hover:[filter:brightness(0.85)]"
                   }`}
                 >
                   {/* 100% Flush Pixel-Perfect Layered Canvas */}
@@ -385,7 +408,13 @@ export function CoverflowCarousel() {
                   </div>
 
                   {/* Card Footnote: Pure Clean Character Title */}
-                  <div className="mt-2.5 text-center font-sans text-[10px] sm:text-[11px] font-bold tracking-[0.16em] text-[#F8F7F4] uppercase">
+                  <div
+                    className={`mt-2.5 text-center font-sans uppercase transition-colors duration-300 ${
+                      isCenter
+                        ? "text-xs sm:text-sm font-black tracking-[0.18em] text-[#F8F7F4]"
+                        : "text-[10px] sm:text-[11px] font-medium tracking-[0.12em] text-[#8AA8B2]"
+                    }`}
+                  >
                     <span className="truncate">{specimen.name}</span>
                   </div>
                 </div>
