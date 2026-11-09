@@ -81,7 +81,7 @@ export function TraitGrid({
   return (
     <div
       data-testid="trait-grid"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
     >
       {items.map((item) => {
         const isEquipped = equippedItemIds.has(item.id);
@@ -117,7 +117,7 @@ export function TraitGrid({
               {item.isLocked && (
                 <div
                   data-testid="locked-badge"
-                  className="absolute top-2 right-2 rounded-full border border-amber-500/30 bg-amber-950/80 px-2.5 py-0.5 text-xs font-medium text-amber-300 backdrop-blur"
+                  className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 rounded-full border border-amber-500/30 bg-amber-950/80 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-medium text-amber-300 backdrop-blur"
                 >
                   <span>Locked</span>
                 </div>
@@ -127,7 +127,7 @@ export function TraitGrid({
               {isEquipped ? (
                 <div
                   data-testid={`equipped-badge-${item.id}`}
-                  className="absolute top-2 left-2 rounded-full border border-emerald-500/40 bg-emerald-950/80 px-2.5 py-0.5 text-xs font-semibold text-emerald-300 backdrop-blur shadow-sm"
+                  className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 rounded-full border border-emerald-500/40 bg-emerald-950/80 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-emerald-300 backdrop-blur shadow-sm"
                 >
                   <span>Equipped</span>
                 </div>
@@ -135,7 +135,7 @@ export function TraitGrid({
                 /* Category Extra / Duplicate Indicator */
                 <div
                   data-testid={`duplicate-badge-${item.id}`}
-                  className="absolute top-2 left-2 rounded-full border border-teal-500/30 bg-teal-950/80 px-2.5 py-0.5 text-xs font-medium text-teal-300 backdrop-blur"
+                  className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 max-w-[calc(100%-12px)] truncate rounded-full border border-teal-500/30 bg-teal-950/80 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-medium text-teal-300 backdrop-blur"
                 >
                   {isDuplicateTrait
                     ? `Duplicate (${traitCounts[item.trait.id]}x)`
@@ -144,34 +144,34 @@ export function TraitGrid({
               ) : null}
 
               {/* Edition Tag */}
-              <div className="absolute bottom-2 left-2 rounded border border-[#163B44] bg-[#04181C]/90 px-2 py-0.5 font-mono text-xs font-medium text-gray-300 backdrop-blur">
+              <div className="absolute bottom-1.5 left-1.5 sm:bottom-2 sm:left-2 rounded border border-[#163B44] bg-[#04181C]/90 px-1.5 sm:px-2 py-0.5 font-mono text-[10px] sm:text-xs font-medium text-gray-300 backdrop-blur">
                 #{item.edition}
               </div>
             </div>
 
             {/* Item Metadata */}
-            <div className="flex flex-1 flex-col justify-between space-y-2 p-3.5">
+            <div className="flex flex-1 flex-col justify-between space-y-2 p-2.5 sm:p-3.5">
               <div>
-                <div className="mb-1.5 flex items-center justify-between gap-1">
+                <div className="mb-1 sm:mb-1.5 flex items-center justify-between gap-1">
                   <span
-                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase ${
+                    className={`inline-flex items-center rounded-full border px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-bold tracking-wider uppercase ${
                       CATEGORY_BADGE_STYLES[item.trait.category] || "border-[#163B44] bg-[#102B33] text-gray-300"
                     }`}
                   >
                     {item.trait.category}
                   </span>
                 </div>
-                <h4 className="line-clamp-1 text-sm font-semibold text-white">
+                <h4 className="line-clamp-1 text-xs sm:text-sm font-semibold text-white">
                   {item.trait.name}
                 </h4>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between border-t border-[#163B44] pt-1 text-xs text-gray-400">
+              <div className="space-y-1.5 sm:space-y-2">
+                <div className="flex items-center justify-between border-t border-[#163B44] pt-1 text-[10px] sm:text-xs text-gray-400">
                   <span>Via {item.acquiredVia.toLowerCase()}</span>
                   {item.isLocked && item.lockReason && (
                     <span
-                      className="max-w-[120px] truncate text-xs text-amber-400/80"
+                      className="max-w-[90px] sm:max-w-[120px] truncate text-[10px] sm:text-xs text-amber-400/80"
                       title={item.lockReason}
                     >
                       {item.lockReason}
@@ -183,7 +183,7 @@ export function TraitGrid({
                 {isEquipped ? (
                   <div
                     data-testid={`equipped-action-${item.id}`}
-                    className="flex h-8 w-full items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-950/50 text-xs font-semibold text-emerald-300 shadow-sm uppercase tracking-wide"
+                    className="flex h-7 sm:h-8 w-full items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-950/50 text-[10px] sm:text-xs font-semibold text-emerald-300 shadow-sm uppercase tracking-wide px-1"
                     title={
                       availableCount < 2
                         ? `This trait is currently equipped on your Profile avatar. You must retain at least 1 item in the ${item.trait.category} category.`
@@ -196,19 +196,19 @@ export function TraitGrid({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 w-full border-amber-500/30 text-xs text-amber-400 opacity-60 cursor-not-allowed uppercase tracking-wide"
+                    className="h-7 sm:h-8 w-full border-amber-500/30 text-[10px] sm:text-xs text-amber-400 opacity-60 cursor-not-allowed uppercase tracking-wide px-1"
                     disabled
                     data-testid={totalCategoryCount < 2 ? `locked-badge-${item.id}` : `gift-button-${item.id}`}
                   >
                     Locked in Gift
                   </Button>
                 ) : (
-                  <div className="flex items-center gap-2 w-full">
+                  <div className="flex items-center gap-1.5 sm:gap-2 w-full">
                     {onEquipItem && (
                       <Button
                         size="sm"
                         variant="outline"
-                        className={`h-8 ${isEligible && onGiftItem ? "flex-1" : "w-full"} border-teal-500/40 text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all uppercase tracking-wide`}
+                        className={`h-7 sm:h-8 ${isEligible && onGiftItem ? "flex-1" : "w-full"} border-teal-500/40 text-[10px] sm:text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all uppercase tracking-wide px-1`}
                         onClick={() => onEquipItem(item)}
                         disabled={isEquipping}
                         data-testid={`equip-button-${item.id}`}
@@ -220,7 +220,7 @@ export function TraitGrid({
                       <Button
                         size="sm"
                         variant="outline"
-                        className={`h-8 ${onEquipItem ? "flex-1" : "w-full"} border-teal-500/40 text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all uppercase tracking-wide`}
+                        className={`h-7 sm:h-8 ${onEquipItem ? "flex-1" : "w-full"} border-teal-500/40 text-[10px] sm:text-xs font-bold text-teal-300 hover:border-teal-400 hover:bg-teal-500/20 cursor-pointer shadow-sm transition-all uppercase tracking-wide px-1`}
                         onClick={() => onGiftItem(item)}
                         data-testid={`gift-button-${item.id}`}
                       >
@@ -230,7 +230,7 @@ export function TraitGrid({
                     {!onEquipItem && !isEligible && (
                       <div
                         data-testid={`single-copy-badge-${item.id}`}
-                        className="flex h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-xs text-gray-400 font-medium px-2 text-center"
+                        className="flex h-7 sm:h-8 w-full items-center justify-center rounded-lg border border-[#163B44] bg-[#051D22]/60 text-[9px] sm:text-xs text-gray-400 font-medium px-1 text-center truncate"
                         title={`You must retain at least 1 item in the ${item.trait.category} category. Only extra category items can be gifted.`}
                       >
                         Keep 1 in {item.trait.category} (Category minimum)

@@ -1147,9 +1147,7 @@ function ProfileContent() {
                   <Badge variant="default" className="border-amber-400/40 bg-amber-950/60 text-amber-300 font-bold text-xs">
                     {inventoryItems.length} {inventoryItems.length === 1 ? "Item" : "Items"}
                   </Badge>
-                ) : (
-                  <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">Inventory Empty</Badge>
-                )}
+                ) : null}
               </div>
             </CardHeader>
             <CardContent>

@@ -247,7 +247,7 @@ describe("TraitGrid Component & Profile Inventory States", () => {
         </Providers>,
       );
 
-      expect(screen.getByText("Inventory Empty")).toBeInTheDocument();
+      expect(screen.queryByText("Inventory Empty")).not.toBeInTheDocument();
       expect(screen.getByTestId("inventory-empty")).toBeInTheDocument();
       expect(
         screen.getByText("No items or traits found in your inventory"),
