@@ -881,6 +881,72 @@ describe("Gifting UI (I-1) Test Suite", () => {
         expect(mockFetchUserInventory).toHaveBeenCalled();
         expect(mockFetchUserGifts).toHaveBeenCalled();
       });
+
+      // Pending incoming gift badge is displayed on the Gifts tab
+      expect(screen.getByTestId("gifts-tab-badge")).toHaveTextContent("1");
+    });
+  });
+
+  describe("6. Gift History Log & Direction Filters (GiftsSection)", () => {
+    const sampleAcceptedIncomingGift: GiftItemData = {
+      ...samplePendingIncomingGift,
+      id: "gift-hist-accepted",
+      status: "ACCEPTED",
+      decidedAt: "2026-10-20T12:00:00.000Z",
+    };
+
+    const sampleCancelledOutgoingGift: GiftItemData = {
+      ...samplePendingOutgoingGift,
+      id: "gift-hist-cancelled",
+      status: "CANCELLED",
+      decidedAt: "2026-10-19T12:00:00.000Z",
+    };
+
+    it("renders historical gifts and filters between ALL, RECEIVED, and SENT", () => {
+      render(
+        <GiftsSection
+          sentGifts={[sampleCancelledOutgoingGift]}
+          receivedGifts={[sampleAcceptedIncomingGift]}
+          isLoading={false}
+          isWlAllocated={false}
+          onRefresh={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByTestId("gift-history-section")).toBeInTheDocument();
+      expect(screen.getByText("Gift Transfer History (2)")).toBeInTheDocument();
+
+      // Both items visible in ALL filter
+      expect(
+        screen.getByTestId(`gift-history-item-${sampleAcceptedIncomingGift.id}`),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId(`gift-history-status-${sampleAcceptedIncomingGift.id}`),
+      ).toHaveTextContent("ACCEPTED");
+      expect(
+        screen.getByTestId(`gift-history-item-${sampleCancelledOutgoingGift.id}`),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId(`gift-history-status-${sampleCancelledOutgoingGift.id}`),
+      ).toHaveTextContent("CANCELLED");
+
+      // Filter by RECEIVED
+      fireEvent.click(screen.getByTestId("gift-history-filter-RECEIVED"));
+      expect(
+        screen.getByTestId(`gift-history-item-${sampleAcceptedIncomingGift.id}`),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId(`gift-history-item-${sampleCancelledOutgoingGift.id}`),
+      ).not.toBeInTheDocument();
+
+      // Filter by SENT
+      fireEvent.click(screen.getByTestId("gift-history-filter-SENT"));
+      expect(
+        screen.queryByTestId(`gift-history-item-${sampleAcceptedIncomingGift.id}`),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId(`gift-history-item-${sampleCancelledOutgoingGift.id}`),
+      ).toBeInTheDocument();
     });
   });
 });

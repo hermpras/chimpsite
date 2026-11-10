@@ -1,16 +1,5 @@
 import React, { useState } from "react";
-import {
-  Gift,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Clock,
-  Check,
-  X,
-  AlertTriangle,
-  CheckCircle2,
-  Ban,
-  RotateCw,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -18,7 +7,6 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import type { GiftItemData } from "@/lib/inventory/client";
 import { resolveGiftRequest } from "@/lib/inventory/client";
@@ -42,10 +30,31 @@ export function GiftsSection({
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [historyFilter, setHistoryFilter] = useState<"ALL" | "RECEIVED" | "SENT">("ALL");
 
   // Filter only pending gifts for incoming and outgoing queues
   const pendingIncoming = receivedGifts.filter((g) => g.status === "PENDING");
   const pendingOutgoing = sentGifts.filter((g) => g.status === "PENDING");
+
+  const receivedHistory = receivedGifts
+    .filter((g) => g.status !== "PENDING")
+    .map((g) => ({ ...g, direction: "RECEIVED" as const }));
+  const sentHistory = sentGifts
+    .filter((g) => g.status !== "PENDING")
+    .map((g) => ({ ...g, direction: "SENT" as const }));
+
+  const allHistory = [...receivedHistory, ...sentHistory].sort((a, b) => {
+    const timeA = new Date(a.decidedAt || a.createdAt).getTime();
+    const timeB = new Date(b.decidedAt || b.createdAt).getTime();
+    return timeB - timeA;
+  });
+
+  const filteredHistory =
+    historyFilter === "ALL"
+      ? allHistory
+      : historyFilter === "RECEIVED"
+        ? receivedHistory
+        : sentHistory;
 
   const handleResolve = async (
     gift: GiftItemData,
@@ -87,31 +96,23 @@ export function GiftsSection({
     <Card className="md:col-span-2" data-testid="gifts-section">
       <CardHeader>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-teal-500/10 p-2 text-teal-400">
-              <Gift className="h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle>Gifts & Peer Transfers</CardTitle>
-              <CardDescription>
-                Review incoming trait gifts and manage your outgoing transfers
-              </CardDescription>
-            </div>
+          <div>
+            <CardTitle>Gifts & Peer Transfers</CardTitle>
+            <CardDescription>
+              Review incoming trait gifts and manage your outgoing transfers
+            </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-teal-500/30 text-teal-300">
-              {pendingIncoming.length} Incoming
-            </Badge>
-            <Badge variant="outline" className="border-sky-500/30 text-sky-300">
-              {pendingOutgoing.length} Outgoing
-            </Badge>
             <button
               onClick={() => onRefresh()}
               disabled={isLoading}
               title="Refresh gifts"
-              className="rounded-lg border border-[#163B44] p-1.5 text-gray-400 hover:bg-[#102B33] hover:text-white disabled:opacity-50"
+              aria-label="Refresh gifts"
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#163B44] text-gray-400 hover:bg-[#102B33] hover:text-white disabled:opacity-50 cursor-pointer"
             >
-              <RotateCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
+              />
             </button>
           </div>
         </div>
@@ -123,15 +124,14 @@ export function GiftsSection({
           <div
             role="alert"
             data-testid="gift-action-error"
-            className="flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300"
+            className="flex items-start justify-between gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300"
           >
-            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-rose-400" />
             <div className="flex-1">{actionError}</div>
             <button
               onClick={() => setActionError(null)}
-              className="text-rose-400 hover:text-rose-200"
+              className="text-rose-400 hover:text-rose-200 font-bold uppercase text-[10px]"
             >
-              <X className="h-4 w-4" />
+              Dismiss
             </button>
           </div>
         )}
@@ -140,15 +140,14 @@ export function GiftsSection({
           <div
             role="status"
             data-testid="gift-action-success"
-            className="flex items-start gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300"
+            className="flex items-start justify-between gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300"
           >
-            <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400" />
             <div className="flex-1">{actionSuccess}</div>
             <button
               onClick={() => setActionSuccess(null)}
-              className="text-emerald-400 hover:text-emerald-200"
+              className="text-emerald-400 hover:text-emerald-200 font-bold uppercase text-[10px]"
             >
-              <X className="h-4 w-4" />
+              Dismiss
             </button>
           </div>
         )}
@@ -157,9 +156,8 @@ export function GiftsSection({
         {isWlAllocated && (
           <div
             data-testid="wl-allocated-gift-notice"
-            className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200"
+            className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200"
           >
-            <Ban className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
             <div className="space-y-0.5">
               <p className="font-semibold text-amber-400">WL Allocated Wallet Notice</p>
               <p className="text-gray-300">
@@ -174,8 +172,7 @@ export function GiftsSection({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* SECTION 1: Incoming Pending Gifts */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <ArrowDownLeft className="h-4 w-4 text-emerald-400" />
+            <div className="flex items-center text-sm font-semibold text-white">
               <span>Pending Incoming Gifts ({pendingIncoming.length})</span>
             </div>
 
@@ -204,7 +201,7 @@ export function GiftsSection({
                     >
                       {/* Trait Thumbnail & Details */}
                       <div className="flex items-center gap-3">
-                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-[#0B2026]">
+                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-[#051D22] border border-[#163B44]">
                           {gift.inventoryItem.trait.imageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -213,8 +210,8 @@ export function GiftsSection({
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center text-gray-600">
-                              <Gift className="h-5 w-5" />
+                            <div className="flex h-full w-full items-center justify-center text-[9px] font-mono font-bold uppercase text-gray-500">
+                              {gift.inventoryItem.trait.category}
                             </div>
                           )}
                         </div>
@@ -235,8 +232,7 @@ export function GiftsSection({
                               From: {gift.sender?.xIdentity?.username ? `@${gift.sender.xIdentity.username} (${shortenAddress(senderAddr)})` : shortenAddress(senderAddr)}
                             </span>
                             <span className="text-gray-600">•</span>
-                            <span className="flex items-center gap-1 text-teal-400">
-                              <Clock className="h-3 w-3" />
+                            <span className="text-teal-400">
                               Pending acceptance
                             </span>
                           </div>
@@ -258,7 +254,6 @@ export function GiftsSection({
                               : "Accept this trait into your inventory"
                           }
                         >
-                          <Check className="mr-1 h-3.5 w-3.5" />
                           {isActing ? "Accepting..." : "Accept"}
                         </Button>
                         <Button
@@ -269,7 +264,6 @@ export function GiftsSection({
                           onClick={() => handleResolve(gift, "REJECT")}
                           className="border-[#163B44] text-xs text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10"
                         >
-                          <X className="mr-1 h-3.5 w-3.5" />
                           {isActing ? "Rejecting..." : "Reject"}
                         </Button>
                       </div>
@@ -282,8 +276,7 @@ export function GiftsSection({
 
           {/* SECTION 2: Outgoing Pending Gifts */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <ArrowUpRight className="h-4 w-4 text-sky-400" />
+            <div className="flex items-center text-sm font-semibold text-white">
               <span>Pending Outgoing Gifts ({pendingOutgoing.length})</span>
             </div>
 
@@ -312,7 +305,7 @@ export function GiftsSection({
                     >
                       {/* Trait Thumbnail & Details */}
                       <div className="flex items-center gap-3">
-                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-[#0B2026]">
+                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-[#051D22] border border-[#163B44]">
                           {gift.inventoryItem.trait.imageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -321,8 +314,8 @@ export function GiftsSection({
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center text-gray-600">
-                              <Gift className="h-5 w-5" />
+                            <div className="flex h-full w-full items-center justify-center text-[9px] font-mono font-bold uppercase text-gray-500">
+                              {gift.inventoryItem.trait.category}
                             </div>
                           )}
                         </div>
@@ -343,8 +336,7 @@ export function GiftsSection({
                               To: {gift.receiver?.xIdentity?.username ? `@${gift.receiver.xIdentity.username} (${shortenAddress(receiverAddr)})` : shortenAddress(receiverAddr)}
                             </span>
                             <span className="text-gray-600">•</span>
-                            <span className="flex items-center gap-1 text-sky-400">
-                              <Clock className="h-3 w-3" />
+                            <span className="text-sky-400">
                               Pending receiver
                             </span>
                           </div>
@@ -362,7 +354,6 @@ export function GiftsSection({
                           className="border-[#163B44] text-xs text-amber-300 hover:border-amber-500/40 hover:bg-amber-500/10"
                           title="Cancel gift and unlock item back into your inventory"
                         >
-                          <X className="mr-1 h-3.5 w-3.5" />
                           {isActing ? "Cancelling..." : "Cancel Gift"}
                         </Button>
                       </div>
@@ -372,6 +363,147 @@ export function GiftsSection({
               </div>
             )}
           </div>
+        </div>
+
+        {/* SECTION 3: Gift History Log */}
+        <div
+          data-testid="gift-history-section"
+          className="border-t border-[#163B44] pt-6 space-y-3"
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm font-semibold text-white">
+              <span>Gift Transfer History ({allHistory.length})</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(["ALL", "RECEIVED", "SENT"] as const).map((filterType) => {
+                const isSelected = historyFilter === filterType;
+                const count =
+                  filterType === "ALL"
+                    ? allHistory.length
+                    : filterType === "RECEIVED"
+                      ? receivedHistory.length
+                      : sentHistory.length;
+
+                return (
+                  <button
+                    key={filterType}
+                    type="button"
+                    data-testid={`gift-history-filter-${filterType}`}
+                    onClick={() => setHistoryFilter(filterType)}
+                    className={`rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      isSelected
+                        ? "border-teal-400/50 bg-teal-500/15 text-teal-300"
+                        : "border-[#163B44] bg-[#051D22]/60 text-zinc-400 hover:border-[#245A68] hover:text-zinc-200"
+                    }`}
+                  >
+                    {`${filterType} (${count})`}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {filteredHistory.length === 0 ? (
+            <div
+              data-testid="no-gift-history"
+              className="rounded-lg border border-dashed border-[#163B44] bg-[#051D22]/40 p-5 text-center text-xs text-gray-500"
+            >
+              No completed or cancelled gift transfers recorded yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredHistory.map((gift) => {
+                const isReceived = gift.direction === "RECEIVED";
+                const peerAddr = isReceived
+                  ? gift.sender?.wallet?.address || gift.senderId
+                  : gift.receiver?.wallet?.address || gift.receiverId;
+                const peerX = isReceived
+                  ? gift.sender?.xIdentity?.username
+                  : gift.receiver?.xIdentity?.username;
+                const peerLabel = peerX
+                  ? `@${peerX} (${shortenAddress(peerAddr)})`
+                  : shortenAddress(peerAddr);
+                const timestamp = new Date(
+                  gift.decidedAt || gift.createdAt,
+                ).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                });
+
+                const statusStyles: Record<string, string> = {
+                  ACCEPTED:
+                    "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+                  REJECTED:
+                    "border-rose-500/40 bg-rose-500/15 text-rose-300",
+                  CANCELLED:
+                    "border-amber-500/40 bg-amber-500/15 text-amber-300",
+                  EXPIRED:
+                    "border-zinc-500/40 bg-zinc-500/15 text-zinc-400",
+                };
+
+                return (
+                  <div
+                    key={`${gift.direction}-${gift.id}`}
+                    data-testid={`gift-history-item-${gift.id}`}
+                    className="flex flex-col gap-2.5 rounded-xl border border-[#163B44]/80 bg-[#051D22]/60 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-[#0B2026] border border-[#163B44]">
+                        {gift.inventoryItem.trait.imageUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={gift.inventoryItem.trait.imageUrl}
+                            alt={gift.inventoryItem.trait.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[8px] font-mono font-bold uppercase text-gray-500">
+                            {gift.inventoryItem.trait.category}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span
+                            className={`rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                              isReceived
+                                ? "border-teal-500/30 bg-teal-500/10 text-teal-300"
+                                : "border-sky-500/30 bg-sky-500/10 text-sky-300"
+                            }`}
+                          >
+                            {gift.direction}
+                          </span>
+                          <span className="text-sm font-semibold text-white">
+                            {`${gift.inventoryItem.trait.name} (#${gift.inventoryItem.edition})`}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+                          <span title={peerAddr}>
+                            {isReceived ? `From: ${peerLabel}` : `To: ${peerLabel}`}
+                          </span>
+                          <span className="text-gray-600">•</span>
+                          <span className="text-gray-500">{timestamp}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:self-center">
+                      <span
+                        data-testid={`gift-history-status-${gift.id}`}
+                        className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          statusStyles[gift.status] || statusStyles.EXPIRED
+                        }`}
+                      >
+                        {gift.status}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

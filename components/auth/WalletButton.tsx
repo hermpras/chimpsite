@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useConnectors } from "wagmi";
+import { LogIn } from "lucide-react";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import { useXIdentity } from "@/hooks/useXIdentity";
 import { Button } from "@/components/ui/Button";
 import { shortenAddress } from "@/lib/auth/address";
 import { UserAvatar } from "@/components/inventory/UserAvatar";
+import { fetchUserGifts } from "@/lib/inventory/gift-client";
 import { WalletModal } from "./WalletModal";
-import { ChevronDown, User, LogOut, LogIn, Loader2 } from "lucide-react";
 
 /**
  * Navbar wallet control.
@@ -48,6 +49,49 @@ export function WalletButton({
   const [modalOpen, setModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [pendingGiftsCount, setPendingGiftsCount] = useState(0);
+
+  useEffect(() => {
+    let ignore = false;
+    if (status !== "authenticated" || !sessionAddress) {
+      return;
+    }
+
+    const loadPendingGifts = () => {
+      try {
+        const res = fetchUserGifts();
+        if (res && typeof res.then === "function") {
+          res
+            .then((data) => {
+              if (!ignore && data?.receivedGifts) {
+                const count = data.receivedGifts.filter(
+                  (g) => g.status === "PENDING",
+                ).length;
+                setPendingGiftsCount(count);
+              }
+            })
+            .catch(() => {});
+        }
+      } catch {}
+    };
+
+    loadPendingGifts();
+
+    const handleGiftsUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ pendingCount?: number }>;
+      if (typeof customEvent.detail?.pendingCount === "number") {
+        setPendingGiftsCount(customEvent.detail.pendingCount);
+      } else {
+        loadPendingGifts();
+      }
+    };
+
+    window.addEventListener("gifts-updated", handleGiftsUpdated);
+    return () => {
+      ignore = true;
+      window.removeEventListener("gifts-updated", handleGiftsUpdated);
+    };
+  }, [status, sessionAddress]);
 
   // Fallback chain: Display name on X -> @handle on X -> Shortened EVM Address
   const displayName =
@@ -88,14 +132,13 @@ export function WalletButton({
             aria-haspopup="true"
             aria-expanded={menuOpen}
             aria-label="Account menu"
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl border border-[#163B44]/90 bg-[#071F24]/90 px-2.5 py-1.5 transition-all hover:border-[#34B7DD]/80 hover:bg-[#102B33] active:scale-95 shadow-sm"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-[#163B44]/90 bg-[#071F24]/90 px-2.5 py-1.5 transition-all hover:border-[#34B7DD]/80 hover:bg-[#102B33] active:scale-95 shadow-sm"
           >
             <UserAvatar
               identifier={sessionAddress}
               size="sm"
               className="h-7 w-7 rounded-lg [image-rendering:pixelated]"
             />
-            <ChevronDown className="h-3.5 w-3.5 text-[#8AA8B2]" />
           </button>
         ) : (
           <button
@@ -114,10 +157,8 @@ export function WalletButton({
               <span className="truncate text-xs font-semibold text-[#F8F7F4] max-w-[130px] leading-tight">
                 {displayName}
               </span>
-              <div className="flex items-center gap-1.5 text-xs text-[#8AA8B2] leading-tight mt-0.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34D399] shrink-0" />
+              <div className="flex items-center text-[11px] text-[#34B7DD] leading-tight mt-0.5 font-medium">
                 <span>Signed in</span>
-                <ChevronDown className="h-3 w-3 text-[#8AA8B2] transition-transform group-hover:translate-y-0.5" />
               </div>
             </div>
           </button>
@@ -147,19 +188,13 @@ export function WalletButton({
                   {displayName}
                 </p>
                 {xUsername ? (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-                    <p className="truncate font-mono text-xs text-[#DBF2F9]">
-                      @{xUsername} on X
-                    </p>
-                  </div>
+                  <p className="truncate font-mono text-xs text-[#DBF2F9] mt-1">
+                    @{xUsername} on X
+                  </p>
                 ) : (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="h-2 w-2 rounded-full bg-[#34B7DD] shrink-0" />
-                    <p className="truncate text-xs text-[#8AA8B2]">
-                      Wallet connected
-                    </p>
-                  </div>
+                  <p className="truncate text-xs text-[#8AA8B2] mt-1">
+                    Wallet connected
+                  </p>
                 )}
                 <p
                   className="font-mono text-xs text-[#8AA8B2] mt-0.5 truncate"
@@ -178,10 +213,17 @@ export function WalletButton({
                   setMenuOpen(false);
                   onAction?.();
                 }}
-                className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-xs sm:text-sm uppercase font-semibold text-[#DBF2F9] transition-colors hover:bg-[#102B33] hover:text-white"
+                className="flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-xs sm:text-sm uppercase font-semibold tracking-wider text-[#DBF2F9] transition-colors hover:bg-[#102B33] hover:text-white"
               >
-                <User className="h-4 w-4 text-[#8AA8B2]" />
                 <span>Profile</span>
+                {pendingGiftsCount > 0 && (
+                  <span
+                    data-testid="navbar-gift-badge"
+                    className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full border border-teal-400/50 bg-teal-500/20 px-1.5 font-mono text-[10px] font-bold leading-none text-teal-300"
+                  >
+                    {pendingGiftsCount}
+                  </span>
+                )}
               </Link>
             </div>
 
@@ -193,9 +235,8 @@ export function WalletButton({
                   onAction?.();
                   void logout();
                 }}
-                className="flex items-center gap-3 w-full rounded-xl px-3 py-2 text-left text-xs sm:text-sm uppercase font-semibold text-rose-400 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
+                className="flex items-center w-full rounded-xl px-3 py-2 text-left text-xs sm:text-sm uppercase font-semibold tracking-wider text-rose-400 transition-colors hover:bg-rose-500/10 hover:text-rose-300"
               >
-                <LogOut className="h-4 w-4 text-rose-400" />
                 <span>Sign out</span>
               </button>
             </div>
@@ -208,14 +249,13 @@ export function WalletButton({
   if (status === "signing") {
     if (compact) {
       return (
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#34B7DD]/20 border border-[#34B7DD]/40 text-[#6FCDE8]">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="flex h-9 px-2.5 items-center justify-center rounded-xl bg-[#34B7DD]/20 border border-[#34B7DD]/40 text-[#6FCDE8] text-[10px] font-bold uppercase tracking-wider">
+          <span>Signing…</span>
         </div>
       );
     }
     return (
-      <div className="flex items-center gap-2 rounded-xl bg-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-semibold shadow-sm">
-        <Loader2 className="h-4 w-4 animate-spin text-[#04181C]" />
+      <div className="flex items-center justify-center rounded-xl bg-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-semibold shadow-sm">
         <span>{busyMessage ?? "Signing in…"}</span>
       </div>
     );
@@ -234,7 +274,7 @@ export function WalletButton({
           }
         >
           <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-          <LogIn className="h-4 w-4 shrink-0 stroke-[2.5]" />
+          <LogIn className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
           <span>Sign In</span>
         </button>
         {error && !compact && (
@@ -263,7 +303,7 @@ export function WalletButton({
           }
         >
           <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-          <LogIn className="h-4 w-4 shrink-0 stroke-[2.5]" />
+          <LogIn className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" />
           <span>Sign In</span>
         </button>
         {error && !compact && (
