@@ -229,13 +229,12 @@ export function WalletButton({
           aria-label="Sign in"
           className={
             compact
-              ? "group relative overflow-hidden flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-3.5 py-2 font-display text-xs tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_15px_rgba(52,183,221,0.3)] transition-all duration-300 hover:shadow-[0_0_24px_rgba(52,183,221,0.6)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
-              : "group relative overflow-hidden flex items-center gap-2 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_16px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_26px_rgba(52,183,221,0.65)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+              ? "group relative overflow-hidden flex min-h-[38px] items-center justify-center rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] px-4 py-2 font-sans text-xs font-black tracking-[0.16em] uppercase text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_20px_rgba(52,183,221,0.35)] hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_12px_28px_rgba(52,183,221,0.55)] active:scale-[0.98] transition-all cursor-pointer"
+              : "group relative overflow-hidden flex min-h-[40px] items-center justify-center rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] px-5 py-2 font-sans text-xs sm:text-sm font-black tracking-[0.16em] uppercase text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_24px_rgba(52,183,221,0.35)] hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_12px_32px_rgba(52,183,221,0.55)] active:scale-[0.98] transition-all cursor-pointer"
           }
         >
           <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-          <LogIn className="h-4 w-4 shrink-0 text-[#04181C] stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
-          <span>Sign in</span>
+          <span>Sign In</span>
         </button>
         {error && !compact && (
           <button
@@ -258,13 +257,12 @@ export function WalletButton({
           aria-label="Sign in"
           className={
             compact
-              ? "group relative overflow-hidden flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-3.5 py-2 font-display text-xs tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_15px_rgba(52,183,221,0.3)] transition-all duration-300 hover:shadow-[0_0_24px_rgba(52,183,221,0.6)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
-              : "group relative overflow-hidden flex items-center gap-2 rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-4 py-2 font-display text-sm tracking-wider uppercase text-[#04181C] font-bold shadow-[0_0_16px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_26px_rgba(52,183,221,0.65)] hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+              ? "group relative overflow-hidden flex min-h-[38px] items-center justify-center rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] px-4 py-2 font-sans text-xs font-black tracking-[0.16em] uppercase text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_20px_rgba(52,183,221,0.35)] hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_12px_28px_rgba(52,183,221,0.55)] active:scale-[0.98] transition-all cursor-pointer"
+              : "group relative overflow-hidden flex min-h-[40px] items-center justify-center rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] px-5 py-2 font-sans text-xs sm:text-sm font-black tracking-[0.16em] uppercase text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_24px_rgba(52,183,221,0.35)] hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_12px_32px_rgba(52,183,221,0.55)] active:scale-[0.98] transition-all cursor-pointer"
           }
         >
           <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-          <LogIn className="h-4 w-4 shrink-0 text-[#04181C] stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
-          <span>Sign in</span>
+          <span>Sign In</span>
         </button>
         {error && !compact && (
           <button

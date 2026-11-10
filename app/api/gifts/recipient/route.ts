@@ -101,7 +101,7 @@ export async function GET(request: Request): Promise<Response> {
       return Response.json(
         {
           error: "RECIPIENT_NOT_FOUND",
-          message: `No ChimpHood account found linked to @${cleanUsername}. Recipient must be a registered ChimpHood user with a connected X account.`,
+          message: `No Elysium account found linked to @${cleanUsername}. Recipient must be a registered Elysium user with a connected X account.`,
         },
         { status: 404 },
       );

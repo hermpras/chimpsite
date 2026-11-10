@@ -494,7 +494,7 @@ export function AdminWhitelist() {
                 )}
               </div>
               <CardDescription className="text-xs text-gray-400">
-                Single canonical ChimpHood qualification program (slug:{" "}
+                Single canonical Elysium qualification program (slug:{" "}
                 <span className="font-mono text-gray-300">
                   {program?.slug || "loading..."}
                 </span>

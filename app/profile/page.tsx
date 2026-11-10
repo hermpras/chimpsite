@@ -1006,7 +1006,7 @@ function ProfileContent() {
                         </p>
                         <div className="border-t border-rose-500/20 pt-2 text-zinc-400 space-y-1 text-xs sm:text-sm">
                           <p>
-                            In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program.
+                            In accordance with Elysium program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program.
                           </p>
                           <p className="text-rose-400 font-semibold">
                             Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the allowlist export.

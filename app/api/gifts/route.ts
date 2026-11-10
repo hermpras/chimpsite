@@ -146,7 +146,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json(
       {
         error: "RECEIVER_NOT_FOUND",
-        message: "No ChimpHood account found for the specified recipient address.",
+        message: "No Elysium account found for the specified recipient address.",
       },
       { status: 404 },
     );

@@ -211,7 +211,7 @@ export function UserAvatar({
         <img
           key={currentKey}
           src={avatarUrl}
-          alt="ChimpHood Character Avatar"
+          alt="Elysium Character Avatar"
           data-testid={isSm ? "navbar-avatar" : "avatar-image"}
           className={`h-full w-full object-cover transition-opacity duration-200 ${
             imgLoaded ? "opacity-100" : "opacity-0"

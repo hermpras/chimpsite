@@ -512,7 +512,7 @@ export default function DropsPage() {
                 {/* 3 Metric Cards */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 text-sm">
                   {/* Period Cycle Card */}
-                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#071F24] to-[#04181C] p-3 sm:p-5 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-between items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
+                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#071F24] to-[#04181C] p-3 sm:p-5 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-center items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-amber-500/15 blur-xl" />
                     <span className="text-[10px] sm:text-xs font-bold text-amber-300/90 uppercase tracking-widest flex items-center justify-center">
@@ -524,9 +524,6 @@ export default function DropsPage() {
                         {displayPeriodIndex}
                       </span>
                     </p>
-                    <span className="text-[10px] sm:text-xs font-semibold text-amber-300/70 uppercase tracking-wider">
-                      Active Cycle
-                    </span>
                   </div>
 
                   {/* Remaining Stock Card */}
@@ -743,7 +740,7 @@ export default function DropsPage() {
                             <div className="pt-1">
                               <Link
                                 href="/profile"
-                                className="group relative overflow-hidden inline-flex w-full items-center justify-center rounded-xl border border-cyan-400/50 bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-cyan-500/20 px-4 py-2 text-xs font-bold uppercase tracking-wider text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:border-cyan-400 hover:shadow-[0_0_24px_rgba(6,182,212,0.45)] hover:scale-[1.01] active:scale-[0.99] transition-all"
+                                className="inline-flex w-full items-center justify-center rounded-xl border border-[#34B7DD]/60 bg-gradient-to-b from-[#0D343F]/95 via-[#07242C]/95 to-[#04191F]/95 px-4 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.16em] text-[#E0F5FA] shadow-[inset_0_1px_1px_rgba(255,255,255,0.35),0_8px_24px_rgba(0,0,0,0.6)] backdrop-blur-2xl hover:border-[#6DE0FF] hover:text-white transition-all active:scale-[0.98]"
                               >
                                 <span>Go to Inventory to Gift</span>
                               </Link>

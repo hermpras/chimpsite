@@ -214,7 +214,7 @@ export function GiftModal({
               Gift Trait
             </h2>
             <p className="text-xs text-gray-400">
-              Transfer an extra item in this category to another ChimpHood holder
+              Transfer an extra item in this category to another Elysium holder
             </p>
           </div>
         </div>

@@ -86,7 +86,7 @@ export function Navbar() {
         <div className="flex flex-1 items-center justify-start">
           <Link
             href="/"
-            aria-label="ChimpHood Home — Elychimp Logo"
+            aria-label="Elysium Home — Elychimp Logo"
             className="group relative inline-flex items-center gap-2 focus:outline-none"
           >
             {/* Ambient Cyan Glow on Hover */}

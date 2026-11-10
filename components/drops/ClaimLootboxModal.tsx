@@ -594,10 +594,9 @@ export function ClaimLootboxModal({
               <Link
                 href="/profile"
                 onClick={onClose}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/60 bg-emerald-600 py-3 text-sm font-medium text-white shadow-lg shadow-emerald-950/50 hover:bg-emerald-500 transition-colors"
+                className="flex w-full items-center justify-center rounded-xl border border-emerald-400/80 bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 py-3 font-sans text-xs sm:text-sm font-black uppercase tracking-[0.16em] text-[#02140d] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.7),0_8px_24px_rgba(16,185,129,0.35)] hover:from-emerald-300 hover:via-emerald-400 hover:to-emerald-500 transition-all active:scale-[0.98]"
               >
                 <span>Equip in Profile</span>
-                <ExternalLink className="h-4 w-4" />
               </Link>
 
               <div className="flex items-center gap-2">
@@ -605,15 +604,14 @@ export function ClaimLootboxModal({
                   href={tweetHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-700 bg-gray-900/90 py-2.5 text-xs font-medium text-gray-200 hover:border-gray-500 hover:bg-gray-800 transition-colors"
+                  className="flex flex-1 items-center justify-center rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] py-2.5 font-sans text-xs font-black uppercase tracking-[0.14em] text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_24px_rgba(52,183,221,0.3)] hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] transition-all active:scale-[0.98]"
                 >
-                  <Share2 className="h-3.5 w-3.5 text-sky-400" />
                   <span>Share on X</span>
                 </a>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 rounded-xl border border-gray-800 bg-gray-900/50 py-2.5 text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800/80 transition-colors"
+                  className="flex-1 rounded-xl border border-[#34B7DD]/40 bg-gradient-to-b from-[#0D343F]/90 via-[#07242C]/90 to-[#04191F]/90 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#E0F5FA] shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] hover:border-[#6DE0FF] hover:text-white transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Collect & Close
                 </button>
@@ -637,7 +635,7 @@ export function ClaimLootboxModal({
             <button
               type="button"
               onClick={onClose}
-              className="mt-6 w-full rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
+              className="mt-6 w-full rounded-xl border border-[#34B7DD]/40 bg-gradient-to-b from-[#0D343F]/90 via-[#07242C]/90 to-[#04191F]/90 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#E0F5FA] shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] hover:border-[#6DE0FF] hover:text-white transition-all active:scale-[0.98] cursor-pointer"
             >
               Close
             </button>

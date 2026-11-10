@@ -66,7 +66,7 @@ export function WalletConnectCard() {
               variant="outline"
               size="sm"
               onClick={() => void logout()}
-              className="rounded-lg text-xs sm:text-sm font-semibold border-[#163B44] bg-[#102B33] hover:bg-[#163B44] hover:text-white text-[#DBF2F9] shrink-0 self-start sm:self-auto cursor-pointer"
+              className="shrink-0 self-start sm:self-auto"
             >
               Sign out
             </Button>
@@ -85,9 +85,8 @@ export function WalletConnectCard() {
               variant="primary"
               size="sm"
               onClick={() => void login()}
-              className="group relative overflow-hidden rounded-xl border border-[#6FCDE8]/40 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] px-4 py-2 font-display text-xs sm:text-sm font-black uppercase tracking-wider text-[#04181C] shadow-[0_0_16px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_26px_rgba(52,183,221,0.65)] hover:scale-[1.03] active:scale-[0.97] shrink-0 self-start sm:self-auto cursor-pointer"
+              className="shrink-0 self-start sm:self-auto"
             >
-              <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
               <span>Sign In with Ethereum</span>
             </Button>
           </div>

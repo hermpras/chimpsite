@@ -85,7 +85,7 @@ export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
               </div>
               <p className="mt-2 text-gray-400">
                 Only accounts with an assigned role (SUPER_ADMIN, ADMIN, MODERATOR, or
-                AUDITOR) in the ChimpHood database are permitted to access this route.
+                AUDITOR) in the Elysium database are permitted to access this route.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-4 pt-2">

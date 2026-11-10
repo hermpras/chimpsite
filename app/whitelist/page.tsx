@@ -1182,10 +1182,9 @@ export default function WhitelistPage() {
                         window.history.replaceState(null, "", "#x");
                       }
                     }}
-                    className="group relative overflow-hidden w-full rounded-xl border border-[#6FCDE8]/50 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] font-black uppercase tracking-wider py-3.5 text-sm sm:text-base text-[#04181C] shadow-[0_0_24px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_32px_rgba(52,183,221,0.65)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full"
                   >
                     <span>Continue to Step 2 (X Sync)</span>
-                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
               ) : status === "wallet-only" ? (
@@ -1197,9 +1196,8 @@ export default function WhitelistPage() {
                     variant="primary"
                     size="lg"
                     onClick={() => void login?.()}
-                    className="group relative overflow-hidden w-full rounded-xl border border-[#6FCDE8]/50 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] font-black uppercase tracking-wider py-3.5 text-sm sm:text-base text-[#04181C] shadow-[0_0_24px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_32px_rgba(52,183,221,0.65)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                    className="w-full"
                   >
-                    <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                     <span>Sign In with Ethereum</span>
                   </Button>
                 </div>
@@ -1208,9 +1206,8 @@ export default function WhitelistPage() {
                   variant="primary"
                   size="lg"
                   onClick={handleConnectWallet}
-                  className="group relative overflow-hidden w-full rounded-xl border border-[#6FCDE8]/50 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] font-black uppercase tracking-wider py-3.5 text-sm sm:text-base text-[#04181C] shadow-[0_0_24px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_32px_rgba(52,183,221,0.65)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="w-full"
                 >
-                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                   <span>Connect Wallet</span>
                 </Button>
               )}
@@ -1286,10 +1283,9 @@ export default function WhitelistPage() {
                         window.history.replaceState(null, "", "#tasks");
                       }
                     }}
-                    className="group relative overflow-hidden w-full rounded-xl border border-[#6FCDE8]/50 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] font-black uppercase tracking-wider py-3.5 text-sm sm:text-base text-[#04181C] shadow-[0_0_24px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_32px_rgba(52,183,221,0.65)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full"
                   >
                     <span>Continue to Step 3 (Tasks)</span>
-                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
               ) : (
@@ -1305,10 +1301,11 @@ export default function WhitelistPage() {
                   )}
 
                   <Button
+                    variant="primary"
                     size="lg"
                     disabled={isConnectingX}
                     onClick={handleDirectConnectX}
-                    className="group relative overflow-hidden w-full rounded-xl border border-white/60 bg-gradient-to-r from-white via-zinc-100 to-white text-black font-black uppercase tracking-wider py-3.5 text-sm sm:text-base shadow-[0_0_24px_rgba(255,255,255,0.25)] transition-all duration-300 hover:bg-zinc-200 hover:shadow-[0_0_32px_rgba(255,255,255,0.45)] hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center cursor-pointer"
+                    className="w-full"
                   >
                     {isConnectingX ? (
                       <span>Connecting to X...</span>
@@ -1568,43 +1565,31 @@ export default function WhitelistPage() {
                                   <button
                                     disabled
                                     title="Paste your reply or quote link first"
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-[#163B44] bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-600 opacity-60"
+                                    className="inline-flex cursor-not-allowed items-center justify-center rounded-xl border border-[#163B44] bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-600 opacity-60"
                                   >
                                     <span>VERIFY TASK</span>
-                                    <ArrowRight className="h-3.5 w-3.5 text-zinc-600" />
                                   </button>
                                 ) : status !== "authenticated" ? (
                                   <Button
                                     variant="primary"
                                     size="sm"
-                                    className="group relative overflow-hidden gap-1.5 rounded-xl text-xs sm:text-sm border border-[#6FCDE8]/60 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] text-[#04181C] font-black uppercase tracking-wider py-2 px-3.5 shadow-[0_0_20px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_28px_rgba(52,183,221,0.55)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                                     onClick={() => login()}
                                   >
-                                    <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                                     <span>CONNECT WALLET TO VERIFY</span>
-                                    <ArrowRight className="h-3.5 w-3.5" />
                                   </Button>
                                 ) : (
                                   <Button
                                     variant="primary"
                                     size="sm"
-                                    className="group relative overflow-hidden gap-1.5 rounded-xl text-xs sm:text-sm border border-[#6FCDE8]/60 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] text-[#04181C] font-black uppercase tracking-wider py-2 px-3.5 shadow-[0_0_20px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_28px_rgba(52,183,221,0.55)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                                     onClick={() => handleSocialVerify(task)}
                                     disabled={isSubmitting || isCountingDown}
                                   >
-                                    <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                                     {isSubmitting ? (
-                                      <>
-                                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                                        <span>COMPLETING...</span>
-                                      </>
+                                      <span>COMPLETING...</span>
                                     ) : (
-                                      <>
-                                        <span>
-                                          {taskStatus.key === "REJECTED" ? "RETRY VERIFY" : "VERIFY TASK"}
-                                        </span>
-                                        <ArrowRight className="h-3.5 w-3.5" />
-                                      </>
+                                      <span>
+                                        {taskStatus.key === "REJECTED" ? "RETRY VERIFY" : "VERIFY TASK"}
+                                      </span>
                                     )}
                                   </Button>
                                 )}
@@ -1742,9 +1727,7 @@ export default function WhitelistPage() {
                                       size="sm"
                                       onClick={() => handleEvidenceSubmit(task)}
                                       disabled={isSubmitting || !taskInput.payload.trim()}
-                                      className="group relative overflow-hidden gap-1.5 rounded-xl text-xs sm:text-sm border border-[#6FCDE8]/60 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] text-[#04181C] font-black uppercase tracking-wider py-2 px-4 shadow-[0_0_20px_rgba(52,183,221,0.35)] transition-all duration-300 hover:shadow-[0_0_28px_rgba(52,183,221,0.55)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                                     >
-                                      <Send className="mr-1 h-3.5 w-3.5" />
                                       {isSubmitting
                                         ? "Submitting..."
                                         : taskStatus.key === "REJECTED"
@@ -1932,11 +1915,9 @@ export default function WhitelistPage() {
                   </div>
                   <Link href="/drops" className="shrink-0">
                     <Button
-                      variant="primary"
+                      variant="gold"
                       size="sm"
-                      className="group relative overflow-hidden rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-xs sm:text-sm font-black uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_28px_rgba(245,158,11,0.55)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                     >
-                      <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                       <span>Go to Drops</span>
                     </Button>
                   </Link>
@@ -2278,19 +2259,18 @@ export default function WhitelistPage() {
                              <Button
                                type="button"
                                onClick={() => setIsShareModalOpen(true)}
-                               variant="outline"
+                               variant="secondary"
                                size="lg"
-                               className="group relative overflow-hidden w-full gap-2 rounded-xl border-amber-400/50 bg-amber-950/40 text-amber-300 hover:bg-amber-900/40 hover:border-amber-400 font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 cursor-pointer shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                               className="w-full"
                              >
                                <span>Download Pass Card</span>
                              </Button>
                              <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
                                <Button
-                                 variant="primary"
+                                 variant="gold"
                                  size="lg"
-                                 className="group relative overflow-hidden w-full gap-2 rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 text-black font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 shadow-[0_0_24px_rgba(245,158,11,0.35)] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                 className="w-full"
                                >
-                                 <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                                  <span>Share on X</span>
                                </Button>
                              </a>
@@ -2459,9 +2439,9 @@ export default function WhitelistPage() {
                                <Button
                                  type="button"
                                  onClick={() => setIsShareModalOpen(true)}
-                                 variant="outline"
+                                 variant="secondary"
                                  size="lg"
-                                 className="group relative overflow-hidden w-full gap-2 rounded-xl border-cyan-400/50 bg-cyan-950/40 text-cyan-300 hover:bg-cyan-900/40 hover:border-cyan-400 font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 cursor-pointer shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                 className="w-full"
                                >
                                  <span>Download Pass Card</span>
                                </Button>
@@ -2469,9 +2449,8 @@ export default function WhitelistPage() {
                                  <Button
                                    variant="primary"
                                    size="lg"
-                                   className="group relative overflow-hidden w-full gap-2 rounded-xl border border-cyan-300/70 bg-gradient-to-r from-[#34B7DD] via-[#46C4E9] to-[#34B7DD] hover:from-[#6FCDE8] hover:to-[#34B7DD] text-black font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 shadow-[0_0_24px_rgba(52,183,221,0.35)] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                   className="w-full"
                                  >
-                                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                                    <span>Share on X</span>
                                  </Button>
                                </a>
@@ -2495,7 +2474,7 @@ export default function WhitelistPage() {
                           {statusResult.status.missingRequirements[0] || "Whitelist qualification has been revoked."}
                         </p>
                         <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
-                          In accordance with ChimpHood program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program. Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the allowlist export.
+                          In accordance with Elysium program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program. Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the allowlist export.
                         </p>
                       </div>
                     )}
