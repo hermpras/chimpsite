@@ -2,11 +2,116 @@ import React from "react";
 import type { InventoryItemData } from "@/lib/inventory/client";
 import { Button } from "@/components/ui/Button";
 
-interface TraitGridProps {
+export interface TraitGridProps {
   items: InventoryItemData[];
+  allItems?: InventoryItemData[];
   onGiftItem?: (item: InventoryItemData) => void;
   onEquipItem?: (item: InventoryItemData) => void;
   equippingItemId?: string | null;
+}
+
+export interface InventoryMetadata {
+  equippedItemIds: Set<string>;
+  equippedByCategory: Record<string, InventoryItemData>;
+  availableCategoryCounts: Record<string, number>;
+  totalCategoryCounts: Record<string, number>;
+  traitCounts: Record<string, number>;
+  eligibleGiftItemIds: Set<string>;
+}
+
+export function resolveInventoryMetadata(
+  sourceItems: InventoryItemData[],
+): InventoryMetadata {
+  // 1. Identify equipped item per category
+  const equippedItemIds = new Set<string>();
+  const equippedByCategory: Record<string, InventoryItemData> = {};
+  const categoryEquippedCandidate: Record<string, InventoryItemData> = {};
+
+  for (const item of sourceItems) {
+    if (item.isEquipped && !item.isLocked) {
+      equippedItemIds.add(item.id);
+      equippedByCategory[item.trait.category] = item;
+    } else if (!item.isLocked) {
+      const cat = item.trait.category;
+      const current = categoryEquippedCandidate[cat];
+      const timeCurrent = current?.acquiredAt
+        ? new Date(current.acquiredAt).getTime()
+        : 0;
+      const timeItem = item.acquiredAt
+        ? new Date(item.acquiredAt).getTime()
+        : 0;
+      if (
+        !current ||
+        item.edition < current.edition ||
+        (item.edition === current.edition &&
+          (timeItem < timeCurrent ||
+            (timeItem === timeCurrent && item.id < current.id)))
+      ) {
+        categoryEquippedCandidate[cat] = item;
+      }
+    }
+  }
+
+  // For any category that does not have an explicitly equipped item, fallback to candidate
+  for (const [cat, candidate] of Object.entries(categoryEquippedCandidate)) {
+    const hasCategoryEquipped = sourceItems.some(
+      (it) => it.trait.category === cat && equippedItemIds.has(it.id),
+    );
+    if (!hasCategoryEquipped) {
+      equippedItemIds.add(candidate.id);
+      equippedByCategory[cat] = candidate;
+    }
+  }
+
+  // 2. Count AVAILABLE (unlocked) items per category
+  const availableCategoryCounts = sourceItems.reduce<Record<string, number>>(
+    (acc, item) => {
+      if (!item.isLocked) {
+        const cat = item.trait.category;
+        acc[cat] = (acc[cat] || 0) + 1;
+      }
+      return acc;
+    },
+    {},
+  );
+
+  // 3. Count TOTAL items per category
+  const totalCategoryCounts = sourceItems.reduce<Record<string, number>>(
+    (acc, item) => {
+      const cat = item.trait.category;
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
+  // 4. Count copies per traitId to display duplicate badge
+  const traitCounts = sourceItems.reduce<Record<string, number>>(
+    (acc, item) => {
+      acc[item.trait.id] = (acc[item.trait.id] || 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
+  // 5. Identify items eligible for gifting (extra unequipped unlocked copies)
+  const eligibleGiftItemIds = new Set<string>();
+  for (const item of sourceItems) {
+    const isEquipped = equippedItemIds.has(item.id);
+    const availableCount = availableCategoryCounts[item.trait.category] || 0;
+    if (!isEquipped && !item.isLocked && availableCount >= 2) {
+      eligibleGiftItemIds.add(item.id);
+    }
+  }
+
+  return {
+    equippedItemIds,
+    equippedByCategory,
+    availableCategoryCounts,
+    totalCategoryCounts,
+    traitCounts,
+    eligibleGiftItemIds,
+  };
 }
 
 const CATEGORY_BADGE_STYLES: Record<string, string> = {
@@ -19,69 +124,23 @@ const CATEGORY_BADGE_STYLES: Record<string, string> = {
 
 export function TraitGrid({
   items,
+  allItems,
   onGiftItem,
   onEquipItem,
   equippingItemId,
 }: TraitGridProps) {
-  // 1. Identify equipped item per category
-  const equippedItemIds = new Set<string>();
-  const categoryEquippedCandidate: Record<string, InventoryItemData> = {};
-
-  for (const item of items) {
-    if (item.isEquipped) {
-      equippedItemIds.add(item.id);
-    } else if (!item.isLocked) {
-      const cat = item.trait.category;
-      const current = categoryEquippedCandidate[cat];
-      const timeCurrent = current?.acquiredAt ? new Date(current.acquiredAt).getTime() : 0;
-      const timeItem = item.acquiredAt ? new Date(item.acquiredAt).getTime() : 0;
-      if (
-        !current ||
-        item.edition < current.edition ||
-        (item.edition === current.edition &&
-          (timeItem < timeCurrent || (timeItem === timeCurrent && item.id < current.id)))
-      ) {
-        categoryEquippedCandidate[cat] = item;
-      }
-    }
-  }
-
-  // For any category that does not have an explicitly equipped item, fallback to candidate
-  for (const [cat, candidate] of Object.entries(categoryEquippedCandidate)) {
-    const hasCategoryEquipped = items.some(
-      (it) => it.trait.category === cat && equippedItemIds.has(it.id),
-    );
-    if (!hasCategoryEquipped) {
-      equippedItemIds.add(candidate.id);
-    }
-  }
-
-  // 2. Count AVAILABLE (unlocked) items per category
-  const availableCategoryCounts = items.reduce<Record<string, number>>((acc, item) => {
-    if (!item.isLocked) {
-      const cat = item.trait.category;
-      acc[cat] = (acc[cat] || 0) + 1;
-    }
-    return acc;
-  }, {});
-
-  // 3. Count TOTAL items per category
-  const totalCategoryCounts = items.reduce<Record<string, number>>((acc, item) => {
-    const cat = item.trait.category;
-    acc[cat] = (acc[cat] || 0) + 1;
-    return acc;
-  }, {});
-
-  // 4. Count copies per traitId to display duplicate badge
-  const traitCounts = items.reduce<Record<string, number>>((acc, item) => {
-    acc[item.trait.id] = (acc[item.trait.id] || 0) + 1;
-    return acc;
-  }, {});
+  const sourceItems = allItems ?? items;
+  const {
+    equippedItemIds,
+    availableCategoryCounts,
+    totalCategoryCounts,
+    traitCounts,
+  } = resolveInventoryMetadata(sourceItems);
 
   return (
     <div
       data-testid="trait-grid"
-      className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
+      className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 md:grid-cols-3"
     >
       {items.map((item) => {
         const isEquipped = equippedItemIds.has(item.id);
@@ -95,7 +154,7 @@ export function TraitGrid({
           <div
             key={item.id}
             data-testid={`inventory-item-${item.id}`}
-            className="group relative flex flex-col overflow-hidden rounded-xl border border-[#163B44] bg-[#0B2026] transition-colors hover:border-[#163B44]"
+            className="group relative flex flex-col overflow-hidden rounded-xl border border-[#163B44] bg-[#0B2026] transition-all duration-200 hover:border-[#34B7DD]/60 hover:shadow-[0_0_20px_rgba(52,183,221,0.12)]"
           >
             {/* Item Image / Fallback Container */}
             <div className="relative aspect-square w-full overflow-hidden bg-[#0B2026]/90">

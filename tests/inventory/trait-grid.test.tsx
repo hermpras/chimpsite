@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import React from "react";
 import { TraitGrid } from "@/components/inventory/TraitGrid";
 import ProfilePage from "@/app/profile/page";
@@ -23,11 +23,13 @@ vi.mock("@/lib/whitelist/client", () => ({
 }));
 
 const mockFetchUserInventory = vi.fn();
+const mockEquipUserTrait = vi.fn();
 vi.mock("@/lib/inventory/client", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/inventory/client")>();
   return {
     ...actual,
     fetchUserInventory: (...args: any[]) => mockFetchUserInventory(...args),
+    equipUserTrait: (...args: any[]) => mockEquipUserTrait(...args),
   };
 });
 
@@ -320,6 +322,131 @@ describe("TraitGrid Component & Profile Inventory States", () => {
         expect(screen.getByText("Diamond Grill")).toBeInTheDocument();
         expect(screen.getByText("Pilot Cap")).toBeInTheDocument();
         expect(screen.getByText("2 Items")).toBeInTheDocument();
+      });
+    });
+
+    it("filters inventory by category and duplicates while preserving gift and equip buttons", async () => {
+      mockUseSiweAuth.mockReturnValue({
+        status: "authenticated",
+        sessionAddress: "0x1234567890123456789012345678901234567890",
+        walletAddress: "0x1234567890123456789012345678901234567890",
+      });
+
+      const furDup: InventoryItemData = {
+        id: "item-fur-extra",
+        edition: 5,
+        acquiredVia: "DROP",
+        acquiredAt: "2026-10-16T10:00:00.000Z",
+        isLocked: false,
+        lockReason: null,
+        isEquipped: false,
+        trait: {
+          id: "t-fur-2",
+          name: "Cyber Fur",
+          category: "FUR",
+          rarity: "EPIC",
+          imageUrl: "https://assets.chimphood.io/traits/cyber-fur.png",
+        },
+      };
+
+      mockFetchUserInventory.mockResolvedValueOnce({
+        items: [sampleItems[0], furDup, sampleItems[1]],
+      });
+
+      render(
+        <Providers>
+          <ProfilePage />
+        </Providers>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("wardrobe-studio-panel")).toBeInTheDocument();
+        expect(screen.getByTestId("wardrobe-filter-bar")).toBeInTheDocument();
+      });
+
+      // Verify filter counts
+      expect(screen.getByTestId("wardrobe-filter-all")).toHaveTextContent("ALL (3)");
+      expect(screen.getByTestId("wardrobe-filter-fur")).toHaveTextContent("FUR (2)");
+      expect(screen.getByTestId("wardrobe-filter-headwear")).toHaveTextContent("HEADWEAR (1)");
+      expect(screen.getByTestId("wardrobe-filter-clothing")).toHaveTextContent("CLOTHING (0)");
+      expect(screen.getByTestId("wardrobe-filter-duplicates")).toHaveTextContent("DUPLICATES (1)");
+
+      // Filter by DUPLICATES -> only Cyber Fur (#5) is shown, and it still has Equip + Gift Trait buttons!
+      fireEvent.click(screen.getByTestId("wardrobe-filter-duplicates"));
+      expect(screen.getByText("Cyber Fur")).toBeInTheDocument();
+      expect(screen.queryByText("Diamond Grill")).not.toBeInTheDocument();
+      expect(screen.queryByText("Pilot Cap")).not.toBeInTheDocument();
+      expect(screen.getByTestId("equip-button-item-fur-extra")).toBeInTheDocument();
+      expect(screen.getByTestId("gift-button-item-fur-extra")).toBeInTheDocument();
+
+      // Filter by unowned category CLOTHING -> shows empty filter state and reset button
+      fireEvent.click(screen.getByTestId("wardrobe-filter-clothing"));
+      expect(screen.getByTestId("wardrobe-filter-empty")).toBeInTheDocument();
+      expect(screen.getByText("No Traits Found in CLOTHING")).toBeInTheDocument();
+
+      // Reset filter back to ALL
+      fireEvent.click(screen.getByTestId("wardrobe-filter-reset"));
+      expect(screen.getByText("Diamond Grill")).toBeInTheDocument();
+      expect(screen.getByText("Cyber Fur")).toBeInTheDocument();
+      expect(screen.getByText("Pilot Cap")).toBeInTheDocument();
+    });
+
+    it("randomizes fit across categories with multiple unlocked traits", async () => {
+      mockUseSiweAuth.mockReturnValue({
+        status: "authenticated",
+        sessionAddress: "0x1234567890123456789012345678901234567890",
+        walletAddress: "0x1234567890123456789012345678901234567890",
+      });
+
+      const furAlt: InventoryItemData = {
+        id: "item-fur-alt",
+        edition: 2,
+        acquiredVia: "DROP",
+        acquiredAt: "2026-10-16T10:00:00.000Z",
+        isLocked: false,
+        lockReason: null,
+        isEquipped: false,
+        trait: {
+          id: "t-fur-alt",
+          name: "Neon Fur",
+          category: "FUR",
+          rarity: "RARE",
+          imageUrl: "https://assets.chimphood.io/traits/neon-fur.png",
+        },
+      };
+
+      mockFetchUserInventory.mockResolvedValue({
+        items: [{ ...sampleItems[0], isEquipped: true }, furAlt],
+      });
+      mockEquipUserTrait.mockResolvedValueOnce({
+        success: true,
+        itemId: "item-fur-alt",
+        category: "FUR",
+      });
+
+      render(
+        <Providers>
+          <ProfilePage />
+        </Providers>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("wardrobe-randomize-btn")).toBeEnabled();
+      });
+
+      // Initially Diamond Grill #1 is equipped in FUR slot
+      expect(screen.getByTestId("wardrobe-slot-fur")).toHaveTextContent(
+        "Diamond Grill #1",
+      );
+
+      // Click Randomize Fit -> switches to the alternative unlocked trait Neon Fur #2
+      fireEvent.click(screen.getByTestId("wardrobe-randomize-btn"));
+
+      await waitFor(() => {
+        expect(mockEquipUserTrait).toHaveBeenCalledWith("item-fur-alt");
+        expect(screen.getByTestId("wardrobe-slot-fur")).toHaveTextContent(
+          "Neon Fur #2",
+        );
       });
     });
   });

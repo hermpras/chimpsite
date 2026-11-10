@@ -2,15 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Info,
-} from "lucide-react";
 import * as navigation from "next/navigation";
-import { XLogo } from "@/components/icons/XLogo";
 import {
   Card,
   CardHeader,
@@ -32,14 +24,16 @@ import * as inventoryClient from "@/lib/inventory/client";
 import type { InventoryItemData } from "@/lib/inventory/client";
 import * as giftClient from "@/lib/inventory/gift-client";
 import type { GiftItemData } from "@/lib/inventory/gift-client";
-import { TraitGrid } from "@/components/inventory/TraitGrid";
+import { TraitGrid, resolveInventoryMetadata } from "@/components/inventory/TraitGrid";
 import { GiftsSection } from "@/components/inventory/GiftsSection";
 import { GiftModal } from "@/components/inventory/GiftModal";
 import { UserAvatar } from "@/components/inventory/UserAvatar";
+import { getAvatarPublicUrl } from "@/lib/inventory/avatar-client";
 import { shortenAddress } from "@/lib/auth/address";
 import { normalizeXAvatarUrl } from "@/lib/social/x-avatar";
 
 const TRAIT_CATEGORIES = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
+type WardrobeFilter = "ALL" | (typeof TRAIT_CATEGORIES)[number] | "DUPLICATES";
 
 const CATEGORY_THEMES: Record<
   string,
@@ -85,7 +79,6 @@ function getGtdReviewDetails(reviewStatus?: WLSlotReviewStatus) {
         subtext: "Verified — All criteria confirmed by team.",
         badgeVariant: "default" as const,
         colorClass: "border-emerald-500/40 bg-emerald-950/50 text-emerald-300",
-        icon: CheckCircle2,
       };
     case "UNDER_REVIEW":
       return {
@@ -93,7 +86,6 @@ function getGtdReviewDetails(reviewStatus?: WLSlotReviewStatus) {
         subtext: "Under Verification — Account details being audited.",
         badgeVariant: "warning" as const,
         colorClass: "border-amber-500/40 bg-amber-950/50 text-amber-300",
-        icon: Clock,
       };
     case "FLAGGED":
       return {
@@ -102,7 +94,6 @@ function getGtdReviewDetails(reviewStatus?: WLSlotReviewStatus) {
           "Notice — Please review your linked accounts and task requirements. Slot remains active.",
         badgeVariant: "warning" as const,
         colorClass: "border-rose-500/40 bg-rose-950/50 text-rose-300",
-        icon: AlertCircle,
       };
     case "NOT_REVIEWED":
     default:
@@ -111,7 +102,6 @@ function getGtdReviewDetails(reviewStatus?: WLSlotReviewStatus) {
         subtext: "Slot Confirmed — Routine verification in progress.",
         badgeVariant: "outline" as const,
         colorClass: "border-cyan-500/40 bg-cyan-950/50 text-cyan-300",
-        icon: Info,
       };
   }
 }
@@ -299,7 +289,39 @@ function ProfileContent() {
   }, []);
   const [equippingItemId, setEquippingItemId] = useState<string | null>(null);
   const [equipError, setEquipError] = useState<string | null>(null);
+  const [wardrobeFilter, setWardrobeFilter] = useState<WardrobeFilter>("ALL");
+  const [isRandomizing, setIsRandomizing] = useState(false);
+  const [isDownloadingPng, setIsDownloadingPng] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const ownedCategories = new Set(inventoryItems.map((item) => item.trait.category));
+
+  const inventoryMeta = React.useMemo(
+    () => resolveInventoryMetadata(inventoryItems),
+    [inventoryItems],
+  );
+
+  const filteredInventoryItems = React.useMemo(() => {
+    if (wardrobeFilter === "ALL") return inventoryItems;
+    if (wardrobeFilter === "DUPLICATES") {
+      return inventoryItems.filter((item) =>
+        inventoryMeta.eligibleGiftItemIds.has(item.id),
+      );
+    }
+    return inventoryItems.filter((item) => item.trait.category === wardrobeFilter);
+  }, [inventoryItems, wardrobeFilter, inventoryMeta.eligibleGiftItemIds]);
+
+  const canRandomizeFit = React.useMemo(
+    () =>
+      Object.values(inventoryMeta.availableCategoryCounts).some(
+        (count) => count >= 2,
+      ),
+    [inventoryMeta.availableCategoryCounts],
+  );
+
+  const pendingIncomingGiftsCount = React.useMemo(
+    () => receivedGifts.filter((g) => g.status === "PENDING").length,
+    [receivedGifts],
+  );
 
   const xErrorMessage =
     xActionError ||
@@ -371,8 +393,22 @@ function ProfileContent() {
     setIsGiftsLoading(true);
     try {
       const data = await giftClient.fetchUserGifts();
-      setSentGifts(data.sentGifts || []);
-      setReceivedGifts(data.receivedGifts || []);
+      const nextSent = data.sentGifts || [];
+      const nextReceived = data.receivedGifts || [];
+      setSentGifts(nextSent);
+      setReceivedGifts(nextReceived);
+      if (typeof window !== "undefined") {
+        try {
+          window.dispatchEvent(
+            new CustomEvent("gifts-updated", {
+              detail: {
+                pendingCount: nextReceived.filter((g) => g.status === "PENDING")
+                  .length,
+              },
+            }),
+          );
+        } catch {}
+      }
     } catch (err: unknown) {
       console.error("Error fetching profile gifts:", err);
     } finally {
@@ -448,6 +484,121 @@ function ProfileContent() {
       setEquipError(msg);
     } finally {
       setEquippingItemId(null);
+    }
+  };
+
+  const handleRandomizeFit = async () => {
+    if (isRandomizing || equippingItemId || !canRandomizeFit) return;
+
+    const chosenByCategory: Record<string, InventoryItemData> = {};
+    for (const cat of TRAIT_CATEGORIES) {
+      const unlockedInCategory = inventoryItems.filter(
+        (it) => it.trait.category === cat && !it.isLocked,
+      );
+      if (unlockedInCategory.length < 2) continue;
+
+      const currentEquipped = inventoryMeta.equippedByCategory[cat];
+      const alternatives = currentEquipped
+        ? unlockedInCategory.filter((it) => it.id !== currentEquipped.id)
+        : unlockedInCategory;
+      const pool = alternatives.length > 0 ? alternatives : unlockedInCategory;
+      const randomChoice = pool[Math.floor(Math.random() * pool.length)];
+      if (randomChoice) {
+        chosenByCategory[cat] = randomChoice;
+      }
+    }
+
+    const itemsToEquip = Object.values(chosenByCategory);
+    if (itemsToEquip.length === 0) return;
+
+    setIsRandomizing(true);
+    setEquipError(null);
+    const previousItems = [...inventoryItems];
+
+    setInventoryItems((prev) =>
+      prev.map((it) => {
+        const chosenForCat = chosenByCategory[it.trait.category];
+        if (chosenForCat) {
+          return { ...it, isEquipped: it.id === chosenForCat.id };
+        }
+        return it;
+      }),
+    );
+
+    try {
+      for (const item of itemsToEquip) {
+        await inventoryClient.equipUserTrait(item.id);
+      }
+      const newVersion = Date.now();
+      setAvatarVersion(newVersion);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("chimphood_avatar_version", String(newVersion));
+          window.dispatchEvent(
+            new CustomEvent("avatar-updated", { detail: { version: newVersion } }),
+          );
+        } catch {}
+      }
+      if (address) {
+        inventoryClient
+          .fetchUserInventory(address)
+          .then((data) => {
+            if (data.items) {
+              setInventoryItems(data.items);
+            }
+          })
+          .catch(() => {});
+      }
+    } catch (err: unknown) {
+      console.error("Error randomizing fit:", err);
+      setInventoryItems(previousItems);
+      const msg =
+        err instanceof Error ? err.message : "Failed to randomize traits.";
+      setEquipError(msg);
+    } finally {
+      setIsRandomizing(false);
+    }
+  };
+
+  const handleDownloadAvatar = async () => {
+    if (!address || isDownloadingPng) return;
+    setIsDownloadingPng(true);
+    const avatarUrl = getAvatarPublicUrl(address, avatarVersion);
+    const filename = `elychimp-avatar-${shortenAddress(address)}.png`;
+
+    try {
+      let downloadHref = avatarUrl;
+      let shouldRevoke = false;
+      try {
+        const res = await fetch(avatarUrl);
+        if (res.ok && typeof res.blob === "function") {
+          const blob = await res.blob();
+          if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
+            downloadHref = URL.createObjectURL(blob);
+            shouldRevoke = true;
+          }
+        }
+      } catch {
+        // Fallback to direct link download
+      }
+
+      if (typeof document !== "undefined") {
+        const link = document.createElement("a");
+        link.href = downloadHref;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      if (shouldRevoke && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+        setTimeout(() => URL.revokeObjectURL(downloadHref), 1000);
+      }
+
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 2000);
+    } finally {
+      setIsDownloadingPng(false);
     }
   };
 
@@ -539,7 +690,7 @@ function ProfileContent() {
       ? hookXUsername || wlData?.status?.details?.xUsername || xStatusData?.identity?.username
       : undefined;
   const displayName = isXConnected
-    ? currentXName || (currentXUsername ? `@${currentXUsername}` : "Chimp Member")
+    ? currentXName || (currentXUsername ? `@${currentXUsername}` : "Elychimp Member")
     : address
       ? shortenAddress(address)
       : "User Profile";
@@ -658,23 +809,20 @@ function ProfileContent() {
             data-testid="x-link-success-banner"
             className="rounded-2xl border border-emerald-500/40 bg-emerald-950/40 p-4 text-emerald-200 shadow-brutal-sm"
           >
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-400" />
-              <div>
-                <p className="font-bold text-white font-display uppercase tracking-wide">
-                  X Account Successfully Linked
-                </p>
-                <p className="mt-0.5 text-xs text-zinc-300">
-                  Your X (Twitter) profile has been verified and connected to your account.
-                </p>
-                <div className="mt-2.5">
-                  <Link
-                    href="/whitelist"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 underline underline-offset-2 uppercase tracking-wide"
-                  >
-                    <span>Continue in Whitelist Portal &rarr;</span>
-                  </Link>
-                </div>
+            <div>
+              <p className="font-bold text-white font-display uppercase tracking-wide">
+                X Account Successfully Linked
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-300">
+                Your X (Twitter) profile has been verified and connected to your account.
+              </p>
+              <div className="mt-2.5">
+                <Link
+                  href="/whitelist"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 underline underline-offset-2 uppercase tracking-wide"
+                >
+                  <span>Continue in Whitelist Portal &rarr;</span>
+                </Link>
               </div>
             </div>
           </div>
@@ -686,12 +834,9 @@ function ProfileContent() {
             data-testid="x-link-error-banner"
             className="rounded-2xl border border-rose-500/40 bg-rose-950/40 p-4 text-rose-200 shadow-brutal-sm"
           >
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-rose-400" />
-              <div>
-                <p className="font-bold text-white font-display uppercase tracking-wide">X Authentication Failed</p>
-                <p className="mt-0.5 text-xs text-zinc-300">{xErrorMessage}</p>
-              </div>
+            <div>
+              <p className="font-bold text-white font-display uppercase tracking-wide">X Authentication Failed</p>
+              <p className="mt-0.5 text-xs text-zinc-300">{xErrorMessage}</p>
             </div>
           </div>
         )}
@@ -744,13 +889,21 @@ function ProfileContent() {
               aria-selected={activeTab === "gifts"}
               tabIndex={activeTab === "gifts" ? 0 : -1}
               onClick={() => handleSelectTab("gifts")}
-              className={`flex items-center border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "gifts"
                   ? "border-amber-400 text-amber-400"
                   : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
               <span>Gifts</span>
+              {pendingIncomingGiftsCount > 0 && (
+                <span
+                  data-testid="gifts-tab-badge"
+                  className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full border border-teal-400/50 bg-teal-500/20 px-1.5 font-mono text-[10px] font-bold leading-none text-teal-300"
+                >
+                  {pendingIncomingGiftsCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -791,10 +944,10 @@ function ProfileContent() {
                       ) : (
                         <div
                           data-testid="x-avatar-fallback"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-400/10 text-cyan-400 shadow"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-400/10 text-cyan-400 shadow font-mono text-xs font-bold"
                           title={currentXUsername ? `@${currentXUsername} (avatar unavailable)` : "X avatar unavailable"}
                         >
-                          <XLogo className="h-4 w-4" />
+                          @
                         </div>
                       )}
                       <div className="min-w-0">
@@ -1177,7 +1330,7 @@ function ProfileContent() {
                 <div className="space-y-6">
                   {/* 5-Category Trait Collection Overview */}
                   <div
-                    className="space-y-3 pb-6 border-b border-zinc-800"
+                    className="space-y-3 pb-6 border-b border-[#163B44]"
                     data-testid="trait-collection-summary"
                   >
                     <div className="mb-3 flex items-center justify-between text-xs sm:text-sm">
@@ -1194,8 +1347,13 @@ function ProfileContent() {
                         return (
                           <div
                             key={category}
+                            onClick={() =>
+                              setWardrobeFilter((prev) =>
+                                prev === category ? "ALL" : category,
+                              )
+                            }
                             data-testid={`collection-category-${category.toLowerCase()}`}
-                            className={`flex items-center justify-center rounded-xl border p-2.5 text-xs sm:text-sm transition-colors text-center ${
+                            className={`flex items-center justify-center rounded-xl border p-2.5 text-xs sm:text-sm transition-colors text-center cursor-pointer ${
                               isHeld
                                 ? `${theme?.heldClass || "border-emerald-500/40 bg-emerald-950/40 text-emerald-300"} font-bold`
                                 : "border-[#163B44] bg-[#051D22]/60 text-zinc-600 grayscale opacity-40"
@@ -1229,18 +1387,256 @@ function ProfileContent() {
                     </div>
                   )}
 
-                  <TraitGrid
-                    items={inventoryItems}
-                    onGiftItem={handleOpenGiftModal}
-                    onEquipItem={handleEquipItem}
-                    equippingItemId={equippingItemId}
-                  />
+                  {/* Interactive Wardrobe Studio + Filterable Trait Grid */}
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
+                    {/* Left Column: Sticky Wardrobe Studio Preview Panel */}
+                    <div
+                      data-testid="wardrobe-studio-panel"
+                      className="lg:col-span-4 lg:sticky lg:top-24 rounded-2xl border border-[#163B44] bg-gradient-to-b from-[#071F24]/95 to-[#051D22]/95 p-4 sm:p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_16px_32px_rgba(0,0,0,0.45)] space-y-4"
+                    >
+                      <div className="border-b border-[#163B44] pb-3">
+                        <h4 className="font-display text-base uppercase tracking-wider text-white">
+                          Wardrobe Studio
+                        </h4>
+                        <p className="text-[11px] text-[#8AA8B2]">
+                          Live Persona Engine
+                        </p>
+                      </div>
+
+                      {/* Live Layered Pixel-Art Stage */}
+                      <div
+                        data-testid="wardrobe-avatar-preview"
+                        className="relative mx-auto aspect-square w-full max-w-[220px] overflow-hidden rounded-2xl border border-cyan-500/30 bg-[#04181C] shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_12px_28px_rgba(0,0,0,0.5)]"
+                      >
+                        {/* Base Fallback / Server Composite Underneath */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={
+                            address
+                              ? getAvatarPublicUrl(address, avatarVersion)
+                              : "/images/chimp-base-bw.png"
+                          }
+                          alt="Wardrobe Composite Preview"
+                          className="h-full w-full object-cover [image-rendering:pixelated]"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.src.endsWith("/images/chimp-base-bw.png")) {
+                              target.src = "/images/chimp-base-bw.png";
+                            }
+                          }}
+                        />
+
+                        {/* Instant Client-Side Layer Stack (BG -> FUR -> CLOTHING -> HEADWEAR -> EYEWEAR) */}
+                        {TRAIT_CATEGORIES.map((cat) => {
+                          const equipped = inventoryMeta.equippedByCategory[cat];
+                          if (!equipped || !equipped.trait.imageUrl) return null;
+                          return (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              key={`${cat}-${equipped.id}`}
+                              src={equipped.trait.imageUrl}
+                              alt={`${cat} layer`}
+                              data-testid={`wardrobe-layer-${cat.toLowerCase()}`}
+                              className="pointer-events-none absolute inset-0 h-full w-full object-cover [image-rendering:pixelated]"
+                            />
+                          );
+                        })}
+                      </div>
+
+                      {/* Active 5-Slot Loadout Breakdown */}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#8AA8B2] px-1">
+                          <span>Slot Loadout</span>
+                          <span>Click to Filter</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {TRAIT_CATEGORIES.map((cat) => {
+                            const equipped = inventoryMeta.equippedByCategory[cat];
+                            const isFiltered = wardrobeFilter === cat;
+                            const theme = CATEGORY_THEMES[cat];
+                            return (
+                              <button
+                                key={cat}
+                                type="button"
+                                data-testid={`wardrobe-slot-${cat.toLowerCase()}`}
+                                onClick={() =>
+                                  setWardrobeFilter((prev) =>
+                                    prev === cat ? "ALL" : cat,
+                                  )
+                                }
+                                className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-xs transition-all cursor-pointer ${
+                                  isFiltered
+                                    ? "border-[#34B7DD] bg-[#102B33] shadow-[0_0_12px_rgba(52,183,221,0.18)]"
+                                    : "border-[#163B44] bg-[#0B2026]/80 hover:border-[#34B7DD]/50"
+                                }`}
+                              >
+                                <span
+                                  className={`inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                    theme?.badgeClass ||
+                                    "border-[#163B44] bg-[#102B33] text-zinc-300"
+                                  }`}
+                                >
+                                  {`${cat} SLOT`}
+                                </span>
+                                <span
+                                  className={`truncate font-medium ${
+                                    equipped ? "text-white" : "text-zinc-500"
+                                  }`}
+                                >
+                                  {equipped
+                                    ? `${equipped.trait.name} #${equipped.edition}`
+                                    : "Empty Slot"}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Studio Actions: Randomize Fit & Download PNG */}
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#163B44]">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          data-testid="wardrobe-randomize-btn"
+                          onClick={handleRandomizeFit}
+                          disabled={
+                            !canRandomizeFit ||
+                            isRandomizing ||
+                            Boolean(equippingItemId)
+                          }
+                          title={
+                            canRandomizeFit
+                              ? "Equip a random combination of your owned traits"
+                              : "Collect at least 2 traits in any category to randomize your fit"
+                          }
+                          className="h-9 rounded-xl border-cyan-500/40 bg-cyan-950/30 px-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-cyan-200 whitespace-nowrap hover:border-cyan-400 hover:bg-cyan-500/20 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                        >
+                          {isRandomizing ? "Randomizing..." : "Randomize Fit"}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          data-testid="wardrobe-download-btn"
+                          onClick={handleDownloadAvatar}
+                          disabled={!address || isDownloadingPng}
+                          className="h-9 rounded-xl border-amber-400/40 bg-amber-950/30 px-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-300 whitespace-nowrap hover:border-amber-300 hover:bg-amber-500/20 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                        >
+                          {isDownloadingPng
+                            ? "Preparing..."
+                            : downloadSuccess
+                              ? "Saved PNG"
+                              : "Download PNG"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Category Filter Bar & Trait Grid */}
+                    <div className="lg:col-span-8 space-y-4">
+                      {/* Filter Bar */}
+                      <div
+                        data-testid="wardrobe-filter-bar"
+                        className="flex flex-wrap items-center gap-1.5 sm:gap-2 rounded-2xl border border-[#163B44] bg-[#071F24]/80 p-2.5"
+                      >
+                        <button
+                          type="button"
+                          data-testid="wardrobe-filter-all"
+                          onClick={() => setWardrobeFilter("ALL")}
+                          className={`rounded-xl border px-3 py-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                            wardrobeFilter === "ALL"
+                              ? "border-amber-400/60 bg-amber-500/15 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.18)]"
+                              : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/50 hover:text-white"
+                          }`}
+                        >
+                          {`ALL (${inventoryItems.length})`}
+                        </button>
+                        {TRAIT_CATEGORIES.map((cat) => {
+                          const count = inventoryMeta.totalCategoryCounts[cat] || 0;
+                          const isActive = wardrobeFilter === cat;
+                          return (
+                            <button
+                              key={cat}
+                              type="button"
+                              data-testid={`wardrobe-filter-${cat.toLowerCase()}`}
+                              onClick={() =>
+                                setWardrobeFilter((prev) =>
+                                  prev === cat ? "ALL" : cat,
+                                )
+                              }
+                              className={`rounded-xl border px-3 py-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                isActive
+                                  ? "border-[#34B7DD] bg-[#102B33] text-cyan-200 shadow-[0_0_12px_rgba(52,183,221,0.2)]"
+                                  : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/50 hover:text-white"
+                              }`}
+                            >
+                              {`${cat} (${count})`}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          data-testid="wardrobe-filter-duplicates"
+                          onClick={() =>
+                            setWardrobeFilter((prev) =>
+                              prev === "DUPLICATES" ? "ALL" : "DUPLICATES",
+                            )
+                          }
+                          className={`rounded-xl border px-3 py-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                            wardrobeFilter === "DUPLICATES"
+                              ? "border-teal-400/60 bg-teal-500/15 text-teal-200 shadow-[0_0_12px_rgba(20,184,166,0.2)]"
+                              : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-teal-400/50 hover:text-white"
+                          }`}
+                        >
+                          {`DUPLICATES (${inventoryMeta.eligibleGiftItemIds.size})`}
+                        </button>
+                      </div>
+
+                      {/* Filtered Items or Empty Filter State */}
+                      {filteredInventoryItems.length > 0 ? (
+                        <TraitGrid
+                          items={filteredInventoryItems}
+                          allItems={inventoryItems}
+                          onGiftItem={handleOpenGiftModal}
+                          onEquipItem={handleEquipItem}
+                          equippingItemId={equippingItemId}
+                        />
+                      ) : (
+                        <div
+                          data-testid="wardrobe-filter-empty"
+                          className="rounded-2xl border border-[#163B44] bg-[#071F24]/60 p-8 text-center space-y-3"
+                        >
+                          <p className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
+                            No Traits Found in {wardrobeFilter}
+                          </p>
+                          <p className="mx-auto max-w-md text-xs sm:text-sm text-[#8AA8B2]">
+                            {wardrobeFilter === "DUPLICATES"
+                              ? "You do not have any extra unequipped traits eligible for peer gifting right now."
+                              : `You have not collected any traits in the ${wardrobeFilter} category yet. Claim crates during active Drops or accept a peer gift to unlock this slot.`}
+                          </p>
+                          <div className="pt-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              data-testid="wardrobe-filter-reset"
+                              onClick={() => setWardrobeFilter("ALL")}
+                              className="rounded-xl border-cyan-500/40 bg-cyan-950/30 text-xs font-bold uppercase tracking-wider text-cyan-200 hover:border-cyan-400 hover:bg-cyan-500/20 cursor-pointer"
+                            >
+                              Show All Traits
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div data-testid="inventory-empty" className="space-y-6">
                   {/* 5-Category Trait Collection Overview */}
                   <div
-                    className="space-y-3 pb-6 border-b border-zinc-800"
+                    className="space-y-3 pb-6 border-b border-[#163B44]"
                     data-testid="trait-collection-summary"
                   >
                     <div className="mb-3 flex items-center justify-between text-xs sm:text-sm">
@@ -1261,7 +1657,7 @@ function ProfileContent() {
                     </div>
                     <div className="mt-3 text-xs sm:text-sm text-[#8AA8B2]">
                       <p>
-                        Your avatar displays your active equipped traits. Collect traits to assemble your Chimp. Equipped traits cannot be transferred as gifts.
+                        Your avatar displays your active equipped traits. Collect traits to assemble your Elychimp. Equipped traits cannot be transferred as gifts.
                       </p>
                     </div>
                   </div>
