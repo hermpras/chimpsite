@@ -266,52 +266,41 @@ export function CoverflowCarousel() {
             const absOffset = Math.abs(offset);
 
             // Responsive spacing & 3D focal geometry
-            const spacing = isMobile ? 86 : 205;
+            const spacing = isMobile ? 90 : 210;
             const translateX = offset * spacing + (isDragging ? dragOffset * 0.45 : 0);
             const translateZ = isCenter
-              ? isMobile
-                ? 35
-                : 75
+              ? 0
               : isMobile
-                ? -absOffset * 115
-                : -absOffset * 135;
+                ? -absOffset * 105
+                : -absOffset * 130;
             const rotateY = isCenter
               ? 0
               : offset < 0
                 ? isMobile
-                  ? 46
-                  : 44
+                  ? 44
+                  : 42
                 : isMobile
-                  ? -46
-                  : -44;
+                  ? -44
+                  : -42;
             const scale = isCenter
-              ? isMobile
-                ? 1.08
-                : 1.15
+              ? 1
               : isMobile
-                ? 0.70
+                ? 0.72
                 : absOffset === 1
-                  ? 0.74
-                  : 0.60;
+                  ? 0.75
+                  : 0.62;
             const opacity = isCenter
               ? 1
               : isMobile
                 ? absOffset === 1
-                  ? 0.28
+                  ? 0.32
                   : 0
                 : absOffset === 1
-                  ? 0.38
+                  ? 0.42
                   : absOffset === 2
-                    ? 0.12
+                    ? 0.15
                     : 0;
             const zIndex = isCenter ? 50 : 30 - absOffset * 10;
-
-            // Optical Depth of Field: soft blur and dimmed contrast on background cards
-            const filter = isCenter
-              ? "none"
-              : isMobile
-                ? "blur(2px) brightness(0.4) contrast(0.85)"
-                : "blur(3.5px) brightness(0.4) contrast(0.85)";
 
             // Smooth spring transition without glitch when wrapping
             const isWrapping = absOffset >= 3;
@@ -322,33 +311,37 @@ export function CoverflowCarousel() {
                 onClick={() => {
                   if (!isCenter) setActiveIndex(idx);
                 }}
-                className={`absolute w-[190px] xs:w-[210px] sm:w-[270px] md:w-[310px] ${
+                className={`absolute w-[205px] xs:w-[225px] sm:w-[285px] md:w-[325px] [backface-visibility:hidden] ${
                   isCenter ? "cursor-default" : "cursor-pointer"
                 }`}
                 style={{
                   transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
                   opacity,
                   zIndex,
-                  filter,
                   pointerEvents: isCenter ? "auto" : isMobile && absOffset > 1 ? "none" : absOffset > 2 ? "none" : "auto",
                   transformOrigin: "center center",
                   transition: isDragging
                     ? "none"
                     : isWrapping
                       ? "opacity 0.25s ease"
-                      : "transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease, filter 0.45s ease",
+                      : "transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease",
                 }}
               >
                 {/* Specimen Frame Card */}
                 <div
-                  className={`relative overflow-hidden rounded-2xl border p-2.5 sm:p-3.5 backdrop-blur-xl transition-all duration-300 ${
+                  className={`relative overflow-hidden rounded-2xl border p-2.5 sm:p-3.5 transition-all duration-300 ${
                     isCenter
                       ? "border-2 border-[#54E4FF] bg-gradient-to-b from-[#0A2E38] via-[#062229] to-[#04181C] shadow-[0_0_45px_rgba(74,226,255,0.45),0_18px_40px_rgba(0,0,0,0.85)] ring-1 ring-white/30"
                       : "border border-[#163B44]/50 bg-[#051D22]/60 shadow-[0_8px_20px_rgba(2,10,12,0.6)] hover:border-[#34B7DD]/60"
                   }`}
                 >
+                  {/* Subtle darkening shroud on background cards */}
+                  {!isCenter && (
+                    <div className="pointer-events-none absolute inset-0 z-20 bg-[#04181C]/55 rounded-2xl transition-opacity duration-300" />
+                  )}
+
                   {/* 100% Flush Pixel-Perfect Layered Canvas */}
-                  <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-[#163B44]/90 bg-[#04181C] shadow-inner">
+                  <div className="pointer-events-none relative aspect-square w-full overflow-hidden rounded-xl border border-[#163B44]/90 bg-[#04181C] shadow-inner select-none">
                     {/* Layer 0: Background */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -357,7 +350,8 @@ export function CoverflowCarousel() {
                       width={240}
                       height={240}
                       loading="eager"
-                      className="absolute inset-0 block h-full w-full object-cover select-none [image-rendering:pixelated]"
+                      draggable={false}
+                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
                     />
 
                     {/* Layer 1: Fur (Primate Body Structure) */}
@@ -368,7 +362,8 @@ export function CoverflowCarousel() {
                       width={240}
                       height={240}
                       loading="eager"
-                      className="absolute inset-0 block h-full w-full object-cover select-none [image-rendering:pixelated]"
+                      draggable={false}
+                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
                     />
 
                     {/* Layer 2: Clothing */}
@@ -379,7 +374,8 @@ export function CoverflowCarousel() {
                       width={240}
                       height={240}
                       loading="eager"
-                      className="absolute inset-0 block h-full w-full object-cover select-none [image-rendering:pixelated]"
+                      draggable={false}
+                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
                     />
 
                     {/* Layer 2.5: Face Accessory (Cigarette, etc.) */}
@@ -391,7 +387,8 @@ export function CoverflowCarousel() {
                         width={240}
                         height={240}
                         loading="eager"
-                        className="absolute inset-0 block h-full w-full object-cover select-none [image-rendering:pixelated]"
+                        draggable={false}
+                        className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
                       />
                     )}
 
@@ -403,7 +400,8 @@ export function CoverflowCarousel() {
                       width={240}
                       height={240}
                       loading="eager"
-                      className="absolute inset-0 block h-full w-full object-cover select-none [image-rendering:pixelated]"
+                      draggable={false}
+                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
                     />
 
                     {/* Layer 4: Headwear (Hats over glasses as documented in generator pack) */}
@@ -414,7 +412,8 @@ export function CoverflowCarousel() {
                       width={240}
                       height={240}
                       loading="eager"
-                      className="absolute inset-0 block h-full w-full object-cover select-none [image-rendering:pixelated]"
+                      draggable={false}
+                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
                     />
 
                     {/* Studio Glare */}
