@@ -528,7 +528,7 @@ export default function DropsPage() {
                   </div>
 
                   {/* Remaining Stock Card */}
-                  <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#071F24] to-[#04181C] p-3 sm:p-5 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-between items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
+                  <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#071F24] to-[#04181C] p-3 sm:p-5 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-center items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-cyan-500/15 blur-xl" />
                     <span className="text-[10px] sm:text-xs font-bold text-cyan-300/90 uppercase tracking-widest flex items-center justify-center">
@@ -542,7 +542,7 @@ export default function DropsPage() {
                         / {displayAllocatedStock}
                       </span>
                     </p>
-                    <div className="w-full flex flex-col items-center">
+                    <div className="w-full flex flex-col items-center mt-0.5 sm:mt-1">
                       <div className="h-1.5 sm:h-2 w-full max-w-[160px] sm:max-w-[200px] rounded-full bg-black/80 overflow-hidden border border-cyan-500/30 p-[1px] shadow-inner">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-teal-300 to-amber-300 shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-all duration-500"
@@ -829,26 +829,28 @@ export default function DropsPage() {
                             <div>
                               {/* Card Top: Badges & Drop Probability */}
                               <div className="relative z-10 flex items-center justify-between gap-1.5 pb-2.5 border-b border-[#163B44]">
-                                <div className="flex flex-wrap items-center gap-1.5">
+                                <div className="flex flex-wrap items-center gap-1.5 md:flex-col md:items-start md:gap-1.5">
                                   <span
                                     className={`rounded-md border px-2 py-0.5 text-xs font-mono uppercase font-bold tracking-wider ${categoryStyle}`}
                                   >
                                     {item.category}
                                   </span>
-                                  <span
-                                    className={`rounded-md border px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText} shadow-sm`}
-                                  >
-                                    {theme.prefix}
-                                    {rarity}
-                                  </span>
-                                  {isSoldOut && (
+                                  <div className="inline-flex flex-wrap items-center gap-1.5">
                                     <span
-                                      data-testid="badge-sold-out"
-                                      className="rounded-md border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
+                                      className={`rounded-md border px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText} shadow-sm`}
                                     >
-                                      Sold Out
+                                      {theme.prefix}
+                                      {rarity}
                                     </span>
-                                  )}
+                                    {isSoldOut && (
+                                      <span
+                                        data-testid="badge-sold-out"
+                                        className="rounded-md border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
+                                      >
+                                        Sold Out
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {/* Probability Drop Rate */}

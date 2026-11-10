@@ -7,6 +7,7 @@ export interface SpecimenItem {
   number: string;
   name: string;
   tag: string;
+  image: string;
   traits: {
     bg: { name: string; file: string };
     fur: { name: string; file: string };
@@ -23,6 +24,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0001",
     name: "Solar Drifter",
     tag: "Iconic Genesis",
+    image: "/specimens/specimen-1.png",
     traits: {
       bg: { name: "Sky", file: "/traits/sky.png" },
       fur: { name: "Gold", file: "/traits/gold.png" },
@@ -36,6 +38,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0002",
     name: "Stealth Heist",
     tag: "Tactical Operative",
+    image: "/specimens/specimen-2.png",
     traits: {
       bg: { name: "Dusk", file: "/traits/dusk.png" },
       fur: { name: "Cocoa", file: "/traits/cocoa.png" },
@@ -49,6 +52,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0003",
     name: "Obsidian Rocker",
     tag: "Underground Rebel",
+    image: "/specimens/specimen-3.png",
     traits: {
       bg: { name: "Dusk", file: "/traits/dusk.png" },
       fur: { name: "Skeleton", file: "/traits/skeleton.png" },
@@ -62,6 +66,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0004",
     name: "High Roller",
     tag: "Apex Syndicate",
+    image: "/specimens/specimen-4.png",
     traits: {
       bg: { name: "Amber", file: "/traits/amber.png" },
       fur: { name: "Pearl", file: "/traits/pearl.png" },
@@ -76,6 +81,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0005",
     name: "Vice City",
     tag: "Neon Tropic",
+    image: "/specimens/specimen-5.png",
     traits: {
       bg: { name: "Mint", file: "/traits/mint.png" },
       fur: { name: "Cocoa", file: "/traits/cocoa.png" },
@@ -89,6 +95,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0006",
     name: "Sukajan Ronin",
     tag: "Tokyo Drift",
+    image: "/specimens/specimen-6.png",
     traits: {
       bg: { name: "Sand", file: "/traits/sand.png" },
       fur: { name: "Gold", file: "/traits/gold.png" },
@@ -102,6 +109,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0007",
     name: "Street Vanguard",
     tag: "Urban Rebel",
+    image: "/specimens/specimen-7.png",
     traits: {
       bg: { name: "Sky", file: "/traits/sky.png" },
       fur: { name: "Pearl", file: "/traits/pearl.png" },
@@ -115,6 +123,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0008",
     name: "Midnight Syndicate",
     tag: "Luxe Dynasty",
+    image: "/specimens/specimen-8.png",
     traits: {
       bg: { name: "Abyss", file: "/traits/abyss.png" },
       fur: { name: "Obsidian", file: "/traits/obsidian.png" },
@@ -129,6 +138,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0009",
     name: "Outland Nomad",
     tag: "Wasteland Scout",
+    image: "/specimens/specimen-9.png",
     traits: {
       bg: { name: "Ice", file: "/traits/ice.png" },
       fur: { name: "Ember", file: "/traits/ember.png" },
@@ -142,6 +152,7 @@ export const SPECIMENS: SpecimenItem[] = [
     number: "0010",
     name: "Crimson Outlaw",
     tag: "Rogue Rebel",
+    image: "/specimens/specimen-10.png",
     traits: {
       bg: { name: "Dusk", file: "/traits/dusk.png" },
       fur: { name: "Cocoa", file: "/traits/cocoa.png" },
@@ -340,80 +351,17 @@ export function CoverflowCarousel() {
                     <div className="pointer-events-none absolute inset-0 z-20 bg-[#04181C]/55 rounded-2xl transition-opacity duration-300" />
                   )}
 
-                  {/* 100% Flush Pixel-Perfect Layered Canvas */}
+                  {/* 100% Flush Pixel-Perfect Composite Canvas */}
                   <div className="pointer-events-none relative aspect-square w-full overflow-hidden rounded-xl border border-[#163B44]/90 bg-[#04181C] shadow-inner select-none">
-                    {/* Layer 0: Background */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={specimen.traits.bg.file}
-                      alt={`${specimen.name} Background`}
-                      width={240}
-                      height={240}
+                      src={specimen.image}
+                      alt={specimen.name}
+                      width={720}
+                      height={720}
                       loading="eager"
                       draggable={false}
-                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
-                    />
-
-                    {/* Layer 1: Fur (Primate Body Structure) */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={specimen.traits.fur.file}
-                      alt={`${specimen.name} Fur`}
-                      width={240}
-                      height={240}
-                      loading="eager"
-                      draggable={false}
-                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
-                    />
-
-                    {/* Layer 2: Clothing */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={specimen.traits.clothing.file}
-                      alt={`${specimen.name} Apparel`}
-                      width={240}
-                      height={240}
-                      loading="eager"
-                      draggable={false}
-                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
-                    />
-
-                    {/* Layer 2.5: Face Accessory (Cigarette, etc.) */}
-                    {specimen.traits.face && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={specimen.traits.face.file}
-                        alt={`${specimen.name} Face Feature`}
-                        width={240}
-                        height={240}
-                        loading="eager"
-                        draggable={false}
-                        className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
-                      />
-                    )}
-
-                    {/* Layer 3: Eyewear */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={specimen.traits.eyewear.file}
-                      alt={`${specimen.name} Eyewear`}
-                      width={240}
-                      height={240}
-                      loading="eager"
-                      draggable={false}
-                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
-                    />
-
-                    {/* Layer 4: Headwear (Hats over glasses as documented in generator pack) */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={specimen.traits.headwear.file}
-                      alt={`${specimen.name} Headwear`}
-                      width={240}
-                      height={240}
-                      loading="eager"
-                      draggable={false}
-                      className="pointer-events-none absolute inset-0 block h-full w-full object-cover select-none"
+                      className="pointer-events-none block h-full w-full object-cover select-none"
                     />
 
                     {/* Studio Glare */}

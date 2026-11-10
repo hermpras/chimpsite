@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "prisma migrate deploy || true && prisma generate && next build --webpack",
+    "build": "prisma migrate deploy || true && prisma generate && node scripts/generate-specimens.js && next build --webpack",
+    "generate:specimens": "node scripts/generate-specimens.js",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
