@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, LogIn } from "lucide-react";
 import { useConnectors } from "wagmi";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import { Button } from "@/components/ui/Button";
@@ -85,8 +85,9 @@ export function WalletConnectCard() {
               variant="primary"
               size="sm"
               onClick={() => void login()}
-              className="shrink-0 self-start sm:self-auto"
+              className="shrink-0 self-start sm:self-auto gap-2"
             >
+              <LogIn className="h-4 w-4 shrink-0" />
               <span>Sign In with Ethereum</span>
             </Button>
           </div>

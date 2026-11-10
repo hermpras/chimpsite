@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Lock,
   ArrowRight,
+  LogIn,
 } from "lucide-react";
 import {
   Card,
@@ -638,10 +639,11 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5 flex items-center justify-center gap-2"
                             onClick={() => void login()}
                           >
-                            Sign In with Ethereum
+                            <LogIn className="h-4 w-4 shrink-0" />
+                            <span>Sign In with Ethereum</span>
                           </Button>
                         ) : status !== "authenticated" ? (
                           <button

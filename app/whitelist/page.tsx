@@ -16,6 +16,7 @@ import {
   Link2,
   ChevronDown,
   ChevronUp,
+  LogIn,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -1196,8 +1197,9 @@ export default function WhitelistPage() {
                     variant="primary"
                     size="lg"
                     onClick={() => void login?.()}
-                    className="w-full"
+                    className="w-full gap-2"
                   >
+                    <LogIn className="h-4 w-4 shrink-0" />
                     <span>Sign In with Ethereum</span>
                   </Button>
                 </div>
