@@ -350,7 +350,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /In accordance with ChimpHood program policies \(DEC-022\), slot revocation results in full disqualification from this Whitelist program\./,
+        /In accordance with (Elychimp|Elysium) program policies \(DEC-022\), slot revocation results in full disqualification from this Whitelist program\./,
       ),
     ).toBeInTheDocument();
     expect(

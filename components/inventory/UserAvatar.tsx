@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { User, RefreshCw, AlertTriangle, Loader2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { getAvatarPublicUrl, triggerAvatarRender } from "@/lib/inventory/avatar-client";
 
 export interface UserAvatarProps {
@@ -119,15 +119,12 @@ export function UserAvatar({
         className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[#163B44] bg-[#0B2026] text-gray-400 shadow-inner ${containerClass} ${className}`}
         title={identifier ? "Base Chimp (no traits in inventory)" : "No character avatar"}
       >
-        {identifier ? (
-          <img
-            src="/images/chimp-base-bw.png"
-            alt="Base Chimp"
-            className="h-full w-full object-cover [image-rendering:pixelated] opacity-85"
-          />
-        ) : (
-          <User className={iconClass} />
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/chimp-base-bw.png"
+          alt="Base Chimp"
+          className="h-full w-full object-cover [image-rendering:pixelated] opacity-85"
+        />
       </div>
     );
   }
@@ -141,7 +138,12 @@ export function UserAvatar({
           className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[#163B44] bg-[#0B2026] text-gray-400 ${containerClass} ${className}`}
           title="Avatar unavailable"
         >
-          <User className={iconClass} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/chimp-base-bw.png"
+            alt="Base Chimp"
+            className="h-full w-full object-cover [image-rendering:pixelated] opacity-85"
+          />
         </div>
       );
     }
@@ -153,8 +155,7 @@ export function UserAvatar({
           className={`relative flex shrink-0 flex-col items-center justify-center overflow-hidden border border-rose-900/50 bg-rose-950/20 text-rose-400 shadow-inner ${containerClass} ${className}`}
           title={renderError}
         >
-          <AlertTriangle className="h-6 w-6 text-rose-400" />
-          <span className="mt-1 text-xs font-semibold text-rose-300">Error</span>
+          <span className="text-xs font-semibold text-rose-300 uppercase tracking-wider">Error</span>
         </div>
         {showRefreshButton && (
           <button
@@ -162,12 +163,10 @@ export function UserAvatar({
             data-testid="avatar-retry-btn"
             onClick={handleManualReRender}
             disabled={isReRendering}
-            className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#163B44] bg-[#0B2026] text-gray-300 shadow hover:bg-[#102B33] hover:text-white"
+            className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#163B44] bg-[#0B2026] text-gray-300 shadow hover:bg-[#102B33] hover:text-white cursor-pointer"
             title="Retry Avatar Render"
           >
-            <RefreshCw
-              className={`h-3 w-3 ${isReRendering ? "animate-spin text-emerald-400" : ""}`}
-            />
+            <RefreshCw className={`h-3 w-3 ${isReRendering ? "animate-spin" : ""}`} />
           </button>
         )}
       </div>
@@ -175,7 +174,7 @@ export function UserAvatar({
   }
 
   // State 3: Image failed to load (e.g. 404 because user has no active traits yet).
-  // Gracefully fallback to clean generic User icon instead of an alarming red error badge.
+  // Gracefully fallback to clean Base Chimp avatar instead of an alarming red error badge.
   if (imgError) {
     return (
       <div
@@ -183,7 +182,12 @@ export function UserAvatar({
         className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[#163B44] bg-[#0B2026] text-gray-400 shadow-inner ${containerClass} ${className}`}
         title="No character avatar (no traits in inventory)"
       >
-        <User className={iconClass} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/chimp-base-bw.png"
+          alt="Base Chimp"
+          className="h-full w-full object-cover [image-rendering:pixelated] opacity-85"
+        />
       </div>
     );
   }
@@ -200,9 +204,9 @@ export function UserAvatar({
         {!imgLoaded && (
           <div
             data-testid="avatar-loading"
-            className="absolute inset-0 z-10 flex items-center justify-center bg-[#0B2026]/90 text-emerald-400"
+            className="absolute inset-0 z-10 flex items-center justify-center bg-[#0B2026]/90 text-emerald-400 font-mono text-[9px] uppercase tracking-wider"
           >
-            <Loader2 className={`animate-spin ${isSm ? "h-3 w-3" : "h-6 w-6"}`} />
+            {isSm ? "..." : "Loading"}
           </div>
         )}
 
@@ -211,7 +215,7 @@ export function UserAvatar({
         <img
           key={currentKey}
           src={avatarUrl}
-          alt="Elysium Character Avatar"
+          alt="Elychimp Character Avatar"
           data-testid={isSm ? "navbar-avatar" : "avatar-image"}
           className={`h-full w-full object-cover transition-opacity duration-200 ${
             imgLoaded ? "opacity-100" : "opacity-0"
@@ -221,19 +225,17 @@ export function UserAvatar({
         />
       </div>
 
-      {/* Optional Refresh/Re-render Button */}
+      {/* Optional Refresh/Re-render Button (visually hidden on luxury profile card, accessible for programmatic/test refresh) */}
       {showRefreshButton && !isSm && (
         <button
           type="button"
           data-testid="avatar-refresh-btn"
           onClick={handleManualReRender}
           disabled={isReRendering}
-          className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#163B44] bg-[#0B2026] text-gray-300 shadow hover:border-emerald-500/50 hover:bg-[#102B33] hover:text-white"
+          className="sr-only"
           title="Re-render Avatar"
         >
-          <RefreshCw
-            className={`h-3 w-3 ${isReRendering ? "animate-spin text-emerald-400" : ""}`}
-          />
+          Re-render Avatar
         </button>
       )}
     </div>

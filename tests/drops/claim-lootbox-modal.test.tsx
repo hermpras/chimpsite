@@ -67,7 +67,7 @@ describe("ClaimLootboxModal Component", () => {
     expect(screen.getByText("PERIOD #3597 DROP CAPSULE")).toBeInTheDocument();
     expect(screen.getByText("Unlocking Mystery Trait")).toBeInTheDocument();
     expect(
-      screen.getByText("Calculating transparent RNG on Base network"),
+      screen.getByText("Calculating transparent RNG on Elysium"),
     ).toBeInTheDocument();
   });
 
@@ -102,7 +102,7 @@ describe("ClaimLootboxModal Component", () => {
     );
 
     // Verifies reveal phase
-    expect(screen.getByText("★ LEGENDARY UNLOCKED")).toBeInTheDocument();
+    expect(screen.getByText("LEGENDARY UNLOCKED")).toBeInTheDocument();
     expect(screen.getByText("Golden Katana")).toBeInTheDocument();
     expect(screen.getByText("Edition #42")).toBeInTheDocument();
     expect(screen.getByText("Added to Your Inventory")).toBeInTheDocument();

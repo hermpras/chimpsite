@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers";
 import { PixelCurtain } from "@/components/layout/PixelCurtain";
 
 export const metadata: Metadata = {
-  title: "Elychimp — Rule the Streets of Elysium | Hyperliquid",
+  title: "Elychimp — Rule the Streets of Elysium",
   description:
     "Leonida grit meets high-speed on-chain culture. Assemble your 5-piece fit, claim limited drop crates, and lock your syndicate pass on Elysium.",
   icons: {

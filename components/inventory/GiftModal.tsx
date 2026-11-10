@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { X, Gift, AlertTriangle, CheckCircle2, ShieldAlert, Search, UserCheck, Loader2 } from "lucide-react";
 import type { InventoryItemData } from "@/lib/inventory/client";
 import { sendGiftRequest, lookupGiftRecipient, type GiftRecipientInfo } from "@/lib/inventory/client";
 import { isValidAddress, shortenAddress } from "@/lib/auth/address";
@@ -199,29 +198,25 @@ export function GiftModal({
           onClick={handleClose}
           disabled={isSubmitting}
           data-testid="gift-modal-close"
-          className="absolute top-4 right-4 rounded-lg p-1 text-gray-400 hover:bg-[#102B33] hover:text-white"
+          className="absolute top-4 right-4 rounded-lg border border-[#163B44] bg-[#051D22] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:bg-[#102B33] hover:text-white cursor-pointer"
+          aria-label="Close modal"
         >
-          <X className="h-5 w-5" />
+          CLOSE
         </button>
 
         {/* Modal Header */}
-        <div className="mb-5 flex items-center gap-3">
-          <div className="rounded-lg bg-teal-500/10 p-2.5 text-teal-400">
-            <Gift className="h-6 w-6" />
-          </div>
-          <div>
-            <h2 id="gift-modal-title" className="text-xl font-bold text-white">
-              Gift Trait
-            </h2>
-            <p className="text-xs text-gray-400">
-              Transfer an extra item in this category to another Elysium holder
-            </p>
-          </div>
+        <div className="mb-5">
+          <h2 id="gift-modal-title" className="text-xl font-bold text-white">
+            Gift Trait
+          </h2>
+          <p className="text-xs text-gray-400">
+            Transfer an extra item in this category to another Elychimp holder on Elysium
+          </p>
         </div>
 
         {/* Selected Trait Preview */}
         <div className="mb-5 flex items-center gap-4 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3.5">
-          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-[#102B33]">
+          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-[#102B33] border border-[#163B44]">
             {item.trait.imageUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -230,8 +225,8 @@ export function GiftModal({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-gray-500">
-                <Gift className="h-6 w-6" />
+              <div className="flex h-full w-full items-center justify-center text-[10px] font-mono font-bold uppercase text-gray-400">
+                {item.trait.category}
               </div>
             )}
           </div>
@@ -255,7 +250,6 @@ export function GiftModal({
         {/* Established Gifting Rules Banner */}
         <div className="mb-5 space-y-1.5 rounded-lg border border-teal-500/20 bg-teal-950/20 p-3.5 text-xs sm:text-sm text-teal-200">
           <div className="flex items-center gap-1.5 font-semibold text-teal-400">
-            <ShieldAlert className="h-4 w-4" />
             <span>Gifting Invariants & Rules:</span>
           </div>
           <ul className="list-inside list-disc space-y-1 text-xs sm:text-sm text-gray-300">
@@ -274,7 +268,6 @@ export function GiftModal({
             data-testid="gift-send-error"
             className="mb-4 flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300"
           >
-            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-rose-400" />
             <div className="flex-1">{error || searchError}</div>
           </div>
         )}
@@ -285,7 +278,6 @@ export function GiftModal({
             data-testid="gift-send-success"
             className="mb-4 flex items-start gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300"
           >
-            <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400" />
             <div className="flex-1">{successMessage}</div>
           </div>
         )}
@@ -334,12 +326,7 @@ export function GiftModal({
                     disabled={isSearching || !trimmed}
                     className="h-10 border-teal-500/30 text-teal-300 hover:bg-teal-500/10"
                   >
-                    {isSearching ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Search className="h-4 w-4" />
-                    )}
-                    <span className="ml-1.5 hidden sm:inline">Verify</span>
+                    <span>{isSearching ? "Verifying..." : "Verify"}</span>
                   </Button>
                 )}
               </div>
@@ -374,8 +361,8 @@ export function GiftModal({
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-gray-500">
-                          <UserCheck className="h-5 w-5" />
+                        <div className="flex h-full w-full items-center justify-center font-mono text-xs font-bold text-teal-400">
+                          @
                         </div>
                       )}
                     </div>
@@ -400,12 +387,11 @@ export function GiftModal({
 
                   <div>
                     {verifiedRecipient.canReceive ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
                         Verified
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-xs font-semibold text-rose-400">
+                      <span className="inline-flex items-center rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-xs font-semibold text-rose-400">
                         Ineligible
                       </span>
                     )}

@@ -153,7 +153,7 @@ export default function HomePage() {
                 Crate Drops & Crew Sharing
               </h3>
               <p className="mt-3 text-sm leading-snug text-[#B8D7E0]">
-                Claim free crate drops every 30-minute cycle. Pull duplicate
+                Claim free crate drops during 30-minute windows across periodic cycles. Pull duplicate
                 traits? Transfer them directly to your homies to help them
                 qualify their 5/5 outfit for the allowlist.
               </p>
@@ -236,7 +236,7 @@ export default function HomePage() {
 
               <div className="mt-8 pt-4 border-t border-[#163B44]">
                 <Link href="/drops" className="block w-full">
-                  <Button className="w-full justify-center border border-[#34B7DD]/60 bg-gradient-to-r from-[#34B7DD] to-[#6FCDE8] font-bold text-base sm:text-lg uppercase tracking-wider text-[#04181C] shadow-[0_0_20px_rgba(52,183,221,0.25)] transition-all hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(52,183,221,0.4)] py-5">
+                  <Button variant="primary" size="lg" className="w-full justify-center">
                     OPEN CRATES
                   </Button>
                 </Link>
@@ -256,7 +256,7 @@ export default function HomePage() {
 
               <div className="mt-8 pt-4 border-t border-[#163B44]">
                 <Link href="/whitelist" className="block w-full">
-                  <Button className="w-full justify-center border border-[#F59E0B]/60 bg-[#F59E0B] font-bold text-base sm:text-lg uppercase tracking-wider text-[#04181C] shadow-[0_0_20px_rgba(245,158,11,0.25)] transition-all hover:scale-[1.01] hover:bg-[#FBBF24] hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] py-5">
+                  <Button variant="gold" size="lg" className="w-full justify-center">
                     GET ON THE LIST
                   </Button>
                 </Link>
@@ -281,8 +281,9 @@ export default function HomePage() {
             <div className="mt-8 flex w-full flex-col items-center justify-center gap-3.5 sm:w-auto sm:flex-row sm:gap-4">
               <Link href="/whitelist" className="w-full sm:w-auto">
                 <Button
+                  variant="primary"
                   size="lg"
-                  className="w-full sm:w-auto border border-[#34B7DD]/60 bg-gradient-to-r from-[#34B7DD] to-[#6FCDE8] font-bold text-base sm:text-lg uppercase tracking-wider text-[#04181C] shadow-[0_0_20px_rgba(52,183,221,0.25)] hover:shadow-[0_0_30px_rgba(52,183,221,0.4)] hover:scale-[1.02] active:scale-[0.99] px-8 py-4 sm:px-10 sm:py-5"
+                  className="w-full sm:w-auto px-8 sm:px-11"
                 >
                   GET ON THE LIST
                 </Button>
@@ -291,7 +292,7 @@ export default function HomePage() {
                 <Button
                   size="lg"
                   variant="secondary"
-                  className="w-full sm:w-auto border border-[#1E4D5A] bg-[#051D22] font-semibold text-base sm:text-lg uppercase tracking-wider text-[#DBF2F9] hover:border-[#34B7DD]/60 hover:text-white px-8 py-4 sm:px-10 sm:py-5"
+                  className="w-full sm:w-auto px-8 sm:px-11"
                 >
                   VIEW GEAR
                 </Button>

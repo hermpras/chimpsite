@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, Gift } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 export default function NotFound() {
@@ -31,10 +30,10 @@ export default function NotFound() {
       <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
         <Link href="/" className="w-full sm:w-auto">
           <Button
+            variant="primary"
             size="lg"
-            className="w-full gap-2.5 bg-[#34B7DD] text-[#04181C] hover:bg-[#6FCDE8] font-bold text-sm sm:text-base uppercase tracking-wider shadow-[0_0_20px_rgba(52,183,221,0.25)] px-6 py-4"
+            className="w-full px-8"
           >
-            <ArrowLeft className="h-4 w-4" />
             RETURN TO HQ
           </Button>
         </Link>
@@ -42,9 +41,8 @@ export default function NotFound() {
           <Button
             size="lg"
             variant="secondary"
-            className="w-full gap-2.5 border border-[#163B44] bg-[#0B2026] text-[#DBF2F9] hover:border-[#34B7DD]/60 hover:text-white font-semibold text-sm sm:text-base uppercase tracking-wider px-6 py-4"
+            className="w-full px-8"
           >
-            <Gift className="h-4 w-4 text-[#34B7DD]" />
             CHECK DROPS
           </Button>
         </Link>

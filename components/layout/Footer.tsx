@@ -35,19 +35,6 @@ export function Footer() {
               forged on Elysium. High-speed trait assembly, algorithmic crate
               drops, and sovereign on-chain identity.
             </p>
-
-            {/* Architectural Status Pills (Minimalist, No Icons) */}
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              <span className="font-mono-street rounded-md border border-[#34B7DD]/30 bg-[#34B7DD]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#34B7DD]">
-                Elysium
-              </span>
-              <span className="font-mono-street rounded-md border border-[#163B44] bg-[#071F24]/70 px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#8AA8B2]">
-                Gasless SIWE
-              </span>
-              <span className="font-mono-street rounded-md border border-[#163B44] bg-[#071F24]/70 px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#8AA8B2]">
-                Sub-Second EVM
-              </span>
-            </div>
           </div>
 
           {/* Column 2: Ecosystem Navigation */}
@@ -119,44 +106,21 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Column 4: Official Dispatch & Protocol Status */}
+          {/* Column 4: Communications */}
           <div className="flex flex-col lg:col-span-3">
             <h3 className="font-mono-street text-[11px] font-bold uppercase tracking-widest text-[#34B7DD]">
               Communications
             </h3>
-
-            {/* Official X Channel Card (Clean, Luxurious, No Icon) */}
-            <a
-              href="https://x.com/Elychimp"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Follow Elychimp on X"
-              className="group mt-4 block rounded-xl border border-[#163B44] bg-[#071F24]/70 p-3.5 transition-all duration-300 hover:border-[#34B7DD]/60 hover:bg-[#0A272F] hover:shadow-[0_0_24px_rgba(52,183,221,0.2)]"
-            >
-              <div className="flex items-center justify-between font-mono-street text-[10px] tracking-wider uppercase text-[#8AA8B2]">
-                <span>Official Channel</span>
-                <span className="font-semibold text-[#34B7DD] group-hover:text-white transition-colors">
-                  Join
-                </span>
-              </div>
-              <div className="mt-1 font-mono-street text-sm font-bold tracking-wide text-[#DBF2F9] group-hover:text-white transition-colors">
-                @Elychimp
-              </div>
-              <p className="mt-1 text-[11px] leading-relaxed text-[#8AA8B2]/80">
-                Direct dispatches, drop countdowns, and syndicate announcements.
-              </p>
-            </a>
-
-            {/* Protocol Status Display (Minimalist Monospace, No Icon) */}
-            <div className="mt-3 rounded-xl border border-[#163B44]/70 bg-[#05181C]/90 px-3.5 py-2.5 font-mono-street text-[10px] tracking-wider">
-              <div className="flex items-center justify-between text-[#8AA8B2]/70 uppercase">
-                <span>Protocol Status</span>
-                <span className="font-bold text-[#34B7DD]">Operational</span>
-              </div>
-              <div className="mt-1 flex items-center justify-between text-[#DBF2F9]/80 uppercase">
-                <span>Network</span>
-                <span className="text-[#8AA8B2]">Elysium</span>
-              </div>
+            <div className="mt-4 flex flex-col space-y-2.5">
+              <a
+                href="https://x.com/Elychimp"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow @Elychimp on X"
+                className="group inline-flex items-center text-xs font-mono-street text-[#8AA8B2] transition-colors duration-200 hover:text-[#34B7DD]"
+              >
+                <span className="tracking-wider">@Elychimp</span>
+              </a>
             </div>
           </div>
         </div>

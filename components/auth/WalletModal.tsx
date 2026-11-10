@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Loader2, AlertCircle } from "lucide-react";
 import type { Connector } from "wagmi";
 import { WalletIcon } from "./WalletIcons";
 
@@ -83,17 +82,16 @@ export function WalletModal({
           <button
             onClick={onClose}
             disabled={isConnecting}
-            className="rounded-lg border border-[#163B44] p-2 text-[#8AA8B2] hover:border-[#34B7DD]/60 hover:bg-[#102B33] hover:text-[#DBF2F9] transition-colors disabled:opacity-50"
+            className="rounded-lg border border-[#163B44] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#8AA8B2] hover:border-[#34B7DD]/60 hover:bg-[#102B33] hover:text-[#DBF2F9] transition-colors disabled:opacity-50 cursor-pointer"
             aria-label="Close modal"
           >
-            <X className="h-5 w-5" />
+            CLOSE
           </button>
         </div>
 
         {/* Error Banner */}
         {error && (
-          <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-left">
-            <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+          <div className="mt-4 flex items-start justify-between gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-left">
             <div className="flex-1">
               <p className="text-xs font-medium text-red-300">{error}</p>
             </div>
@@ -113,9 +111,6 @@ export function WalletModal({
           <div className="py-10 flex flex-col items-center justify-center text-center">
             <div className="relative mb-4">
               <div className="h-14 w-14 rounded-full border-2 border-[#34B7DD]/20 border-t-[#34B7DD] animate-spin" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="h-6 w-6 text-[#34B7DD] animate-spin" />
-              </div>
             </div>
             <p className="font-display text-lg uppercase tracking-wide text-[#F8F7F4]">
               {busyMessage ?? "Awaiting Wallet Signature..."}

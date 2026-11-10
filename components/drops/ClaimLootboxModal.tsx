@@ -2,17 +2,6 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import {
-  Sparkles,
-  Share2,
-  ExternalLink,
-  CheckCircle2,
-  X,
-  AlertTriangle,
-  Flame,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
 import { ElychimpSpinner } from "@/components/ui/ElychimpSpinner";
 
 export interface WonTraitData {
@@ -71,7 +60,7 @@ const RARITY_THEME: Record<
     titleColor: "text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400",
     rayColor: "rgba(251, 191, 36, 0.25)",
     particleColors: ["#f59e0b", "#fbbf24", "#fef08a", "#d97706", "#ffffff"],
-    prefix: "★ LEGENDARY",
+    prefix: "LEGENDARY",
   },
   EPIC: {
     border: "border-purple-400",
@@ -83,7 +72,7 @@ const RARITY_THEME: Record<
     titleColor: "text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-fuchsia-300 to-purple-400",
     rayColor: "rgba(192, 132, 252, 0.2)",
     particleColors: ["#a855f7", "#c084fc", "#e879f9", "#7e22ce", "#ffffff"],
-    prefix: "◆ EPIC",
+    prefix: "EPIC",
   },
   RARE: {
     border: "border-sky-400",
@@ -95,7 +84,7 @@ const RARITY_THEME: Record<
     titleColor: "text-transparent bg-clip-text bg-gradient-to-r from-sky-200 via-cyan-300 to-sky-400",
     rayColor: "rgba(56, 189, 248, 0.2)",
     particleColors: ["#0284c7", "#38bdf8", "#7dd3fc", "#0369a1", "#ffffff"],
-    prefix: "▲ RARE",
+    prefix: "RARE",
   },
   UNCOMMON: {
     border: "border-emerald-400",
@@ -107,7 +96,7 @@ const RARITY_THEME: Record<
     titleColor: "text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-teal-300 to-emerald-400",
     rayColor: "rgba(52, 211, 153, 0.18)",
     particleColors: ["#059669", "#34d399", "#6ee7b7", "#047857", "#ffffff"],
-    prefix: "● UNCOMMON",
+    prefix: "UNCOMMON",
   },
   COMMON: {
     border: "border-gray-600",
@@ -319,7 +308,7 @@ export function ClaimLootboxModal({
     poolItems.length > 0
       ? poolItems[currentRollIndex % poolItems.length]
       : {
-          traitName: "Chimp Trait",
+          traitName: "Elychimp Trait",
           category: "TRAIT",
           rarity: "EPIC",
           imageUrl: undefined,
@@ -332,7 +321,7 @@ export function ClaimLootboxModal({
   // Share on X (Twitter) URL
   const tweetText = wonTrait
     ? encodeURIComponent(
-        `Just pulled ${wonTrait.name} (${wonRarity}) in the @Elychimp Drop! 🐒🔥 Edition #${claimedItem?.edition} • Deployed on @Enter_elysium (Hyperliquid).\n\nRule the streets:`,
+        `Just pulled ${wonTrait.name} (${wonRarity}) in the @Elychimp Drop! Edition #${claimedItem?.edition} • Deployed on @Enter_elysium (Elysium).\n\nRule the streets:`,
       )
     : "";
   const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
@@ -400,25 +389,21 @@ export function ClaimLootboxModal({
             setSoundEnabled(next);
             if (next) playTone("click");
           }}
-          className="rounded-full bg-[#0B2026]/80 p-2 text-[#8AA8B2] hover:text-white border border-[#163B44] backdrop-blur transition-colors"
+          className="rounded-lg bg-[#0B2026]/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8AA8B2] hover:text-white border border-[#163B44] backdrop-blur transition-colors cursor-pointer"
           title={soundEnabled ? "Mute SFX" : "Unmute SFX"}
           aria-label={soundEnabled ? "Mute SFX" : "Unmute SFX"}
         >
-          {soundEnabled ? (
-            <Volume2 className="h-4 w-4" />
-          ) : (
-            <VolumeX className="h-4 w-4 text-[#8AA8B2]" />
-          )}
+          {soundEnabled ? "SFX ON" : "SFX OFF"}
         </button>
         {phase !== "ROLLING" && (
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full bg-[#0B2026]/80 p-2 text-[#8AA8B2] hover:text-white border border-[#163B44] backdrop-blur transition-colors"
+            className="rounded-lg bg-[#0B2026]/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8AA8B2] hover:text-white border border-[#163B44] backdrop-blur transition-colors cursor-pointer"
             title="Close modal"
             aria-label="Close modal"
           >
-            <X className="h-4 w-4" />
+            CLOSE
           </button>
         )}
       </div>
@@ -468,8 +453,8 @@ export function ClaimLootboxModal({
                     style={{ imageRendering: "pixelated" }}
                   />
                 ) : (
-                  <div className="flex h-32 w-32 items-center justify-center rounded-xl bg-gray-900/80 text-emerald-400">
-                    <Flame className="h-14 w-14 animate-pulse text-emerald-400" />
+                  <div className="flex h-32 w-32 items-center justify-center rounded-xl bg-[#04181C] text-emerald-400 font-display text-xs uppercase tracking-widest">
+                    MYSTERY POD
                   </div>
                 )}
                 <div className="mt-2 text-center">
@@ -485,14 +470,13 @@ export function ClaimLootboxModal({
 
             {/* Dynamic Status Ticker */}
             <div className="mt-6 flex flex-col items-center space-y-1.5">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+              <div className="flex items-center justify-center">
                 <span className="font-mono text-xs font-semibold text-emerald-400">
                   {ROLLING_MESSAGES[messageIndex]}
                 </span>
               </div>
-              <p className="text-[11px] text-gray-500 font-mono">
-                Calculating transparent RNG on Base network
+              <p className="text-[11px] text-[#8AA8B2] font-mono">
+                Calculating transparent RNG on Elysium
               </p>
             </div>
           </div>
@@ -529,9 +513,8 @@ export function ClaimLootboxModal({
 
             {/* Rarity Banner */}
             <div
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-xs font-black uppercase tracking-wider ${wonTheme.badgeBg} ${wonTheme.badgeBorder} ${wonTheme.badgeText} shadow-md`}
+              className={`inline-flex items-center rounded-full border px-3.5 py-1 text-xs font-black uppercase tracking-wider ${wonTheme.badgeBg} ${wonTheme.badgeBorder} ${wonTheme.badgeText} shadow-md`}
             >
-              <Sparkles className="h-3.5 w-3.5" />
               <span>{wonTheme.prefix} UNLOCKED</span>
             </div>
 
@@ -557,8 +540,8 @@ export function ClaimLootboxModal({
                   style={{ imageRendering: "pixelated" }}
                 />
               ) : (
-                <div className="flex h-44 w-44 items-center justify-center rounded-xl bg-gray-900/80 text-white">
-                  <Flame className="h-16 w-16" />
+                <div className="flex h-44 w-44 items-center justify-center rounded-xl bg-[#04181C] text-white font-display text-xs uppercase tracking-widest">
+                  {wonTrait.category}
                 </div>
               )}
 
@@ -623,11 +606,7 @@ export function ClaimLootboxModal({
         {/* ===================== PHASE 3: ERROR ===================== */}
         {phase === "ERROR" && (
           <div className="flex flex-col items-center py-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-rose-500/40 bg-rose-950/40 text-rose-400">
-              <AlertTriangle className="h-8 w-8" />
-            </div>
-
-            <h3 className="mt-4 text-lg font-bold text-white">Claim Failed</h3>
+            <h3 className="text-lg font-bold text-rose-400">Claim Failed</h3>
             <p className="mt-2 text-xs text-gray-400 max-w-xs text-center leading-relaxed">
               {error || "An error occurred while claiming your drop. Please try again."}
             </p>

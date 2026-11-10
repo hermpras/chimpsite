@@ -1,11 +1,10 @@
 "use client";
 
-import { AlertTriangle, Loader2, LogIn } from "lucide-react";
 import { useConnectors } from "wagmi";
+import { LogIn } from "lucide-react";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import { Button } from "@/components/ui/Button";
 import { shortenAddress } from "@/lib/auth/address";
-import { WalletIcon } from "./WalletIcons";
 import {
   Card,
   CardHeader,
@@ -41,26 +40,22 @@ export function WalletConnectCard() {
       </CardHeader>
       <CardContent className="space-y-3 p-0">
         {status === "checking" && (
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22] p-3 text-xs sm:text-sm text-[#8AA8B2]">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#34B7DD]" />
+          <div className="flex items-center justify-center rounded-xl border border-[#163B44] bg-[#051D22] p-3 text-xs sm:text-sm text-[#8AA8B2]">
             <span>Checking session…</span>
           </div>
         )}
 
         {status === "authenticated" && sessionAddress && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[#163B44] bg-[#051D22] p-3.5">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-[#F8F7F4] text-sm sm:text-base truncate" title={sessionAddress}>
-                    {shortenAddress(sessionAddress)}
-                  </span>
-                </div>
-                <p className="font-mono text-xs sm:text-[13px] text-[#8AA8B2] truncate mt-0.5">
-                  {sessionAddress}
-                </p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold text-[#F8F7F4] text-sm sm:text-base truncate" title={sessionAddress}>
+                  {shortenAddress(sessionAddress)}
+                </span>
               </div>
+              <p className="font-mono text-xs sm:text-[13px] text-[#8AA8B2] truncate mt-0.5">
+                {sessionAddress}
+              </p>
             </div>
             <Button
               variant="outline"
@@ -85,9 +80,9 @@ export function WalletConnectCard() {
               variant="primary"
               size="sm"
               onClick={() => void login()}
-              className="shrink-0 self-start sm:self-auto gap-2"
+              className="shrink-0 self-start sm:self-auto gap-1.5"
             >
-              <LogIn className="h-4 w-4 shrink-0" />
+              <LogIn className="h-3.5 w-3.5 shrink-0" />
               <span>Sign In with Ethereum</span>
             </Button>
           </div>
@@ -109,14 +104,9 @@ export function WalletConnectCard() {
                     key={connector.uid}
                     variant="outline"
                     size="sm"
-                    className="flex-1 min-w-[120px] justify-center gap-2 py-2 rounded-lg border-[#163B44] bg-[#102B33]/80 hover:bg-[#163B44] hover:border-[#34B7DD]/60 text-xs sm:text-sm text-[#DBF2F9] cursor-pointer"
+                    className="flex-1 min-w-[120px] justify-center py-2 rounded-lg border-[#163B44] bg-[#102B33]/80 hover:bg-[#163B44] hover:border-[#34B7DD]/60 text-xs sm:text-sm text-[#DBF2F9] cursor-pointer"
                     onClick={() => void login(connector)}
                   >
-                    <WalletIcon
-                      name={connector.name}
-                      iconUrl={connector.icon}
-                      className="h-4 w-4"
-                    />
                     <span className="font-semibold text-xs sm:text-sm truncate">Connect {connector.name}</span>
                   </Button>
                 ))}
@@ -130,8 +120,7 @@ export function WalletConnectCard() {
           )}
 
         {status === "signing" && (
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-[#163B44] bg-[#051D22] p-3 text-xs sm:text-sm text-[#DBF2F9]">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#34B7DD]" />
+          <div className="flex items-center justify-center rounded-xl border border-[#163B44] bg-[#051D22] p-3 text-xs sm:text-sm text-[#DBF2F9]">
             <span>{busyMessage ?? "Working…"}</span>
           </div>
         )}
@@ -139,10 +128,9 @@ export function WalletConnectCard() {
         {error && status !== "signing" && (
           <button
             onClick={dismissError}
-            className="flex w-full items-start gap-2 rounded-xl border border-rose-500/40 bg-rose-950/40 p-2.5 text-left"
+            className="flex w-full items-start rounded-xl border border-rose-500/40 bg-rose-950/40 p-2.5 text-left"
             title="Dismiss"
           >
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
             <span className="text-xs text-rose-300">{error}</span>
           </button>
         )}

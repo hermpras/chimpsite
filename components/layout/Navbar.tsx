@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield } from "lucide-react";
 import { WalletButton } from "@/components/auth/WalletButton";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 
@@ -112,16 +111,12 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 aria-label={link.label}
-                className={`group relative inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold tracking-wider uppercase transition-all duration-200 ${
+                className={`group relative inline-flex items-center justify-center rounded-full px-4 py-1.5 text-xs font-semibold tracking-wider uppercase transition-all duration-200 ${
                   isActive
                     ? "border border-[#34B7DD]/60 bg-gradient-to-b from-[#103844] to-[#082229] text-[#34B7DD] shadow-[0_0_16px_rgba(52,183,221,0.3)]"
                     : "text-[#8AA8B2] hover:bg-[#102B33]/60 hover:text-[#DBF2F9]"
                 }`}
               >
-                {/* Active Neon Dot */}
-                {isActive && (
-                  <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[#34B7DD] shadow-[0_0_8px_#34B7DD]" />
-                )}
                 <span>{link.label}</span>
               </Link>
             );
@@ -132,13 +127,12 @@ export function Navbar() {
             <Link
               href="/admin"
               aria-label="Admin Portal"
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wider uppercase transition-all ${
+              className={`inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wider uppercase transition-all ${
                 pathname.startsWith("/admin")
                   ? "border border-[#F59E0B]/60 bg-gradient-to-b from-[#F59E0B]/25 to-[#F59E0B]/10 text-[#F59E0B] shadow-[0_0_16px_rgba(245,158,11,0.25)]"
                   : "text-[#F59E0B] hover:bg-[#F59E0B]/15 hover:text-[#FBBF24]"
               }`}
             >
-              <Shield className="h-3.5 w-3.5 text-[#F59E0B]" />
               <span>Admin</span>
             </Link>
           )}
@@ -253,14 +247,7 @@ export function Navbar() {
                       : "border border-[#163B44]/80 bg-[#071F24]/70 text-[#DBF2F9] hover:border-[#34B7DD]/50 hover:bg-[#102B33]/90 hover:text-[#34B7DD]"
                   }`}
                 >
-                  <span className="flex items-center gap-2.5">
-                    {isActive ? (
-                      <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-[#34B7DD] shadow-[0_0_8px_#34B7DD]" />
-                    ) : (
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#163B44] transition-colors group-hover:bg-[#34B7DD]" />
-                    )}
-                    <span>{link.label}</span>
-                  </span>
+                  <span>{link.label}</span>
                 </Link>
               );
             })}
@@ -278,10 +265,7 @@ export function Navbar() {
                     : "border border-[#F59E0B]/30 bg-[#F59E0B]/10 text-[#F59E0B] hover:border-[#F59E0B]/60 hover:bg-[#F59E0B]/20"
                 }`}
               >
-                <span className="flex items-center gap-2.5">
-                  <Shield className="h-4 w-4" />
-                  <span>Admin Portal</span>
-                </span>
+                <span>Admin Portal</span>
                 <span className="font-mono-street rounded border border-[#F59E0B]/40 bg-[#F59E0B]/10 px-1.5 py-0.5 text-[10px] tracking-widest text-[#F59E0B]/80 uppercase">
                   Mod
                 </span>

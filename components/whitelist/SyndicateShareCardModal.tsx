@@ -1,14 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  X,
-  Download,
-  ExternalLink,
-  Copy,
-  Check,
-} from "lucide-react";
-import { XLogo } from "@/components/icons/XLogo";
 import { Button } from "@/components/ui/Button";
 import { shortenAddress } from "@/lib/auth/address";
 
@@ -122,8 +114,8 @@ export function SyndicateShareCardModal({
       });
 
   const tweetText = isGtd
-    ? `Verified by the @Elychimp Syndicate! 🐒🔥\n\nOfficial Clearance Pass secured on @Enter_elysium (Hyperliquid).\n\nRule the streets:`
-    : `Registered with the @Elychimp Syndicate! 🐒💨 Verified clearance on @Enter_elysium (Hyperliquid).\n\nRule the streets:`;
+    ? `Verified by the @Elychimp Syndicate!\n\nOfficial Clearance Pass secured on @Enter_elysium (Elysium).\n\nRule the streets:`
+    : `Registered with the @Elychimp Syndicate! Verified clearance on @Enter_elysium (Elysium).\n\nRule the streets:`;
 
   const shareUrl =
     typeof window !== "undefined"
@@ -655,14 +647,14 @@ export function SyndicateShareCardModal({
       aria-labelledby="share-card-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
     >
-      <div className="relative my-auto w-full max-w-3xl rounded-2xl border border-zinc-800 bg-[#0c0d15] p-4 sm:p-6 shadow-2xl space-y-4">
+      <div className="relative my-auto w-full max-w-3xl rounded-2xl border border-[#1E4D5A] bg-[#071F24] p-4 sm:p-6 shadow-2xl space-y-4">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-400 hover:text-white p-1 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors z-10"
+          className="absolute top-4 right-4 text-[#8AA8B2] hover:text-white px-2.5 py-1 rounded-lg border border-[#163B44] bg-[#051D22] hover:border-[#34B7DD]/60 text-[10px] font-bold uppercase tracking-wider transition-colors z-10 cursor-pointer"
           aria-label="Close modal"
         >
-          <X className="h-5 w-5" />
+          CLOSE
         </button>
 
         {/* Modal Header */}
@@ -745,7 +737,7 @@ export function SyndicateShareCardModal({
                     <div className="absolute -bottom-3 -left-3 pointer-events-none select-none -rotate-12 border-2 border-red-600/85 rounded-full p-1 text-center text-red-600 font-display leading-none bg-white/70 backdrop-blur-2xs shadow-sm">
                       <div className="rounded-full border border-red-600/70 p-1.5 sm:p-2 flex flex-col items-center justify-center">
                         <span className="text-[6px] sm:text-[7px] font-mono font-bold tracking-widest text-red-600">
-                          ★ ELYCHIMP ★
+                          ELYCHIMP
                         </span>
                         <span className="text-[10px] sm:text-xs font-black tracking-wider my-0.5 text-red-600">
                           {isGtd ? "GUARANTEED" : "REGISTERED"}
@@ -867,18 +859,12 @@ export function SyndicateShareCardModal({
 
           <button
             onClick={handleCopyLink}
-            className="w-full py-2 text-center text-xs font-medium text-zinc-400 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="w-full py-2 text-center text-xs font-medium text-[#8AA8B2] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
           >
             {copiedLink ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-emerald-400">Link Copied to Clipboard!</span>
-              </>
+              <span className="text-emerald-400">Link Copied to Clipboard!</span>
             ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" />
-                <span>Copy Shareable Link</span>
-              </>
+              <span>Copy Shareable Link</span>
             )}
           </button>
         </div>
