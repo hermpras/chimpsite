@@ -15,16 +15,6 @@ export default function HomePage() {
           {/* Top Edge Jewel Rim */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#34B7DD]/40 to-transparent" />
 
-          {/* Faint Precision Grid Texture */}
-          <div
-            className="absolute inset-0 opacity-[0.05]"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, #34B7DD 1px, transparent 1px), linear-gradient(to bottom, #34B7DD 1px, transparent 1px)",
-              backgroundSize: "56px 56px",
-            }}
-          />
-
           {/* Atmospheric Starlet Motel Backdrop */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
