@@ -512,43 +512,51 @@ export default function DropsPage() {
                 {/* 3 Metric Cards */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 text-sm">
                   {/* Period Cycle Card */}
-                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#071F24] to-[#04181C] p-3.5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-center items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
+                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#071F24] to-[#04181C] p-3 sm:p-5 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-between items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-amber-500/15 blur-xl" />
                     <span className="text-[10px] sm:text-xs font-bold text-amber-300/90 uppercase tracking-widest flex items-center justify-center">
                       Period Cycle
                     </span>
-                    <p className="my-1 sm:my-2 font-display text-3xl sm:text-5xl font-black bg-gradient-to-br from-amber-100 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]">
-                      #{displayPeriodIndex}
+                    <p className="my-1 sm:my-1.5 font-sans text-xl xs:text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center justify-center">
+                      <span className="text-amber-400/60 text-sm xs:text-base sm:text-xl mr-0.5 font-bold">#</span>
+                      <span className="bg-gradient-to-br from-amber-100 via-yellow-200 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]">
+                        {displayPeriodIndex}
+                      </span>
                     </p>
+                    <span className="text-[10px] sm:text-xs font-semibold text-amber-300/70 uppercase tracking-wider">
+                      Active Cycle
+                    </span>
                   </div>
 
                   {/* Remaining Stock Card */}
-                  <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#071F24] to-[#04181C] p-3.5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-center items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
+                  <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-b from-cyan-950/20 via-[#071F24] to-[#04181C] p-3 sm:p-5 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(6,182,212,0.15)] flex flex-col justify-between items-center text-center group hover:border-cyan-400/50 hover:shadow-[0_12px_32px_rgba(6,182,212,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
                     <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-40 rounded-full bg-cyan-500/15 blur-xl" />
                     <span className="text-[10px] sm:text-xs font-bold text-cyan-300/90 uppercase tracking-widest flex items-center justify-center">
                       Remaining Stock
                     </span>
-                    <p className="my-1 sm:my-2 font-mono text-xl sm:text-3xl font-bold text-white">
+                    <p className="my-1 sm:my-1.5 font-mono text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-white flex items-baseline justify-center">
                       <span className="bg-gradient-to-r from-cyan-100 via-cyan-300 to-sky-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(6,182,212,0.3)]">
                         {displayRemainingStock}
                       </span>{" "}
-                      <span className="text-[10px] sm:text-xs font-semibold text-gray-400">
+                      <span className="text-[10px] sm:text-xs font-semibold text-gray-400 ml-1">
                         / {displayAllocatedStock}
                       </span>
                     </p>
-                    <div className="mt-1 sm:mt-2 h-2 sm:h-2.5 w-full max-w-[220px] rounded-full bg-black/80 overflow-hidden border border-cyan-500/30 p-[1px] shadow-inner">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-teal-300 to-amber-300 shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-all duration-500"
-                        style={{
-                          width: `${displayStockPercentage}%`,
-                        }}
-                      />
+                    <div className="w-full flex flex-col items-center">
+                      <div className="h-1.5 sm:h-2 w-full max-w-[160px] sm:max-w-[200px] rounded-full bg-black/80 overflow-hidden border border-cyan-500/30 p-[1px] shadow-inner">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-teal-300 to-amber-300 shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-all duration-500"
+                          style={{
+                            width: `${displayStockPercentage}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="mt-1 text-[10px] sm:text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                        {displayStockPercentage}% Available
+                      </span>
                     </div>
-                    <span className="mt-1 sm:mt-2 inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-cyan-400 uppercase tracking-wider">
-                      {displayStockPercentage}% Available
-                    </span>
                   </div>
 
                   {/* Claim Window / Countdown Card */}
@@ -557,7 +565,7 @@ export default function DropsPage() {
                       isWindowActive
                         ? "border-amber-500/40 bg-gradient-to-b from-amber-950/25 via-[#071F24] to-[#04181C] shadow-[0_8px_24px_rgba(245,158,11,0.15),inset_0_1px_0_rgba(251,191,36,0.2)] hover:border-amber-400/60"
                         : "border-[#163B44] bg-gradient-to-b from-white/[0.03] via-[#071F24] to-[#04181C] shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-white/20"
-                    } p-4 sm:p-6 flex flex-col justify-between text-center group transition-all duration-300`}
+                    } p-4 sm:p-5 flex flex-col justify-between text-center group transition-all duration-300`}
                   >
                     <div
                       className={`absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent ${
@@ -565,39 +573,46 @@ export default function DropsPage() {
                       } to-transparent`}
                     />
                     <div>
-                      <div className="flex items-center justify-center gap-2">
-                        <span
-                          className={`text-xs font-bold uppercase tracking-widest ${
-                            isWindowActive ? "text-amber-300" : "text-gray-300"
-                          }`}
-                        >
-                          {isWindowActive ? "Claim Window Active" : "Next Drop Window"}
-                        </span>
-                      </div>
-                      <p
-                        className={`my-2 font-mono text-2xl sm:text-3xl font-bold ${
-                          isWindowActive
-                            ? "bg-gradient-to-r from-amber-100 via-yellow-300 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]"
-                            : "text-amber-300"
+                      <span
+                        className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest block ${
+                          isWindowActive ? "text-amber-300" : "text-gray-300"
                         }`}
                       >
-                        {isWindowActive
-                          ? `${formatRemaining(claimRemainingMs)} left`
-                          : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
-                      </p>
+                        {isWindowActive ? "Claim Window Active" : "Next Drop Window"}
+                      </span>
+
+                      <div className="my-1.5 sm:my-2 flex items-baseline justify-center gap-1.5">
+                        <span
+                          className={`font-mono text-2xl sm:text-3xl font-bold tracking-wider ${
+                            isWindowActive
+                              ? "bg-gradient-to-r from-amber-100 via-yellow-200 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_2px_14px_rgba(251,191,36,0.35)]"
+                              : "text-amber-300"
+                          }`}
+                        >
+                          {isWindowActive
+                            ? formatRemaining(claimRemainingMs)
+                            : `Opens in ${formatRemaining(nextDropRemainingMs)}`}
+                        </span>
+                        {isWindowActive && (
+                          <span className="text-[10px] sm:text-xs font-bold text-amber-300/80 uppercase tracking-widest">
+                            LEFT
+                          </span>
+                        )}
+                      </div>
+
                       {isWindowActive && dropData.claimWindow?.endsAt && (
-                        <span className="block text-xs text-gray-400 uppercase tracking-wider">
+                        <span className="block text-[10px] sm:text-xs text-[#8AA8B2] font-medium uppercase tracking-wider">
                           Closes at {formatTimeWithUtc(dropData.claimWindow.endsAt)}
                         </span>
                       )}
                       {!isWindowActive && periodEndsMs > 0 && (
-                        <span className="block text-xs text-gray-400 uppercase tracking-wider">
+                        <span className="block text-[10px] sm:text-xs text-[#8AA8B2] font-medium uppercase tracking-wider">
                           Cycle starts at {formatTimeWithUtc(periodEndsMs)}
                         </span>
                       )}
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-[#163B44]">
+                    <div className="mt-3.5 pt-3 border-t border-[#163B44]">
                       {claimLoading ? (
                           <Button
                             variant="primary"
@@ -632,19 +647,18 @@ export default function DropsPage() {
                             Sign In with Ethereum
                           </Button>
                         ) : status !== "authenticated" ? (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5"
+                          <button
+                            type="button"
+                            className="w-full rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] font-sans font-black text-xs sm:text-sm uppercase tracking-[0.16em] text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_24px_rgba(52,183,221,0.35)] hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] transition-all py-3 flex items-center justify-center cursor-pointer"
                             onClick={() => void login()}
                           >
                             Connect Wallet to Register
-                          </Button>
+                          </button>
                         ) : isCheckingEligibility ? (
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-wait py-2.5"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-xs sm:text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-wait py-3"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -656,26 +670,25 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center cursor-not-allowed py-2.5"
+                            className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center cursor-not-allowed py-3"
                             disabled
                           >
                             <span>Whitelist Slot Secured</span>
                           </Button>
                         ) : !hasLinkedX ? (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            className="w-full rounded-xl border border-cyan-400/50 bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 font-bold text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(6,182,212,0.35)] hover:from-cyan-300 hover:to-blue-400 flex items-center justify-center gap-2 transition-all py-2.5"
+                          <button
+                            type="button"
+                            className="w-full rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] font-sans font-black text-xs sm:text-sm uppercase tracking-[0.16em] text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_24px_rgba(52,183,221,0.35)] hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_12px_32px_rgba(52,183,221,0.55)] active:scale-[0.98] transition-all py-3 flex items-center justify-center cursor-pointer disabled:opacity-50"
                             onClick={handleConnectX}
                             disabled={isConnectingX}
                           >
                             <span>{isConnectingX ? "Connecting X..." : "Link X (Twitter) to Register"}</span>
-                          </Button>
+                          </button>
                         ) : !areTasksDone ? (
                           <Link
                             href="/whitelist#tasks"
                             aria-label={`Complete Quests on Whitelist (${completedTasks}/${totalTasks})`}
-                            className="w-full rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-xs sm:text-sm uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.55)] hover:scale-[1.01] active:scale-[0.99] py-2.5 px-3 flex items-center justify-center gap-2 transition-all"
+                            className="w-full rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-xs sm:text-sm uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.55)] hover:scale-[1.01] active:scale-[0.99] py-3 px-3 flex items-center justify-center gap-2 transition-all"
                           >
                             <span>Complete Quests</span>
                             <span className="rounded-md bg-black/15 px-1.5 py-0.5 text-xs font-black tracking-normal">
@@ -686,7 +699,7 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-emerald-500/40 bg-emerald-950/40 text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider flex items-center justify-center cursor-not-allowed opacity-95 py-2.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                            className="w-full rounded-xl border border-emerald-500/40 bg-emerald-950/40 text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider flex items-center justify-center cursor-not-allowed opacity-95 py-3 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
                             disabled
                           >
                             <span>Claimed for Period #{dropData.period.periodIndex} (1/1)</span>
@@ -695,25 +708,24 @@ export default function DropsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-red-500/30 bg-red-500/10 text-xs sm:text-sm font-bold text-red-300 uppercase tracking-wider cursor-not-allowed opacity-75 py-2.5"
+                            className="w-full rounded-xl border border-red-500/30 bg-red-500/10 text-xs sm:text-sm font-bold text-red-300 uppercase tracking-wider cursor-not-allowed opacity-75 py-3"
                             disabled
                           >
                             Period Stock Exhausted
                           </Button>
                         ) : isWindowActive ? (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            className="w-full rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.4)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.6)] hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer py-2.5"
+                          <button
+                            type="button"
+                            className="w-full rounded-xl border border-yellow-300/80 bg-gradient-to-b from-yellow-300 via-amber-400 to-amber-500 font-sans font-black text-xs sm:text-sm uppercase tracking-[0.16em] text-[#1c1202] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_24px_rgba(245,158,11,0.4)] hover:from-yellow-200 hover:via-amber-300 hover:to-amber-400 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_12px_32px_rgba(245,158,11,0.6)] active:scale-[0.98] transition-all cursor-pointer py-3 flex items-center justify-center"
                             onClick={handleClaim}
                           >
                             Claim Trait Now
-                          </Button>
+                          </button>
                         ) : (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full rounded-xl border border-[#163B44] bg-[#102B33]/50 text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center cursor-not-allowed py-2.5"
+                            className="w-full rounded-xl border border-[#163B44] bg-[#102B33]/50 text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center cursor-not-allowed py-3"
                             disabled
                           >
                             <span>Opens in {formatRemaining(nextDropRemainingMs)}</span>
