@@ -238,15 +238,20 @@ export function CoverflowCarousel() {
     >
       {/* 3D Runway Stage Container */}
       <div
-        className="relative mx-auto h-[290px] sm:h-[370px] md:h-[430px] w-full max-w-5xl overflow-hidden touch-pan-y cursor-grab active:cursor-grabbing [perspective:1000px]"
+        className="relative mx-auto h-[310px] sm:h-[390px] md:h-[455px] w-full max-w-5xl overflow-visible touch-pan-y cursor-grab active:cursor-grabbing [perspective:1000px]"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* Centerstage Ambient Spotlight */}
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-72 w-full flex items-center justify-center">
-          <div className="h-64 w-80 rounded-full bg-[#34B7DD]/20 blur-3xl" />
+        {/* Centerstage Deep Atmospheric Spotlight & Floor Halo */}
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center">
+          {/* Deep dark centerstage backdrop to cut background noise behind active card */}
+          <div className="h-64 w-72 sm:h-80 sm:w-88 rounded-full bg-[#021014]/90 blur-2xl" />
+          {/* Radiant Cyan Spotlight Glow */}
+          <div className="absolute h-56 w-64 sm:h-72 sm:w-80 rounded-full bg-[#34B7DD]/28 blur-3xl" />
+          {/* Runway Floor Reflection Line */}
+          <div className="absolute top-[165px] sm:top-[205px] md:top-[235px] h-10 w-48 sm:h-12 sm:w-72 rounded-[100%] bg-gradient-to-r from-transparent via-[#54E4FF]/35 to-transparent blur-md" />
         </div>
 
         <div className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]">
@@ -258,17 +263,18 @@ export function CoverflowCarousel() {
             while (offset < -half) offset += total;
 
             const isCenter = offset === 0;
+            const absOffset = Math.abs(offset);
 
             // Responsive spacing & 3D focal geometry
-            const spacing = isMobile ? 84 : 180;
+            const spacing = isMobile ? 86 : 205;
             const translateX = offset * spacing + (isDragging ? dragOffset * 0.45 : 0);
             const translateZ = isCenter
               ? isMobile
-                ? 30
-                : 65
+                ? 35
+                : 75
               : isMobile
-                ? -Math.abs(offset) * 115
-                : -Math.abs(offset) * 130;
+                ? -absOffset * 115
+                : -absOffset * 135;
             const rotateY = isCenter
               ? 0
               : offset < 0
@@ -280,28 +286,35 @@ export function CoverflowCarousel() {
                   : -44;
             const scale = isCenter
               ? isMobile
-                ? 1.05
-                : 1.08
+                ? 1.08
+                : 1.15
               : isMobile
-                ? 0.72
-                : Math.abs(offset) === 1
-                  ? 0.76
-                  : 0.62;
+                ? 0.70
+                : absOffset === 1
+                  ? 0.74
+                  : 0.60;
             const opacity = isCenter
               ? 1
               : isMobile
-                ? Math.abs(offset) === 1
-                  ? 0.32
+                ? absOffset === 1
+                  ? 0.28
                   : 0
-                : Math.abs(offset) === 1
-                  ? 0.45
-                  : Math.abs(offset) === 2
-                    ? 0.15
+                : absOffset === 1
+                  ? 0.38
+                  : absOffset === 2
+                    ? 0.12
                     : 0;
-            const zIndex = isCenter ? 50 : 30 - Math.abs(offset) * 10;
+            const zIndex = isCenter ? 50 : 30 - absOffset * 10;
+
+            // Optical Depth of Field: soft blur and dimmed contrast on background cards
+            const filter = isCenter
+              ? "none"
+              : isMobile
+                ? "blur(2px) brightness(0.4) contrast(0.85)"
+                : "blur(3.5px) brightness(0.4) contrast(0.85)";
 
             // Smooth spring transition without glitch when wrapping
-            const isWrapping = Math.abs(offset) >= 3;
+            const isWrapping = absOffset >= 3;
 
             return (
               <div
@@ -316,21 +329,22 @@ export function CoverflowCarousel() {
                   transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
                   opacity,
                   zIndex,
-                  pointerEvents: isCenter ? "auto" : isMobile && Math.abs(offset) > 1 ? "none" : Math.abs(offset) > 2 ? "none" : "auto",
+                  filter,
+                  pointerEvents: isCenter ? "auto" : isMobile && absOffset > 1 ? "none" : absOffset > 2 ? "none" : "auto",
                   transformOrigin: "center center",
                   transition: isDragging
                     ? "none"
                     : isWrapping
                       ? "opacity 0.25s ease"
-                      : "transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease",
+                      : "transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease, filter 0.45s ease",
                 }}
               >
                 {/* Specimen Frame Card */}
                 <div
                   className={`relative overflow-hidden rounded-2xl border p-2.5 sm:p-3.5 backdrop-blur-xl transition-all duration-300 ${
                     isCenter
-                      ? "border-2 border-[#54E4FF] bg-[#07242C] shadow-[0_0_45px_rgba(74,226,255,0.45),0_30px_70px_rgba(2,10,12,0.95)] ring-1 ring-white/30"
-                      : "border border-[#163B44]/60 bg-[#051D22]/65 shadow-[0_10px_25px_rgba(2,10,12,0.7)] [filter:brightness(0.55)_contrast(0.9)] hover:border-[#34B7DD]/60 hover:[filter:brightness(0.85)]"
+                      ? "border-2 border-[#54E4FF] bg-gradient-to-b from-[#0A2E38] via-[#062229] to-[#04181C] shadow-[0_0_45px_rgba(74,226,255,0.45),0_18px_40px_rgba(0,0,0,0.85)] ring-1 ring-white/30"
+                      : "border border-[#163B44]/50 bg-[#051D22]/60 shadow-[0_8px_20px_rgba(2,10,12,0.6)] hover:border-[#34B7DD]/60"
                   }`}
                 >
                   {/* 100% Flush Pixel-Perfect Layered Canvas */}

@@ -30,14 +30,17 @@ export default function HomePage() {
           <img
             src="/images/bg-starlet-motel.jpg"
             alt="Atmospheric Background"
-            className="h-full w-full object-cover object-[75%_25%] opacity-25 filter contrast-110 saturate-[0.85]"
+            className="h-full w-full object-cover object-[75%_25%] opacity-20 filter contrast-105 saturate-[0.8] blur-[2px] scale-105"
           />
 
           {/* Radiant Centerstage Ambient Lighting */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,rgba(52,183,221,0.18),transparent_75%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_75%_55%_at_50%_45%,rgba(52,183,221,0.22),transparent_70%)]" />
+
+          {/* Focal Darkening Vignette around Runway */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_52%,transparent_25%,rgba(6,31,37,0.55)_65%,#061F25_95%)]" />
 
           {/* Atmospheric Vignettes */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#061F25]/80 via-[#061F25]/60 to-[#061F25]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#061F25]/85 via-transparent to-[#061F25]" />
           <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#061F25] to-transparent" />
           <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#061F25] to-transparent" />
         </div>
