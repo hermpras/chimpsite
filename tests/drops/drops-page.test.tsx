@@ -3,11 +3,16 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import DropsPage from "@/app/drops/page";
 import * as dropsClient from "@/lib/drops/client";
+import * as inventoryClient from "@/lib/inventory/client";
 import * as siweHook from "@/hooks/useSiweAuth";
 
 vi.mock("@/lib/drops/client", () => ({
   fetchCurrentDrop: vi.fn(),
   claimDropItem: vi.fn(),
+}));
+
+vi.mock("@/lib/inventory/client", () => ({
+  fetchUserInventory: vi.fn(),
 }));
 
 vi.mock("@/hooks/useSiweAuth", () => ({
@@ -155,6 +160,9 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockActiveDrop);
+    vi.mocked(inventoryClient.fetchUserInventory).mockResolvedValue({
+      items: [],
+    });
     vi.mocked(siweHook.useSiweAuth).mockReturnValue({
       status: "authenticated",
       sessionAddress: "0x1111111111111111111111111111111111111111",
@@ -906,6 +914,154 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
 
         expect(screen.queryByRole("button", { name: /Claim Trait Now/i })).not.toBeInTheDocument();
       });
+    });
+  });
+
+  describe("17. Smart Ownership Badges & Drop Pool Category/Rarity Filter", () => {
+    it("displays OWNED and NEEDED CATEGORY smart badges based on authenticated user inventory", async () => {
+      vi.mocked(inventoryClient.fetchUserInventory).mockResolvedValue({
+        items: [
+          {
+            id: "inv-1",
+            edition: 1,
+            acquiredVia: "DROP",
+            acquiredAt: pastDate,
+            isLocked: false,
+            trait: {
+              id: "trait-katana",
+              name: "Golden Katana",
+              category: "CLOTHING",
+              rarity: "LEGENDARY",
+              imageUrl: "/images/katana.png",
+            },
+          },
+          {
+            id: "inv-2",
+            edition: 1,
+            acquiredVia: "DROP",
+            acquiredAt: pastDate,
+            isLocked: false,
+            trait: {
+              id: "trait-other-bg",
+              name: "Other Background",
+              category: "BG",
+              rarity: "COMMON",
+              imageUrl: "/images/bg.png",
+            },
+          },
+        ],
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("drop-badge-owned-pool-item-1")).toHaveTextContent(
+          "OWNED",
+        );
+      });
+
+      // pool-item-5 is BG (user already owns a BG trait "trait-other-bg") -> neither OWNED nor NEEDED CATEGORY
+      expect(screen.queryByTestId("drop-badge-owned-pool-item-5")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("drop-badge-needed-pool-item-5")).not.toBeInTheDocument();
+
+      // pool-item-2 (HEADWEAR), pool-item-3 (EYEWEAR), pool-item-4 (FUR) are missing categories -> NEEDED CATEGORY
+      expect(screen.getByTestId("drop-badge-needed-pool-item-2")).toHaveTextContent(
+        "NEEDED CATEGORY",
+      );
+      expect(screen.getByTestId("drop-badge-needed-pool-item-3")).toHaveTextContent(
+        "NEEDED CATEGORY",
+      );
+      expect(screen.getByTestId("drop-badge-needed-pool-item-4")).toHaveTextContent(
+        "NEEDED CATEGORY",
+      );
+    });
+
+    it("filters Drop Pool items by category, rarity, and NEEDED status", async () => {
+      vi.mocked(inventoryClient.fetchUserInventory).mockResolvedValue({
+        items: [
+          {
+            id: "inv-1",
+            edition: 1,
+            acquiredVia: "DROP",
+            acquiredAt: pastDate,
+            isLocked: false,
+            trait: {
+              id: "trait-katana",
+              name: "Golden Katana",
+              category: "CLOTHING",
+              rarity: "LEGENDARY",
+              imageUrl: "/images/katana.png",
+            },
+          },
+        ],
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("drop-pool-filter-bar")).toBeInTheDocument();
+      });
+
+      // Filter by category HEADWEAR
+      fireEvent.click(screen.getByTestId("drop-filter-cat-headwear"));
+      expect(screen.getByText("Cyber Helmet")).toBeInTheDocument();
+      expect(screen.queryByText("Golden Katana")).not.toBeInTheDocument();
+
+      // Combine with incompatible rarity LEGENDARY -> empty filter state
+      fireEvent.click(screen.getByTestId("drop-filter-rarity-legendary"));
+      expect(screen.getByTestId("drop-filter-empty")).toBeInTheDocument();
+
+      // Reset filters
+      fireEvent.click(screen.getByTestId("drop-filter-reset"));
+      expect(screen.getByText("Golden Katana")).toBeInTheDocument();
+      expect(screen.getByText("Cyber Helmet")).toBeInTheDocument();
+    });
+
+    it("renders Recent Crate Unboxings feed when recentPulls are returned by drop endpoint", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValueOnce({
+        ...mockActiveDrop,
+        recentPulls: [
+          {
+            id: "pull-1",
+            traitName: "Golden Katana",
+            category: "CLOTHING",
+            rarity: "LEGENDARY",
+            edition: 7,
+            imageUrl: "/images/katana.png",
+            claimedBy: "@ely_whale",
+            periodIndex: 1,
+            claimedAt: pastDate,
+          },
+          {
+            id: "pull-2",
+            traitName: "Cyber Helmet",
+            category: "HEADWEAR",
+            rarity: "EPIC",
+            edition: 14,
+            imageUrl: "/images/helmet.png",
+            claimedBy: "0x9999...8888",
+            periodIndex: 1,
+            claimedAt: pastDate,
+          },
+        ],
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("recent-pulls-feed")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("Recent Crate Unboxings")).toBeInTheDocument();
+      expect(screen.getByTestId("recent-pull-pull-1")).toHaveTextContent(
+        "Golden Katana (#7)",
+      );
+      expect(screen.getByTestId("recent-pull-pull-1")).toHaveTextContent(
+        "@ely_whale • Period #1",
+      );
+      expect(screen.getByTestId("recent-pull-pull-2")).toHaveTextContent(
+        "Cyber Helmet (#14)",
+      );
     });
   });
 });

@@ -1,7 +1,20 @@
+export interface RecentDropPull {
+  id: string;
+  traitName: string;
+  category: string;
+  rarity: string;
+  edition: number;
+  imageUrl?: string;
+  claimedBy: string;
+  periodIndex: number;
+  claimedAt: string;
+}
+
 export interface CurrentDropResponse {
   active: boolean;
   message?: string;
   userHasClaimed?: boolean;
+  recentPulls?: RecentDropPull[];
   userEligibility?: {
     isEligible: boolean;
     hasWallet: boolean;

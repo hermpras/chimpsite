@@ -2,18 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import {
-  Sparkles,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  ExternalLink,
-  ShieldCheck,
-  Lock,
-  ArrowRight,
-  LogIn,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -31,11 +20,19 @@ import {
   type CurrentDropResponse,
 } from "@/lib/drops/client";
 import {
+  fetchUserInventory,
+  type InventoryItemData,
+} from "@/lib/inventory/client";
+import {
   ClaimLootboxModal,
   type WonTraitData,
 } from "@/components/drops/ClaimLootboxModal";
-import { XLogo } from "@/components/icons/XLogo";
 import { ElychimpSpinner } from "@/components/ui/ElychimpSpinner";
+
+const DROP_CATEGORIES = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
+const DROP_RARITIES = ["LEGENDARY", "EPIC", "RARE", "UNCOMMON", "COMMON"] as const;
+type PoolCategoryFilter = "ALL" | (typeof DROP_CATEGORIES)[number] | "NEEDED";
+type PoolRarityFilter = "ALL" | (typeof DROP_RARITIES)[number];
 
 const RARITY_THEME: Record<
   string,
@@ -64,7 +61,7 @@ const RARITY_THEME: Record<
     badgeBorder: "border-amber-400/70",
     badgeText: "text-amber-200 font-bold",
     glow: "shadow-[0_8px_30px_rgba(251,191,36,0.15)] hover:shadow-[0_12px_42px_rgba(251,191,36,0.3)]",
-    prefix: "★ ",
+    prefix: "",
     barColor: "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300",
     sheen: "from-transparent via-amber-400/80 to-transparent",
     ambientGlow: "bg-amber-500/20",
@@ -80,7 +77,7 @@ const RARITY_THEME: Record<
     badgeBorder: "border-purple-400/70",
     badgeText: "text-purple-200 font-semibold",
     glow: "shadow-[0_8px_30px_rgba(168,85,247,0.15)] hover:shadow-[0_12px_42px_rgba(168,85,247,0.3)]",
-    prefix: "◆ ",
+    prefix: "",
     barColor: "bg-gradient-to-r from-purple-500 via-fuchsia-400 to-pink-400",
     sheen: "from-transparent via-purple-400/80 to-transparent",
     ambientGlow: "bg-purple-500/20",
@@ -96,7 +93,7 @@ const RARITY_THEME: Record<
     badgeBorder: "border-sky-400/70",
     badgeText: "text-sky-200 font-semibold",
     glow: "shadow-[0_8px_30px_rgba(56,189,248,0.12)] hover:shadow-[0_12px_42px_rgba(56,189,248,0.25)]",
-    prefix: "▲ ",
+    prefix: "",
     barColor: "bg-gradient-to-r from-sky-500 via-cyan-400 to-teal-300",
     sheen: "from-transparent via-sky-400/80 to-transparent",
     ambientGlow: "bg-sky-500/18",
@@ -112,7 +109,7 @@ const RARITY_THEME: Record<
     badgeBorder: "border-emerald-400/60",
     badgeText: "text-emerald-400 font-medium",
     glow: "shadow-[0_8px_24px_rgba(52,211,153,0.1)] hover:shadow-[0_12px_36px_rgba(52,211,153,0.22)]",
-    prefix: "● ",
+    prefix: "",
     barColor: "bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400",
     sheen: "from-transparent via-emerald-400/70 to-transparent",
     ambientGlow: "bg-emerald-500/15",
@@ -165,6 +162,65 @@ export default function DropsPage() {
   // X Connection State
   const [isConnectingX, setIsConnectingX] = useState<boolean>(false);
   const [connectXError, setConnectXError] = useState<string | null>(null);
+
+  // User Inventory & Drop Pool Filter State (Tahap 3)
+  const [userInventory, setUserInventory] = useState<InventoryItemData[]>([]);
+  const [userInventoryLoaded, setUserInventoryLoaded] = useState<boolean>(false);
+  const [selectedPoolCategory, setSelectedPoolCategory] =
+    useState<PoolCategoryFilter>("ALL");
+  const [selectedPoolRarity, setSelectedPoolRarity] =
+    useState<PoolRarityFilter>("ALL");
+
+  const loadUserInventory = useCallback(async (targetAddress?: string | null) => {
+    const addr = targetAddress ?? address;
+    if (!addr || typeof fetchUserInventory !== "function") {
+      setUserInventory([]);
+      setUserInventoryLoaded(false);
+      return;
+    }
+    try {
+      const inv = await fetchUserInventory(addr);
+      if (inv && Array.isArray(inv.items)) {
+        setUserInventory(inv.items);
+        setUserInventoryLoaded(true);
+      }
+    } catch {
+      // Non-blocking: if inventory fetch fails on drops page, gracefully degrade
+    }
+  }, [address]);
+
+  useEffect(() => {
+    let ignore = false;
+    if (status === "authenticated" && address && typeof fetchUserInventory === "function") {
+      Promise.resolve(fetchUserInventory(address))
+        .then((inv) => {
+          if (!ignore && inv && Array.isArray(inv.items)) {
+            setUserInventory(inv.items);
+            setUserInventoryLoaded(true);
+          }
+        })
+        .catch(() => {});
+    } else {
+      setUserInventory([]);
+      setUserInventoryLoaded(false);
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [status, address]);
+
+  const ownedTraitIds = React.useMemo(
+    () => new Set(userInventory.map((it) => it.trait.id)),
+    [userInventory],
+  );
+  const ownedTraitNames = React.useMemo(
+    () => new Set(userInventory.map((it) => it.trait.name.toUpperCase())),
+    [userInventory],
+  );
+  const ownedCategories = React.useMemo(
+    () => new Set(userInventory.map((it) => it.trait.category.toUpperCase())),
+    [userInventory],
+  );
 
   const handleConnectX = async () => {
     setIsConnectingX(true);
@@ -364,8 +420,8 @@ export default function DropsPage() {
       setClaimMessage(
         `Successfully claimed ${res.inventoryItem.trait.name} (Edition #${res.inventoryItem.edition})!`
       );
-      // Refresh drop info
-      await loadDropData();
+      // Refresh drop info & user inventory
+      await Promise.all([loadDropData(), loadUserInventory(address)]);
     } catch (err: unknown) {
       const msg = (err as Error).message || "Failed to claim drop.";
       setClaimError(msg);
@@ -438,7 +494,7 @@ export default function DropsPage() {
               <button
                 onClick={loadDropData}
                 disabled={isLoading}
-                className="flex items-center justify-center rounded-xl border border-[#163B44] bg-[#102B33]/50 p-2.5 text-gray-300 hover:border-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 hover:shadow-[0_0_15px_rgba(251,191,36,0.2)] transition-all duration-300 disabled:opacity-50"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#163B44] bg-[#102B33]/50 text-gray-300 hover:border-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 hover:shadow-[0_0_15px_rgba(251,191,36,0.2)] transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 title="Refresh Drop Status"
                 aria-label="Refresh Drop Status"
               >
@@ -458,7 +514,6 @@ export default function DropsPage() {
                 className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 sm:flex-row sm:items-center sm:justify-between text-xs text-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
               >
                 <div className="flex items-center gap-2.5">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
                   <span>{fetchError}</span>
                 </div>
                 <Button
@@ -468,11 +523,7 @@ export default function DropsPage() {
                   disabled={isLoading}
                   className="border-rose-500/40 text-xs text-rose-300 hover:bg-rose-500/20 shrink-0 rounded-lg"
                 >
-                  {isLoading ? (
-                    <ElychimpSpinner size="xs" className="mr-1.5" />
-                  ) : (
-                    <RefreshCw className="mr-1.5 h-3 w-3" />
-                  )}
+                  {isLoading && <ElychimpSpinner size="xs" className="mr-1.5" />}
                   Try Again
                 </Button>
               </div>
@@ -490,7 +541,6 @@ export default function DropsPage() {
                 role="alert"
                 className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 sm:p-10 text-center shadow-[0_0_30px_rgba(244,63,94,0.15)]"
               >
-                <AlertCircle className="mx-auto mb-3 h-9 w-9 text-rose-400" />
                 <h3 className="text-base font-bold text-white">Failed to Load Drop Event</h3>
                 <p className="mt-1 text-sm text-rose-300">
                   {fetchError}
@@ -503,7 +553,6 @@ export default function DropsPage() {
                     disabled={isLoading}
                     className="gap-2 font-medium rounded-xl border border-rose-400/40 bg-rose-500 hover:bg-rose-600 text-white shadow-lg"
                   >
-                    <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                     Try Again
                   </Button>
                 </div>
@@ -511,7 +560,7 @@ export default function DropsPage() {
             ) : dropData?.active && dropData.period ? (
               <div className="space-y-6">
                 {/* 3 Metric Cards */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 text-sm">
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 text-sm">
                   {/* Period Cycle Card */}
                   <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-b from-amber-950/20 via-[#071F24] to-[#04181C] p-3 sm:p-5 shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.15)] flex flex-col justify-center items-center text-center group hover:border-amber-400/50 hover:shadow-[0_12px_32px_rgba(251,191,36,0.15)] transition-all duration-300">
                     <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
@@ -520,9 +569,8 @@ export default function DropsPage() {
                       Period Cycle
                     </span>
                     <p className="my-1 sm:my-1.5 font-sans text-xl xs:text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center justify-center">
-                      <span className="text-amber-400/60 text-sm xs:text-base sm:text-xl mr-0.5 font-bold">#</span>
                       <span className="bg-gradient-to-br from-amber-100 via-yellow-200 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(251,191,36,0.3)]">
-                        {displayPeriodIndex}
+                        #{displayPeriodIndex}
                       </span>
                     </p>
                   </div>
@@ -539,7 +587,7 @@ export default function DropsPage() {
                         {displayRemainingStock}
                       </span>{" "}
                       <span className="text-[10px] sm:text-xs font-semibold text-gray-400 ml-1">
-                        / {displayAllocatedStock}
+                        / {displayAllocatedStock} Units
                       </span>
                     </p>
                     <div className="w-full flex flex-col items-center mt-0.5 sm:mt-1">
@@ -639,10 +687,9 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5 flex items-center justify-center gap-2"
+                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5 flex items-center justify-center"
                             onClick={() => void login()}
                           >
-                            <LogIn className="h-4 w-4 shrink-0" />
                             <span>Sign In with Ethereum</span>
                           </Button>
                         ) : status !== "authenticated" ? (
@@ -751,8 +798,7 @@ export default function DropsPage() {
                         )}
 
                         {connectXError && (
-                          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-rose-400">
-                            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                          <p className="mt-2 flex items-center justify-center text-xs sm:text-sm text-rose-400">
                             <span>{connectXError}</span>
                           </p>
                         )}
@@ -764,8 +810,7 @@ export default function DropsPage() {
                           </div>
                         )}
                         {claimError && !isAlreadyClaimed && !hasAllocatedSlot && (
-                          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs sm:text-sm text-rose-400">
-                            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                          <p className="mt-2 flex items-center justify-center text-xs sm:text-sm text-rose-400">
                             <span>{claimError}</span>
                           </p>
                         )}
@@ -787,6 +832,70 @@ export default function DropsPage() {
                   </div>
                 </div>
 
+                {/* Live Recent Pulls Feed (Tahap 5) */}
+                {dropData.recentPulls && dropData.recentPulls.length > 0 && (
+                  <div
+                    data-testid="recent-pulls-feed"
+                    className="space-y-3 pt-4 border-t border-[#163B44]"
+                  >
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold tracking-wider text-white uppercase">
+                        Recent Crate Unboxings
+                      </h3>
+                      <p className="text-xs text-[#8AA8B2] mt-0.5">
+                        Latest traits pulled by community members across active drop cycles
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+                      {dropData.recentPulls.slice(0, 8).map((pull) => {
+                        const rarityUpper = pull.rarity?.toUpperCase() || "COMMON";
+                        const theme = RARITY_THEME[rarityUpper] || RARITY_THEME.COMMON;
+                        return (
+                          <div
+                            key={pull.id}
+                            data-testid={`recent-pull-${pull.id}`}
+                            className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${theme.border} bg-[#051D22]/85`}
+                          >
+                            <div
+                              className={`relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border ${theme.pedestalBorder} ${theme.pedestalBg}`}
+                            >
+                              {pull.imageUrl ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  src={pull.imageUrl}
+                                  alt={pull.traitName}
+                                  className="h-full w-full object-contain p-1 [image-rendering:pixelated]"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center font-mono text-[9px] font-bold uppercase text-zinc-500">
+                                  {pull.category}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`truncate rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText}`}
+                                >
+                                  {`${pull.category} • ${rarityUpper}`}
+                                </span>
+                              </div>
+                              <p className="mt-1 truncate text-xs font-bold text-white uppercase tracking-wide">
+                                {`${pull.traitName} (#${pull.edition})`}
+                              </p>
+                              <p className="truncate font-mono text-[10px] text-[#8AA8B2]">
+                                {`${pull.claimedBy} • Period #${pull.periodIndex}`}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Trait Inventory Pool */}
                 <div className="space-y-4 pt-4 border-t border-[#163B44]">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -801,186 +910,382 @@ export default function DropsPage() {
                   </div>
 
                   {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 ? (
-                    /* Trait Card Grid */
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                      {dropData.stock.poolItems.map((item) => {
-                        const rarity = item.rarity?.toUpperCase() || "COMMON";
-                        const theme = RARITY_THEME[rarity] || RARITY_THEME.COMMON;
-                        const categoryStyle =
-                          CATEGORY_BADGE_STYLES[item.category?.toUpperCase()] ||
-                          "border-gray-800 bg-gray-900/80 text-gray-400";
-                        const isSoldOut = isWindowActive && item.remainingStock <= 0;
+                    (() => {
+                      const poolItems = dropData.stock.poolItems;
+                      const catCounts: Record<string, number> = {};
+                      const rarityCounts: Record<string, number> = {};
+                      let neededCount = 0;
 
-                        return (
+                      for (const p of poolItems) {
+                        const c = (p.category || "").toUpperCase();
+                        const r = (p.rarity || "COMMON").toUpperCase();
+                        catCounts[c] = (catCounts[c] || 0) + 1;
+                        rarityCounts[r] = (rarityCounts[r] || 0) + 1;
+                        if (userInventoryLoaded && !ownedCategories.has(c)) {
+                          neededCount++;
+                        }
+                      }
+
+                      const filteredPoolItems = poolItems.filter((item) => {
+                        const cat = (item.category || "").toUpperCase();
+                        const rar = (item.rarity || "COMMON").toUpperCase();
+                        if (selectedPoolCategory === "NEEDED") {
+                          if (!userInventoryLoaded || ownedCategories.has(cat)) {
+                            return false;
+                          }
+                        } else if (
+                          selectedPoolCategory !== "ALL" &&
+                          cat !== selectedPoolCategory
+                        ) {
+                          return false;
+                        }
+                        if (selectedPoolRarity !== "ALL" && rar !== selectedPoolRarity) {
+                          return false;
+                        }
+                        return true;
+                      });
+
+                      return (
+                        <div className="space-y-4">
+                          {/* Category & Rarity Filter Bar */}
                           <div
-                            key={item.poolItemId}
-                            className={`group relative flex flex-col justify-between rounded-2xl border p-4 transition-all duration-300 hover:-translate-y-1.5 overflow-hidden backdrop-blur-md ${theme.border} ${theme.bg} ${theme.glow} ${isSoldOut ? "opacity-75" : ""}`}
+                            data-testid="drop-pool-filter-bar"
+                            className="flex flex-col gap-2.5 rounded-2xl border border-[#163B44] bg-[#071F24]/80 p-3 sm:flex-row sm:items-center sm:justify-between"
                           >
-                            {/* Top Luxury Foil Sheen */}
-                            <div
-                              className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${theme.sheen}`}
-                            />
-
-                            {/* Ambient Back Glow on Hover */}
-                            <div
-                              className={`pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full ${theme.ambientGlow} blur-2xl transition-opacity duration-300 opacity-60 group-hover:opacity-100`}
-                            />
-
-                            <div>
-                              {/* Card Top: Badges & Drop Probability */}
-                              <div className="relative z-10 flex items-center justify-between gap-1.5 pb-2.5 border-b border-[#163B44]">
-                                <div className="flex flex-wrap items-center gap-1.5 md:flex-col md:items-start md:gap-1.5">
-                                  <span
-                                    className={`rounded-md border px-2 py-0.5 text-xs font-mono uppercase font-bold tracking-wider ${categoryStyle}`}
-                                  >
-                                    {item.category}
-                                  </span>
-                                  <div className="inline-flex flex-wrap items-center gap-1.5">
-                                    <span
-                                      className={`rounded-md border px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText} shadow-sm`}
-                                    >
-                                      {theme.prefix}
-                                      {rarity}
-                                    </span>
-                                    {isSoldOut && (
-                                      <span
-                                        data-testid="badge-sold-out"
-                                        className="rounded-md border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
-                                      >
-                                        Sold Out
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Probability Drop Rate */}
-                                <div className="shrink-0 flex items-center gap-1 rounded-md border border-[#163B44] bg-black/60 px-2 py-0.5 shadow-inner">
-                                  <span className="text-xs text-amber-400 font-mono">✦</span>
-                                  <span className={`font-mono text-xs sm:text-sm font-extrabold ${theme.text}`}>
-                                    {item.probabilityPercent}%
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Showcase Pedestal: Centerpiece Trait Art */}
-                              <div
-                                className={`relative my-3 flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border ${theme.pedestalBorder} ${theme.pedestalBg} p-2 transition-all duration-300 group-hover:scale-[1.02] shadow-inner`}
+                            {/* Category Filter Pills */}
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <button
+                                type="button"
+                                data-testid="drop-filter-cat-all"
+                                onClick={() => setSelectedPoolCategory("ALL")}
+                                className={`rounded-xl border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                  selectedPoolCategory === "ALL"
+                                    ? "border-amber-400/60 bg-amber-500/15 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.18)]"
+                                    : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/50 hover:text-white"
+                                }`}
                               >
-                                {/* Radial Light Halo */}
-                                <div
-                                  className={`pointer-events-none absolute inset-0 ${theme.halo}`}
-                                />
-
-                                {/* Luxury Metallic Corner Brackets */}
-                                <div className="absolute top-1.5 left-1.5 h-2 w-2 border-t border-l border-white/20" />
-                                <div className="absolute top-1.5 right-1.5 h-2 w-2 border-t border-r border-white/20" />
-                                <div className="absolute bottom-1.5 left-1.5 h-2 w-2 border-b border-l border-white/20" />
-                                <div className="absolute bottom-1.5 right-1.5 h-2 w-2 border-b border-r border-white/20" />
-
-                                {item.imageUrl ? (
-                                  /* eslint-disable-next-line @next/next/no-img-element */
-                                  <img
-                                    src={item.imageUrl}
-                                    alt={item.traitName}
-                                    className="relative z-10 h-24 w-24 object-contain [image-rendering:pixelated] transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
-                                  />
-                                ) : (
-                                  <Sparkles className="relative z-10 h-8 w-8 text-gray-500" />
-                                )}
-                              </div>
-
-                              {/* Trait Title */}
-                              <div className="relative z-10">
-                                <p
-                                  className="truncate text-sm font-bold tracking-wide text-white group-hover:text-amber-200 transition-colors"
-                                  title={item.traitName}
+                                {`ALL (${poolItems.length})`}
+                              </button>
+                              {DROP_CATEGORIES.map((cat) => {
+                                const count = catCounts[cat] || 0;
+                                const isActive = selectedPoolCategory === cat;
+                                return (
+                                  <button
+                                    key={cat}
+                                    type="button"
+                                    data-testid={`drop-filter-cat-${cat.toLowerCase()}`}
+                                    onClick={() =>
+                                      setSelectedPoolCategory((prev) =>
+                                        prev === cat ? "ALL" : cat,
+                                      )
+                                    }
+                                    className={`rounded-xl border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                      isActive
+                                        ? "border-[#34B7DD] bg-[#102B33] text-cyan-200 shadow-[0_0_12px_rgba(52,183,221,0.2)]"
+                                        : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/50 hover:text-white"
+                                    }`}
+                                  >
+                                    {`${cat} (${count})`}
+                                  </button>
+                                );
+                              })}
+                              {userInventoryLoaded && neededCount > 0 && (
+                                <button
+                                  type="button"
+                                  data-testid="drop-filter-cat-needed"
+                                  onClick={() =>
+                                    setSelectedPoolCategory((prev) =>
+                                      prev === "NEEDED" ? "ALL" : "NEEDED",
+                                    )
+                                  }
+                                  className={`rounded-xl border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                    selectedPoolCategory === "NEEDED"
+                                      ? "border-cyan-400 bg-cyan-500/20 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                                      : "border-cyan-500/40 bg-cyan-950/30 text-cyan-300 hover:border-cyan-400 hover:text-white"
+                                  }`}
                                 >
-                                  {item.traitName}
-                                </p>
-                              </div>
+                                  {`NEEDED (${neededCount})`}
+                                </button>
+                              )}
                             </div>
 
-                            {/* Stock Meter & Counter */}
-                            {(() => {
-                              const allocated =
-                                item.allocatedStock && item.allocatedStock > 0
-                                  ? item.allocatedStock
-                                  : Math.max(10, item.remainingStock);
-                              const currentRemaining = isWindowActive ? item.remainingStock : allocated;
-                              const stockPercent = Math.max(
-                                0,
-                                Math.min(
-                                  100,
-                                  Math.round((currentRemaining / allocated) * 100)
-                                )
-                              );
-                              const isLowStock =
-                                !isSoldOut &&
-                                (stockPercent <= 20 || currentRemaining <= 2);
-
-                              return (
-                                <div className="relative z-10 mt-3 border-t border-[#163B44] pt-2.5">
-                                  <div className="mb-1.5 flex items-center justify-between text-xs sm:text-sm font-mono">
-                                    <span className="flex items-center gap-1.5">
-                                      {isLowStock && (
-                                        <span className="h-2 w-2 animate-ping rounded-full bg-rose-500" />
-                                      )}
-                                      <span
-                                        className={
-                                          isSoldOut
-                                            ? "font-bold text-rose-400"
-                                            : isLowStock
-                                              ? "font-bold text-rose-400"
-                                              : "text-gray-300 font-bold"
-                                        }
-                                      >
-                                        {isSoldOut ? "Sold Out" : isLowStock ? "Low Stock" : "Stock"}
-                                      </span>
-                                    </span>
-                                    <span className="text-gray-300 text-xs sm:text-sm font-medium">
-                                      <span
-                                        className={`font-black ${
-                                          isSoldOut
-                                            ? "text-rose-400"
-                                            : isLowStock
-                                              ? "text-rose-300"
-                                              : "text-white"
-                                        }`}
-                                      >
-                                        {currentRemaining}
-                                      </span>
-                                      <span className="text-gray-400 font-semibold">
-                                        /{allocated} left
-                                      </span>
-                                    </span>
-                                  </div>
-                                  <div className="h-2 w-full overflow-hidden rounded-full border border-[#163B44] bg-black/80 p-[1px]">
-                                    <div
-                                      className={`h-full rounded-full transition-all duration-500 ${
-                                        isSoldOut
-                                          ? "bg-rose-500/40"
-                                          : isLowStock
-                                            ? "bg-gradient-to-r from-rose-500 via-amber-500 to-yellow-400 shadow-[0_0_10px_rgba(244,63,94,0.5)]"
-                                            : `${theme.barColor} shadow-[0_0_10px_rgba(255,255,255,0.25)]`
+                            {/* Rarity Filter Pills */}
+                            <div className="flex flex-wrap items-center gap-1.5 border-t border-[#163B44] pt-2 sm:border-t-0 sm:pt-0">
+                              <button
+                                type="button"
+                                data-testid="drop-filter-rarity-all"
+                                onClick={() => setSelectedPoolRarity("ALL")}
+                                className={`rounded-xl border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                  selectedPoolRarity === "ALL"
+                                    ? "border-[#34B7DD]/60 bg-[#102B33] text-cyan-200"
+                                    : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/40 hover:text-white"
+                                }`}
+                              >
+                                ALL RARITIES
+                              </button>
+                              {DROP_RARITIES.filter((r) => (rarityCounts[r] || 0) > 0).map(
+                                (r) => {
+                                  const rCount = rarityCounts[r] || 0;
+                                  const isActive = selectedPoolRarity === r;
+                                  return (
+                                    <button
+                                      key={r}
+                                      type="button"
+                                      data-testid={`drop-filter-rarity-${r.toLowerCase()}`}
+                                      onClick={() =>
+                                        setSelectedPoolRarity((prev) =>
+                                          prev === r ? "ALL" : r,
+                                        )
+                                      }
+                                      className={`rounded-xl border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                        isActive
+                                          ? "border-amber-400/60 bg-amber-500/15 text-amber-300"
+                                          : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-amber-400/40 hover:text-white"
                                       }`}
-                                      style={{ width: `${stockPercent}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })()}
+                                    >
+                                      {`${r} (${rCount})`}
+                                    </button>
+                                  );
+                                },
+                              )}
+                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
+
+                          {filteredPoolItems.length > 0 ? (
+                            /* Trait Card Grid */
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                              {filteredPoolItems.map((item) => {
+                                const rarity = item.rarity?.toUpperCase() || "COMMON";
+                                const theme = RARITY_THEME[rarity] || RARITY_THEME.COMMON;
+                                const catUpper = item.category?.toUpperCase() || "";
+                                const categoryStyle =
+                                  CATEGORY_BADGE_STYLES[catUpper] ||
+                                  "border-gray-800 bg-gray-900/80 text-gray-400";
+                                const isSoldOut = isWindowActive && item.remainingStock <= 0;
+                                const isOwnedTrait =
+                                  userInventoryLoaded &&
+                                  (ownedTraitIds.has(item.traitId) ||
+                                    ownedTraitNames.has(
+                                      (item.traitName || "").toUpperCase(),
+                                    ));
+                                const isNeededCategory =
+                                  userInventoryLoaded &&
+                                  !isOwnedTrait &&
+                                  Boolean(catUpper) &&
+                                  !ownedCategories.has(catUpper);
+
+                                return (
+                                  <div
+                                    key={item.poolItemId}
+                                    className={`group relative flex flex-col justify-between rounded-2xl border p-4 transition-all duration-300 hover:-translate-y-1.5 overflow-hidden backdrop-blur-md ${theme.border} ${theme.bg} ${theme.glow} ${isSoldOut ? "opacity-75" : ""}`}
+                                  >
+                                    {/* Top Luxury Foil Sheen */}
+                                    <div
+                                      className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${theme.sheen}`}
+                                    />
+
+                                    {/* Ambient Back Glow on Hover */}
+                                    <div
+                                      className={`pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full ${theme.ambientGlow} blur-2xl transition-opacity duration-300 opacity-60 group-hover:opacity-100`}
+                                    />
+
+                                    <div>
+                                      {/* Card Top: Badges & Drop Probability */}
+                                      <div className="relative z-10 flex items-center justify-between gap-1.5 pb-2.5 border-b border-[#163B44]">
+                                        <div className="flex flex-wrap items-center gap-1.5 md:flex-col md:items-start md:gap-1.5">
+                                          <span
+                                            className={`rounded-md border px-2 py-0.5 text-xs font-mono uppercase font-bold tracking-wider ${categoryStyle}`}
+                                          >
+                                            {item.category}
+                                          </span>
+                                          <div className="inline-flex flex-wrap items-center gap-1.5">
+                                            <span
+                                              className={`rounded-md border px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText} shadow-sm`}
+                                            >
+                                              {theme.prefix}
+                                              {rarity}
+                                            </span>
+                                            {isSoldOut && (
+                                              <span
+                                                data-testid="badge-sold-out"
+                                                className="rounded-md border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
+                                              >
+                                                Sold Out
+                                              </span>
+                                            )}
+                                            {isOwnedTrait && (
+                                              <span
+                                                data-testid={`drop-badge-owned-${item.poolItemId}`}
+                                                className="rounded-md border border-emerald-500/50 bg-emerald-950/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300 shadow-sm"
+                                              >
+                                                OWNED
+                                              </span>
+                                            )}
+                                            {isNeededCategory && (
+                                              <span
+                                                data-testid={`drop-badge-needed-${item.poolItemId}`}
+                                                className="rounded-md border border-cyan-400/50 bg-cyan-950/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-200 shadow-sm"
+                                              >
+                                                NEEDED CATEGORY
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Probability Drop Rate */}
+                                        <div className="shrink-0 flex items-center rounded-md border border-[#163B44] bg-black/60 px-2 py-0.5 shadow-inner">
+                                          <span className={`font-mono text-xs sm:text-sm font-extrabold ${theme.text}`}>
+                                            {item.probabilityPercent}%
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Showcase Pedestal: Centerpiece Trait Art */}
+                                      <div
+                                        className={`relative my-3 flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border ${theme.pedestalBorder} ${theme.pedestalBg} p-2 transition-all duration-300 group-hover:scale-[1.02] shadow-inner`}
+                                      >
+                                        {/* Radial Light Halo */}
+                                        <div
+                                          className={`pointer-events-none absolute inset-0 ${theme.halo}`}
+                                        />
+
+                                        {/* Luxury Metallic Corner Brackets */}
+                                        <div className="absolute top-1.5 left-1.5 h-2 w-2 border-t border-l border-white/20" />
+                                        <div className="absolute top-1.5 right-1.5 h-2 w-2 border-t border-r border-white/20" />
+                                        <div className="absolute bottom-1.5 left-1.5 h-2 w-2 border-b border-l border-white/20" />
+                                        <div className="absolute bottom-1.5 right-1.5 h-2 w-2 border-b border-r border-white/20" />
+
+                                        {item.imageUrl ? (
+                                          /* eslint-disable-next-line @next/next/no-img-element */
+                                          <img
+                                            src={item.imageUrl}
+                                            alt={item.traitName}
+                                            className="relative z-10 h-24 w-24 object-contain [image-rendering:pixelated] transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
+                                          />
+                                        ) : (
+                                          <span className="relative z-10 font-mono text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                            {item.category}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* Trait Title */}
+                                      <div className="relative z-10">
+                                        <p
+                                          className="truncate text-sm font-bold tracking-wide text-white group-hover:text-amber-200 transition-colors"
+                                          title={item.traitName}
+                                        >
+                                          {item.traitName}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Stock Meter & Counter */}
+                                    {(() => {
+                                      const allocated =
+                                        item.allocatedStock && item.allocatedStock > 0
+                                          ? item.allocatedStock
+                                          : Math.max(10, item.remainingStock);
+                                      const currentRemaining = isWindowActive ? item.remainingStock : allocated;
+                                      const stockPercent = Math.max(
+                                        0,
+                                        Math.min(
+                                          100,
+                                          Math.round((currentRemaining / allocated) * 100)
+                                        )
+                                      );
+                                      const isLowStock =
+                                        !isSoldOut &&
+                                        (stockPercent <= 20 || currentRemaining <= 2);
+
+                                      return (
+                                        <div className="relative z-10 mt-3 border-t border-[#163B44] pt-2.5">
+                                          <div className="mb-1.5 flex items-center justify-between text-xs sm:text-sm font-mono">
+                                            <span className="flex items-center">
+                                              <span
+                                                className={
+                                                  isSoldOut
+                                                    ? "font-bold text-rose-400"
+                                                    : isLowStock
+                                                      ? "font-bold text-rose-400"
+                                                      : "text-gray-300 font-bold"
+                                                }
+                                              >
+                                                {isSoldOut ? "Sold Out" : isLowStock ? "Low Stock" : "Stock"}
+                                              </span>
+                                            </span>
+                                            <span className="text-gray-300 text-xs sm:text-sm font-medium">
+                                              <span
+                                                className={`font-black ${
+                                                  isSoldOut
+                                                    ? "text-rose-400"
+                                                    : isLowStock
+                                                      ? "text-rose-300"
+                                                      : "text-white"
+                                                }`}
+                                              >
+                                                {currentRemaining}
+                                              </span>
+                                              <span className="text-gray-400 font-semibold">
+                                                /{allocated} left
+                                              </span>
+                                            </span>
+                                          </div>
+                                          <div className="h-2 w-full overflow-hidden rounded-full border border-[#163B44] bg-black/80 p-[1px]">
+                                            <div
+                                              className={`h-full rounded-full transition-all duration-500 ${
+                                                isSoldOut
+                                                  ? "bg-rose-500/40"
+                                                  : isLowStock
+                                                    ? "bg-gradient-to-r from-rose-500 via-amber-500 to-yellow-400 shadow-[0_0_10px_rgba(244,63,94,0.5)]"
+                                                    : `${theme.barColor} shadow-[0_0_10px_rgba(255,255,255,0.25)]`
+                                              }`}
+                                              style={{ width: `${stockPercent}%` }}
+                                            />
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div
+                              data-testid="drop-filter-empty"
+                              className="rounded-2xl border border-[#163B44] bg-[#071F24]/60 p-8 text-center space-y-3"
+                            >
+                              <p className="font-display text-base sm:text-lg uppercase tracking-wider text-white">
+                                No Drop Pool Traits Match Selected Filters
+                              </p>
+                              <p className="mx-auto max-w-md text-xs sm:text-sm text-[#8AA8B2]">
+                                Try resetting your category or rarity filter to view all traits available in this drop period.
+                              </p>
+                              <div className="pt-1">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  data-testid="drop-filter-reset"
+                                  onClick={() => {
+                                    setSelectedPoolCategory("ALL");
+                                    setSelectedPoolRarity("ALL");
+                                  }}
+                                  className="rounded-xl border-cyan-500/40 bg-cyan-950/30 text-xs font-bold uppercase tracking-wider text-cyan-200 hover:border-cyan-400 hover:bg-cyan-500/20 cursor-pointer"
+                                >
+                                  Reset Filters
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
                   ) : (
                     <div
                       data-testid="empty-drop-pool"
                       className="relative overflow-hidden rounded-2xl border border-dashed border-[#163B44] bg-gradient-to-b from-white/[0.03] via-transparent to-transparent p-10 text-center backdrop-blur-sm"
                     >
-                      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.15)]">
-                        <Sparkles className="mx-auto h-7 w-7 text-amber-400 animate-pulse" />
-                      </div>
                       <p className="text-base font-bold text-white">
                         No traits currently available in this drop pool
                       </p>

@@ -146,10 +146,73 @@ export async function GET(request: Request): Promise<Response> {
     // Non-blocking optional check
   }
 
+  let recentPulls: Array<{
+    id: string;
+    traitName: string;
+    category: string;
+    rarity: string;
+    edition: number;
+    imageUrl?: string;
+    claimedBy: string;
+    periodIndex: number;
+    claimedAt: string;
+  }> = [];
+
+  try {
+    if (prisma.claim?.findMany) {
+      const claims = await prisma.claim.findMany({
+        where: {
+          dropId: drop.id,
+          status: "SUCCESS",
+        },
+        orderBy: { claimedAt: "desc" },
+        take: 8,
+        include: {
+          period: { select: { periodIndex: true } },
+          inventoryItem: {
+            include: { trait: true },
+          },
+          user: {
+            select: {
+              wallet: { select: { address: true } },
+              xIdentity: { select: { username: true } },
+            },
+          },
+        },
+      });
+
+      recentPulls = claims.map((c) => {
+        const addr = c.user?.wallet?.address || "";
+        const shortAddr =
+          addr.length >= 10
+            ? `${addr.slice(0, 6)}...${addr.slice(-4)}`
+            : "Anonymous";
+        const claimedBy = c.user?.xIdentity?.username
+          ? `@${c.user.xIdentity.username}`
+          : shortAddr;
+
+        return {
+          id: c.id,
+          traitName: c.inventoryItem.trait.name,
+          category: c.inventoryItem.trait.category,
+          rarity: c.inventoryItem.trait.rarity,
+          edition: c.inventoryItem.edition,
+          imageUrl: c.inventoryItem.trait.imageUrl || undefined,
+          claimedBy,
+          periodIndex: c.period?.periodIndex ?? activePeriod.periodIndex,
+          claimedAt: c.claimedAt.toISOString(),
+        };
+      });
+    }
+  } catch {
+    // Non-blocking optional query
+  }
+
   return Response.json({
     active: true,
     userHasClaimed,
     userEligibility: userEligibility ?? undefined,
+    ...(recentPulls.length > 0 ? { recentPulls } : {}),
     drop: {
       id: drop.id,
       slug: drop.slug,
