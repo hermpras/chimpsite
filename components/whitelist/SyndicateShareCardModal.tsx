@@ -90,8 +90,7 @@ export function SyndicateShareCardModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const isGtd = phase === "SLOT_ALLOCATED";
-  const num = isGtd ? slotNumber : queueNumber;
+  const num = slotNumber ?? queueNumber;
   const paddedNum = num ? String(num).padStart(4, "0") : "0001";
   const displayName =
     xName ||
@@ -113,9 +112,7 @@ export function SyndicateShareCardModal({
         year: "numeric",
       });
 
-  const tweetText = isGtd
-    ? `Verified by the @Elychimp Syndicate!\n\nOfficial Clearance Pass secured on @Enter_elysium (Elysium).\n\nRule the streets:`
-    : `Registered with the @Elychimp Syndicate! Verified clearance on @Enter_elysium (Elysium).\n\nRule the streets:`;
+  const tweetText = `Verified by the @Elychimp Syndicate!\n\nOfficial Whitelist Pass #${paddedNum} secured on @Enter_elysium (Elysium).\n\nRule the streets:`;
 
   const shareUrl =
     typeof window !== "undefined"
@@ -371,7 +368,7 @@ export function SyndicateShareCardModal({
       ctx.fillStyle = "#064e3b";
       ctx.font = "bold 9px 'Space Mono', monospace";
       ctx.textAlign = "left";
-      ctx.fillText("SLOT NO.", 12, 18);
+      ctx.fillText("PASS NO.", 12, 18);
 
       ctx.font = "900 18px 'Space Mono', monospace";
       ctx.fillText(`#${paddedNum}`, 12, 38);
@@ -424,7 +421,7 @@ export function SyndicateShareCardModal({
       );
       ctx.imageSmoothingEnabled = true;
 
-      // Dark Navy/Black Status Pill under photo (like "VISITOR" in reference)
+      // Dark Navy/Black Status Pill under photo
       const pillW = photoSize;
       const pillH = 38;
       const pillY = photoY + photoSize + 12;
@@ -437,12 +434,12 @@ export function SyndicateShareCardModal({
       ctx.font = "900 16px 'Anton', impact, sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(
-        isGtd ? "GUARANTEED MINTER" : "FCFS VISITOR",
+        "WHITELISTED MINTER",
         photoX + pillW / 2,
         pillY + 24
       );
 
-      // Red Rubber Stamp Overlaid on Photo (like reference!)
+      // Red Rubber Stamp Overlaid on Photo
       ctx.save();
       const stampX = photoX + 105;
       const stampY = photoY + photoSize - 20;
@@ -466,7 +463,7 @@ export function SyndicateShareCardModal({
       ctx.fillText("★ ELYCHIMP SYNDICATE ★", 0, -22);
 
       ctx.font = "900 18px 'Anton', impact, sans-serif";
-      ctx.fillText(isGtd ? "GUARANTEED" : "REGISTERED", 0, 5);
+      ctx.fillText("WHITELISTED", 0, 5);
 
       ctx.font = "bold 8px 'Space Mono', monospace";
       ctx.fillText("OFFICIAL CLEARANCE", 0, 26);
@@ -581,7 +578,7 @@ export function SyndicateShareCardModal({
       ctx.fillStyle = "#374151";
       ctx.font = "bold 13px 'Space Mono', monospace";
       ctx.textAlign = "center";
-      const serialText = `SERIAL: ELY-${isGtd ? "GTD" : "FCFS"}-${paddedNum}  •  elychimp.xyz`;
+      const serialText = `SERIAL: ELY-WL-${paddedNum}  •  elychimp.xyz`;
       ctx.fillText(serialText, cardX + cardW / 2, bottomBarY + 30);
 
       ctx.restore(); // restore card clipping
@@ -622,7 +619,6 @@ export function SyndicateShareCardModal({
       setIsGenerating(false);
     }
   }, [
-    isGtd,
     paddedNum,
     displayName,
     xUsername,
@@ -676,47 +672,47 @@ export function SyndicateShareCardModal({
         </div>
 
         {/* Realistic Lanyard ID Badge Card Preview (Twitter 16:9 Landscape) */}
-        <div className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#a3a7c8] to-[#bcc0dc] p-3 sm:p-5 shadow-xl select-none">
+        <div className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#a3a7c8] to-[#bcc0dc] p-2 sm:p-5 shadow-xl select-none">
           {/* Translucent Acrylic Sleeve Holder */}
-          <div className="relative mx-auto rounded-[22px] border-2 border-white/80 bg-white/40 p-2 sm:p-3 shadow-[0_12px_32px_rgba(0,0,0,0.18)] backdrop-blur-xs">
+          <div className="relative mx-auto rounded-[20px] sm:rounded-[22px] border-2 border-white/80 bg-white/40 p-1.5 sm:p-3 shadow-[0_12px_32px_rgba(0,0,0,0.18)] backdrop-blur-xs">
             {/* Top Lanyard Slot */}
-            <div className="mx-auto mb-2 h-2.5 sm:h-3.5 w-24 sm:w-32 rounded-full border border-white/80 bg-[#7b809d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]" />
+            <div className="mx-auto mb-1.5 sm:mb-2 h-2 sm:h-3.5 w-16 sm:w-32 rounded-full border border-white/80 bg-[#7b809d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]" />
 
             {/* Inner White Paper Card */}
             <div className="relative overflow-hidden rounded-xl border border-black/10 bg-[#fafafd] shadow-sm">
               {/* Header: Forest Green Syndicate Band */}
-              <div className="flex items-center justify-between bg-[#16452d] px-3 sm:px-5 py-2.5 sm:py-3 text-white border-b-2 border-[#2d704c]">
-                <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="flex items-center justify-between gap-2 bg-[#16452d] px-2.5 sm:px-5 py-2 sm:py-3 text-white border-b-2 border-[#2d704c]">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/images/elychimp-logo.png"
                     alt="Elychimp Logo"
-                    className="h-7 sm:h-10 w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
+                    className="h-6 sm:h-10 w-auto shrink-0 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
                   />
-                  <div>
-                    <h4 className="font-display text-sm sm:text-lg uppercase tracking-wide leading-none text-white">
+                  <div className="min-w-0">
+                    <h4 className="font-display text-xs sm:text-lg uppercase tracking-wide leading-none text-white truncate">
                       Elychimp Syndicate
                     </h4>
-                    <span className="text-[8px] sm:text-[10px] text-emerald-200 font-semibold tracking-wider">
+                    <span className="block text-[7px] sm:text-[10px] text-emerald-200 font-semibold tracking-wider truncate mt-0.5">
                       Official Syndicate ID Badge
                     </span>
                   </div>
                 </div>
 
-                {/* Taped Slot No. Tag */}
-                <div className="relative -rotate-2 rounded-sm bg-emerald-300/90 px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono text-[9px] sm:text-[11px] text-emerald-950 shadow-sm border border-emerald-400/80 font-bold">
-                  <span className="block text-[7px] uppercase tracking-widest text-emerald-900 leading-none">
-                    SLOT NO.
+                {/* Taped Pass No. Tag */}
+                <div className="shrink-0 relative -rotate-2 rounded-sm bg-emerald-300/95 px-1.5 sm:px-2.5 py-0.5 sm:py-1 font-mono text-[8.5px] sm:text-[11px] text-emerald-950 shadow-sm border border-emerald-400/80 font-bold leading-tight">
+                  <span className="block text-[6px] sm:text-[7px] uppercase tracking-widest text-emerald-900 leading-none">
+                    PASS NO.
                   </span>
                   <span>#{paddedNum}</span>
                 </div>
               </div>
 
-              {/* Main Body: Photo + Info Fields */}
-              <div className="p-3 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
+              {/* Main Body: Photo + Info Fields (Horizontal ID layout on Mobile & Desktop) */}
+              <div className="p-2.5 sm:p-5 flex flex-row gap-2.5 sm:gap-6 items-start">
                 {/* Photo ID on Left */}
-                <div className="flex flex-col items-center shrink-0 mx-auto sm:mx-0">
-                  <div className="relative p-1.5 sm:p-2 bg-white rounded-lg border border-black/15 shadow-sm">
+                <div className="flex flex-col items-center shrink-0 w-[96px] sm:w-[192px]">
+                  <div className="relative p-1 sm:p-2 bg-white rounded-lg border border-black/15 shadow-sm w-full aspect-square flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={
@@ -726,7 +722,7 @@ export function SyndicateShareCardModal({
                           : "/images/chimp-base-bw.png")
                       }
                       alt="Elychimp Assembled Character"
-                      className="h-28 w-28 sm:h-44 sm:w-44 object-contain [image-rendering:pixelated] rounded"
+                      className="h-full w-full object-contain [image-rendering:pixelated] rounded"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
                           "/images/chimp-base-bw.png";
@@ -734,15 +730,15 @@ export function SyndicateShareCardModal({
                     />
 
                     {/* Red Circular Verification Stamp Overlaid */}
-                    <div className="absolute -bottom-3 -left-3 pointer-events-none select-none -rotate-12 border-2 border-red-600/85 rounded-full p-1 text-center text-red-600 font-display leading-none bg-white/70 backdrop-blur-2xs shadow-sm">
-                      <div className="rounded-full border border-red-600/70 p-1.5 sm:p-2 flex flex-col items-center justify-center">
-                        <span className="text-[6px] sm:text-[7px] font-mono font-bold tracking-widest text-red-600">
+                    <div className="absolute -bottom-1.5 -right-1.5 sm:-bottom-3 sm:-left-3 sm:right-auto pointer-events-none select-none -rotate-12 border-[1.5px] sm:border-2 border-red-600/85 rounded-full p-[1.5px] sm:p-1 text-center text-red-600 leading-none bg-white/90 shadow-sm">
+                      <div className="rounded-full border border-red-600/70 w-11 h-11 sm:w-16 sm:h-16 px-0.5 flex flex-col items-center justify-center">
+                        <span className="text-[4.5px] sm:text-[6px] font-mono font-bold tracking-wider text-red-600 leading-none">
                           ELYCHIMP
                         </span>
-                        <span className="text-[10px] sm:text-xs font-black tracking-wider my-0.5 text-red-600">
-                          {isGtd ? "GUARANTEED" : "REGISTERED"}
+                        <span className="text-[5px] sm:text-[7.5px] font-sans font-black tracking-tight my-0.5 text-red-600 leading-none">
+                          WHITELISTED
                         </span>
-                        <span className="text-[5px] sm:text-[6px] font-mono text-red-600/80">
+                        <span className="text-[4px] sm:text-[5px] font-mono text-red-600/80 leading-none">
                           CLEARANCE
                         </span>
                       </div>
@@ -750,54 +746,54 @@ export function SyndicateShareCardModal({
                   </div>
 
                   {/* Dark Pill Under Photo */}
-                  <div className="mt-2.5 w-full rounded-md bg-[#111827] px-3 py-1 text-center text-white font-display text-[11px] sm:text-xs tracking-wider shadow-sm">
-                    {isGtd ? "GUARANTEED MINTER" : "FCFS VISITOR"}
+                  <div className="mt-2 sm:mt-2.5 w-full rounded-md bg-[#111827] px-1.5 sm:px-3 py-0.5 sm:py-1 text-center text-white font-display text-[7px] sm:text-xs tracking-wider shadow-sm whitespace-nowrap">
+                    WHITELISTED MINTER
                   </div>
                 </div>
 
                 {/* Identity Information on Right */}
-                <div className="flex-1 w-full space-y-2.5 sm:space-y-3 text-left">
+                <div className="flex-1 min-w-0 w-full space-y-1 sm:space-y-3 text-left">
                   <div>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
+                    <span className="text-[6.5px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block leading-none">
                       NAME
                     </span>
-                    <p className="font-display text-lg sm:text-2xl uppercase tracking-wider text-gray-900 leading-tight">
+                    <p className="font-display text-xs sm:text-2xl uppercase tracking-wider text-gray-900 leading-tight truncate mt-0.5">
                       {displayName}
                     </p>
                   </div>
 
                   <div>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
+                    <span className="text-[6.5px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block leading-none">
                       ACCOUNT
                     </span>
-                    <p className="font-mono text-xs sm:text-sm font-semibold text-gray-800">
+                    <p className="font-mono text-[9.5px] sm:text-sm font-semibold text-gray-800 truncate mt-0.5">
                       {xUsername ? `@${xUsername}` : "EVM Verified"}
                     </p>
                   </div>
 
                   <div>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
+                    <span className="text-[6.5px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block leading-none">
                       WALLET ADDRESS
                     </span>
-                    <p className="font-mono text-[11px] sm:text-xs font-semibold text-gray-600">
+                    <p className="font-mono text-[9px] sm:text-xs font-semibold text-gray-600 truncate mt-0.5">
                       {address ? shortenAddress(address) : "0x0000...0000"}
                     </p>
                   </div>
 
                   <div>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
+                    <span className="text-[6.5px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest block leading-none">
                       VISITING SINCE
                     </span>
-                    <p className="text-[11px] sm:text-xs font-medium text-gray-900">
+                    <p className="text-[8.5px] sm:text-xs font-medium text-gray-900 truncate mt-0.5">
                       {formattedDate} • ELYSIUM
                     </p>
                   </div>
 
                   {/* Realistic Barcode with elychimp.xyz pill */}
-                  <div className="relative pt-1 flex items-center justify-between">
-                    <div className="h-9 w-full bg-[repeating-linear-gradient(90deg,#18181b,#18181b_2px,transparent_2px,transparent_4px,#18181b_4px,#18181b_7px,transparent_7px,transparent_9px)] opacity-90 rounded" />
+                  <div className="relative pt-0.5 sm:pt-1 flex items-center justify-between h-6 sm:h-9">
+                    <div className="h-full w-full bg-[repeating-linear-gradient(90deg,#18181b,#18181b_2px,transparent_2px,transparent_4px,#18181b_4px,#18181b_7px,transparent_7px,transparent_9px)] opacity-90 rounded" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="rounded-md border border-black/40 bg-white px-3 py-0.5 font-mono text-[10px] sm:text-xs font-bold text-gray-900 shadow-sm">
+                      <span className="rounded-md border border-black/40 bg-white px-1.5 sm:px-3 py-0.5 font-mono text-[7.5px] sm:text-xs font-bold text-gray-900 shadow-sm leading-none">
                         elychimp.xyz
                       </span>
                     </div>
@@ -806,20 +802,20 @@ export function SyndicateShareCardModal({
               </div>
 
               {/* Bottom Serial Strip */}
-              <div className="border-t border-zinc-200 bg-[#edeef2] px-3 sm:px-4 py-2 text-center font-mono text-[9px] sm:text-[11px] font-semibold tracking-wider text-zinc-700 select-all uppercase">
-                SERIAL: ELY-{isGtd ? "GTD" : "FCFS"}-{paddedNum} &bull; elychimp.xyz
+              <div className="border-t border-zinc-200 bg-[#edeef2] px-2.5 sm:px-4 py-1.5 sm:py-2 text-center font-mono text-[8px] sm:text-[11px] font-semibold tracking-wider text-zinc-700 select-all uppercase truncate">
+                SERIAL: ELY-WL-{paddedNum} &bull; elychimp.xyz
               </div>
             </div>
 
-            {/* Playful Die-Cut Banana Stickers */}
+            {/* Playful Die-Cut Banana Stickers — Positioned cleanly away from header & serial text */}
             <BananaSticker
-              className="absolute top-8 sm:top-10 right-16 sm:right-32 w-14 sm:w-24 h-7 sm:h-12 -rotate-12 pointer-events-none"
+              className="absolute top-12 sm:top-14 right-2 sm:right-28 w-10 sm:w-24 h-5 sm:h-12 -rotate-12 pointer-events-none opacity-95"
             />
             <BananaSticker
               className="hidden sm:block absolute top-36 sm:top-40 -right-2 sm:right-2 w-14 sm:w-20 h-7 sm:h-10 rotate-24 pointer-events-none"
             />
             <BananaSticker
-              className="absolute bottom-4 sm:bottom-12 right-6 sm:right-16 w-14 sm:w-28 h-7 sm:h-14 rotate-6 pointer-events-none"
+              className="absolute bottom-7 sm:bottom-11 right-2 sm:right-16 w-10 sm:w-28 h-5 sm:h-14 rotate-6 pointer-events-none opacity-95"
             />
 
             {/* Diagonal Plastic Glare Highlight */}
