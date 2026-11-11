@@ -118,14 +118,26 @@ export function RabbyIcon({ className = "h-6 w-6" }: { className?: string }) {
 
 export function PhantomIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none">
-      <rect width="32" height="32" rx="16" fill="#AB9FF2" />
+    <svg viewBox="0 0 128 128" className={className} fill="none">
+      <defs>
+        <linearGradient id="phantom-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#534BB1" />
+          <stop offset="100%" stopColor="#551BF9" />
+        </linearGradient>
+      </defs>
+      {/* Purple rounded square background */}
+      <rect width="128" height="128" rx="26" fill="url(#phantom-bg)" />
+      {/* Ghost body */}
       <path
-        d="M23.5 17.5C23.5 21.5 20.2 24 16.5 24C12.5 24 9.5 21 9.5 17C9.5 12.5 12.8 9 17 9C20.6 9 23.5 12.2 23.5 17.5Z"
+        d="M110.584 68.878c0 23.802-18.69 43.098-41.754 43.098-13.374 0-25.302-6.26-33.07-16.052-2.07-2.595-5.864-2.955-8.37-.762l-6.98 6.09c-1.62 1.413-4.088.423-4.37-1.72-.65-5.0-1.0-10.113-1.0-15.306V42.44C15.04 27.627 27.64 15.9 43.3 15.9h43.98c12.86 0 23.304 9.753 23.304 21.788v31.19z"
         fill="white"
       />
-      <circle cx="18" cy="15" r="1.2" fill="#5544B2" />
-      <circle cx="14" cy="15" r="1.2" fill="#5544B2" />
+      {/* Left eye */}
+      <ellipse cx="51" cy="61" rx="8.5" ry="10" fill="#534BB1" />
+      <ellipse cx="53.5" cy="58.5" rx="3" ry="3.5" fill="white" />
+      {/* Right eye */}
+      <ellipse cx="78" cy="61" rx="8.5" ry="10" fill="#534BB1" />
+      <ellipse cx="80.5" cy="58.5" rx="3" ry="3.5" fill="white" />
     </svg>
   );
 }
