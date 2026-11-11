@@ -1109,8 +1109,8 @@ function ProfileContent() {
                         <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-zinc-200">
                           <span className="font-bold text-white">
                             {wlData.status.isFullyQualified
-                              ? "Whitelist Application Approved"
-                              : "Whitelist Application in Progress"}
+                              ? "Whitelist Qualification: Approved"
+                              : "Whitelist Qualification: In Progress"}
                           </span>
                           {wlData.status.joinedAt && (
                             <>
@@ -1134,10 +1134,10 @@ function ProfileContent() {
                         ) : (
                           <div className="rounded-lg border border-amber-500/40 bg-amber-950/50 p-3.5 text-xs sm:text-sm text-amber-200">
                             <div className="font-bold text-amber-300 text-sm sm:text-base">
-                              Action Required — Incomplete Requirements
+                              Action Needed — Incomplete Requirements
                             </div>
                             <p className="mt-1 text-zinc-300">
-                              Complete all 5 requirements below to qualify for the official allowlist.
+                              Complete all 5 criteria below to secure your official allowlist allocation.
                             </p>
                           </div>
                         )}
@@ -1174,9 +1174,9 @@ function ProfileContent() {
                         className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-sm sm:text-base text-zinc-300 space-y-2.5"
                         data-testid="none-status-card"
                       >
-                        <p className="font-bold text-white text-base sm:text-lg">Whitelist Application</p>
+                        <p className="font-bold text-white text-base sm:text-lg">Whitelist Qualification</p>
                         <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
-                          Connect your EVM wallet and X (Twitter) account, and complete the 5 trait categories and mandatory tasks to qualify for the allowlist.
+                          Connect your EVM wallet and X (Twitter) account, and complete the 5 trait categories and campaign tasks to qualify for the allowlist.
                         </p>
                         <div className="pt-2">
                           <Link
@@ -1190,7 +1190,7 @@ function ProfileContent() {
                       </div>
                     )}
 
-                    {/* Progress Section: 5 Trait Categories & Mandatory Campaign Tasks (Hidden when REVOKED) */}
+                    {/* Progress Section: 5 Trait Categories & Campaign Tasks (Hidden when REVOKED) */}
                     {wlData?.status?.phase !== "REVOKED" && (
                       <div
                         className="space-y-4 border-t border-[#163B44] pt-4"
@@ -1231,12 +1231,12 @@ function ProfileContent() {
                           </div>
                         </div>
 
-                        {/* Mandatory Campaign Tasks Progress */}
+                        {/* Campaign Tasks Progress */}
                         <div className="flex flex-col gap-2.5 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-4 sm:flex-row sm:items-center sm:justify-between text-sm sm:text-base">
                           <div>
-                            <span className="font-bold text-zinc-100 text-sm sm:text-base">Mandatory Campaign Tasks</span>
+                            <span className="font-bold text-zinc-100 text-sm sm:text-base">Campaign Tasks</span>
                             <p className="text-xs sm:text-sm text-[#8AA8B2] mt-0.5">
-                              Complete all mandatory campaign quests to maintain whitelist eligibility
+                              Complete all campaign quests to maintain whitelist eligibility
                             </p>
                           </div>
                           <div className="flex items-center gap-2.5">
@@ -1258,7 +1258,7 @@ function ProfileContent() {
                           !wlData.status.isFullyQualified &&
                           wlData.status.phase !== "SLOT_ALLOCATED" && (
                             <div className="space-y-1.5 rounded-xl border border-amber-500/40 bg-amber-950/40 p-4 text-sm text-amber-200">
-                              <p className="font-bold text-amber-300 text-sm sm:text-base">Missing Requirements:</p>
+                              <p className="font-bold text-amber-300 text-sm sm:text-base">Action Needed:</p>
                               <ul className="list-inside list-disc space-y-1 text-amber-200/90 text-xs sm:text-sm leading-relaxed">
                                 {wlData.status.missingRequirements.map((req, i) => (
                                   <li key={i}>{req}</li>

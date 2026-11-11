@@ -2317,9 +2317,9 @@ export default function WhitelistPage() {
                     {/* Incomplete / In-Progress Whitelist Application State */}
                     {!isWhitelistSecured && statusResult?.status?.phase !== "REVOKED" && (
                       <div className="rounded-xl border border-[#163B44] bg-zinc-900/60 p-4 text-xs sm:text-sm text-zinc-400 space-y-1.5">
-                        <span className="font-bold text-white text-sm sm:text-base">Whitelist Application</span>
+                        <span className="font-bold text-white text-sm sm:text-base">Qualification In Progress</span>
                         <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                          Connect your EVM wallet and X (Twitter) account, and complete the 5 trait categories and campaign tasks to unlock your Official Whitelist Pass.
+                          You&apos;re almost there! Complete the remaining criteria below to unlock your Official Syndicate Whitelist Pass.
                         </p>
                       </div>
                     )}
@@ -2330,7 +2330,7 @@ export default function WhitelistPage() {
                       !isWhitelistSecured &&
                       statusResult.status.phase !== "REVOKED" && (
                         <div className="rounded-xl border border-amber-500/40 bg-amber-950/40 p-3 text-xs sm:text-sm text-amber-200 space-y-1">
-                          <span className="font-bold text-amber-300 text-xs sm:text-sm">Missing Requirements:</span>
+                          <span className="font-bold text-amber-300 text-xs sm:text-sm">Action Needed:</span>
                           <ul className="list-inside list-disc text-xs sm:text-sm text-amber-200 space-y-0.5">
                             {statusResult.status.missingRequirements.map((r, i) => (
                               <li key={i}>{r}</li>

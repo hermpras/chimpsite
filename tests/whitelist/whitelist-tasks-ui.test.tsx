@@ -449,7 +449,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Whitelist Application")).toBeInTheDocument();
+      expect(screen.getByText("Qualification In Progress")).toBeInTheDocument();
     });
 
     expect(
@@ -597,7 +597,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Whitelist Application")).toBeInTheDocument();
+      expect(screen.getByText("Qualification In Progress")).toBeInTheDocument();
     });
 
     expect(screen.queryByText("Whitelisted Minter Pass")).not.toBeInTheDocument();
