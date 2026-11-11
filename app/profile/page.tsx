@@ -84,8 +84,8 @@ function getGtdReviewDetails(reviewStatus?: WLSlotReviewStatus) {
       return {
         label: "Under Verification",
         subtext: "Under Verification — Account details being audited.",
-        badgeVariant: "warning" as const,
-        colorClass: "border-amber-500/40 bg-amber-950/50 text-amber-300",
+        badgeVariant: "default" as const,
+        colorClass: "border-cyan-500/40 bg-cyan-950/50 text-cyan-300",
       };
     case "FLAGGED":
       return {
@@ -152,7 +152,7 @@ function getWhitelistSummaryBadge(
           variant="default"
           className="rounded-full border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase tracking-wide px-3.5 py-1 shadow-[0_0_14px_rgba(16,185,129,0.25)] backdrop-blur-sm"
         >
-          {`WL Status: Guaranteed Slot #${status.slotNumber}`}
+          WL Status: Whitelisted
         </Badge>
       );
     case "FCFS_REGISTERED":
@@ -184,10 +184,10 @@ function getWhitelistSummaryBadge(
     default:
       return (
         <Badge
-          variant="outline"
-          className="rounded-full border-[#163B44] bg-[#071f27]/70 text-zinc-400 text-xs px-3.5 py-1 font-medium backdrop-blur-sm"
+          variant="default"
+          className="rounded-full border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs tracking-wide px-3.5 py-1 shadow-[0_0_14px_rgba(52,183,221,0.25)] backdrop-blur-sm"
         >
-          WL Status: Not Registered
+          WL Status: In Progress
         </Badge>
       );
   }
@@ -819,7 +819,7 @@ function ProfileContent() {
               <div className="mt-2.5">
                 <Link
                   href="/whitelist"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 underline underline-offset-2 uppercase tracking-wide"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-400 hover:text-cyan-300 underline underline-offset-2 uppercase tracking-wide"
                 >
                   <span>Continue in Whitelist Portal &rarr;</span>
                 </Link>
@@ -859,7 +859,7 @@ function ProfileContent() {
               onClick={() => handleSelectTab("overview")}
               className={`flex items-center border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "overview"
-                  ? "border-amber-400 text-amber-400"
+                  ? "border-cyan-400 text-cyan-300"
                   : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
@@ -875,7 +875,7 @@ function ProfileContent() {
               onClick={() => handleSelectTab("collection")}
               className={`flex items-center border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "collection"
-                  ? "border-amber-400 text-amber-400"
+                  ? "border-cyan-400 text-cyan-300"
                   : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
@@ -891,7 +891,7 @@ function ProfileContent() {
               onClick={() => handleSelectTab("gifts")}
               className={`flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-display uppercase tracking-wider transition-colors cursor-pointer ${
                 activeTab === "gifts"
-                  ? "border-amber-400 text-amber-400"
+                  ? "border-cyan-400 text-cyan-300"
                   : "border-transparent text-zinc-500 hover:border-[#163B44] hover:text-zinc-300"
               }`}
             >
@@ -980,7 +980,7 @@ function ProfileContent() {
                       size="sm"
                       disabled={isLinking || status !== "authenticated"}
                       onClick={handleLinkX}
-                      className="group relative overflow-hidden rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 px-4 py-2 font-display text-xs sm:text-sm font-black uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.35)] transition-all duration-300 hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.6)] hover:scale-[1.02] active:scale-[0.98] shrink-0 self-start sm:self-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
+                      className="group relative overflow-hidden rounded-xl border border-cyan-400/70 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-500 px-4 py-2 font-display text-xs sm:text-sm font-black uppercase tracking-wider text-black shadow-[0_0_24px_rgba(34,211,238,0.35)] transition-all duration-300 hover:from-cyan-300 hover:via-teal-200 hover:to-cyan-400 hover:shadow-[0_0_32px_rgba(34,211,238,0.6)] hover:scale-[1.02] active:scale-[0.98] shrink-0 self-start sm:self-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
                     >
                       <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                       <span>{isLinking ? "Connecting..." : "Link X Account"}</span>
@@ -1006,29 +1006,13 @@ function ProfileContent() {
                     </CardDescription>
                   </div>
                   <div>
-                    {status !== "authenticated" ? null : wlData?.status?.phase === "SLOT_ALLOCATED" ? (
+                    {status !== "authenticated" ? null : (wlData?.status?.phase === "SLOT_ALLOCATED" || (wlData?.status?.phase === "FCFS_REGISTERED" && wlData?.status?.isFullyQualified)) ? (
                       <Badge
                         variant="default"
-                        className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs sm:text-sm uppercase"
+                        className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs sm:text-sm uppercase tracking-wide"
                       >
-                        WL Slot #{wlData.status.slotNumber}
+                        Whitelisted
                       </Badge>
-                    ) : wlData?.status?.phase === "FCFS_REGISTERED" ? (
-                      wlData.status.isFullyQualified ? (
-                        <Badge
-                          variant="default"
-                          className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs sm:text-sm uppercase tracking-wide"
-                        >
-                          Whitelisted
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="default"
-                          className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs sm:text-sm tracking-wide"
-                        >
-                          In Progress
-                        </Badge>
-                      )
                     ) : wlData?.status?.phase === "REVOKED" ? (
                       <Badge
                         variant="outline"
@@ -1036,7 +1020,14 @@ function ProfileContent() {
                       >
                         REVOKED
                       </Badge>
-                    ) : null}
+                    ) : (
+                      <Badge
+                        variant="default"
+                        className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs sm:text-sm tracking-wide"
+                      >
+                        In Progress
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -1050,7 +1041,7 @@ function ProfileContent() {
                   </div>
                 ) : (
                   <>
-                    {/* 1. SLOT_ALLOCATED (GTD aktif) */}
+                    {/* 1. SLOT_ALLOCATED (Aktif) */}
                     {wlData?.status?.phase === "SLOT_ALLOCATED" && (() => {
                       const review = getGtdReviewDetails(wlData.status.reviewStatus);
                       return (
@@ -1065,11 +1056,11 @@ function ProfileContent() {
                                   Allocation:
                                 </span>
                                 <span className="text-sm sm:text-base font-bold text-emerald-300">
-                                  Guaranteed Whitelist Slot #{wlData.status.slotNumber} (Active)
+                                  Whitelist Slot #{wlData.status.slotNumber} (Active)
                                 </span>
                               </div>
                               <p className="text-xs sm:text-sm text-zinc-300">
-                                Your Guaranteed Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected.
+                                Your Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected.
                               </p>
                             </div>
                             {wlData.status.allocatedAt && (
@@ -1100,17 +1091,49 @@ function ProfileContent() {
                       );
                     })()}
 
-                    {/* 2. FCFS_REGISTERED */}
-                    {wlData?.status?.phase === "FCFS_REGISTERED" && (
+                    {/* 2. In Progress (FCFS incomplete OR with X connected) */}
+                    {wlData?.status?.phase !== "REVOKED" &&
+                      wlData?.status?.phase !== "SLOT_ALLOCATED" &&
+                      !wlData?.status?.isFullyQualified &&
+                      (wlData?.status?.phase === "FCFS_REGISTERED" || isXConnected) && (
+                        <div
+                          className="space-y-3 rounded-xl border border-cyan-500/40 bg-cyan-950/40 p-4"
+                          data-testid="fcfs-status-card"
+                        >
+                          <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-zinc-200">
+                            <span className="font-bold text-white">
+                              Whitelist Qualification: In Progress
+                            </span>
+                            {wlData?.status?.joinedAt && (
+                              <>
+                                <span className="text-zinc-600">•</span>
+                                <span className="text-zinc-400 text-xs sm:text-sm">
+                                  Registered on {formatRegistrationDate(wlData.status.joinedAt)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="rounded-lg border border-cyan-500/40 bg-cyan-950/50 p-3.5 text-xs sm:text-sm text-cyan-200">
+                            <div className="font-bold text-cyan-300 text-sm sm:text-base">
+                              Action Needed — Incomplete Requirements
+                            </div>
+                            <p className="mt-1 text-zinc-300">
+                              Complete all 5 criteria below to secure your official allowlist allocation.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* 3. Fully Qualified Allowlist */}
+                    {wlData?.status?.phase === "FCFS_REGISTERED" && wlData.status.isFullyQualified && (
                       <div
                         className="space-y-3 rounded-xl border border-cyan-500/40 bg-cyan-950/40 p-4"
                         data-testid="fcfs-status-card"
                       >
                         <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-zinc-200">
                           <span className="font-bold text-white">
-                            {wlData.status.isFullyQualified
-                              ? "Whitelist Qualification: Approved"
-                              : "Whitelist Qualification: In Progress"}
+                            Whitelist Qualification: Approved
                           </span>
                           {wlData.status.joinedAt && (
                             <>
@@ -1122,29 +1145,18 @@ function ProfileContent() {
                           )}
                         </div>
 
-                        {wlData.status.isFullyQualified ? (
-                          <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/50 p-3.5 text-xs sm:text-sm text-emerald-200">
-                            <div className="font-bold text-emerald-300 text-sm sm:text-base">
-                              Whitelist Qualified
-                            </div>
-                            <p className="mt-1 text-zinc-300">
-                              All 5 qualification requirements are satisfied! Your wallet will be included in the official allowlist for minting.
-                            </p>
+                        <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/50 p-3.5 text-xs sm:text-sm text-emerald-200">
+                          <div className="font-bold text-emerald-300 text-sm sm:text-base">
+                            Whitelist Qualified
                           </div>
-                        ) : (
-                          <div className="rounded-lg border border-amber-500/40 bg-amber-950/50 p-3.5 text-xs sm:text-sm text-amber-200">
-                            <div className="font-bold text-amber-300 text-sm sm:text-base">
-                              Action Needed — Incomplete Requirements
-                            </div>
-                            <p className="mt-1 text-zinc-300">
-                              Complete all 5 criteria below to secure your official allowlist allocation.
-                            </p>
-                          </div>
-                        )}
+                          <p className="mt-1 text-zinc-300">
+                            All 5 qualification requirements are satisfied! Your wallet will be included in the official allowlist for minting.
+                          </p>
+                        </div>
                       </div>
                     )}
 
-                    {/* 3. REVOKED Full Disqualification Alert (DEC-022) */}
+                    {/* 4. REVOKED Full Disqualification Alert (DEC-022) */}
                     {wlData?.status?.phase === "REVOKED" && (
                       <div
                         className="space-y-3 rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-xs sm:text-sm text-rose-200"
@@ -1162,14 +1174,14 @@ function ProfileContent() {
                             In accordance with Elysium program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program.
                           </p>
                           <p className="text-rose-400 font-semibold">
-                            Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the allowlist export.
+                            Revoked participants are not eligible for Whitelist slots and are excluded from the allowlist export.
                           </p>
                         </div>
                       </div>
                     )}
 
-                    {/* 4. NONE (Not Registered) */}
-                    {(!wlData?.status || wlData?.status?.phase === "NONE") && (
+                    {/* 5. NONE (Not Registered & X not connected) */}
+                    {(!wlData?.status || wlData?.status?.phase === "NONE") && !isXConnected && (
                       <div
                         className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-sm sm:text-base text-zinc-300 space-y-2.5"
                         data-testid="none-status-card"
@@ -1181,7 +1193,7 @@ function ProfileContent() {
                         <div className="pt-2">
                           <Link
                             href="/whitelist"
-                            className="group relative overflow-hidden inline-flex items-center rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black px-4 py-2 text-xs sm:text-sm font-black uppercase tracking-wider shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_28px_rgba(245,158,11,0.55)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            className="group relative overflow-hidden inline-flex items-center rounded-xl border border-cyan-400/70 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-500 text-black px-4 py-2 text-xs sm:text-sm font-black uppercase tracking-wider shadow-[0_0_20px_rgba(34,211,238,0.35)] hover:from-cyan-300 hover:via-teal-200 hover:to-cyan-400 hover:shadow-[0_0_28px_rgba(34,211,238,0.55)] hover:scale-[1.02] active:scale-[0.98] transition-all"
                           >
                             <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                             <span>Go to Whitelist Portal</span>
@@ -1206,7 +1218,7 @@ function ProfileContent() {
                             <span className="text-zinc-300 font-medium">
                               Required Trait Categories (5 of 5)
                             </span>
-                            <span className="font-bold text-amber-400">
+                            <span className="font-bold text-cyan-300">
                               {heldCategoriesCount} / 5 Collected
                             </span>
                           </div>
@@ -1244,7 +1256,7 @@ function ProfileContent() {
                               className={`font-mono font-bold text-sm sm:text-base ${
                                 mandatoryTasksCompleted >= mandatoryTasksTotal && mandatoryTasksTotal > 0
                                   ? "text-emerald-400"
-                                  : "text-amber-400"
+                                  : "text-cyan-300"
                               }`}
                             >
                               {mandatoryTasksCompleted} / {mandatoryTasksTotal} Completed
@@ -1257,9 +1269,9 @@ function ProfileContent() {
                           wlData.status.missingRequirements.length > 0 &&
                           !wlData.status.isFullyQualified &&
                           wlData.status.phase !== "SLOT_ALLOCATED" && (
-                            <div className="space-y-1.5 rounded-xl border border-amber-500/40 bg-amber-950/40 p-4 text-sm text-amber-200">
-                              <p className="font-bold text-amber-300 text-sm sm:text-base">Action Needed:</p>
-                              <ul className="list-inside list-disc space-y-1 text-amber-200/90 text-xs sm:text-sm leading-relaxed">
+                            <div className="space-y-1.5 rounded-xl border border-cyan-500/30 bg-[#071f27]/80 p-4 text-sm text-cyan-200">
+                              <p className="font-bold text-cyan-300 text-sm sm:text-base">Action Needed:</p>
+                              <ul className="list-inside list-disc space-y-1 text-zinc-300 text-xs sm:text-sm leading-relaxed">
                                 {wlData.status.missingRequirements.map((req, i) => (
                                   <li key={i}>{req}</li>
                                 ))}
@@ -1296,10 +1308,6 @@ function ProfileContent() {
                   <Badge variant="outline" className="border-[#163B44] bg-[#102B33]/40 text-zinc-400 text-xs">Loading...</Badge>
                 ) : inventoryError ? (
                   <Badge variant="warning" className="border-rose-500/40 bg-rose-950/50 text-rose-300 text-xs">Inventory Error</Badge>
-                ) : inventoryItems.length > 0 ? (
-                  <Badge variant="default" className="border-amber-400/40 bg-amber-950/60 text-amber-300 font-bold text-xs">
-                    {inventoryItems.length} {inventoryItems.length === 1 ? "Item" : "Items"}
-                  </Badge>
                 ) : null}
               </div>
             </CardHeader>
@@ -1522,7 +1530,7 @@ function ProfileContent() {
                           data-testid="wardrobe-download-btn"
                           onClick={handleDownloadAvatar}
                           disabled={!address || isDownloadingPng}
-                          className="h-9 rounded-xl border-amber-400/40 bg-amber-950/30 px-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-300 whitespace-nowrap hover:border-amber-300 hover:bg-amber-500/20 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                          className="h-9 rounded-xl border-cyan-400/40 bg-cyan-950/30 px-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-cyan-300 whitespace-nowrap hover:border-cyan-300 hover:bg-cyan-500/20 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
                         >
                           {isDownloadingPng
                             ? "Preparing..."
@@ -1546,7 +1554,7 @@ function ProfileContent() {
                           onClick={() => setWardrobeFilter("ALL")}
                           className={`rounded-xl border px-3 py-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                             wardrobeFilter === "ALL"
-                              ? "border-amber-400/60 bg-amber-500/15 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.18)]"
+                              ? "border-cyan-400/60 bg-cyan-500/15 text-cyan-300 shadow-[0_0_12px_rgba(52,183,221,0.18)]"
                               : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/50 hover:text-white"
                           }`}
                         >
@@ -1687,7 +1695,7 @@ function ProfileContent() {
                       <div className="pt-2">
                         <Link
                           href="/drops"
-                          className="group relative overflow-hidden inline-flex items-center rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-black uppercase tracking-wider shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                          className="group relative overflow-hidden inline-flex items-center rounded-xl border border-cyan-400/70 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-500 text-black px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-black uppercase tracking-wider shadow-[0_0_24px_rgba(34,211,238,0.35)] hover:from-cyan-300 hover:via-teal-200 hover:to-cyan-400 hover:shadow-[0_0_32px_rgba(34,211,238,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >
                           <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                           <span>Go to Drops &amp; Claim</span>

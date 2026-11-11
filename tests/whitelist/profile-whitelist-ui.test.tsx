@@ -81,7 +81,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
       // X identity overview
       expect(screen.getAllByText(/chimpmaster/).length).toBeGreaterThanOrEqual(1);
       // Whitelist summary badge in header
-      expect(screen.getByText("WL Status: Guaranteed Slot #77")).toBeInTheDocument();
+      expect(screen.getByText("WL Status: Whitelisted")).toBeInTheDocument();
     });
   });
 
@@ -122,7 +122,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     });
 
     expect(
-      screen.getByText("Guaranteed Whitelist Slot #42 (Active)"),
+      screen.getByText("Whitelist Slot #42 (Active)"),
     ).toBeInTheDocument();
     expect(screen.getByText("Verified")).toBeInTheDocument();
     expect(
@@ -131,7 +131,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     expect(screen.getByText("Secured on Oct 18, 2026")).toBeInTheDocument();
     expect(
       screen.getByText(
-        /Your Guaranteed Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected./,
+        /Your Whitelist slot is locked and active. Make sure your connected wallet and linked X account remain connected./,
       ),
     ).toBeInTheDocument();
   });
@@ -355,7 +355,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /Revoked participants are not eligible for Guaranteed \(GTD\) slots and are excluded from the allowlist export\./,
+        /Revoked participants are not eligible for Whitelist slots and are excluded from the allowlist export\./,
       ),
     ).toBeInTheDocument();
 
