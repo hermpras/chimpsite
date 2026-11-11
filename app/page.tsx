@@ -77,7 +77,7 @@ export default function HomePage() {
               <Link href="/drops" className="w-full sm:w-auto">
                 <button
                   type="button"
-                  className="group relative flex w-full sm:w-auto items-center justify-center overflow-hidden rounded-xl border border-[#34B7DD]/60 bg-gradient-to-b from-[#0D343F]/95 via-[#07242C]/95 to-[#04191F]/95 px-8 sm:px-11 py-3.5 sm:py-4 font-sans text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-[#E0F5FA] shadow-[inset_0_1px_1px_rgba(255,255,255,0.35),inset_0_0_24px_rgba(52,183,221,0.12),0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-all duration-300 hover:border-[#6DE0FF] hover:from-[#134452] hover:via-[#0A2E38] hover:to-[#052129] hover:text-white hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.65),0_0_36px_rgba(52,183,221,0.45)] active:scale-[0.98] cursor-pointer"
+                  className="group relative flex w-full sm:w-auto items-center justify-center overflow-hidden rounded-xl border border-[#34B7DD]/60 bg-gradient-to-b from-[#0D343F]/95 via-[#07242C]/95 to-[#04191F]/95 px-8 sm:px-11 py-3.5 sm:py-4 font-sans text-xs sm:text-sm font-extrabold uppercase tracking-[0.2em] text-[#E0F5FA] shadow-[inset_0_1px_1px_rgba(255,255,255,0.35),inset_0_0_24px_rgba(52,183,221,0.12),0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-all duration-300 hover:border-[#6DE0FF] hover:from-[#134452] hover:via-[#0A2E38] hover:to-[#052129] hover:text-white hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.65),0_0_36px_rgba(52,183,221,0.45)] active:scale-[0.98] cursor-pointer"
                 >
                   <span className="relative z-10 transition-transform duration-300 group-hover:scale-[1.02]">
                     OPEN CRATES
