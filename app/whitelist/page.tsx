@@ -35,29 +35,29 @@ const CATEGORY_THEMES: Record<
   { heldClass: string; unheldClass: string; checkColor: string }
 > = {
   BG: {
-    heldClass: "border-cyan-400/40 bg-cyan-950/40 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.15)]",
+    heldClass: "border-sky-500/40 bg-sky-950/40 text-sky-300 shadow-[0_0_12px_rgba(6,182,212,0.15)]",
     unheldClass: "border-[#163B44] bg-[#051D22] text-zinc-500",
-    checkColor: "text-cyan-400",
+    checkColor: "text-sky-400",
   },
   FUR: {
-    heldClass: "border-amber-400/40 bg-amber-950/40 text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.15)]",
+    heldClass: "border-amber-500/40 bg-amber-950/40 text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.15)]",
     unheldClass: "border-[#163B44] bg-[#051D22] text-zinc-500",
     checkColor: "text-amber-400",
   },
   CLOTHING: {
-    heldClass: "border-purple-400/40 bg-purple-950/40 text-purple-300 shadow-[0_0_12px_rgba(192,132,252,0.15)]",
+    heldClass: "border-violet-500/40 bg-violet-950/40 text-violet-300 shadow-[0_0_12px_rgba(192,132,252,0.15)]",
     unheldClass: "border-[#163B44] bg-[#051D22] text-zinc-500",
-    checkColor: "text-purple-400",
+    checkColor: "text-violet-400",
   },
   HEADWEAR: {
-    heldClass: "border-emerald-400/40 bg-emerald-950/40 text-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.15)]",
+    heldClass: "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.15)]",
     unheldClass: "border-[#163B44] bg-[#051D22] text-zinc-500",
     checkColor: "text-emerald-400",
   },
   EYEWEAR: {
-    heldClass: "border-pink-400/40 bg-pink-950/40 text-pink-300 shadow-[0_0_12px_rgba(244,114,182,0.15)]",
+    heldClass: "border-teal-500/40 bg-teal-950/40 text-teal-300 shadow-[0_0_12px_rgba(20,184,166,0.15)]",
     unheldClass: "border-[#163B44] bg-[#051D22] text-zinc-500",
-    checkColor: "text-pink-400",
+    checkColor: "text-teal-400",
   },
 };
 
@@ -512,6 +512,28 @@ export default function WhitelistPage() {
     loadTasks();
   }, [loadTasks, status]);
 
+  // Fetch Whitelist status (reusable for initial load and manual retry on error)
+  const loadWhitelistStatus = useCallback(async () => {
+    const targetAddress =
+      address ||
+      (typeof window !== "undefined"
+        ? sessionStorage.getItem("elychimp_wl_address_cache")
+        : null);
+
+    if (!targetAddress) return;
+
+    setStatusLoading(true);
+    setStatusError(null);
+    try {
+      const data = await fetchWhitelistStatus(targetAddress);
+      updateStatusResult(data);
+    } catch (err) {
+      setStatusError((err as Error).message || "Failed to check status.");
+    } finally {
+      setStatusLoading(false);
+    }
+  }, [address, updateStatusResult]);
+
   // Fast auto-fetch: Query status immediately whenever an address is available (do not wait for sequential SIWE check)
   useEffect(() => {
     const targetAddress =
@@ -778,7 +800,7 @@ export default function WhitelistPage() {
     };
   }, [statusResult, inventoryItems]);
 
-  // Whitelist qualification status text mapped to the 4 strict requirements
+  // Whitelist qualification status text mapped to the unified Whitelist goal
   const qualificationState = useMemo(() => {
     const phase = statusResult?.status?.phase;
     if (phase === "REVOKED") {
@@ -788,46 +810,38 @@ export default function WhitelistPage() {
         badgeClass: "bg-rose-950/60 text-rose-300 border-rose-500/40",
       };
     }
-    if (phase === "SLOT_ALLOCATED") {
+    if (
+      phase === "SLOT_ALLOCATED" ||
+      phase === "IN_QUEUE" ||
+      phase === "QUALIFIED" ||
+      statusResult?.status?.isFullyQualified
+    ) {
       return {
         key: "Whitelisted" as const,
         title: "Whitelisted",
         badgeClass: "bg-emerald-950/60 text-emerald-300 border-emerald-500/40",
       };
     }
-    if (phase === "IN_QUEUE") {
-      return {
-        key: "Queued" as const,
-        title: "Queued",
-        badgeClass: "bg-cyan-950/60 text-cyan-300 border-cyan-500/40",
-      };
-    }
-    if (statusResult?.status?.isFullyQualified || phase === "QUALIFIED") {
-      return {
-        key: "Qualified" as const,
-        title: "Qualified",
-        badgeClass: "bg-teal-950/60 text-teal-300 border-teal-500/40",
-      };
-    }
     return {
       key: "Incomplete" as const,
-      title: "Incomplete",
+      title: "In Progress",
       badgeClass: "bg-amber-950/60 text-amber-300 border-amber-500/40",
     };
   }, [statusResult]);
 
-  // Robust connection checks
+  // Robust connection checks: Step 1 requires an authenticated SIWE session (or cached verified status during initial session check)
   const isWalletConnected =
     status === "authenticated" ||
-    status === "wallet-only" ||
-    Boolean(address) ||
-    Boolean(statusResult?.status?.details?.hasVerifiedWallet);
+    (status === "checking" && Boolean(statusResult?.status?.details?.hasVerifiedWallet));
 
   const isXLinked = Boolean(statusResult?.status?.details?.hasLinkedX);
   const isTasksComplete = areAllMandatoryApproved;
   const isTraitsComplete = heldCategories.length === 5;
   const isWhitelistSecured =
-    statusResult?.status?.phase === "SLOT_ALLOCATED" || Boolean(statusResult?.status?.isFullyQualified);
+    statusResult?.status?.phase === "SLOT_ALLOCATED" ||
+    statusResult?.status?.phase === "IN_QUEUE" ||
+    statusResult?.status?.phase === "QUALIFIED" ||
+    Boolean(statusResult?.status?.isFullyQualified);
 
   const isRevoked = statusResult?.status?.phase === "REVOKED";
 
@@ -978,7 +992,7 @@ export default function WhitelistPage() {
                       ? "Connect wallet first"
                       : step.num === 3
                         ? "Link X (Twitter) account first"
-                        : "Complete all mandatory tasks first"
+                        : "Complete all campaign tasks first"
                     : undefined;
 
                   return (
@@ -1044,6 +1058,38 @@ export default function WhitelistPage() {
             </div>
           </div>
         </header>
+
+        {/* Global Whitelist Status Loading / Error Feedback */}
+        {statusLoading && !statusResult && isWalletConnected && !statusError && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-2xl border border-cyan-500/30 bg-[#071F24]/90 px-4 py-3 text-xs sm:text-sm text-cyan-300 font-medium"
+          >
+            Syncing Whitelist status...
+          </div>
+        )}
+
+        {statusError && (
+          <div
+            role="alert"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-rose-500/40 bg-rose-950/40 p-4 text-xs sm:text-sm text-rose-300 shadow-[0_4px_24px_rgba(0,0,0,0.35)]"
+          >
+            <div className="space-y-0.5">
+              <p className="font-semibold text-rose-200">Failed to load Whitelist status:</p>
+              <p>{statusError}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void loadWhitelistStatus()}
+              disabled={statusLoading}
+              className="rounded-xl self-start sm:self-auto shrink-0 text-xs sm:text-sm border-rose-500/40 bg-rose-950/60 text-rose-200 hover:bg-rose-900/60"
+            >
+              <span>{statusLoading ? "Retrying..." : "Retry Status"}</span>
+            </Button>
+          </div>
+        )}
 
         {/* =======================================================================
             STRICTLY SEQUENTIAL FIVE-STEP VIEWS
@@ -1128,7 +1174,7 @@ export default function WhitelistPage() {
                     <span>Continue to Step 2 (X Sync)</span>
                   </Button>
                 </div>
-              ) : status === "wallet-only" ? (
+              ) : status === "wallet-only" || (status === "signing" && Boolean(address)) ? (
                 <div className="space-y-3">
                   <p className="text-xs sm:text-sm text-[#8AA8B2]">
                     Connected address: {address ? shortenAddress(address) : "—"}
@@ -1136,21 +1182,23 @@ export default function WhitelistPage() {
                   <Button
                     variant="primary"
                     size="lg"
+                    disabled={status === "signing" || Boolean(busyMessage)}
                     onClick={() => void login?.()}
                     className="w-full gap-2"
                   >
                     <LogIn className="h-4 w-4 shrink-0" />
-                    <span>Sign In with Ethereum</span>
+                    <span>{busyMessage || "Sign In with Ethereum"}</span>
                   </Button>
                 </div>
               ) : (
                 <Button
                   variant="primary"
                   size="lg"
+                  disabled={status === "signing" || Boolean(busyMessage)}
                   onClick={handleConnectWallet}
                   className="w-full"
                 >
-                  <span>Connect Wallet</span>
+                  <span>{busyMessage || "Connect Wallet"}</span>
                 </Button>
               )}
             </div>
@@ -1299,9 +1347,44 @@ export default function WhitelistPage() {
               </Badge>
             </div>
 
+            {/* Step 3 Completed Banner & Continue CTA (for backward navigation) */}
+            {isTasksComplete && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-emerald-500/40 bg-emerald-950/30 p-4 sm:p-5 shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white text-sm sm:text-base">
+                      All Campaign Tasks Completed
+                    </span>
+                    <Badge
+                      variant="default"
+                      className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 text-xs font-bold"
+                    >
+                      Completed
+                    </Badge>
+                  </div>
+                  <p className="text-xs sm:text-sm text-[#8AA8B2]">
+                    All campaign tasks are verified. You can proceed to check your traits and Whitelist status.
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => {
+                    setSelectedStep(4);
+                    if (typeof window !== "undefined") {
+                      window.history.replaceState(null, "", "#traits");
+                    }
+                  }}
+                  className="w-full sm:w-auto shrink-0"
+                >
+                  <span>Continue to Step 4 (Traits)</span>
+                </Button>
+              </div>
+            )}
+
             {/* Campaign Tasks Section */}
             <div id="tasks" className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5 scroll-mt-24">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-[#163B44] pb-4">
+              <div className="flex items-center justify-between gap-3 border-b border-[#163B44] pb-4">
                 <div>
                   <h2 className="font-display text-xl uppercase tracking-wider text-white">
                     Campaigns & Quests
@@ -1310,18 +1393,16 @@ export default function WhitelistPage() {
                     Community missions to earn Whitelist allocation
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={loadTasks}
                   disabled={tasksLoading}
                   aria-label="Refresh Tasks"
                   title="Refresh Tasks"
-                  className="rounded-xl self-start sm:self-auto gap-1.5 text-xs sm:text-sm text-[#DBF2F9] border-[#163B44] bg-zinc-900/60 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#163B44] bg-[#102B33]/50 text-[#DBF2F9] hover:border-[#34B7DD]/60 hover:bg-[#34B7DD]/10 hover:text-white hover:shadow-[0_0_15px_rgba(52,183,221,0.2)] transition-all duration-300 disabled:opacity-50 cursor-pointer"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${tasksLoading ? "animate-spin" : ""}`} />
-                  <span>{tasksLoading ? "Refreshing..." : "Refresh Tasks"}</span>
-                </Button>
+                  <RefreshCw className={`h-4 w-4 ${tasksLoading ? "animate-spin" : ""}`} />
+                </button>
               </div>
 
               {/* Tasks List */}
@@ -1399,14 +1480,23 @@ export default function WhitelistPage() {
                                     </span>
                                   </div>
                                   {task.description && (
-                                    <p className="text-xs sm:text-sm text-[#8AA8B2] line-clamp-1">
+                                    <p className="text-xs sm:text-sm text-[#8AA8B2] leading-relaxed">
                                       {task.description}
+                                    </p>
+                                  )}
+
+                                  {/* Mobile-friendly visible step hint when VERIFY TASK is locked */}
+                                  {taskStatus.key !== "APPROVED" && !isTaskOpened && (
+                                    <p className="pt-0.5 text-[11px] sm:text-xs font-medium text-cyan-300/90">
+                                      {isProofRequired
+                                        ? "Click OPEN X first to post your reply or quote and unlock the link input."
+                                        : "Click OPEN X first to unlock task verification."}
                                     </p>
                                   )}
 
                                   {/* Proof input for Quote/Reply tasks */}
                                   {isProofRequired && isTaskOpened && taskStatus.key !== "APPROVED" && (
-                                    <div className="pt-2 max-w-md">
+                                    <div className="pt-2 max-w-md space-y-1">
                                       <div className="relative">
                                         <input
                                           type="url"
@@ -1425,6 +1515,11 @@ export default function WhitelistPage() {
                                           className="w-full rounded-xl border border-[#163B44] bg-black/60 px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-amber-400 focus:outline-none"
                                         />
                                       </div>
+                                      {!taskInput.payload.trim() && (
+                                        <p className="text-[11px] font-medium text-amber-300/90">
+                                          Paste your reply or quote link above to enable VERIFY TASK.
+                                        </p>
+                                      )}
                                     </div>
                                   )}
 
@@ -1691,11 +1786,15 @@ export default function WhitelistPage() {
             =================================================================== */}
             <div
               id="traits"
-              className={`lg:col-span-5 space-y-5 scroll-mt-24 ${
-                activeStepNumber === 5 ? "order-2 lg:order-1" : "order-1"
-              }`}
+              className="lg:col-span-5 space-y-5 scroll-mt-24"
             >
-              <div className="relative rounded-3xl border border-[#163B44] bg-gradient-to-b from-[#0B2026] via-[#071F24] to-[#04181C] p-5 sm:p-6 shadow-[0_12px_40px_rgba(0,0,0,0.6)] space-y-5 overflow-hidden backdrop-blur-md">
+              <div
+                className={`relative rounded-3xl border bg-gradient-to-b from-[#0B2026] via-[#071F24] to-[#04181C] p-5 sm:p-6 shadow-[0_12px_40px_rgba(0,0,0,0.6)] space-y-5 overflow-hidden backdrop-blur-md transition-colors duration-300 ${
+                  activeStepNumber === 4
+                    ? "border-amber-400/50"
+                    : "border-[#163B44]"
+                }`}
+              >
                 {/* Luxury Foil Sheen Top Edge */}
                 <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/80 to-transparent" />
 
@@ -1732,34 +1831,22 @@ export default function WhitelistPage() {
                   </div>
 
                   {/* Clean Prestige Pill */}
-                  <div className="mt-4 inline-flex items-center rounded-full border border-amber-400/30 bg-gradient-to-r from-amber-500/15 via-yellow-400/10 to-amber-500/15 px-3 py-1 shadow-[0_0_15px_rgba(251,191,36,0.12)]">
+                  <div className="mt-4 inline-flex items-center rounded-full border border-amber-400/30 bg-gradient-to-r from-amber-500/15 via-yellow-400/10 to-amber-500/15 px-3.5 py-1 shadow-[0_0_15px_rgba(251,191,36,0.12)]">
                     <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                      {isTraitsComplete ? "Full Outfit Assembled" : "Trait Assembly In-Progress"}
+                      {isTraitsComplete
+                        ? "Full Outfit Assembled • 5/5"
+                        : `${heldCategories.length} / 5 Categories Collected`}
                     </span>
                   </div>
-
-                  <h4 className="mt-2.5 font-display text-sm tracking-wide text-white uppercase text-center">
-                    {isTraitsComplete ? "Elychimp Outfit Complete!" : "Elychimp In-Progress Avatar"}
-                  </h4>
-                  <p className="mt-0.5 text-xs sm:text-sm text-[#8AA8B2] text-center">
-                    <span className="text-amber-400 font-bold">{heldCategories.length}</span> of 5 Distinct Categories Collected
-                  </p>
                 </div>
 
                 {/* Five Trait Categories (Owned in Color, Missing in Grayscale) */}
                 {statusResult?.status?.phase !== "REVOKED" && (
                   <div className="space-y-2.5">
-                    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between border-b border-[#163B44] pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-display text-xs tracking-wider uppercase text-white font-bold">
-                          Required Trait Categories (5 of 5)
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 self-start sm:self-auto">
-                        <span className="inline-flex items-center rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 text-xs font-bold text-amber-300 shadow-sm">
-                          <span>{heldCategories.length} / 5 Collected</span>
-                        </span>
-                      </div>
+                    <div className="flex items-center justify-between border-b border-[#163B44] pb-2">
+                      <span className="font-display text-xs tracking-wider uppercase text-white font-bold">
+                        Trait Categories
+                      </span>
                     </div>
 
                     {/* Micro Progress Bar */}
@@ -1850,11 +1937,17 @@ export default function WhitelistPage() {
             =================================================================== */}
             <div
               id="status"
-              className={`lg:col-span-7 space-y-5 scroll-mt-24 ${
-                activeStepNumber === 5 ? "order-1 lg:order-2" : "order-2"
-              }`}
+              className="lg:col-span-7 space-y-5 scroll-mt-24"
             >
-              <div className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5">
+              <div
+                className={`rounded-2xl border bg-[#0B2026] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5 transition-colors duration-300 ${
+                  activeStepNumber === 5
+                    ? isWhitelistSecured
+                      ? "border-emerald-500/45"
+                      : "border-cyan-400/50"
+                    : "border-[#163B44]"
+                }`}
+              >
                 <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
                   <div className="flex items-center gap-2">
                     <h3 className="font-display text-sm tracking-wide uppercase text-white">
@@ -1862,18 +1955,11 @@ export default function WhitelistPage() {
                     </h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    {/* Phase Badges */}
-                    {statusResult?.status?.phase === "SLOT_ALLOCATED" && (
+                    {isWhitelistSecured ? (
                       <Badge variant="default" className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-bold text-xs uppercase">
-                        GTD SLOT ALLOCATED
+                        WHITELISTED
                       </Badge>
-                    )}
-                    {statusResult?.status?.phase === "FCFS_REGISTERED" && (
-                      <Badge variant="default" className="border-cyan-500/40 bg-cyan-950/60 text-cyan-300 font-bold text-xs uppercase">
-                        FCFS REGISTERED
-                      </Badge>
-                    )}
-                    {qualificationState.title !== "Whitelisted" && (
+                    ) : (
                       <Badge variant="outline" className={`text-xs font-bold ${qualificationState.badgeClass}`}>
                         {qualificationState.title}
                       </Badge>
@@ -1954,6 +2040,14 @@ export default function WhitelistPage() {
                       <div className="mt-2 pt-2 border-t border-[#163B44] space-y-2">
                         {campaigns.flatMap((c) => c.tasks).map((t) => {
                           const st = getTaskStatus(t);
+                          const statusColor =
+                            st.key === "APPROVED"
+                              ? "text-emerald-400"
+                              : st.key === "PENDING"
+                                ? "text-amber-300"
+                                : st.key === "REJECTED"
+                                  ? "text-rose-400"
+                                  : "text-zinc-400";
                           return (
                             <div
                               key={t.id}
@@ -1962,7 +2056,7 @@ export default function WhitelistPage() {
                               <div className="flex items-center gap-1.5 truncate">
                                 <span className="font-semibold text-zinc-200 truncate">{t.title}</span>
                               </div>
-                              <span className="font-bold text-emerald-400 shrink-0">
+                              <span className={`font-bold shrink-0 ${statusColor}`}>
                                 {st.label}
                               </span>
                             </div>
@@ -2001,378 +2095,210 @@ export default function WhitelistPage() {
                   <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 text-xs sm:text-sm space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-black font-extrabold text-xs">
+                        <div
+                          className={`flex h-6 w-6 items-center justify-center rounded-full text-black font-extrabold text-xs ${
+                            isWhitelistSecured
+                              ? "bg-emerald-500"
+                              : isRevoked
+                                ? "bg-rose-500"
+                                : "bg-amber-400"
+                          }`}
+                        >
                           5
                         </div>
                         <span className="font-bold text-white text-xs sm:text-sm">
                           Whitelist Allocation
                         </span>
                       </div>
-                      <Badge variant="outline" className="text-xs font-semibold text-zinc-400 border-[#163B44] bg-zinc-800/40">
-                        Allocation Details
-                      </Badge>
                     </div>
 
-                    {/* Detailed Backend Qualification Results */}
-                    {statusResult?.status?.phase === "SLOT_ALLOCATED" && (() => {
-                       const review = getGtdReviewDetails(statusResult.status.reviewStatus);
-                       const slotNum = statusResult.status.slotNumber;
-                       const paddedSlot = slotNum ? String(slotNum).padStart(4, "0") : "0001";
-                       const gtdXUsername = statusResult?.status?.details?.xUsername;
-                       const tweetText = encodeURIComponent(
-                         `Just secured Guaranteed Whitelist Slot #${slotNum} in the @Elychimp Syndicate!\n\n5/5 Outfit Fit assembled on @Enter_elysium (Elysium).\n\nRule the streets:`
-                       );
-                       const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
-                       const tweetHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`;
-                       const displayName = xName || (gtdXUsername ? `@${gtdXUsername}` : address ? shortenAddress(address) : "Syndicate Member");
-                       const operatorHandle = gtdXUsername ? `@${gtdXUsername}` : "—";
-                       const allocatedDate = statusResult.status.allocatedAt
-                         ? new Date(statusResult.status.allocatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                         : "—";
-                       const gtdAvatarUrl = address ? getAvatarPublicUrl(address, avatarVersion) : undefined;
+                    {/* Unified Whitelisted Minter Pass Card (when all 5/5 requirements are met) */}
+                    {isWhitelistSecured && statusResult?.status && (() => {
+                      const isSlotAllocated = statusResult.status.phase === "SLOT_ALLOCATED";
+                      const review = getGtdReviewDetails(statusResult.status.reviewStatus);
+                      const passNum = statusResult.status.slotNumber ?? statusResult.status.queueNumber;
+                      const paddedPass = passNum ? String(passNum).padStart(4, "0") : "0001";
+                      const wlXUsername = statusResult?.status?.details?.xUsername;
+                      const tweetText = encodeURIComponent(
+                        `Just secured Official Whitelist Pass #${paddedPass} in the @Elychimp Syndicate!\n\n5/5 Outfit Fit assembled on @Enter_elysium (Elysium).\n\nRule the streets:`
+                      );
+                      const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
+                      const tweetHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`;
+                      const displayName = xName || (wlXUsername ? `@${wlXUsername}` : address ? shortenAddress(address) : "Syndicate Member");
+                      const operatorHandle = wlXUsername ? `@${wlXUsername}` : "—";
+                      const rawDate = statusResult.status.allocatedAt ?? statusResult.status.joinedAt;
+                      const issuedDate = rawDate
+                        ? new Date(rawDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                        : "—";
+                      const wlAvatarUrl = address ? getAvatarPublicUrl(address, avatarVersion) : undefined;
 
-                       return (
-                         <div className="space-y-3">
-                           {/* Lanyard ID Badge Card (Image 2 style) */}
-                           <div className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#a3a7c8] to-[#bcc0dc] p-2.5 sm:p-4 shadow-xl select-none">
-                             {/* Translucent Acrylic Sleeve */}
-                             <div className="relative mx-auto rounded-[18px] border-2 border-white/80 bg-white/40 p-1.5 sm:p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.18)] backdrop-blur-sm">
-                               {/* Top Lanyard Slot */}
-                               <div className="mx-auto mb-2 h-2.5 w-20 rounded-full border border-white/80 bg-[#7b809d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]" />
+                      return (
+                        <div className="space-y-3">
+                          {/* Unified Lanyard ID Badge Card */}
+                          <div className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#a3a7c8] to-[#bcc0dc] p-2 sm:p-4 shadow-xl select-none">
+                            {/* Translucent Acrylic Sleeve */}
+                            <div className="relative mx-auto rounded-[18px] border-2 border-white/80 bg-white/40 p-1.5 sm:p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.18)] backdrop-blur-sm">
+                              {/* Top Lanyard Slot */}
+                              <div className="mx-auto mb-1.5 sm:mb-2 h-2 sm:h-2.5 w-16 sm:w-20 rounded-full border border-white/80 bg-[#7b809d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]" />
 
-                               {/* Inner White Paper Card */}
-                               <div className="relative overflow-hidden rounded-xl border border-black/10 bg-[#fafafd] shadow-sm">
-                                 {/* Header: Forest Green Syndicate Band */}
-                                 <div className="flex items-center justify-between bg-[#16452d] px-3 sm:px-4 py-2 sm:py-2.5 text-white border-b-2 border-[#2d704c]">
-                                   <div className="flex items-center gap-2">
-                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                     <img
-                                       src="/images/elychimp-logo.png"
-                                       alt="Elychimp Logo"
-                                       className="h-7 sm:h-9 w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
-                                     />
-                                     <div>
-                                       <h4 className="font-display text-xs sm:text-sm uppercase tracking-wide leading-none text-white">
-                                         Elychimp Syndicate
-                                       </h4>
-                                       <span className="text-[7px] sm:text-[9px] text-emerald-200 tracking-wider font-semibold">
-                                         Official Syndicate ID Badge
-                                       </span>
-                                     </div>
-                                   </div>
+                              {/* Inner White Paper Card */}
+                              <div className="relative overflow-hidden rounded-xl border border-black/10 bg-[#fafafd] shadow-sm">
+                                {/* Header: Forest Green Syndicate Band */}
+                                <div className="flex items-center justify-between gap-2 bg-[#16452d] px-2.5 sm:px-4 py-2 sm:py-2.5 text-white border-b-2 border-[#2d704c]">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src="/images/elychimp-logo.png"
+                                      alt="Elychimp Logo"
+                                      className="h-6 sm:h-9 w-auto shrink-0 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
+                                    />
+                                    <div className="min-w-0">
+                                      <h4 className="font-display text-[11px] sm:text-sm uppercase tracking-wide leading-none text-white truncate">
+                                        Elychimp Syndicate
+                                      </h4>
+                                      <span className="block text-[6.5px] sm:text-[9px] text-emerald-200 tracking-wider font-semibold truncate mt-0.5">
+                                        Official Syndicate ID Badge
+                                      </span>
+                                    </div>
+                                  </div>
 
-                                   {/* Slot No. Tag */}
-                                   <div className="-rotate-2 rounded-sm bg-emerald-300/90 px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono text-[9px] sm:text-[11px] text-emerald-950 shadow-sm border border-emerald-400/80 font-bold">
-                                     <span className="block text-[6px] uppercase tracking-widest text-emerald-900 leading-none">SLOT NO.</span>
-                                     <span>#{paddedSlot}</span>
-                                   </div>
-                                 </div>
+                                  {/* Pass No. Tag */}
+                                  <div className="shrink-0 -rotate-2 rounded-sm bg-emerald-300/95 px-1.5 sm:px-2.5 py-0.5 sm:py-1 font-mono text-[8.5px] sm:text-[11px] text-emerald-950 shadow-sm border border-emerald-400/80 font-bold leading-tight">
+                                    <span className="block text-[5.5px] sm:text-[6px] uppercase tracking-widest text-emerald-900 leading-none">PASS NO.</span>
+                                    <span>#{paddedPass}</span>
+                                  </div>
+                                </div>
 
-                                 {/* Main Body */}
-                                 <div className="p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-5 items-start">
-                                   {/* Photo ID */}
-                                   <div className="flex flex-col items-center shrink-0 mx-auto sm:mx-0">
-                                     <div className="relative p-1 sm:p-1.5 bg-white rounded-md border border-black/15 shadow-sm">
-                                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                                       <img
-                                         src={gtdAvatarUrl || "/images/chimp-base-bw.png"}
-                                         alt="Elychimp Character"
-                                         className="h-24 w-24 sm:h-32 sm:w-32 object-contain [image-rendering:pixelated] rounded"
-                                         onError={(e) => { (e.target as HTMLImageElement).src = "/images/chimp-base-bw.png"; }}
-                                       />
-                                       {/* Red Verification Stamp */}
-                                       <div className="absolute -bottom-2 -left-2 pointer-events-none -rotate-12 border-[1.5px] border-red-600/85 rounded-full text-center text-red-600 font-display leading-none bg-white/80 shadow-sm">
-                                         <div className="rounded-full border border-red-600/60 p-1 sm:p-1.5 flex flex-col items-center justify-center w-14 sm:w-16 h-14 sm:h-16">
-                                           <span className="text-[5px] sm:text-[6px] font-mono font-bold tracking-widest text-red-600">ELYCHIMP</span>
-                                           <span className="text-[7px] sm:text-[8px] font-black tracking-wider my-0.5 text-red-600">GUARANTEED</span>
-                                           <span className="text-[4px] sm:text-[5px] font-mono text-red-600/80">CLEARANCE</span>
-                                         </div>
-                                       </div>
-                                     </div>
-                                     <div className="mt-2 w-full rounded bg-[#111827] px-2 py-0.5 text-center text-white font-display text-[7px] sm:text-[9px] tracking-wider shadow-sm uppercase">
-                                       Guaranteed Minter Pass
-                                     </div>
-                                   </div>
+                                {/* Main Body — True Horizontal ID Pass Layout on Mobile & Desktop */}
+                                <div className="p-2.5 sm:p-4 flex flex-row gap-2.5 sm:gap-5 items-start">
+                                  {/* Photo ID Column */}
+                                  <div className="flex flex-col items-center shrink-0 w-[92px] sm:w-[136px]">
+                                    <div className="relative p-1 sm:p-1.5 bg-white rounded-md border border-black/15 shadow-sm w-full aspect-square flex items-center justify-center">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={wlAvatarUrl || "/images/chimp-base-bw.png"}
+                                        alt="Elychimp Character"
+                                        className="h-full w-full object-contain [image-rendering:pixelated] rounded"
+                                        onError={(e) => { (e.target as HTMLImageElement).src = "/images/chimp-base-bw.png"; }}
+                                      />
+                                      {/* Red Verification Stamp */}
+                                      <div className="absolute -bottom-1.5 -right-1.5 sm:-bottom-2 sm:-left-2 sm:right-auto pointer-events-none -rotate-12 border-[1.5px] border-red-600/85 rounded-full text-center text-red-600 leading-none bg-white/90 shadow-sm p-[1.5px]">
+                                        <div className="rounded-full border border-red-600/60 flex flex-col items-center justify-center w-11 h-11 sm:w-14 sm:h-14 px-0.5">
+                                          <span className="text-[4.5px] sm:text-[5.5px] font-mono font-bold tracking-wider text-red-600 leading-none">ELYCHIMP</span>
+                                          <span className="text-[5px] sm:text-[6.5px] font-sans font-black tracking-tight my-0.5 text-red-600 leading-none">WHITELISTED</span>
+                                          <span className="text-[4px] sm:text-[4.5px] font-mono text-red-600/80 leading-none">CLEARANCE</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="mt-2 w-full rounded bg-[#111827] px-1 sm:px-2 py-0.5 sm:py-1 text-center text-white font-display text-[6px] sm:text-[8.5px] tracking-wider shadow-sm uppercase leading-tight whitespace-nowrap">
+                                      Whitelisted Minter Pass
+                                    </div>
+                                  </div>
 
-                                   {/* Info Fields */}
-                                   <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2 text-sm text-[#DBF2F9] text-left w-full">
-                                     <div>
-                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">NAME</span>
-                                       <p className="font-display text-sm sm:text-lg uppercase tracking-wider text-gray-900 leading-tight truncate">
-                                         {displayName}
-                                       </p>
-                                     </div>
-                                     <div>
-                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">ACCOUNT</span>
-                                       <p className="font-mono text-[10px] sm:text-xs font-semibold text-gray-800 truncate">
-                                         {operatorHandle}
-                                       </p>
-                                     </div>
-                                     <div>
-                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">WALLET ADDRESS</span>
-                                       <p className="font-mono text-[9px] sm:text-[11px] font-semibold text-gray-600 truncate">
-                                         {address ? shortenAddress(address) : "0x0000...0000"}
-                                       </p>
-                                     </div>
-                                     <div>
-                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">VISITING SINCE</span>
-                                       <p className="text-[9px] sm:text-[11px] font-medium text-gray-900 truncate">
-                                         {allocatedDate} • ELYSIUM
-                                       </p>
-                                     </div>
-                                     {/* Barcode */}
-                                     <div className="relative pt-0.5 h-7 sm:h-9">
-                                       <div className="h-full w-full bg-[repeating-linear-gradient(90deg,#18181b,#18181b_2px,transparent_2px,transparent_4px,#18181b_4px,#18181b_7px,transparent_7px,transparent_9px)] opacity-80 rounded" />
-                                       <div className="absolute inset-0 flex items-center justify-center">
-                                         <span className="rounded border border-black/40 bg-white px-2 sm:px-3 py-0.5 font-mono text-[8px] sm:text-[9px] font-bold text-gray-900 shadow-sm">
-                                           elychimp.xyz
-                                         </span>
-                                       </div>
-                                     </div>
-                                   </div>
-                                 </div>
+                                  {/* Info Fields Column */}
+                                  <div className="flex-1 min-w-0 space-y-1 sm:space-y-2 text-left">
+                                    <div>
+                                      <span className="text-[6.5px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block leading-none">NAME</span>
+                                      <p className="font-display text-xs sm:text-lg uppercase tracking-wider text-gray-900 leading-tight truncate mt-0.5">
+                                        {displayName}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="text-[6.5px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block leading-none">ACCOUNT</span>
+                                      <p className="font-mono text-[9.5px] sm:text-xs font-semibold text-gray-800 truncate mt-0.5">
+                                        {operatorHandle}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="text-[6.5px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block leading-none">WALLET ADDRESS</span>
+                                      <p className="font-mono text-[9px] sm:text-[11px] font-semibold text-gray-600 truncate mt-0.5">
+                                        {address ? shortenAddress(address) : "0x0000...0000"}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="text-[6.5px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block leading-none">VISITING SINCE</span>
+                                      <p className="text-[8.5px] sm:text-[11px] font-medium text-gray-900 truncate mt-0.5">
+                                        {issuedDate} • ELYSIUM
+                                      </p>
+                                    </div>
+                                    {/* Barcode */}
+                                    <div className="relative pt-0.5 h-6 sm:h-9">
+                                      <div className="h-full w-full bg-[repeating-linear-gradient(90deg,#18181b,#18181b_2px,transparent_2px,transparent_4px,#18181b_4px,#18181b_7px,transparent_7px,transparent_9px)] opacity-80 rounded" />
+                                      <div className="absolute inset-0 flex items-center justify-center">
+                                        <span className="rounded border border-black/40 bg-white px-1.5 sm:px-3 py-0.5 font-mono text-[7.5px] sm:text-[9px] font-bold text-gray-900 shadow-sm leading-none">
+                                          elychimp.xyz
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
 
-                                 {/* Bottom Serial Strip */}
-                                 <div className="border-t border-zinc-200 bg-[#edeef2] px-3 sm:px-4 py-1.5 sm:py-2 text-center font-mono text-[9px] sm:text-[11px] font-semibold tracking-wider text-zinc-700 select-all uppercase">
-                                   SERIAL: ELY-GTD-{paddedSlot} &bull; ELYCHIMP.XYZ
-                                 </div>
-                               </div>
+                                {/* Bottom Serial Strip */}
+                                <div className="border-t border-zinc-200 bg-[#edeef2] px-2.5 sm:px-4 py-1.5 sm:py-2 text-center font-mono text-[8px] sm:text-[11px] font-semibold tracking-wider text-zinc-700 select-all uppercase truncate">
+                                  SERIAL: ELY-WL-{paddedPass} &bull; ELYCHIMP.XYZ
+                                </div>
+                              </div>
 
-                               {/* Banana Stickers */}
-                               <BananaSticker className="absolute top-6 sm:top-10 right-14 sm:right-28 w-12 sm:w-20 h-6 sm:h-10 -rotate-12 pointer-events-none" />
-                               <BananaSticker className="hidden sm:block absolute top-28 sm:top-36 -right-2 sm:right-1 w-12 sm:w-16 h-6 sm:h-8 rotate-24 pointer-events-none" />
-                               <BananaSticker className="absolute bottom-4 sm:bottom-8 right-4 sm:right-10 w-14 sm:w-22 h-7 sm:h-11 rotate-6 pointer-events-none" />
+                              {/* Banana Stickers — Positioned cleanly away from header & serial text */}
+                              <BananaSticker className="absolute top-12 sm:top-12 right-2 sm:right-24 w-9 sm:w-18 h-4.5 sm:h-9 -rotate-12 pointer-events-none opacity-95" />
+                              <BananaSticker className="hidden sm:block absolute top-28 sm:top-36 -right-2 sm:right-1 w-12 sm:w-16 h-6 sm:h-8 rotate-24 pointer-events-none" />
+                              <BananaSticker className="absolute bottom-7 sm:bottom-9 right-2 sm:right-10 w-10 sm:w-20 h-5 sm:h-10 rotate-6 pointer-events-none opacity-95" />
 
-                               {/* Plastic Glare */}
-                               <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rounded-[16px]" />
-                             </div>
-                           </div>
+                              {/* Plastic Glare */}
+                              <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rounded-[16px]" />
+                            </div>
+                          </div>
 
-                           {/* Review Note */}
-                           <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 text-xs sm:text-sm text-[#8AA8B2]">
-                             <div className="space-y-0.5 min-w-0">
-                               <div className="flex items-center gap-2">
-                                 <Badge variant={review.badgeVariant} className={`text-xs font-bold ${review.colorClass}`}>
-                                   {review.label}
-                                 </Badge>
-                                 <span className="text-zinc-200 font-bold">{review.subtext}</span>
-                               </div>
-                               <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed pt-0.5">
-                                 Your Guaranteed Whitelist slot is locked in the syndicate registry. Keep this wallet and X account connected for snapshot export.
-                               </p>
-                             </div>
-                           </div>
+                          {/* Verification / Eligibility Note */}
+                          {isSlotAllocated ? (
+                            <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 text-xs sm:text-sm text-[#8AA8B2]">
+                              <div className="space-y-0.5 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={review.badgeVariant} className={`text-xs font-bold ${review.colorClass}`}>
+                                    {review.label}
+                                  </Badge>
+                                  <span className="text-zinc-200 font-bold">{review.subtext}</span>
+                                </div>
+                                <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed pt-0.5">
+                                  Your Whitelist status is locked in the syndicate registry. Keep this wallet and X account connected for snapshot export.
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5">
+                              <div className="space-y-0.5">
+                                <p className="text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider">All 5 Requirements Satisfied</p>
+                                <p className="text-[#8AA8B2] text-xs sm:text-sm leading-relaxed">
+                                  Your wallet is eligible for inclusion in the official allowlist for minting.
+                                </p>
+                              </div>
+                            </div>
+                          )}
 
-                           {/* Action Buttons */}
-                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                             <Button
-                               type="button"
-                               onClick={() => setIsShareModalOpen(true)}
-                               variant="secondary"
-                               size="lg"
-                               className="w-full"
-                             >
-                               <span>Download Pass Card</span>
-                             </Button>
-                             <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
-                               <Button
-                                 variant="gold"
-                                 size="lg"
-                                 className="w-full"
-                               >
-                                 <span>Share on X</span>
-                               </Button>
-                             </a>
-                           </div>
-                         </div>
-                       );
-                     })()}
-
-                    {statusResult?.status?.phase === "FCFS_REGISTERED" && (() => {
-                       const queueNum = statusResult.status.queueNumber;
-                       const paddedQueue = queueNum ? String(queueNum).padStart(4, "0") : "0001";
-                       const fcfsXUsername = statusResult?.status?.details?.xUsername;
-                       const tweetText = encodeURIComponent(
-                         `Registered in the @Elychimp FCFS Whitelist Directory #${queueNum}! Assembled 5/5 traits on @Enter_elysium (Elysium).\n\nRule the streets:`
-                       );
-                       const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
-                       const tweetHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`;
-                       const displayName = xName || (fcfsXUsername ? `@${fcfsXUsername}` : address ? shortenAddress(address) : "Syndicate Member");
-                       const fcfsOperator = fcfsXUsername ? `@${fcfsXUsername}` : "—";
-                       const joinedDate = statusResult.status.joinedAt
-                         ? new Date(statusResult.status.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                         : "—";
-                       const fcfsAvatarUrl = address ? getAvatarPublicUrl(address, avatarVersion) : undefined;
-
-                       return (
-                         <div className="space-y-3">
-                           {/* Lanyard ID Badge Card — FCFS Teal Variant */}
-                           <div className="relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#9baec8] to-[#b0c4dc] p-2.5 sm:p-4 shadow-xl select-none">
-                             {/* Translucent Acrylic Sleeve */}
-                             <div className="relative mx-auto rounded-[18px] border-2 border-white/80 bg-white/40 p-1.5 sm:p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.18)] backdrop-blur-sm">
-                               {/* Top Lanyard Slot */}
-                               <div className="mx-auto mb-2 h-2.5 w-20 rounded-full border border-white/80 bg-[#7b809d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]" />
-
-                               {/* Inner White Paper Card */}
-                               <div className="relative overflow-hidden rounded-xl border border-black/10 bg-[#fafafd] shadow-sm">
-                                 {/* Header: Teal Syndicate Band */}
-                                 <div className="flex items-center justify-between bg-[#134e5e] px-3 sm:px-4 py-2 sm:py-2.5 text-white border-b-2 border-[#1d7d8a]">
-                                   <div className="flex items-center gap-2">
-                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                     <img
-                                       src="/images/elychimp-logo.png"
-                                       alt="Elychimp Logo"
-                                       className="h-7 sm:h-9 w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
-                                     />
-                                     <div>
-                                       <h4 className="font-display text-xs sm:text-sm uppercase tracking-wide leading-none text-white">
-                                         Elychimp Syndicate
-                                       </h4>
-                                       <span className="text-[7px] sm:text-[9px] text-cyan-200 tracking-wider font-semibold">
-                                         Official Syndicate ID Badge
-                                       </span>
-                                     </div>
-                                   </div>
-
-                                   {/* Queue No. Tag */}
-                                   <div className="-rotate-2 rounded-sm bg-cyan-300/90 px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono text-[9px] sm:text-[11px] text-cyan-950 shadow-sm border border-cyan-400/80 font-bold">
-                                     <span className="block text-[6px] uppercase tracking-widest text-cyan-900 leading-none">QUEUE NO.</span>
-                                     <span>#{paddedQueue}</span>
-                                   </div>
-                                 </div>
-
-                                 {/* Main Body */}
-                                 <div className="p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-5 items-start">
-                                   {/* Photo ID */}
-                                   <div className="flex flex-col items-center shrink-0 mx-auto sm:mx-0">
-                                     <div className="relative p-1 sm:p-1.5 bg-white rounded-md border border-black/15 shadow-sm">
-                                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                                       <img
-                                         src={fcfsAvatarUrl || "/images/chimp-base-bw.png"}
-                                         alt="Elychimp Character"
-                                         className="h-24 w-24 sm:h-32 sm:w-32 object-contain [image-rendering:pixelated] rounded"
-                                         onError={(e) => { (e.target as HTMLImageElement).src = "/images/chimp-base-bw.png"; }}
-                                       />
-                                       {/* Cyan Verification Stamp */}
-                                       <div className="absolute -bottom-2 -left-2 pointer-events-none -rotate-12 border-[1.5px] border-cyan-600/85 rounded-full text-center text-cyan-700 font-display leading-none bg-white/80 shadow-sm">
-                                         <div className="rounded-full border border-cyan-600/60 p-1 sm:p-1.5 flex flex-col items-center justify-center w-14 sm:w-16 h-14 sm:h-16">
-                                           <span className="text-[5px] sm:text-[6px] font-mono font-bold tracking-widest text-cyan-700">ELYCHIMP</span>
-                                           <span className="text-[7px] sm:text-[8px] font-black tracking-wider my-0.5 text-cyan-700">FCFS</span>
-                                           <span className="text-[4px] sm:text-[5px] font-mono text-cyan-700/80">CLEARANCE</span>
-                                         </div>
-                                       </div>
-                                     </div>
-                                     <div className="mt-2 w-full rounded bg-[#134e5e] px-2 py-0.5 text-center text-white font-display text-[7px] sm:text-[9px] tracking-wider shadow-sm uppercase">
-                                       FCFS Clearance Pass
-                                     </div>
-                                   </div>
-
-                                   {/* Info Fields */}
-                                   <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2 text-sm text-[#DBF2F9] text-left w-full">
-                                     <div>
-                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">NAME</span>
-                                       <p className="font-display text-sm sm:text-lg uppercase tracking-wider text-gray-900 leading-tight truncate">
-                                         {displayName}
-                                       </p>
-                                     </div>
-                                     <div>
-                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">ACCOUNT</span>
-                                       <p className="font-mono text-[10px] sm:text-xs font-semibold text-gray-800 truncate">
-                                         {fcfsOperator}
-                                       </p>
-                                     </div>
-                                     <div>
-                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">WALLET ADDRESS</span>
-                                       <p className="font-mono text-[9px] sm:text-[11px] font-semibold text-gray-600 truncate">
-                                         {address ? shortenAddress(address) : "0x0000...0000"}
-                                       </p>
-                                     </div>
-                                     <div>
-                                       <span className="text-[7px] sm:text-[8px] font-bold text-gray-500 uppercase tracking-widest block">VISITING SINCE</span>
-                                       <p className="text-[9px] sm:text-[11px] font-medium text-gray-900 truncate">
-                                         {joinedDate} • ELYSIUM
-                                       </p>
-                                     </div>
-                                     {/* Barcode */}
-                                     <div className="relative pt-0.5 h-7 sm:h-9">
-                                       <div className="h-full w-full bg-[repeating-linear-gradient(90deg,#18181b,#18181b_2px,transparent_2px,transparent_4px,#18181b_4px,#18181b_7px,transparent_7px,transparent_9px)] opacity-80 rounded" />
-                                       <div className="absolute inset-0 flex items-center justify-center">
-                                         <span className="rounded border border-black/40 bg-white px-2 sm:px-3 py-0.5 font-mono text-[8px] sm:text-[9px] font-bold text-gray-900 shadow-sm">
-                                           elychimp.xyz
-                                         </span>
-                                       </div>
-                                     </div>
-                                   </div>
-                                 </div>
-
-                                 {/* Bottom Serial Strip */}
-                                 <div className="border-t border-zinc-200 bg-[#edeef2] px-3 sm:px-4 py-1.5 sm:py-2 text-center font-mono text-[9px] sm:text-[11px] font-semibold tracking-wider text-zinc-700 select-all uppercase">
-                                   SERIAL: ELY-FCFS-{paddedQueue} &bull; ELYCHIMP.XYZ
-                                 </div>
-                               </div>
-
-                               {/* Banana Stickers */}
-                               <BananaSticker className="absolute top-6 sm:top-10 right-14 sm:right-28 w-12 sm:w-20 h-6 sm:h-10 -rotate-12 pointer-events-none" />
-                               <BananaSticker className="hidden sm:block absolute top-28 sm:top-36 -right-2 sm:right-1 w-12 sm:w-16 h-6 sm:h-8 rotate-24 pointer-events-none" />
-                               <BananaSticker className="absolute bottom-4 sm:bottom-8 right-4 sm:right-10 w-14 sm:w-22 h-7 sm:h-11 rotate-6 pointer-events-none" />
-
-                               {/* Plastic Glare */}
-                               <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rounded-[16px]" />
-                             </div>
-                           </div>
-
-                           {/* Eligibility Note */}
-                           {statusResult.status.isFullyQualified ? (
-                             <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5">
-                               <div className="space-y-0.5">
-                                 <p className="text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider">All 5 Requirements Satisfied</p>
-                                 <p className="text-[#8AA8B2] text-xs sm:text-sm leading-relaxed">
-                                   Your wallet is eligible for inclusion in the official allowlist for minting.
-                                 </p>
-                               </div>
-                             </div>
-                           ) : (
-                             <div className="rounded-xl border border-amber-500/30 bg-amber-950/40 p-3.5">
-                               <div className="space-y-0.5">
-                                 <p className="text-xs sm:text-sm font-bold text-amber-300 uppercase tracking-wider">Action Required — Complete 5/5 Requirements</p>
-                                 <p className="text-[#8AA8B2] text-xs sm:text-sm leading-relaxed">
-                                   Complete missing requirements to qualify for the official allowlist.
-                                 </p>
-                               </div>
-                             </div>
-                           )}
-
-                           {/* Action Buttons — only if fully qualified */}
-                           {statusResult.status.isFullyQualified && (
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                               <Button
-                                 type="button"
-                                 onClick={() => setIsShareModalOpen(true)}
-                                 variant="secondary"
-                                 size="lg"
-                                 className="w-full"
-                               >
-                                 <span>Download Pass Card</span>
-                               </Button>
-                               <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
-                                 <Button
-                                   variant="primary"
-                                   size="lg"
-                                   className="w-full"
-                                 >
-                                   <span>Share on X</span>
-                                 </Button>
-                               </a>
-                             </div>
-                           )}
-
-                           {/* Notice */}
-                           <div className="text-xs sm:text-sm text-[#8AA8B2]">
-                             Official mint details, schedule, and stage announcements will be posted through official channels.
-                           </div>
-                         </div>
-                       );
-                     })()}
+                          {/* Action Buttons */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <Button
+                              type="button"
+                              onClick={() => setIsShareModalOpen(true)}
+                              variant="secondary"
+                              size="lg"
+                              className="w-full"
+                            >
+                              <span>Download Card</span>
+                            </Button>
+                            <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
+                              <Button
+                                variant="gold"
+                                size="lg"
+                                className="w-full"
+                              >
+                                <span>Share on X</span>
+                              </Button>
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {statusResult?.status?.phase === "REVOKED" && (
                       <div className="space-y-1.5 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3.5 text-xs sm:text-sm text-rose-200">
@@ -2383,16 +2309,17 @@ export default function WhitelistPage() {
                           {statusResult.status.missingRequirements[0] || "Whitelist qualification has been revoked."}
                         </p>
                         <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
-                          In accordance with Elysium program policies (DEC-022), slot revocation results in full disqualification from this Whitelist program. Revoked participants are not eligible for Guaranteed (GTD) slots and are excluded from the allowlist export.
+                          In accordance with Elysium program policies (DEC-022), whitelist revocation results in full disqualification from this Whitelist program and exclusion from the allowlist export.
                         </p>
                       </div>
                     )}
 
-                    {statusResult?.status?.phase === "NONE" && (
+                    {/* Incomplete / In-Progress Whitelist Application State */}
+                    {!isWhitelistSecured && statusResult?.status?.phase !== "REVOKED" && (
                       <div className="rounded-xl border border-[#163B44] bg-zinc-900/60 p-4 text-xs sm:text-sm text-zinc-400 space-y-1.5">
                         <span className="font-bold text-white text-sm sm:text-base">Whitelist Application</span>
                         <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                          Connect your EVM wallet and X (Twitter) account, and complete the 5 trait categories and mandatory tasks to qualify for the allowlist.
+                          Connect your EVM wallet and X (Twitter) account, and complete the 5 trait categories and campaign tasks to unlock your Official Whitelist Pass.
                         </p>
                       </div>
                     )}
@@ -2400,8 +2327,7 @@ export default function WhitelistPage() {
                     {/* Missing requirements listing if incomplete */}
                     {statusResult?.status?.missingRequirements &&
                       statusResult.status.missingRequirements.length > 0 &&
-                      !statusResult.status.isFullyQualified &&
-                      statusResult.status.phase !== "SLOT_ALLOCATED" &&
+                      !isWhitelistSecured &&
                       statusResult.status.phase !== "REVOKED" && (
                         <div className="rounded-xl border border-amber-500/40 bg-amber-950/40 p-3 text-xs sm:text-sm text-amber-200 space-y-1">
                           <span className="font-bold text-amber-300 text-xs sm:text-sm">Missing Requirements:</span>
