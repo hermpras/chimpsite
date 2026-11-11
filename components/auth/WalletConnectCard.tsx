@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useConnectors, type Connector } from "wagmi";
+import { useConnectors } from "wagmi";
 import { LogIn } from "lucide-react";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import { Button } from "@/components/ui/Button";
@@ -53,35 +53,20 @@ export function WalletConnectCard() {
     }
   }, []);
 
-  const deepLinkMap: Record<string, (url: string) => string> = {
-    metamask: (url) => {
-      const dappUrl = window.location.host + window.location.pathname + window.location.search;
-      return `https://metamask.app.link/dapp/${dappUrl}`;
-    },
-    coinbase: (url) => `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(url)}`,
-    trust: (url) => `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(url)}`,
-    phantom: (url) => `https://phantom.app/ul/browse/${encodeURIComponent(url)}`,
-    rainbow: (url) => `https://rnbwapp.com/wc?uri=${encodeURIComponent(url)}`,
-    okx: (url) => `https://www.okx.com/download?deeplink=${encodeURIComponent("okx://wallet/dapp/url?dappUrl=" + url)}`,
-    zerion: () => `https://app.zerion.io/`,
-    backpack: () => `https://backpack.app/`,
-  };
-
-  const handleConnect = (connector: Connector) => {
+  const handleConnectBrowserWallet = () => {
     if (isMobile && !hasInjected) {
-      const name = connector.name.toLowerCase();
-      const fullUrl = window.location.href;
-      const dlKey = Object.keys(deepLinkMap).find((k) => name.includes(k));
-      if (dlKey) {
-        window.location.href = deepLinkMap[dlKey](fullUrl);
-        return;
-      }
-      // Fallback to full modal for unrecognized connectors
       setModalOpen(true);
       return;
     }
+    const injectedConnector =
+      connectors.find((c) => c.id === "injected" || c.name.toLowerCase() === "injected") ??
+      connectors[0];
 
-    void login(connector);
+    if (injectedConnector) {
+      void login(injectedConnector);
+    } else {
+      setModalOpen(true);
+    }
   };
 
   return (
@@ -153,40 +138,26 @@ export function WalletConnectCard() {
           {(status === "signed-out" || (status !== "signing" && error)) &&
             status !== "authenticated" &&
             status !== "wallet-only" && (
-              <div className="space-y-2.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  {connectors.length === 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => setModalOpen(true)}
-                      className="group flex flex-1 min-w-[120px] items-center justify-center gap-2 rounded-xl border border-[#163B44] bg-[#071F24] px-4 py-2.5 text-xs sm:text-sm font-semibold tracking-wide text-[#DBF2F9] transition-all hover:border-[#34B7DD]/70 hover:bg-[#102B33] hover:text-white hover:shadow-[0_0_15px_rgba(52,183,221,0.15)] active:scale-[0.98] cursor-pointer"
-                    >
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#04181C] p-0.5 transition-transform group-hover:scale-105">
-                        <WalletIcon name="Generic" className="h-4 w-4 shrink-0" />
-                      </div>
-                      <span>Connect</span>
-                    </button>
-                  ) : (
-                    connectors.map((connector) => (
-                      <button
-                        key={connector.uid}
-                        type="button"
-                        onClick={() => handleConnect(connector)}
-                        title={connector.name}
-                        aria-label={`Connect with ${connector.name}`}
-                        className="group flex flex-1 min-w-[100px] sm:min-w-[120px] items-center justify-center gap-2 rounded-xl border border-[#163B44] bg-[#071F24] px-3.5 py-2.5 text-xs sm:text-sm font-semibold tracking-wide text-[#DBF2F9] transition-all hover:border-[#34B7DD]/70 hover:bg-[#102B33] hover:text-white hover:shadow-[0_0_15px_rgba(52,183,221,0.15)] active:scale-[0.98] cursor-pointer"
-                      >
-                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#04181C] p-0.5 transition-transform group-hover:scale-105">
-                          <WalletIcon
-                            name={connector.name}
-                            iconUrl={connector.icon}
-                            className="h-4 w-4 shrink-0"
-                          />
-                        </div>
-                        <span>Connect</span>
-                      </button>
-                    ))
-                  )}
+              <div className="space-y-3">
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={handleConnectBrowserWallet}
+                  className="w-full flex items-center justify-center gap-2.5 py-3 tracking-wider cursor-pointer"
+                >
+                  <WalletIcon name="Generic" className="h-5 w-5 shrink-0" />
+                  <span>Connect Browser Wallet</span>
+                </Button>
+
+                <div className="flex items-center justify-between px-1 text-xs text-[#8AA8B2]">
+                  <span>Need another device or wallet?</span>
+                  <button
+                    type="button"
+                    onClick={() => setModalOpen(true)}
+                    className="font-semibold text-[#34B7DD] hover:text-[#6FCDE8] hover:underline transition-colors cursor-pointer"
+                  >
+                    All Wallets
+                  </button>
                 </div>
               </div>
             )}

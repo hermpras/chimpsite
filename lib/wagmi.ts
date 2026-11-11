@@ -52,17 +52,7 @@ export function metaMaskConnector() {
  */
 export const wagmiConfig = createConfig({
   chains: [mainnet],
-  connectors: [
-    injected(),
-    metaMaskConnector(),
-    coinbaseWallet(),
-    injected({ target: { id: "rabby", name: "Rabby Wallet", provider: () => (window as unknown as Record<string, unknown>).ethereum as never } }),
-    injected({ target: { id: "phantom", name: "Phantom", provider: () => ((window as unknown as { phantom?: { ethereum?: unknown } }).phantom?.ethereum ?? (window as unknown as Record<string, unknown>).ethereum) as never } }),
-    injected({ target: { id: "rainbow", name: "Rainbow", provider: () => (window as unknown as Record<string, unknown>).ethereum as never } }),
-    injected({ target: { id: "okx", name: "OKX Wallet", provider: () => ((window as unknown as { okxwallet?: unknown }).okxwallet ?? (window as unknown as Record<string, unknown>).ethereum) as never } }),
-    injected({ target: { id: "zerion", name: "Zerion", provider: () => (window as unknown as Record<string, unknown>).ethereum as never } }),
-    injected({ target: { id: "backpack", name: "Backpack", provider: () => ((window as unknown as { backpack?: { ethereum?: unknown } }).backpack?.ethereum ?? (window as unknown as Record<string, unknown>).ethereum) as never } }),
-  ],
+  connectors: [injected(), metaMaskConnector(), coinbaseWallet()],
   transports: {
     [mainnet.id]: http(),
   },

@@ -962,22 +962,28 @@ function ProfileContent() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3.5">
+                  <div className="space-y-3">
                     <Button
-                      size="sm"
+                      variant="primary"
+                      size="md"
                       disabled={isLinking || status !== "authenticated"}
                       onClick={handleLinkX}
-                      className="group relative overflow-hidden rounded-xl border border-cyan-400/70 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-500 px-4 py-2 font-display text-xs sm:text-sm font-black uppercase tracking-wider text-black shadow-[0_0_24px_rgba(34,211,238,0.35)] transition-all duration-300 hover:from-cyan-300 hover:via-teal-200 hover:to-cyan-400 hover:shadow-[0_0_32px_rgba(34,211,238,0.6)] hover:scale-[1.02] active:scale-[0.98] shrink-0 self-start sm:self-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
+                      className="w-full flex items-center justify-center gap-2.5 py-3 tracking-wider cursor-pointer"
                     >
-                      <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
                       <span>{isLinking ? "Connecting..." : "Link X Account"}</span>
                     </Button>
+
+                    <div className="flex items-center justify-between px-1 text-xs text-[#8AA8B2]">
+                      <span>No X account linked</span>
+                      <span className="text-[#8AA8B2]/70">OAuth 2.0</span>
+                    </div>
+
+                    {status !== "authenticated" && (
+                      <p className="text-xs text-[#8AA8B2] px-1 pt-0.5">
+                        Connect and authenticate your Web3 wallet first to enable X linking.
+                      </p>
+                    )}
                   </div>
-                )}
-                {status !== "authenticated" && (
-                  <p className="text-center text-xs sm:text-sm text-zinc-400 pt-0.5">
-                    Connect and authenticate your Web3 wallet first to enable X linking.
-                  </p>
                 )}
               </CardContent>
             </Card>
@@ -1325,7 +1331,7 @@ function ProfileContent() {
                 <div className="space-y-6">
                   {/* 5-Category Trait Collection Overview */}
                   <div
-                    className="space-y-3 pb-6 border-b border-[#163B44]"
+                    className="space-y-3 pb-6 border-b border-gray-800 border-[#163B44]"
                     data-testid="trait-collection-summary"
                   >
                     <div className="mb-3 flex items-center justify-between text-xs sm:text-sm">
@@ -1631,7 +1637,7 @@ function ProfileContent() {
                 <div data-testid="inventory-empty" className="space-y-6">
                   {/* 5-Category Trait Collection Overview */}
                   <div
-                    className="space-y-3 pb-6 border-b border-[#163B44]"
+                    className="space-y-3 pb-6 border-b border-gray-800 border-[#163B44]"
                     data-testid="trait-collection-summary"
                   >
                     <div className="mb-3 flex items-center justify-between text-xs sm:text-sm">
