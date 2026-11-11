@@ -179,7 +179,7 @@ describe("Public Pages English Copy Rendering", () => {
     );
     expect(screen.getByText("User Profile")).toBeInTheDocument();
     expect(screen.getByText("Web3 Wallet")).toBeInTheDocument();
-    expect(screen.getByText(/Gasless off-chain signature verification/i)).toBeInTheDocument();
+    expect(screen.getByText(/Connect your wallet to verify identity on Elysium/i)).toBeInTheDocument();
     expect(screen.getByText("X (Twitter) Identity")).toBeInTheDocument();
     expect(screen.getByText("Community Tier & Whitelist Status")).toBeInTheDocument();
     expect(screen.getByText("Collection & Inventory")).toBeInTheDocument();
