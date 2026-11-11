@@ -99,43 +99,79 @@ export function WalletModal({
     }
   };
 
-  const mobileWallets: MobileWalletOption[] = [
-    {
-      id: "metamask",
-      name: "MetaMask",
-      getDeepLink: () => {
-        const dappUrl = window.location.host + window.location.pathname + window.location.search;
-        return `https://metamask.app.link/dapp/${dappUrl}`;
-      },
+  // Deep-link map for wallets that support mobile app links.
+  // Used both for the "no injected wallet" fallback AND as open-in-app
+  // button for connectors that are listed but can't connect via browser.
+  const deepLinkMap: Record<string, () => string> = {
+    metamask: () => {
+      const dappUrl = window.location.host + window.location.pathname + window.location.search;
+      return `https://metamask.app.link/dapp/${dappUrl}`;
     },
-    {
-      id: "coinbase",
-      name: "Coinbase Wallet",
-      getDeepLink: () => `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(window.location.href)}`,
-    },
-    {
-      id: "trust",
-      name: "Trust Wallet",
-      getDeepLink: () => `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(window.location.href)}`,
-    },
-    {
-      id: "phantom",
-      name: "Phantom",
-      getDeepLink: () => `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`,
-    },
+    coinbase: () => `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(window.location.href)}`,
+    trust: () => `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(window.location.href)}`,
+    phantom: () => `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`,
+    rainbow: () => `https://rnbwapp.com/wc?uri=${encodeURIComponent(window.location.href)}`,
+    okx: () => `https://www.okx.com/download?deeplink=${encodeURIComponent("okx://wallet/dapp/url?dappUrl=" + window.location.href)}`,
+    zerion: () => `https://app.zerion.io/`,
+    backpack: () => `https://backpack.app/`,
+  };
+
+  // Extra wallets that have deep links but may not be wagmi connectors
+  const extraMobileWallets: MobileWalletOption[] = [
+    { id: "metamask",  name: "MetaMask",      getDeepLink: deepLinkMap.metamask },
+    { id: "coinbase",  name: "Coinbase Wallet",getDeepLink: deepLinkMap.coinbase },
+    { id: "trust",     name: "Trust Wallet",  getDeepLink: deepLinkMap.trust },
+    { id: "phantom",   name: "Phantom",       getDeepLink: deepLinkMap.phantom },
+    { id: "rainbow",   name: "Rainbow",       getDeepLink: deepLinkMap.rainbow },
+    { id: "okx",       name: "OKX Wallet",    getDeepLink: deepLinkMap.okx },
+    { id: "zerion",    name: "Zerion",         getDeepLink: deepLinkMap.zerion },
+    { id: "backpack",  name: "Backpack",       getDeepLink: deepLinkMap.backpack },
   ];
+
+  // On mobile: build a merged, deduplicated list.
+  // 1. All wagmi connectors with display names.
+  // 2. Any extra wallet that isn't already represented by a connector.
+  const mobileWalletList: MobileWalletOption[] = (() => {
+    const list: MobileWalletOption[] = connectors
+      .filter((c) => {
+        const n = c.name.toLowerCase();
+        // Skip bare "injected" — it's the browser wallet generic slot
+        return n !== "injected";
+      })
+      .map((c) => {
+        const n = c.name.toLowerCase();
+        const dlKey = Object.keys(deepLinkMap).find((k) => n.includes(k));
+        return {
+          id: c.uid,
+          name: c.name,
+          getDeepLink: dlKey ? deepLinkMap[dlKey] : () => window.location.href,
+        };
+      });
+
+    // Append extra wallets not already in the list
+    for (const extra of extraMobileWallets) {
+      const alreadyIn = list.some((item) => item.name.toLowerCase().includes(extra.id));
+      if (!alreadyIn) {
+        list.push(extra);
+      }
+    }
+    return list;
+  })();
 
   const handleSelectMobileWallet = (wallet: MobileWalletOption) => {
     if (hasInjected) {
+      // If injected wallet available, try to find matching connector
       const match = connectors.find((c) =>
         c.name.toLowerCase().includes(wallet.id) ||
-        (wallet.id === "metamask" && c.id === "metaMask")
+        (wallet.id === "metamask" && c.id === "metaMask") ||
+        c.uid === wallet.id
       );
       if (match) {
         onSelect(match);
         return;
       }
     }
+    // Fallback: open wallet deep link / app store
     window.location.href = wallet.getDeepLink();
   };
 
@@ -205,7 +241,7 @@ export function WalletModal({
           <div className="mt-5 space-y-2.5 max-h-[380px] overflow-y-auto flex-1 min-h-0 pr-0.5">
             {showMobileAppList ? (
               <>
-                {mobileWallets.map((wallet) => (
+                {mobileWalletList.map((wallet) => (
                   <button
                     key={wallet.id}
                     onClick={() => handleSelectMobileWallet(wallet)}

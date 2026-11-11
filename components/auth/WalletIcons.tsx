@@ -144,6 +144,65 @@ export function TrustWalletIcon({ className = "h-6 w-6" }: { className?: string 
   );
 }
 
+export function RainbowIcon({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} fill="none">
+      <rect width="32" height="32" rx="16" fill="#174299" />
+      <path d="M7 20C7 14.4772 11.4772 10 17 10H25V14H17C13.6863 14 11 16.6863 11 20H7Z" fill="#FF6B6B" />
+      <path d="M11 20C11 16.6863 13.6863 14 17 14H25V17H17C15.3431 17 14 18.3431 14 20H11Z" fill="#FFD166" />
+      <path d="M14 20C14 18.3431 15.3431 17 17 17H25V20H14Z" fill="#06D6A0" />
+    </svg>
+  );
+}
+
+export function OKXIcon({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} fill="none">
+      <rect width="32" height="32" rx="16" fill="#000000" />
+      <rect x="8" y="8" width="6" height="6" fill="white" />
+      <rect x="13" y="13" width="6" height="6" fill="white" />
+      <rect x="18" y="8" width="6" height="6" fill="white" />
+      <rect x="8" y="18" width="6" height="6" fill="white" />
+      <rect x="18" y="18" width="6" height="6" fill="white" />
+    </svg>
+  );
+}
+
+export function ZerionIcon({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} fill="none">
+      <rect width="32" height="32" rx="16" fill="#2962EF" />
+      <path
+        d="M9 22L19.5 10H23L12.5 22H9Z"
+        fill="white"
+      />
+      <path
+        d="M9 10H23V13H9V10Z"
+        fill="white"
+      />
+      <path
+        d="M9 19H23V22H9V19Z"
+        fill="white"
+      />
+    </svg>
+  );
+}
+
+export function BackpackIcon({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} fill="none">
+      <rect width="32" height="32" rx="16" fill="#E33E3F" />
+      <path
+        d="M12 12C12 10.3431 13.3431 9 15 9H17C18.6569 9 20 10.3431 20 12V13H23C23.5523 13 24 13.4477 24 14V23C24 23.5523 23.5523 24 23 24H9C8.44772 24 8 23.5523 8 23V14C8 13.4477 8.44772 13 9 13H12V12Z"
+        stroke="white"
+        strokeWidth="1.5"
+        fill="none"
+      />
+      <circle cx="16" cy="18" r="2" fill="white" />
+    </svg>
+  );
+}
+
 export function GenericWalletIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} fill="none">
@@ -197,6 +256,18 @@ export function WalletIcon({
   }
   if (normalized.includes("trust")) {
     return <TrustWalletIcon className={className} />;
+  }
+  if (normalized.includes("rainbow")) {
+    return <RainbowIcon className={className} />;
+  }
+  if (normalized.includes("okx")) {
+    return <OKXIcon className={className} />;
+  }
+  if (normalized.includes("zerion")) {
+    return <ZerionIcon className={className} />;
+  }
+  if (normalized.includes("backpack")) {
+    return <BackpackIcon className={className} />;
   }
 
   return <GenericWalletIcon className={className} />;

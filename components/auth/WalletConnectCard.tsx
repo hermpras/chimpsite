@@ -53,29 +53,30 @@ export function WalletConnectCard() {
     }
   }, []);
 
+  const deepLinkMap: Record<string, (url: string) => string> = {
+    metamask: (url) => {
+      const dappUrl = window.location.host + window.location.pathname + window.location.search;
+      return `https://metamask.app.link/dapp/${dappUrl}`;
+    },
+    coinbase: (url) => `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(url)}`,
+    trust: (url) => `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(url)}`,
+    phantom: (url) => `https://phantom.app/ul/browse/${encodeURIComponent(url)}`,
+    rainbow: (url) => `https://rnbwapp.com/wc?uri=${encodeURIComponent(url)}`,
+    okx: (url) => `https://www.okx.com/download?deeplink=${encodeURIComponent("okx://wallet/dapp/url?dappUrl=" + url)}`,
+    zerion: () => `https://app.zerion.io/`,
+    backpack: () => `https://backpack.app/`,
+  };
+
   const handleConnect = (connector: Connector) => {
     if (isMobile && !hasInjected) {
       const name = connector.name.toLowerCase();
-      const dappUrl = window.location.host + window.location.pathname + window.location.search;
       const fullUrl = window.location.href;
-
-      if (name.includes("metamask")) {
-        window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
+      const dlKey = Object.keys(deepLinkMap).find((k) => name.includes(k));
+      if (dlKey) {
+        window.location.href = deepLinkMap[dlKey](fullUrl);
         return;
       }
-      if (name.includes("coinbase")) {
-        window.location.href = `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(fullUrl)}`;
-        return;
-      }
-      if (name.includes("phantom")) {
-        window.location.href = `https://phantom.app/ul/browse/${encodeURIComponent(fullUrl)}`;
-        return;
-      }
-      if (name.includes("trust")) {
-        window.location.href = `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(fullUrl)}`;
-        return;
-      }
-      // If connector cannot be deep-linked directly, open the full modal
+      // Fallback to full modal for unrecognized connectors
       setModalOpen(true);
       return;
     }
