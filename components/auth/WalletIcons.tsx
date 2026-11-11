@@ -1,5 +1,10 @@
 import React from "react";
 
+/**
+ * Official, authentic vector logos for Web3 wallets.
+ * Sourced directly from official brand asset kits and RainbowKit.
+ */
+
 export function MetaMaskIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 318.6 318.6" className={className} fill="none">
@@ -93,11 +98,27 @@ export function MetaMaskIcon({ className = "h-6 w-6" }: { className?: string }) 
 
 export function CoinbaseWalletIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none">
-      <circle cx="16" cy="16" r="16" fill="#0052FF" />
+    <svg viewBox="0 0 28 28" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="28" height="28" rx="6" fill="#2C5FF6" />
       <path
-        d="M16 7C11.0294 7 7 11.0294 7 16C7 20.9706 11.0294 25 16 25C20.9706 25 25 20.9706 25 16C25 11.0294 20.9706 7 16 7ZM13.8 18.2C13.3582 18.2 13 17.8418 13 17.4V14.6C13 14.1582 13.3582 13.8 13.8 13.8H18.2C18.6418 13.8 19 14.1582 19 14.6V17.4C19 17.8418 18.6418 18.2 18.2 18.2H13.8Z"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M14 23.8C19.4124 23.8 23.8 19.4124 23.8 14C23.8 8.58761 19.4124 4.2 14 4.2C8.58761 4.2 4.2 8.58761 4.2 14C4.2 19.4124 8.58761 23.8 14 23.8ZM11.55 10.8C11.1358 10.8 10.8 11.1358 10.8 11.55V16.45C10.8 16.8642 11.1358 17.2 11.55 17.2H16.45C16.8642 17.2 17.2 16.8642 17.2 16.45V11.55C17.2 11.1358 16.8642 10.8 16.45 10.8H11.55Z"
         fill="white"
+      />
+    </svg>
+  );
+}
+
+export function PhantomIcon({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 28 28" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="28" height="28" rx="6" fill="#AB9FF2" />
+      <path
+        fill="#FFFDF8"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12.063 18.128c-1.173 1.796-3.137 4.07-5.75 4.07-1.236 0-2.424-.51-2.424-2.719 0-5.627 7.682-14.337 14.81-14.337 4.056 0 5.671 2.813 5.671 6.008 0 4.101-2.66 8.79-5.306 8.79-.84 0-1.252-.46-1.252-1.192 0-.19.032-.397.095-.62-.902 1.542-2.645 2.973-4.276 2.973-1.188 0-1.79-.747-1.79-1.797 0-.381.079-.778.222-1.176Zm9.63-7.089c0 .931-.549 1.397-1.163 1.397-.624 0-1.164-.466-1.164-1.397 0-.93.54-1.396 1.164-1.396.614 0 1.164.465 1.164 1.396Zm-3.49 0c0 .931-.55 1.397-1.164 1.397-.624 0-1.164-.466-1.164-1.397 0-.93.54-1.396 1.164-1.396.614 0 1.164.465 1.164 1.396Z"
       />
     </svg>
   );
@@ -105,96 +126,158 @@ export function CoinbaseWalletIcon({ className = "h-6 w-6" }: { className?: stri
 
 export function RabbyIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none">
-      <rect width="32" height="32" rx="16" fill="#7084FF" />
+    <svg viewBox="0 0 28 28" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="28" height="28" rx="6" fill="#8697FF" />
       <path
-        d="M21.5 19.8C20.3 22.3 17.8 24 15 24C11.1 24 8 20.9 8 17C8 13.1 11.1 10 15 10C16.8 10 18.5 10.7 19.8 11.8L21.2 9.5C21.6 8.8 22.5 8.6 23.2 9C23.9 9.4 24.1 10.3 23.7 11L21.8 14.2C22.2 15.1 22.5 16 22.5 17C22.5 18 22.1 19 21.5 19.8Z"
-        fill="white"
+        fill="url(#rabby-b)"
+        d="M22.54 15.078c.677-1.514-2.673-5.744-5.874-7.506-2.017-1.365-4.12-1.178-4.545-.579-.935 1.316 3.094 2.43 5.788 3.731-.58.252-1.125.703-1.446 1.28-1.004-1.096-3.209-2.04-5.796-1.28-1.743.513-3.191 1.721-3.751 3.546a1.097 1.097 0 1 0-.445 2.1c.112 0 .463-.075.463-.075l5.612.041c-2.244 3.56-4.018 4.081-4.018 4.698s1.697.45 2.335.22c3.05-1.1 6.327-4.531 6.89-5.519 2.36.295 4.345.33 4.786-.657Z"
       />
-      <circle cx="14" cy="16" r="1.5" fill="#7084FF" />
-    </svg>
-  );
-}
-
-export function PhantomIcon({ className = "h-6 w-6" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 128 128" className={className} fill="none">
+      <path
+        fill="url(#rabby-c)"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="m17.885 10.713.025.01c.125-.049.105-.233.07-.378-.078-.333-1.438-1.676-2.715-2.277-1.743-.82-3.025-.777-3.212-.398.356.726 1.998 1.408 3.714 2.12.723.3 1.46.606 2.118.923Z"
+      />
+      <path
+        fill="url(#rabby-d)"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M15.701 18.036a10.296 10.296 0 0 0-1.2-.37c.482-.862.583-2.138.128-2.945-.639-1.133-1.44-1.736-3.304-1.736-1.024 0-3.783.346-3.832 2.648-.005.242 0 .464.017.667l5.036.037a17.264 17.264 0 0 1-1.871 2.483c.669.172 1.221.316 1.728.448.48.125.92.24 1.38.357a21.003 21.003 0 0 0 1.918-1.59Z"
+      />
+      <path
+        fill="url(#rabby-e)"
+        d="M6.848 16.063c.206 1.75 1.2 2.435 3.232 2.638 2.032.203 3.197.067 4.749.208 1.296.118 2.453.778 2.882.55.386-.205.17-.947-.347-1.423-.67-.617-1.597-1.046-3.229-1.199.325-.89.234-2.138-.27-2.817-.731-.982-2.079-1.426-3.785-1.232-1.782.202-3.49 1.08-3.232 3.275Z"
+      />
       <defs>
-        <linearGradient id="phantom-bg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#534BB1" />
-          <stop offset="100%" stopColor="#551BF9" />
+        <linearGradient id="rabby-b" x1="10.464" x2="22.394" y1="13.737" y2="17.12" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#fff" />
+          <stop offset="1" stopColor="#fff" />
+        </linearGradient>
+        <linearGradient id="rabby-c" x1="20.386" x2="11.779" y1="13.509" y2="4.879" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#7258DC" />
+          <stop offset="1" stopColor="#797DEA" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="rabby-d" x1="15.94" x2="7.673" y1="18.337" y2="13.584" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#7461EA" />
+          <stop offset="1" stopColor="#BFC2FF" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="rabby-e" x1="11.177" x2="16.765" y1="13.648" y2="20.749" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#fff" />
+          <stop offset=".984" stopColor="#D5CEFF" />
         </linearGradient>
       </defs>
-      {/* Purple rounded square background */}
-      <rect width="128" height="128" rx="26" fill="url(#phantom-bg)" />
-      {/* Ghost body */}
-      <path
-        d="M110.584 68.878c0 23.802-18.69 43.098-41.754 43.098-13.374 0-25.302-6.26-33.07-16.052-2.07-2.595-5.864-2.955-8.37-.762l-6.98 6.09c-1.62 1.413-4.088.423-4.37-1.72-.65-5.0-1.0-10.113-1.0-15.306V42.44C15.04 27.627 27.64 15.9 43.3 15.9h43.98c12.86 0 23.304 9.753 23.304 21.788v31.19z"
-        fill="white"
-      />
-      {/* Left eye */}
-      <ellipse cx="51" cy="61" rx="8.5" ry="10" fill="#534BB1" />
-      <ellipse cx="53.5" cy="58.5" rx="3" ry="3.5" fill="white" />
-      {/* Right eye */}
-      <ellipse cx="78" cy="61" rx="8.5" ry="10" fill="#534BB1" />
-      <ellipse cx="80.5" cy="58.5" rx="3" ry="3.5" fill="white" />
     </svg>
   );
 }
 
 export function TrustWalletIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none">
-      <rect width="32" height="32" rx="16" fill="#0500FF" />
-      <path
-        d="M16 6.5L8.5 10.5V17C8.5 21.5 11.7 25.2 16 26.5C20.3 25.2 23.5 21.5 23.5 17V10.5L16 6.5Z"
-        stroke="white"
-        strokeWidth="1.75"
-        strokeLinejoin="round"
-      />
+    <svg viewBox="0 0 28 28" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#0500FF" d="M6 7.583 13.53 5v17.882C8.15 20.498 6 15.928 6 13.345V7.583Z" />
+      <path fill="url(#trust-rainbow-grad)" d="M22 7.583 13.53 5v17.882c6.05-2.384 8.47-6.954 8.47-9.537V7.583Z" />
+      <defs>
+        <linearGradient id="trust-rainbow-grad" x1="19.768" x2="14.072" y1="3.753" y2="22.853" gradientUnits="userSpaceOnUse">
+          <stop offset=".02" stopColor="#00F" />
+          <stop offset=".08" stopColor="#0094FF" />
+          <stop offset=".16" stopColor="#48FF91" />
+          <stop offset=".42" stopColor="#0094FF" />
+          <stop offset=".68" stopColor="#0038FF" />
+          <stop offset=".9" stopColor="#0500FF" />
+        </linearGradient>
+      </defs>
     </svg>
   );
 }
 
 export function RainbowIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none">
-      <rect width="32" height="32" rx="16" fill="#174299" />
-      <path d="M7 20C7 14.4772 11.4772 10 17 10H25V14H17C13.6863 14 11 16.6863 11 20H7Z" fill="#FF6B6B" />
-      <path d="M11 20C11 16.6863 13.6863 14 17 14H25V17H17C15.3431 17 14 18.3431 14 20H11Z" fill="#FFD166" />
-      <path d="M14 20C14 18.3431 15.3431 17 17 17H25V20H14Z" fill="#06D6A0" />
+    <svg viewBox="0 0 120 120" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="120" height="120" rx="26" fill="url(#rainbow-bg)" />
+      <path
+        d="M20 37C20 40.3137 22.6863 43 26 43C54.1665 43 77 65.8335 77 94C77 97.3137 79.6863 100 83 100H100V94C100 53.1309 66.8691 20 26 20H20V37Z"
+        fill="url(#rainbow-radial-1)"
+      />
+      <path d="M83 94H100V100H90C84.4772 100 83 96.5228 83 94Z" fill="url(#rainbow-linear-1)" />
+      <path d="M26 43C22.6863 43 20 40.3137 20 37L20 20L26 20L26 43Z" fill="url(#rainbow-linear-2)" />
+      <path
+        d="M20 52.5C20 55.5376 22.4624 58 25.5 58C45.3823 58 61.5 74.1177 61.5 94C61.5 97.0376 63.9624 99.5 67 99.5H83.5V94C83.5 62.2436 57.7564 36.5 26 36.5H20V52.5Z"
+        fill="url(#rainbow-radial-2)"
+      />
+      <path d="M67.5 94H83.5V99.5H74C69.5817 99.5 67.5 96.4183 67.5 94Z" fill="url(#rainbow-linear-3)" />
+      <path d="M26 58C22.6863 58 20 55.3137 20 52L20 36.5L26 36.5L26 58Z" fill="url(#rainbow-linear-4)" />
+      <path
+        d="M20 62C20 65.3137 22.6863 68 26 68C40.3594 68 52 79.6406 52 94C52 97.3137 54.6863 100 58 100H68V94C68 70.804 49.196 52 26 52H20V62Z"
+        fill="url(#rainbow-radial-3)"
+      />
+      <path d="M52 94H68V100H58C54.6863 100 52 97.3137 52 94Z" fill="url(#rainbow-radial-4)" />
+      <path d="M26 68C22.6863 68 20 65.3137 20 62L20 52L26 52L26 68Z" fill="url(#rainbow-radial-5)" />
+      <defs>
+        <linearGradient id="rainbow-bg" x1="60" y1="0" x2="60" y2="120" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#174299" />
+          <stop offset="1" stopColor="#001E59" />
+        </linearGradient>
+        <radialGradient id="rainbow-radial-1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(26 94) rotate(-90) scale(74)">
+          <stop offset="0.770277" stopColor="#FF4000" />
+          <stop offset="1" stopColor="#8754C9" />
+        </radialGradient>
+        <linearGradient id="rainbow-linear-1" x1="83" y1="97" x2="100" y2="97" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FF4000" />
+          <stop offset="1" stopColor="#8754C9" />
+        </linearGradient>
+        <linearGradient id="rainbow-linear-2" x1="23" y1="20" x2="23" y2="37" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#8754C9" />
+          <stop offset="1" stopColor="#FF4000" />
+        </linearGradient>
+        <radialGradient id="rainbow-radial-2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(26 94) rotate(-90) scale(58)">
+          <stop offset="0.723929" stopColor="#FFF700" />
+          <stop offset="1" stopColor="#FF9901" />
+        </radialGradient>
+        <linearGradient id="rainbow-linear-3" x1="68" y1="97" x2="84" y2="97" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFF700" />
+          <stop offset="1" stopColor="#FF9901" />
+        </linearGradient>
+        <linearGradient id="rainbow-linear-4" x1="23" y1="52" x2="23" y2="36" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFF700" />
+          <stop offset="1" stopColor="#FF9901" />
+        </linearGradient>
+        <radialGradient id="rainbow-radial-3" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(26 94) rotate(-90) scale(42)">
+          <stop offset="0.59513" stopColor="#00AAFF" />
+          <stop offset="1" stopColor="#01DA40" />
+        </radialGradient>
+        <radialGradient id="rainbow-radial-4" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(51 97) scale(17 45.3333)">
+          <stop stopColor="#00AAFF" />
+          <stop offset="1" stopColor="#01DA40" />
+        </radialGradient>
+        <radialGradient id="rainbow-radial-5" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(23 69) rotate(-90) scale(17 322.37)">
+          <stop stopColor="#00AAFF" />
+          <stop offset="1" stopColor="#01DA40" />
+        </radialGradient>
+      </defs>
     </svg>
   );
 }
 
 export function OKXIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none">
-      <rect width="32" height="32" rx="16" fill="#000000" />
-      <rect x="8" y="8" width="6" height="6" fill="white" />
-      <rect x="13" y="13" width="6" height="6" fill="white" />
-      <rect x="18" y="8" width="6" height="6" fill="white" />
-      <rect x="8" y="18" width="6" height="6" fill="white" />
-      <rect x="18" y="18" width="6" height="6" fill="white" />
+    <svg viewBox="0 0 28 28" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="28" height="28" rx="6" fill="#000000" />
+      <path
+        fill="#ffffff"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M10.819 5.556H5.93a.376.376 0 0 0-.375.375v4.888c0 .207.168.375.375.375h4.888a.376.376 0 0 0 .375-.376V5.932a.376.376 0 0 0-.376-.375Zm5.64 5.638h-4.886a.376.376 0 0 0-.376.376v4.887c0 .208.168.376.376.376h4.887a.376.376 0 0 0 .376-.375V11.57a.376.376 0 0 0-.376-.377Zm.75-5.638h4.887c.208 0 .376.168.376.375v4.888a.376.376 0 0 1-.376.375H17.21a.376.376 0 0 1-.376-.376V5.933c0-.208.169-.376.376-.376Zm-6.39 11.277H5.93a.376.376 0 0 0-.375.376v4.887c0 .208.168.376.375.376h4.888a.376.376 0 0 0 .375-.376V17.21a.376.376 0 0 0-.376-.376Zm6.39 0h4.887c.208 0 .376.169.376.376v4.887a.376.376 0 0 1-.376.376H17.21a.376.376 0 0 1-.376-.376V17.21c0-.207.169-.376.376-.376Z"
+      />
     </svg>
   );
 }
 
 export function ZerionIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none">
-      <rect width="32" height="32" rx="16" fill="#2962EF" />
+    <svg viewBox="0 0 28 28" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="28" height="28" rx="6" fill="#2962EF" />
       <path
-        d="M9 22L19.5 10H23L12.5 22H9Z"
-        fill="white"
-      />
-      <path
-        d="M9 10H23V13H9V10Z"
-        fill="white"
-      />
-      <path
-        d="M9 19H23V22H9V19Z"
-        fill="white"
+        fill="#ffffff"
+        d="M6.073 7c-.48 0-.665.593-.262.841l10.073 6.074a.577.577 0 0 0 .758-.139l4.43-5.814c.3-.404-.004-.962-.525-.962H6.073ZM21.904 21c.48 0 .67-.596.267-.844l-10.075-6.073a.569.569 0 0 0-.751.146l-4.437 5.813c-.301.404.012.958.534.958h14.462Z"
       />
     </svg>
   );
@@ -202,15 +285,14 @@ export function ZerionIcon({ className = "h-6 w-6" }: { className?: string }) {
 
 export function BackpackIcon({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} fill="none">
-      <rect width="32" height="32" rx="16" fill="#E33E3F" />
+    <svg viewBox="0 0 240 240" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="240" height="240" rx="52" fill="#E33E3F" />
       <path
-        d="M12 12C12 10.3431 13.3431 9 15 9H17C18.6569 9 20 10.3431 20 12V13H23C23.5523 13 24 13.4477 24 14V23C24 23.5523 23.5523 24 23 24H9C8.44772 24 8 23.5523 8 23V14C8 13.4477 8.44772 13 9 13H12V12Z"
-        stroke="white"
-        strokeWidth="1.5"
-        fill="none"
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M128.905 62.75c4.969 0 9.631.667 13.947 1.902C138.626 54.804 129.853 52 120.089 52c-9.783 0-18.572 2.815-22.788 12.71 4.285-1.279 8.926-1.96 13.879-1.96h17.725Zm-18.862 9.886C86.445 72.636 73 91.2 73 114.1v23.524c0 2.29 1.913 4.101 4.273 4.101h85.454c2.36 0 4.273-1.811 4.273-4.101V114.1c0-22.9-15.635-41.464-39.232-41.464h-17.725Zm9.924 41.67c8.259 0 14.954-6.696 14.954-14.955s-6.695-14.954-14.954-14.954-14.955 6.695-14.955 14.954 6.696 14.955 14.955 14.955ZM73 155.555c0-2.29 1.913-4.147 4.273-4.147h85.454c2.36 0 4.273 1.857 4.273 4.147v24.878c0 4.58-3.826 8.293-8.545 8.293h-76.91c-4.72 0-8.545-3.713-8.545-8.293v-24.878Z"
+        fill="white"
       />
-      <circle cx="16" cy="18" r="2" fill="white" />
     </svg>
   );
 }
