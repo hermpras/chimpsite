@@ -531,8 +531,8 @@ export default function DropsPage() {
 
             {isLoading && !dropData ? (
               <div className="py-20 text-center text-sm text-gray-400 flex flex-col items-center justify-center">
-                <ElychimpSpinner size="lg" className="mb-4 filter drop-shadow-[0_0_25px_rgba(251,191,36,0.5)]" />
-                <span className="text-xs uppercase tracking-widest text-amber-400 animate-pulse">
+                <ElychimpSpinner size="lg" className="mb-4 filter drop-shadow-[0_0_25px_rgba(52,183,221,0.55)]" />
+                <span className="text-xs uppercase tracking-widest text-[#34B7DD] font-semibold animate-pulse">
                   Loading drop event and stock data...
                 </span>
               </div>
@@ -839,10 +839,10 @@ export default function DropsPage() {
                     className="space-y-3 pt-4 border-t border-[#163B44]"
                   >
                     <div>
-                      <h3 className="text-sm sm:text-base font-bold tracking-wider text-white uppercase">
+                      <h3 className="font-display text-base sm:text-lg lg:text-xl font-bold tracking-wider text-white uppercase">
                         Recent Crate Unboxings
                       </h3>
-                      <p className="text-xs text-[#8AA8B2] mt-0.5">
+                      <p className="text-xs sm:text-sm text-[#8AA8B2] mt-1">
                         Latest traits pulled by community members across active drop cycles
                       </p>
                     </div>
