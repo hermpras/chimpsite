@@ -275,13 +275,109 @@ describe("Whitelist Stepper Navigation & Access Guard (app/whitelist/page.tsx)",
 
     await waitFor(() => {
       expect(screen.getByText("Step 3 of 5 — Campaign Tasks")).toBeInTheDocument();
+      expect(screen.getByText("All Campaign Tasks Completed")).toBeInTheDocument();
     });
 
-    // From step 3, user can click step 4 to go back forward
-    fireEvent.click(step4Btn);
+    // From step 3, user can click the Continue to Step 4 CTA button to go back forward
+    const continueToStep4Btn = screen.getByRole("button", {
+      name: /Continue to Step 4 \(Traits\)/i,
+    });
+    fireEvent.click(continueToStep4Btn);
 
     await waitFor(() => {
       expect(screen.getByText("Character & Wardrobe")).toBeInTheDocument();
+    });
+  });
+
+  it("keeps user on Step 1 when status is wallet-only (not yet SIWE authenticated) and shows busyMessage during signing", async () => {
+    vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+      status: "wallet-only",
+      sessionAddress: null,
+      walletAddress: "0x1111111111111111111111111111111111111111",
+      busyMessage: null,
+      login: vi.fn(),
+    } as any);
+
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
+      configured: true,
+      address: "0x1111111111111111111111111111111111111111",
+      status: {
+        qualified: false,
+        isFullyQualified: false,
+        phase: "NONE",
+        details: {
+          hasVerifiedWallet: true,
+          hasLinkedX: false,
+          heldCategories: [],
+          completedMandatoryTasksCount: 0,
+          totalMandatoryTasksCount: 1,
+        },
+      },
+    } as any);
+
+    const { rerender } = render(<WhitelistPage />);
+
+    const step1Btn = screen.getByRole("button", { name: /1\s*WALLET/i });
+    const step2Btn = screen.getByRole("button", { name: /2\s*X SYNC/i });
+
+    // Must remain on Step 1 until SIWE authenticated
+    expect(step1Btn).not.toBeDisabled();
+    expect(step2Btn).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Sign In with Ethereum/i })).toBeInTheDocument();
+
+    // When signing is in progress, button shows busyMessage and is disabled
+    vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+      status: "signing",
+      sessionAddress: null,
+      walletAddress: "0x1111111111111111111111111111111111111111",
+      busyMessage: "Waiting for your signature…",
+      login: vi.fn(),
+    } as any);
+
+    rerender(<WhitelistPage />);
+
+    const busyBtn = screen.getByRole("button", { name: /Waiting for your signature…/i });
+    expect(busyBtn).toBeDisabled();
+  });
+
+  it("displays statusError banner when fetchWhitelistStatus fails and retries on clicking Retry Status", async () => {
+    vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+      status: "authenticated",
+      sessionAddress: "0x1111111111111111111111111111111111111111",
+      walletAddress: "0x1111111111111111111111111111111111111111",
+    } as any);
+
+    vi.mocked(whitelistClient.fetchWhitelistStatus)
+      .mockRejectedValueOnce(new Error("Status endpoint unavailable"))
+      .mockResolvedValueOnce({
+        configured: true,
+        address: "0x1111111111111111111111111111111111111111",
+        status: {
+          qualified: false,
+          isFullyQualified: false,
+          phase: "NONE",
+          details: {
+            hasVerifiedWallet: true,
+            hasLinkedX: false,
+            heldCategories: [],
+            completedMandatoryTasksCount: 0,
+            totalMandatoryTasksCount: 1,
+          },
+        },
+      } as any);
+
+    render(<WhitelistPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to load Whitelist status:")).toBeInTheDocument();
+      expect(screen.getByText("Status endpoint unavailable")).toBeInTheDocument();
+    });
+
+    const retryStatusBtn = screen.getByRole("button", { name: "Retry Status" });
+    fireEvent.click(retryStatusBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Failed to load Whitelist status:")).not.toBeInTheDocument();
     });
   });
 

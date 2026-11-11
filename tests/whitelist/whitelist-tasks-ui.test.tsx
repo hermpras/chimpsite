@@ -463,7 +463,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     expect(screen.queryByText("Qualify / Claim Slot")).not.toBeInTheDocument();
   });
 
-  it("displays SLOT_ALLOCATED and slot number when user status has active slot", async () => {
+  it("displays WHITELISTED and pass number when user status has active slot", async () => {
     vi.mocked(siweHook.useSiweAuth).mockReturnValue({
       status: "authenticated",
       sessionAddress: "0x1111111111111111111111111111111111111111",
@@ -501,17 +501,17 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Guaranteed Minter Pass")).toBeInTheDocument();
+      expect(screen.getByText("Whitelisted Minter Pass")).toBeInTheDocument();
     });
 
     expect(screen.getByText("#0007")).toBeInTheDocument();
-    expect(screen.getByText("GTD SLOT ALLOCATED")).toBeInTheDocument();
+    expect(screen.getAllByText("WHITELISTED")[0]).toBeInTheDocument();
     expect(
       screen.getByText("Slot Confirmed — Routine verification in progress."),
     ).toBeInTheDocument();
   });
 
-  it("displays FCFS_REGISTERED with participant sequence and allowlist status", async () => {
+  it("displays unified Whitelisted Minter Pass when FCFS_REGISTERED is fully qualified", async () => {
     vi.mocked(siweHook.useSiweAuth).mockReturnValue({
       status: "authenticated",
       sessionAddress: "0x1111111111111111111111111111111111111111",
@@ -550,11 +550,59 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("FCFS Clearance Pass")).toBeInTheDocument();
+      expect(screen.getByText("Whitelisted Minter Pass")).toBeInTheDocument();
     });
 
     expect(screen.getAllByText("#0015")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("WHITELISTED")[0]).toBeInTheDocument();
     expect(screen.getByText(/eligible for inclusion in the official allowlist for minting/i)).toBeInTheDocument();
+  });
+
+  it("shows In Progress and Whitelist Application without Lanyard Pass when FCFS_REGISTERED is not yet fully qualified", async () => {
+    vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+      status: "authenticated",
+      sessionAddress: "0x1111111111111111111111111111111111111111",
+      walletAddress: "0x1111111111111111111111111111111111111111",
+    } as any);
+
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+      configured: true,
+      program: {
+        id: "prog-1",
+        slug: "main",
+        name: "Genesis",
+        totalSlots: 1000,
+        allocatedSlotsCount: 10,
+        status: "OPEN",
+      },
+      status: {
+        qualified: false,
+        isFullyQualified: false,
+        phase: "FCFS_REGISTERED",
+        queueNumber: 15,
+        joinedAt: "2026-10-20T10:00:00.000Z",
+        missingRequirements: ["Missing trait categories: EYEWEAR."],
+        details: {
+          hasVerifiedWallet: true,
+          hasLinkedX: true,
+          heldCategories: ["BG", "FUR", "CLOTHING", "HEADWEAR"],
+          missingCategories: ["EYEWEAR"],
+          completedMandatoryTasksCount: 1,
+          totalMandatoryTasksCount: 1,
+          isBanned: false,
+        },
+      },
+    } as any);
+
+    render(<WhitelistPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Whitelist Application")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("Whitelisted Minter Pass")).not.toBeInTheDocument();
+    expect(screen.queryByText("FCFS REGISTERED")).not.toBeInTheDocument();
+    expect(screen.getByText("Missing trait categories: EYEWEAR.")).toBeInTheDocument();
   });
 
   it("renders pending review status directly from latestSubmission status PENDING_REVIEW even when progress is null", async () => {
@@ -684,12 +732,15 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
       "https://x.com/chimphoodNFT/status/1234567890",
     );
 
-    // Gating check: Before clicking OPEN X, verify buttons are disabled VERIFY TASK
+    // Gating check: Before clicking OPEN X, verify buttons are disabled VERIFY TASK and visible hint is shown
     const disabledButtons = screen.getAllByRole("button", {
       name: /VERIFY TASK/i,
     });
     expect(disabledButtons.length).toBe(2);
     expect(disabledButtons[0]).toBeDisabled();
+    expect(
+      screen.getAllByText("Click OPEN X first to unlock task verification.").length,
+    ).toBe(2);
 
     // Click OPEN X to open destination
     fireEvent.click(followAnchor!);
@@ -783,8 +834,13 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
 
     expect(screen.getByText("REPLY / ONCE")).toBeInTheDocument();
 
-    // Initially proof input is not visible until OPEN X is clicked
+    // Initially proof input is not visible until OPEN X is clicked, and mobile hint is displayed
     expect(screen.queryByPlaceholderText(/Paste reply or quote URL/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Click OPEN X first to post your reply or quote and unlock the link input.",
+      ),
+    ).toBeInTheDocument();
 
     // Verify button is disabled initially
     const disabledBtn = screen.getByRole("button", { name: /VERIFY TASK/i });
@@ -797,6 +853,9 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     // Now proof input appears!
     const input = await screen.findByPlaceholderText(/Paste reply or quote URL/i);
     expect(input).toBeInTheDocument();
+    expect(
+      screen.getByText("Paste your reply or quote link above to enable VERIFY TASK."),
+    ).toBeInTheDocument();
 
     // Before typing, verify button is still disabled
     const pasteFirstBtn = screen.getByRole("button", { name: /VERIFY TASK/i });
