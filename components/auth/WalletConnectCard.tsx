@@ -130,7 +130,7 @@ export function WalletConnectCard() {
                 className="shrink-0 self-start sm:self-auto gap-1.5 cursor-pointer"
               >
                 <LogIn className="h-3.5 w-3.5 shrink-0" />
-                <span>Sign In with Ethereum</span>
+                <span>Sign In</span>
               </Button>
             </div>
           )}

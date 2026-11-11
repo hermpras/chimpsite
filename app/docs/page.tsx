@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 const NAV_SECTIONS = [
   { id: "traits", title: "Trait Collection & Inventory", short: "Traits & Inventory" },
@@ -869,17 +870,15 @@ export default function DocsPage() {
               </div>
 
               <div className="relative z-10 flex flex-col gap-2.5 pt-1">
-                <Link
-                  href="/drops"
-                  className="inline-flex items-center justify-center w-full rounded-xl bg-[#34B7DD] px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#04181C] hover:bg-[#6FCDE8] shadow-[0_0_20px_rgba(52,183,221,0.3)] transition-all"
-                >
-                  Open Crates
+                <Link href="/drops" className="block w-full">
+                  <Button variant="primary" size="md" className="w-full justify-center">
+                    Open Crates
+                  </Button>
                 </Link>
-                <Link
-                  href="/whitelist"
-                  className="inline-flex items-center justify-center w-full rounded-xl border border-[#163B44] bg-[#071F24]/90 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[#DBF2F9] hover:border-[#34B7DD]/50 hover:text-white transition-all"
-                >
-                  Whitelist Portal
+                <Link href="/whitelist" className="block w-full">
+                  <Button variant="secondary" size="md" className="w-full justify-center">
+                    Whitelist Portal
+                  </Button>
                 </Link>
               </div>
 

@@ -1187,7 +1187,7 @@ export default function WhitelistPage() {
                     className="w-full gap-2"
                   >
                     <LogIn className="h-4 w-4 shrink-0" />
-                    <span>{busyMessage || "Sign In with Ethereum"}</span>
+                    <span>{busyMessage || "Sign In"}</span>
                   </Button>
                 </div>
               ) : (
@@ -1704,7 +1704,7 @@ export default function WhitelistPage() {
                               <div className="pt-1">
                                 {status !== "authenticated" ? (
                                   <p className="text-xs sm:text-sm text-zinc-500 italic">
-                                    Sign in with Ethereum to submit evidence for this task.
+                                    Sign in to submit evidence for this task.
                                   </p>
                                 ) : (
                                   <div className="flex flex-col gap-2 sm:flex-row">
@@ -1910,7 +1910,7 @@ export default function WhitelistPage() {
                 </div>
 
                 {/* Trait Lootbox Drops CTA */}
-                <div className="relative rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-[#071F24] to-amber-500/5 p-4 flex items-center justify-between gap-3 shadow-sm">
+                <div className="relative rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 via-[#071F24] to-cyan-500/5 p-4 flex items-center justify-between gap-3 shadow-sm">
                   <div className="space-y-1 min-w-0 flex-1">
                     <p className="font-display text-xs uppercase tracking-wider text-white">
                       Trait Lootbox Drops
@@ -1921,7 +1921,7 @@ export default function WhitelistPage() {
                   </div>
                   <Link href="/drops" className="shrink-0">
                     <Button
-                      variant="gold"
+                      variant="primary"
                       size="sm"
                     >
                       <span>Go to Drops</span>
@@ -2288,7 +2288,7 @@ export default function WhitelistPage() {
                             </Button>
                             <a href={tweetHref} target="_blank" rel="noopener noreferrer" className="block w-full">
                               <Button
-                                variant="gold"
+                                variant="primary"
                                 size="lg"
                                 className="w-full"
                               >

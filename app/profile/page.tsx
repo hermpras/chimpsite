@@ -1686,12 +1686,10 @@ function ProfileContent() {
                         This is your Base Chimp canvas. Claim traits during active drops or receive gifts from peers to reveal your colored Elychimp avatar and qualify for the Whitelist!
                       </p>
                       <div className="pt-2">
-                        <Link
-                          href="/drops"
-                          className="group relative overflow-hidden inline-flex items-center rounded-xl border border-cyan-400/70 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-500 text-black px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-black uppercase tracking-wider shadow-[0_0_24px_rgba(34,211,238,0.35)] hover:from-cyan-300 hover:via-teal-200 hover:to-cyan-400 hover:shadow-[0_0_32px_rgba(34,211,238,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all"
-                        >
-                          <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-                          <span>Go to Drops &amp; Claim</span>
+                        <Link href="/drops" className="inline-block">
+                          <Button variant="primary" size="md">
+                            Go to Drops
+                          </Button>
                         </Link>
                       </div>
                     </div>

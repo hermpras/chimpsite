@@ -323,7 +323,7 @@ describe("Whitelist Stepper Navigation & Access Guard (app/whitelist/page.tsx)",
     // Must remain on Step 1 until SIWE authenticated
     expect(step1Btn).not.toBeDisabled();
     expect(step2Btn).toBeDisabled();
-    expect(screen.getByRole("button", { name: /Sign In with Ethereum/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Sign In/i })).toBeInTheDocument();
 
     // When signing is in progress, button shows busyMessage and is disabled
     vi.mocked(siweHook.useSiweAuth).mockReturnValue({

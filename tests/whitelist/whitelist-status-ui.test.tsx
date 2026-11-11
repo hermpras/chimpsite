@@ -450,7 +450,7 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
 
     render(<WhitelistPage />);
 
-    const signInBtn = screen.getByRole("button", { name: "Sign In with Ethereum" });
+    const signInBtn = screen.getByRole("button", { name: "Sign In" });
     expect(signInBtn).toBeInTheDocument();
     fireEvent.click(signInBtn);
     expect(mockLogin).toHaveBeenCalledTimes(1);
