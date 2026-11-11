@@ -126,14 +126,7 @@ function getWhitelistSummaryBadge(
   isAuthenticated?: boolean,
 ) {
   if (!isAuthenticated) {
-    return (
-      <Badge
-        variant="outline"
-        className="rounded-full border-[#163B44] bg-[#071f27]/70 text-zinc-400 text-xs px-3.5 py-1 font-medium backdrop-blur-sm"
-      >
-        Wallet Not Connected
-      </Badge>
-    );
+    return null;
   }
   if (!status) {
     return (
@@ -969,13 +962,7 @@ function ProfileContent() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3.5">
-                    <div>
-                      <p className="text-sm font-bold text-zinc-300">Status: Not Connected</p>
-                      <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
-                        {currentXUsername ? `@${currentXUsername}` : "No X account linked"}
-                      </p>
-                    </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3.5">
                     <Button
                       size="sm"
                       disabled={isLinking || status !== "authenticated"}
