@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Copy, Check } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -52,7 +52,18 @@ export function AdminUsersBans() {
   const [userPage, setUserPage] = useState(1);
   const [userTotal, setUserTotal] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const userLimit = 10;
+
+  const handleCopy = (text: string, key: string) => {
+    if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+    setCopiedKey(key);
+    setTimeout(() => {
+      setCopiedKey((curr) => (curr === key ? null : curr));
+    }, 1500);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -518,20 +529,65 @@ export function AdminUsersBans() {
                   users.map((u) => (
                     <tr key={u.id} className="transition-colors hover:bg-[#102B33]/30">
                       <td className="px-3 py-2.5 font-mono text-gray-200">
-                        <span title={u.id}>{u.id}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span title={u.id}>{u.id}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(u.id, `user-${u.id}`)}
+                            title="Copy User ID"
+                            aria-label={`Copy User ID ${u.id}`}
+                            className="text-gray-500 hover:text-cyan-400 transition-colors p-0.5 rounded focus:outline-none"
+                          >
+                            {copiedKey === `user-${u.id}` ? (
+                              <Check className="h-3.5 w-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                       <td className="px-3 py-2.5 font-mono text-emerald-400">
                         {u.wallet?.address ? (
-                          <span title={u.wallet.address}>
-                            {safeFormatAddress(u.wallet.address)}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span title={u.wallet.address}>
+                              {safeFormatAddress(u.wallet.address)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(u.wallet!.address, `wallet-${u.id}`)}
+                              title="Copy Wallet Address"
+                              aria-label={`Copy Wallet Address ${u.wallet.address}`}
+                              className="text-gray-500 hover:text-emerald-400 transition-colors p-0.5 rounded focus:outline-none"
+                            >
+                              {copiedKey === `wallet-${u.id}` ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-gray-500">—</span>
                         )}
                       </td>
                       <td className="px-3 py-2.5">
                         {u.xIdentity?.username ? (
-                          <span className="text-sky-400">@{u.xIdentity.username}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sky-400">@{u.xIdentity.username}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(`@${u.xIdentity!.username}`, `x-${u.id}`)}
+                              title="Copy X Username"
+                              aria-label={`Copy X Username @${u.xIdentity.username}`}
+                              className="text-gray-500 hover:text-sky-400 transition-colors p-0.5 rounded focus:outline-none"
+                            >
+                              {copiedKey === `x-${u.id}` ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-gray-500">—</span>
                         )}

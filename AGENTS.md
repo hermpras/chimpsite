@@ -10,10 +10,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## User Preferences & Rules
 
-- **JANGAN PERNAH ADA ICON (KECUALI TOMBOL SIGN IN & REFRESH, DAN CHECKLIST TASK)**: Jangan pernah menambahkan icon (baik icon Lucide, icon dot/bullet, SVG icon, atau emoji) pada komponen UI **kecuali** untuk:
+- **JANGAN PERNAH ADA ICON (KECUALI TOMBOL SIGN IN & REFRESH, CHECKLIST TASK, DAN COPY DI TABEL USER DIRECTORY)**: Jangan pernah menambahkan icon (baik icon Lucide, icon dot/bullet, SVG icon, atau emoji) pada komponen UI **kecuali** untuk:
   1. **Tombol Sign In** (`LogIn`)
   2. **Tombol Refresh** (`RefreshCw` — boleh menggunakan icon atau diganti icon saja)
   3. **Icon Ceklist Modern pada Status Done Task Whitelist** (`Check` — menggantikan teks badge "Done" dengan icon ceklist modern berefek glow emerald).
+  4. **Icon Copy pada Tabel User Directory Admin** (`Copy` & `Check` feedback — untuk mempermudah admin menyalin User ID, Wallet Address, dan X username).
   Selain komponen tersebut, desain harus bersih, minimalis, dan mewah tanpa icon dekoratif.
 - **BRAND & CHAIN IDENTITAS RESMI**: **Elychimp** adalah nama resmi Brand / Produk (bukan ChimpHood), sedangkan **Elysium** adalah nama Chain / Jaringan tempat Elychimp berjalan. Selalu gunakan **Elychimp** untuk merujuk ke produk/platform/koleksi dan **Elysium** untuk merujuk ke jaringan/chain.
 - **Top Profile Card & Panel Header**: Harus bersih tanpa teks atau badge berlebihan seperti `//`, `FULL CHARACTER SET`, `ELYCHIMP`, `SYNCED`, `5/5 ACTIVE`, atau tombol navigasi tambahan. Jangan pernah menambahkan badge status/counter dekoratif di pojok kanan atas header panel. Tetap fokus pada judul bersih, status whitelist, pills ringkas tanpa icon, dan avatar dalam bingkai kaca mewah.

@@ -98,6 +98,58 @@ describe("Local Testing - Admin Dashboard Users & Bans UI", () => {
       expect(screen.getByLabelText(/Ban Record ID/i)).toHaveValue("ban-rec-789");
     });
 
+    it("copies User ID, Wallet Address, and X Username to clipboard when copy icon is clicked", async () => {
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock,
+        },
+      });
+
+      vi.mocked(adminClient.adminListUsers).mockResolvedValueOnce({
+        users: [
+          {
+            id: "user-cuid-123",
+            role: "USER",
+            isBanned: false,
+            createdAt: "2026-10-24T00:00:00.000Z",
+            updatedAt: "2026-10-24T00:00:00.000Z",
+            wallet: {
+              address: "0x1234567890123456789012345678901234567890",
+              chainId: 1,
+              verifiedAt: "2026-10-24T00:00:00.000Z",
+            },
+            xIdentity: { username: "chimp_trader", name: "Chimp Trader" },
+            activeBan: null,
+          },
+        ],
+        total: 1,
+        limit: 10,
+        offset: 0,
+      });
+
+      render(<AdminUsersBans />);
+
+      await waitFor(() => {
+        expect(screen.getByText("user-cuid-123")).toBeInTheDocument();
+      });
+
+      // Copy User ID
+      const copyUserIdBtn = screen.getByRole("button", { name: /Copy User ID user-cuid-123/i });
+      fireEvent.click(copyUserIdBtn);
+      expect(writeTextMock).toHaveBeenCalledWith("user-cuid-123");
+
+      // Copy Wallet Address
+      const copyWalletBtn = screen.getByRole("button", { name: /Copy Wallet Address 0x1234567890123456789012345678901234567890/i });
+      fireEvent.click(copyWalletBtn);
+      expect(writeTextMock).toHaveBeenCalledWith("0x1234567890123456789012345678901234567890");
+
+      // Copy X Username
+      const copyXBtn = screen.getByRole("button", { name: /Copy X Username @chimp_trader/i });
+      fireEvent.click(copyXBtn);
+      expect(writeTextMock).toHaveBeenCalledWith("@chimp_trader");
+    });
+
     it("triggers search query submission and updates directory listing", async () => {
       vi.mocked(adminClient.adminListUsers).mockResolvedValueOnce({
         users: [],
