@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { LogIn, RefreshCw } from "lucide-react";
+import { LogIn, RefreshCw, Check } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -1552,9 +1552,22 @@ export default function WhitelistPage() {
                               {/* Action Buttons & Status */}
                               <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 border-t border-[#163B44] md:border-t-0 md:pt-0">
                                 {taskStatus.key !== "NOT_SUBMITTED" && (
-                                  <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}>
-                                    {taskStatus.key === "APPROVED" ? "Done" : taskStatus.label}
-                                  </Badge>
+                                  taskStatus.key === "APPROVED" ? (
+                                    <span
+                                      className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-emerald-500/50 bg-gradient-to-b from-emerald-950/70 to-[#041d18]/90 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)] ring-1 ring-emerald-500/20 backdrop-blur-sm transition-all duration-200 hover:border-emerald-400 hover:shadow-[0_0_16px_rgba(16,185,129,0.45)] hover:scale-105"
+                                      title="Task Completed"
+                                      aria-label="Completed"
+                                    >
+                                      <Check
+                                        className="h-3.5 w-3.5 text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]"
+                                        strokeWidth={2.75}
+                                      />
+                                    </span>
+                                  ) : (
+                                    <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}>
+                                      {taskStatus.label}
+                                    </Badge>
+                                  )
                                 )}
 
                                 <a
