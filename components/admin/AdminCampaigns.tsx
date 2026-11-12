@@ -858,9 +858,6 @@ export function AdminCampaigns() {
             >
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-white">{task.title}</span>
-                <Badge variant="outline" className="text-[10px]">
-                  {task.points} pts
-                </Badge>
               </div>
               <div className="flex items-center gap-2 font-mono text-[11px] text-gray-400">
                 <span>code: {task.taskCode}</span>
@@ -941,9 +938,6 @@ export function AdminCampaigns() {
                             className="text-[10px]"
                           >
                             {isRequired ? "Required for WL" : "Optional"}
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px]">
-                            {task.points} pts
                           </Badge>
                         </div>
                       </div>
@@ -1204,9 +1198,6 @@ export function AdminCampaigns() {
                                     className="text-[10px]"
                                   >
                                     {isRequired ? "Required for WL" : "Optional"}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-[10px]">
-                                    {task.points} pts
                                   </Badge>
                                 </div>
                               </div>
@@ -1490,46 +1481,26 @@ export function AdminCampaigns() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="add-task-type"
-                    className="mb-1 block font-medium text-gray-300"
-                  >
-                    Task Type *
-                  </label>
-                  <select
-                    id="add-task-type"
-                    value={addTaskType}
-                    onChange={(e) => setAddTaskType(e.target.value)}
-                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  >
-                    <option value="SOCIAL_X_FOLLOW">SOCIAL_X_FOLLOW (Follow)</option>
-                    <option value="SOCIAL_X_LIKE">SOCIAL_X_LIKE (Like)</option>
-                    <option value="SOCIAL_X_REPOST">SOCIAL_X_REPOST (Repost)</option>
-                    <option value="SOCIAL_X_QUOTE">SOCIAL_X_QUOTE (Quote)</option>
-                    <option value="SOCIAL_X_REPLY">SOCIAL_X_REPLY (Reply)</option>
-                    <option value="CUSTOM">CUSTOM (Custom Quest)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="add-task-points"
-                    className="mb-1 block font-medium text-gray-300"
-                  >
-                    Points *
-                  </label>
-                  <input
-                    id="add-task-points"
-                    type="number"
-                    min="0"
-                    value={addTaskPoints}
-                    onChange={(e) => setAddTaskPoints(Number(e.target.value))}
-                    required
-                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
+              <div>
+                <label
+                  htmlFor="add-task-type"
+                  className="mb-1 block font-medium text-gray-300"
+                >
+                  Task Type *
+                </label>
+                <select
+                  id="add-task-type"
+                  value={addTaskType}
+                  onChange={(e) => setAddTaskType(e.target.value)}
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                >
+                  <option value="SOCIAL_X_FOLLOW">SOCIAL_X_FOLLOW (Follow)</option>
+                  <option value="SOCIAL_X_LIKE">SOCIAL_X_LIKE (Like)</option>
+                  <option value="SOCIAL_X_REPOST">SOCIAL_X_REPOST (Repost)</option>
+                  <option value="SOCIAL_X_QUOTE">SOCIAL_X_QUOTE (Quote)</option>
+                  <option value="SOCIAL_X_REPLY">SOCIAL_X_REPLY (Reply)</option>
+                  <option value="CUSTOM">CUSTOM (Custom Quest)</option>
+                </select>
               </div>
 
               <div>
@@ -1674,24 +1645,6 @@ export function AdminCampaigns() {
                   onChange={(e) => setEditTaskTitle(e.target.value)}
                   required
                   className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="edit-task-points"
-                  className="mb-1 block font-medium text-gray-300"
-                >
-                  Points
-                </label>
-                <input
-                  id="edit-task-points"
-                  type="number"
-                  min="0"
-                  value={editTaskPoints}
-                  onChange={(e) => setEditTaskPoints(Number(e.target.value))}
-                  required
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 

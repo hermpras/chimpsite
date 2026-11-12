@@ -290,8 +290,8 @@ export function AdminEvidenceReview() {
             )}
           </div>
           <p className="mt-1 text-sm text-gray-400">
-            Moderate quest evidence submissions, verify user task proofs, and approve
-            point allocations.
+            Moderate quest evidence submissions, verify user task proofs, and confirm
+            task completion.
           </p>
         </div>
 

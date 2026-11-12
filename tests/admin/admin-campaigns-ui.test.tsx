@@ -501,8 +501,7 @@ describe("Local Testing - Admin Dashboard Campaigns Menu", () => {
         expect(screen.getByText("Repost Announcement")).toBeInTheDocument();
       });
 
-      expect(screen.getByText("25 pts")).toBeInTheDocument();
-      expect(screen.getByText("15 pts")).toBeInTheDocument();
+      expect(screen.queryByText(/pts/i)).not.toBeInTheDocument();
       expect(screen.getByText("code: FOLLOW_X_CHIMP")).toBeInTheDocument();
       expect(screen.getByText("code: REPOST_ANNOUNCEMENT")).toBeInTheDocument();
       expect(screen.getByText("type: SOCIAL_X_FOLLOW")).toBeInTheDocument();
@@ -625,9 +624,9 @@ describe("Local Testing - Admin Dashboard Campaigns Menu", () => {
       // Verify the legacy task is rendered in the UI
       await waitFor(() => {
         expect(screen.getByText("Legacy Historical Task")).toBeInTheDocument();
-        expect(screen.getByText("50 pts")).toBeInTheDocument();
         expect(screen.getByText("code: LEGACY_TASK")).toBeInTheDocument();
       });
+      expect(screen.queryByText(/pts/i)).not.toBeInTheDocument();
     });
   });
 
@@ -862,7 +861,7 @@ describe("Local Testing - Admin Dashboard Campaigns Menu", () => {
       });
     });
 
-    it("menampilkan task cards dengan badge Required/Optional, Points, dan Target URL X", async () => {
+    it("menampilkan task cards dengan badge Required/Optional dan Target URL X", async () => {
       render(<AdminCampaigns />);
 
       await waitFor(() => {
@@ -876,8 +875,7 @@ describe("Local Testing - Admin Dashboard Campaigns Menu", () => {
 
       expect(screen.getByText("Required for WL")).toBeInTheDocument();
       expect(screen.getByText("Optional")).toBeInTheDocument();
-      expect(screen.getByText("20 pts")).toBeInTheDocument();
-      expect(screen.getByText("10 pts")).toBeInTheDocument();
+      expect(screen.queryByText(/pts/i)).not.toBeInTheDocument();
       expect(screen.getByText("code: FOLLOW_X_CHIMP")).toBeInTheDocument();
       expect(screen.getByText("type: SOCIAL_X_FOLLOW")).toBeInTheDocument();
       expect(
@@ -895,7 +893,7 @@ describe("Local Testing - Admin Dashboard Campaigns Menu", () => {
           title: "Like & Repost Post",
           description: "New promotional task",
           taskType: "SOCIAL_X_REPOST",
-          points: 15,
+          points: 10,
           isRequired: true,
           sortOrder: 3,
         },
@@ -927,9 +925,6 @@ describe("Local Testing - Admin Dashboard Campaigns Menu", () => {
       fireEvent.change(screen.getByLabelText(/Task Type/i), {
         target: { value: "SOCIAL_X_REPOST" },
       });
-      fireEvent.change(screen.getByLabelText(/Points/i), {
-        target: { value: "15" },
-      });
       fireEvent.change(screen.getByLabelText(/Target X Post URL/i), {
         target: { value: "https://x.com/ChimpHood/status/20002" },
       });
@@ -945,7 +940,6 @@ describe("Local Testing - Admin Dashboard Campaigns Menu", () => {
             taskCode: "LIKE_REPOST_QUEST",
             title: "Like & Repost Post",
             taskType: "SOCIAL_X_REPOST",
-            points: 15,
             isRequired: true,
             requirementMetadata: { tweetUrl: "https://x.com/ChimpHood/status/20002" },
           }),
@@ -1013,12 +1007,9 @@ describe("Local Testing - Admin Dashboard Campaigns Menu", () => {
       // Click Edit
       fireEvent.click(screen.getAllByRole("button", { name: /Edit/i })[0]);
 
-      // Change title & points only (URL unchanged)
+      // Change title only (URL unchanged)
       fireEvent.change(screen.getByLabelText(/Task Title/i), {
         target: { value: "Follow @ChimpHood Officially" },
-      });
-      fireEvent.change(screen.getByLabelText(/Points/i), {
-        target: { value: "25" },
       });
 
       // Submit
@@ -1031,7 +1022,6 @@ describe("Local Testing - Admin Dashboard Campaigns Menu", () => {
           expect.objectContaining({
             taskId: "task-001",
             title: "Follow @ChimpHood Officially",
-            points: 25,
           }),
         );
       });
