@@ -1,18 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  Users,
-  ShieldAlert,
-  CheckCircle2,
-  AlertCircle,
-  UserX,
-  UserCheck,
-  Search,
-  RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -30,7 +19,7 @@ import {
   type AdminRevokeBanInput,
   type AdminUserRecord,
 } from "@/lib/admin/client";
-import { shortenAddress } from "@/lib/auth/address";
+import { safeFormatAddress } from "@/lib/auth/address";
 
 export function AdminUsersBans() {
   // Ban User Form State
@@ -183,10 +172,7 @@ export function AdminUsersBans() {
         {/* Tool 1: Ban User Form */}
         <Card className="border-[#163B44] bg-[#0B2026]/90">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <UserX className="h-5 w-5 text-rose-400" />
-              <CardTitle className="text-base text-white">Ban Account</CardTitle>
-            </div>
+            <CardTitle className="text-base text-white">Ban Account</CardTitle>
             <CardDescription className="text-xs text-gray-400">
               Impose an immediate ban or specific operational restriction on a user
               account.
@@ -308,8 +294,7 @@ export function AdminUsersBans() {
               </div>
 
               {banError && (
-                <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <div className="rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
                   <span>{banError}</span>
                 </div>
               )}
@@ -317,9 +302,8 @@ export function AdminUsersBans() {
               {banResult &&
                 (banResult.alreadyBanned ? (
                   <div className="space-y-1 rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <ShieldAlert className="h-4 w-4" />
-                      <span>Account Already Banned</span>
+                    <div className="font-semibold">
+                      Account Already Banned
                     </div>
                     <p className="text-[11px] text-amber-200">
                       An active ban with the same or encompassing scope already exists.
@@ -330,9 +314,8 @@ export function AdminUsersBans() {
                   </div>
                 ) : (
                   <div className="space-y-1 rounded border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span>Ban Applied Successfully</span>
+                    <div className="font-semibold">
+                      Ban Applied Successfully
                     </div>
                     <p className="text-[11px] text-emerald-200">
                       Ban ID: {banResult.banRecord?.id ?? banResult.banId ?? "Registered"}{" "}
@@ -357,10 +340,7 @@ export function AdminUsersBans() {
         {/* Tool 2: Revoke Ban Form */}
         <Card className="border-[#163B44] bg-[#0B2026]/90">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-emerald-400" />
-              <CardTitle className="text-base text-white">Revoke Ban</CardTitle>
-            </div>
+            <CardTitle className="text-base text-white">Revoke Ban</CardTitle>
             <CardDescription className="text-xs text-gray-400">
               Restore an account by revoking an existing ban record and clearing
               restrictions.
@@ -404,17 +384,15 @@ export function AdminUsersBans() {
               </div>
 
               {revokeError && (
-                <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <div className="rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
                   <span>{revokeError}</span>
                 </div>
               )}
 
               {revokeResult && (
                 <div className="space-y-1 rounded border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-                  <div className="flex items-center gap-2 font-semibold">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Ban Revoked Successfully</span>
+                  <div className="font-semibold">
+                    Ban Revoked Successfully
                   </div>
                   <p className="text-[11px] text-emerald-200">
                     User account restored. Audit Log ID: {revokeResult.auditLogId}
@@ -440,12 +418,9 @@ export function AdminUsersBans() {
       <Card className="border-[#163B44] bg-[#0B2026]/90">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-indigo-400" />
-              <CardTitle className="text-base text-white">
-                User Directory & Search
-              </CardTitle>
-            </div>
+            <CardTitle className="text-base text-white">
+              User Directory & Search
+            </CardTitle>
             <Button
               variant="outline"
               size="sm"
@@ -471,13 +446,12 @@ export function AdminUsersBans() {
           {/* Search Bar */}
           <form onSubmit={handleSearchSubmit} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute top-2.5 left-3 h-3.5 w-3.5 text-gray-500" />
               <input
                 type="text"
                 placeholder="Search by wallet address (0x...), User CUID, or X username..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 py-1.5 pr-3 pl-9 text-xs text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 py-1.5 px-3 text-xs text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
               />
             </div>
             <Button
@@ -509,8 +483,7 @@ export function AdminUsersBans() {
           </form>
 
           {usersError && (
-            <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <div className="rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
               <span>{usersError}</span>
             </div>
           )}
@@ -550,7 +523,7 @@ export function AdminUsersBans() {
                       <td className="px-3 py-2.5 font-mono text-emerald-400">
                         {u.wallet?.address ? (
                           <span title={u.wallet.address}>
-                            {shortenAddress(u.wallet.address)}
+                            {safeFormatAddress(u.wallet.address)}
                           </span>
                         ) : (
                           <span className="text-gray-500">—</span>
@@ -630,9 +603,9 @@ export function AdminUsersBans() {
                   setLoadingUsers(true);
                   setUserPage((p) => p - 1);
                 }}
-                className="h-7 px-2"
+                className="h-7 px-2 text-xs"
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                Previous
               </Button>
               <span className="px-2 text-gray-300">
                 Page {userPage} of {totalPages}
@@ -646,9 +619,9 @@ export function AdminUsersBans() {
                   setLoadingUsers(true);
                   setUserPage((p) => p + 1);
                 }}
-                className="h-7 px-2"
+                className="h-7 px-2 text-xs"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
+                Next
               </Button>
             </div>
           </div>

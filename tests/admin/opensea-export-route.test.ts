@@ -155,10 +155,10 @@ describe("Admin Whitelist OpenSea Export API Route (GET /api/admin/whitelist/exp
   });
 
   describe("Successful CSV Exports", () => {
-    it("successfully downloads chimphood-gtd-allowlist.csv for GTD", async () => {
+    it("successfully downloads elychimp-gtd-allowlist.csv for GTD", async () => {
       const sampleCsv = "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed,1\n";
       vi.mocked(exportOpenSeaAllowlist).mockResolvedValueOnce({
-        filename: "chimphood-gtd-allowlist.csv",
+        filename: "elychimp-gtd-allowlist.csv",
         csv: sampleCsv,
         count: 1,
         stage: "gtd",
@@ -177,7 +177,7 @@ describe("Admin Whitelist OpenSea Export API Route (GET /api/admin/whitelist/exp
       expect(res.status).toBe(200);
       expect(res.headers.get("Content-Type")).toBe("text/csv; charset=utf-8");
       expect(res.headers.get("Content-Disposition")).toBe(
-        'attachment; filename="chimphood-gtd-allowlist.csv"',
+        'attachment; filename="elychimp-gtd-allowlist.csv"',
       );
       expect(body).toBe(sampleCsv);
       expect(exportOpenSeaAllowlist).toHaveBeenCalledWith(
@@ -187,10 +187,10 @@ describe("Admin Whitelist OpenSea Export API Route (GET /api/admin/whitelist/exp
       );
     });
 
-    it("successfully downloads chimphood-fcfs-allowlist.csv for FCFS", async () => {
+    it("successfully downloads elychimp-fcfs-allowlist.csv for FCFS", async () => {
       const sampleCsv = "0x71c89f074d310ec5e427773cb20a44ef69d7a229,1\n";
       vi.mocked(exportOpenSeaAllowlist).mockResolvedValueOnce({
-        filename: "chimphood-fcfs-allowlist.csv",
+        filename: "elychimp-fcfs-allowlist.csv",
         csv: sampleCsv,
         count: 1,
         stage: "fcfs",
@@ -211,7 +211,7 @@ describe("Admin Whitelist OpenSea Export API Route (GET /api/admin/whitelist/exp
       expect(res.status).toBe(200);
       expect(res.headers.get("Content-Type")).toBe("text/csv; charset=utf-8");
       expect(res.headers.get("Content-Disposition")).toBe(
-        'attachment; filename="chimphood-fcfs-allowlist.csv"',
+        'attachment; filename="elychimp-fcfs-allowlist.csv"',
       );
       expect(body).toBe(sampleCsv);
       expect(exportOpenSeaAllowlist).toHaveBeenCalledWith(

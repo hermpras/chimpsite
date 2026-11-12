@@ -262,7 +262,7 @@ describe("PostgreSQL Real Database Verification — OpenSea CSV Export Hardening
       programIdOrSlug: programId,
     });
 
-    expect(result.filename).toBe("chimphood-gtd-allowlist.csv");
+    expect(result.filename).toBe("elychimp-gtd-allowlist.csv");
     expect(result.stage).toBe("gtd");
     expect(result.count).toBe(2);
 
@@ -307,7 +307,7 @@ describe("PostgreSQL Real Database Verification — OpenSea CSV Export Hardening
       programIdOrSlug: programId,
     });
 
-    expect(fcfsResult.filename).toBe("chimphood-fcfs-allowlist.csv");
+    expect(fcfsResult.filename).toBe("elychimp-fcfs-allowlist.csv");
     expect(fcfsResult.stage).toBe("fcfs");
     expect(fcfsResult.count).toBe(1);
 

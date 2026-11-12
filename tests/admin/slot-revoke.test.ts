@@ -835,6 +835,10 @@ describe("Whitelist Slot Revoke Service (revokeWlSlot)", () => {
 
     it("revoked slot holder is no longer blocked from claiming drops by WL_HOLDER_CLAIM_PROHIBITED", async () => {
       // Setup active drop period with available pool item
+      const u1 = mockPrisma._store.users.find((u: any) => u.id === "user-1");
+      if (u1) {
+        u1.xIdentity = { id: "x-user-1", xId: "x-user-1", username: "user_1" };
+      }
       mockPrisma._store.drops.push({ id: "drop-1", status: "ACTIVE" });
       mockPrisma._store.periods.push({
         id: "period-1",

@@ -1,18 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  FileCheck2,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  ExternalLink,
-  RefreshCw,
-  AlertCircle,
-  Filter,
-  Copy,
-  Check,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -28,14 +17,7 @@ import {
   adminReviewEvidence,
   type AdminListEvidenceInput,
 } from "@/lib/admin/client";
-
-function XLogo(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 23.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
+import { safeFormatAddress } from "@/lib/auth/address";
 
 export interface EvidenceSubmissionItem {
   id: string;
@@ -128,12 +110,6 @@ export function isFollowLikeRepostTask(sub: EvidenceSubmissionItem): boolean {
     return true;
   }
   return false;
-}
-
-function shortenAddress(addr: string): string {
-  if (!addr) return "";
-  if (addr.length <= 12) return addr;
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
 export function AdminEvidenceReview() {
@@ -270,8 +246,8 @@ export function AdminEvidenceReview() {
       {/* Filter Tabs */}
       <div className="flex flex-col gap-3 border-b border-[#163B44] pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="mr-2 flex items-center gap-1 text-xs font-medium text-gray-400">
-            <Filter className="h-3.5 w-3.5" /> Status:
+          <span className="mr-2 text-xs font-medium text-gray-400">
+            Status:
           </span>
           {(["PENDING_REVIEW", "APPROVED", "REJECTED", "ALL"] as const).map((status) => (
             <button
@@ -318,15 +294,13 @@ export function AdminEvidenceReview() {
 
       {/* Notifications */}
       {actionSuccess && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-          <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-400" />
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
           <span>{actionSuccess}</span>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-          <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-400" />
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
           <span>{error}</span>
         </div>
       )}
@@ -340,14 +314,13 @@ export function AdminEvidenceReview() {
       ) : filteredSubmissions.length === 0 ? (
         <Card className="border-[#163B44] bg-[#0B2026]">
           <CardContent className="p-12 text-center">
-            <FileCheck2 className="mx-auto mb-3 h-10 w-10 text-gray-600" />
             <h3 className="text-base font-semibold text-gray-300">
               No Submissions Found
             </h3>
             <p className="mt-1 text-xs text-gray-500">
               There are no evidence records matching the current filter (
               {filterStatus.replace("_", " ")}
-              {taskScopeFilter === "REPLY_QUOTE_ONLY" ? " • Reply & Quote Only" : ""}).
+              {taskScopeFilter === "REPLY_QUOTE_ONLY" ? " / Reply & Quote Only" : ""}).
             </p>
             {hiddenCount > 0 && taskScopeFilter === "REPLY_QUOTE_ONLY" && (
               <div className="mt-4">
@@ -379,7 +352,13 @@ export function AdminEvidenceReview() {
                   const match = sub.payload.match(
                     /https?:\/\/(?:twitter|x)\.com\/([A-Za-z0-9_]+)(?:\/status|\/|$)/,
                   );
-                  if (match && match[1] && match[1].toLowerCase() !== "chimphoodnft") {
+                  if (
+                    match &&
+                    match[1] &&
+                    !["chimphoodnft", "chimphood", "elychimp", "elychimpnft"].includes(
+                      match[1].toLowerCase(),
+                    )
+                  ) {
                     return match[1];
                   }
                 }
@@ -510,11 +489,9 @@ export function AdminEvidenceReview() {
                                 href={`https://x.com/${xUsername}`}
                                 target="_blank"
                                 rel="noreferrer noopener"
-                                className="inline-flex items-center gap-1 font-medium text-sky-400 hover:text-sky-300 hover:underline"
+                                className="font-medium text-sky-400 hover:text-sky-300 hover:underline"
                               >
-                                <XLogo className="h-3 w-3" />
-                                <span>@{xUsername}</span>
-                                <ExternalLink className="h-2.5 w-2.5 opacity-70" />
+                                @{xUsername}
                               </a>
                             ) : (
                               <span className="text-gray-500 italic">Not connected</span>
@@ -524,21 +501,17 @@ export function AdminEvidenceReview() {
                           <div className="mt-1 flex items-center gap-1.5">
                             <span className="text-gray-500">Wallet:</span>{" "}
                             {walletAddress ? (
-                              <div className="inline-flex items-center gap-1">
+                              <div className="inline-flex items-center gap-1.5">
                                 <span className="font-mono text-gray-200" title={walletAddress}>
-                                  {shortenAddress(walletAddress)}
+                                  {safeFormatAddress(walletAddress)}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={() => handleCopyWallet(walletAddress)}
-                                  className="text-gray-500 hover:text-gray-300 transition-colors p-0.5"
+                                  className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
                                   title="Copy wallet address"
                                 >
-                                  {copiedWallet === walletAddress ? (
-                                    <Check className="h-3 w-3 text-emerald-400" />
-                                  ) : (
-                                    <Copy className="h-3 w-3" />
-                                  )}
+                                  {copiedWallet === walletAddress ? "Copied" : "Copy"}
                                 </button>
                               </div>
                             ) : (
@@ -577,9 +550,8 @@ export function AdminEvidenceReview() {
                                 href={proofUrl}
                                 target="_blank"
                                 rel="noreferrer noopener"
-                                className="inline-flex items-center gap-1.5 text-xs break-all text-emerald-400 hover:underline"
+                                className="text-xs break-all text-emerald-400 hover:underline"
                               >
-                                <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
                                 {proofUrl}
                               </a>
                             </div>
@@ -596,8 +568,7 @@ export function AdminEvidenceReview() {
                           )}
                         </div>
                       ) : (
-                        <div className="mt-2 flex items-center gap-1.5 rounded border border-[#163B44]/50 bg-[#0B2026]/20 px-2.5 py-1.5 text-[11px] text-gray-400">
-                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        <div className="mt-2 rounded border border-[#163B44]/50 bg-[#0B2026]/20 px-2.5 py-1.5 text-[11px] text-gray-400">
                           <span>Auto-verified social task — manual proof content hidden</span>
                         </div>
                       )}
@@ -646,21 +617,19 @@ export function AdminEvidenceReview() {
                         <Button
                           variant="primary"
                           size="sm"
-                          className="flex-1 gap-1 text-xs"
+                          className="flex-1 text-xs"
                           onClick={() => handleReview(sub.id, "APPROVED")}
                           disabled={isBusy || !isPending}
                         >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
                           Approve
                         </Button>
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="flex-1 gap-1 text-xs text-rose-300 hover:bg-rose-900/30 hover:text-rose-200"
+                          className="flex-1 text-xs text-rose-300 hover:bg-rose-900/30 hover:text-rose-200"
                           onClick={() => handleReview(sub.id, "REJECTED")}
                           disabled={isBusy || !isPending}
                         >
-                          <XCircle className="h-3.5 w-3.5" />
                           Reject
                         </Button>
                       </div>

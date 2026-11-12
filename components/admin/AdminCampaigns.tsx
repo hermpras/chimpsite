@@ -1,26 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  Sparkles,
-  Plus,
-  RefreshCw,
-  CheckCircle2,
-  AlertCircle,
-  Layers,
-  ChevronDown,
-  ChevronUp,
-  ArrowLeft,
-  Settings,
-  History,
-  CheckSquare,
-  Pencil,
-  Trash2,
-  Link as LinkIcon,
-  X,
-  Info,
-  Lock,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -640,14 +621,12 @@ export function AdminCampaigns() {
     <>
       {successMessage && (
         <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-          <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-400" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {error && (
         <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-          <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-400" />
           <span>{error}</span>
         </div>
       )}
@@ -924,10 +903,9 @@ export function AdminCampaigns() {
             <Button
               variant="primary"
               size="sm"
-              className="gap-1.5 text-xs"
+              className="text-xs"
               onClick={() => setShowAddTaskModal(true)}
             >
-              <Plus className="h-3.5 w-3.5" />
               Add Task
             </Button>
           </div>
@@ -973,7 +951,7 @@ export function AdminCampaigns() {
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-gray-400">
                       <span>code: {task.taskCode}</span>
-                      <span>•</span>
+                      <span>/</span>
                       <span>type: {task.taskType}</span>
                     </div>
 
@@ -985,7 +963,6 @@ export function AdminCampaigns() {
 
                     {tweetUrl && (
                       <div className="flex items-center gap-1.5 rounded border border-[#163B44] bg-[#04181C]/80 px-2.5 py-1.5 text-[11px] text-emerald-400">
-                        <LinkIcon className="h-3 w-3 flex-shrink-0" />
                         <span className="truncate" title={tweetUrl}>
                           Target: {tweetUrl}
                         </span>
@@ -997,19 +974,17 @@ export function AdminCampaigns() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-1 text-xs"
+                      className="text-xs"
                       onClick={() => handleOpenEditModal(task)}
                     >
-                      <Pencil className="h-3 w-3" />
                       Edit
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-1 text-xs text-rose-400 hover:border-rose-500/50 hover:text-rose-300"
+                      className="text-xs text-rose-400 hover:border-rose-500/50 hover:text-rose-300"
                       onClick={() => setDeletingTask(task)}
                     >
-                      <Trash2 className="h-3 w-3" />
                       Delete
                     </Button>
                   </div>
@@ -1064,8 +1039,7 @@ export function AdminCampaigns() {
           </div>
         ) : versionError ? (
           <div className="flex items-center justify-between rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-300">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-400" />
+            <div>
               <span>{versionError}</span>
             </div>
             <Button
@@ -1196,8 +1170,7 @@ export function AdminCampaigns() {
                     </div>
 
                     {!activeSnapshot.isCurrent && (
-                      <div className="mt-2 flex items-start gap-2 rounded border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] text-amber-200">
-                        <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
+                      <div className="mt-2 rounded border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] text-amber-200">
                         <span>
                           This historical version is read-only. Tasks and requirements cannot be edited or deleted to preserve carry-over audit integrity.
                         </span>
@@ -1240,7 +1213,7 @@ export function AdminCampaigns() {
 
                               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-gray-400">
                                 <span>code: {task.taskCode}</span>
-                                <span>•</span>
+                                <span>/</span>
                                 <span>type: {task.taskType}</span>
                               </div>
 
@@ -1252,7 +1225,6 @@ export function AdminCampaigns() {
 
                               {tweetUrl && (
                                 <div className="flex items-center gap-1.5 rounded border border-[#163B44] bg-[#04181C]/80 px-2 py-1 text-[11px] text-emerald-400">
-                                  <LinkIcon className="h-3 w-3 flex-shrink-0" />
                                   <span className="truncate" title={tweetUrl}>
                                     Target: {tweetUrl}
                                   </span>
@@ -1308,15 +1280,13 @@ export function AdminCampaigns() {
 
         {/* Local Settings Alert Notifications */}
         {settingsSuccess && (
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-400" />
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
             <span>{settingsSuccess}</span>
           </div>
         )}
 
         {settingsError && (
-          <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-            <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-400" />
+          <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
             <span>{settingsError}</span>
           </div>
         )}
@@ -1338,9 +1308,8 @@ export function AdminCampaigns() {
                 <div>
                   <label
                     htmlFor="setting-slug"
-                    className="mb-1.5 flex items-center gap-1.5 font-medium text-gray-400"
+                    className="mb-1.5 block font-medium text-gray-400"
                   >
-                    <Lock className="h-3 w-3 text-gray-500" />
                     <span>URL Slug (Read-Only)</span>
                   </label>
                   <input
@@ -1359,9 +1328,8 @@ export function AdminCampaigns() {
                 <div>
                   <label
                     htmlFor="setting-wl-program"
-                    className="mb-1.5 flex items-center gap-1.5 font-medium text-gray-400"
+                    className="mb-1.5 block font-medium text-gray-400"
                   >
-                    <Lock className="h-3 w-3 text-gray-500" />
                     <span>Associated WL Program ID</span>
                   </label>
                   <input
@@ -1389,7 +1357,7 @@ export function AdminCampaigns() {
                 <input
                   id="setting-title"
                   type="text"
-                  placeholder="e.g. ChimpHood Main Whitelist Campaign"
+                  placeholder="e.g. Elychimp Main Whitelist Campaign"
                   value={settingTitle}
                   onChange={(e) => {
                     setSettingTitle(e.target.value);
@@ -1476,9 +1444,9 @@ export function AdminCampaigns() {
             <button
               type="button"
               onClick={() => setShowAddTaskModal(false)}
-              className="text-gray-400 hover:text-white"
+              className="text-xs font-medium text-gray-400 hover:text-white"
             >
-              <X className="h-4 w-4" />
+              Close
             </button>
           </CardHeader>
           <CardContent>
@@ -1574,7 +1542,7 @@ export function AdminCampaigns() {
                 <input
                   id="add-task-url"
                   type="url"
-                  placeholder="https://x.com/ChimpHood/status/1234567890"
+                  placeholder="https://x.com/Elychimp/status/1234567890"
                   value={addTaskTweetUrl}
                   onChange={(e) => setAddTaskTweetUrl(e.target.value)}
                   className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
@@ -1664,9 +1632,9 @@ export function AdminCampaigns() {
             <button
               type="button"
               onClick={() => setEditingTask(null)}
-              className="text-gray-400 hover:text-white"
+              className="text-xs font-medium text-gray-400 hover:text-white"
             >
-              <X className="h-4 w-4" />
+              Close
             </button>
           </CardHeader>
           <CardContent>
@@ -1737,7 +1705,7 @@ export function AdminCampaigns() {
                 <input
                   id="edit-task-url"
                   type="url"
-                  placeholder="https://x.com/ChimpHood/status/..."
+                  placeholder="https://x.com/Elychimp/status/..."
                   value={editTaskTweetUrl}
                   onChange={(e) => setEditTaskTweetUrl(e.target.value)}
                   className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
@@ -1774,8 +1742,7 @@ export function AdminCampaigns() {
               </div>
 
               {triggersNewVersion && (
-                <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-200">
-                  <Info className="h-4 w-4 flex-shrink-0 text-amber-400" />
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-200">
                   <div>
                     <span className="font-semibold text-amber-300">
                       Automatic Campaign Version Bump:
@@ -1873,9 +1840,8 @@ export function AdminCampaigns() {
                 variant="outline"
                 size="sm"
                 onClick={() => setViewMode("OVERVIEW")}
-                className="gap-1.5 text-xs text-gray-300 hover:text-white"
+                className="text-xs text-gray-300 hover:text-white"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
                 Back to Overview
               </Button>
               <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
@@ -1895,12 +1861,12 @@ export function AdminCampaigns() {
             </div>
             <p className="text-xs text-gray-400">
               <span className="font-mono text-gray-500">slug: {camp.slug}</span>
-              <span className="mx-2 text-gray-600">•</span>
+              <span className="mx-2 text-gray-600">/</span>
               <span>
                 WL Program:{" "}
                 <span className="font-mono text-gray-300">{camp.wlProgramId}</span>
               </span>
-              <span className="mx-2 text-gray-600">•</span>
+              <span className="mx-2 text-gray-600">/</span>
               <span>
                 Version:{" "}
                 <span className="font-mono text-emerald-400">
@@ -1925,13 +1891,12 @@ export function AdminCampaigns() {
             role="tab"
             aria-selected={detailTab === "tasks"}
             onClick={() => handleSelectTab("tasks")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-medium transition-colors ${
+            className={`border-b-2 px-4 py-2.5 text-xs font-medium transition-colors ${
               detailTab === "tasks"
                 ? "border-emerald-500 text-emerald-400"
                 : "border-transparent text-gray-400 hover:text-gray-200"
             }`}
           >
-            <CheckSquare className="h-3.5 w-3.5" />
             Tasks
           </button>
           <button
@@ -1939,13 +1904,12 @@ export function AdminCampaigns() {
             role="tab"
             aria-selected={detailTab === "versions"}
             onClick={() => handleSelectTab("versions")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-medium transition-colors ${
+            className={`border-b-2 px-4 py-2.5 text-xs font-medium transition-colors ${
               detailTab === "versions"
                 ? "border-emerald-500 text-emerald-400"
                 : "border-transparent text-gray-400 hover:text-gray-200"
             }`}
           >
-            <History className="h-3.5 w-3.5" />
             Version History
           </button>
           <button
@@ -1953,13 +1917,12 @@ export function AdminCampaigns() {
             role="tab"
             aria-selected={detailTab === "settings"}
             onClick={() => handleSelectTab("settings")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-medium transition-colors ${
+            className={`border-b-2 px-4 py-2.5 text-xs font-medium transition-colors ${
               detailTab === "settings"
                 ? "border-emerald-500 text-emerald-400"
                 : "border-transparent text-gray-400 hover:text-gray-200"
             }`}
           >
-            <Settings className="h-3.5 w-3.5" />
             Settings
           </button>
         </div>
@@ -2012,10 +1975,8 @@ export function AdminCampaigns() {
               <Button
                 variant="primary"
                 size="sm"
-                className="gap-2"
                 onClick={() => setShowCreateForm(!showCreateForm)}
               >
-                <Plus className="h-4 w-4" />
                 {showCreateForm ? "Cancel" : "New Campaign"}
               </Button>
             )}
@@ -2037,7 +1998,6 @@ export function AdminCampaigns() {
         ) : campaigns.length === 0 ? (
           <Card className="border-[#163B44] bg-[#0B2026]">
             <CardContent className="p-12 text-center">
-              <Sparkles className="mx-auto mb-3 h-10 w-10 text-gray-600" />
               <h3 className="text-base font-semibold text-gray-300">
                 No Campaigns Registered
               </h3>
@@ -2127,26 +2087,19 @@ export function AdminCampaigns() {
                         <Button
                           variant="primary"
                           size="sm"
-                          className="gap-1.5 text-xs"
+                          className="text-xs"
                           onClick={() => handleOpenDetail(camp.id, "tasks")}
                         >
-                          <Settings className="h-3.5 w-3.5" />
                           Manage Campaign
                         </Button>
 
                         <Button
                           variant="outline"
                           size="sm"
-                          className="gap-1 text-xs"
+                          className="text-xs"
                           onClick={() => handleToggleTasks(camp)}
                         >
-                          <Layers className="h-3.5 w-3.5" />
                           Tasks
-                          {isExpanded ? (
-                            <ChevronUp className="h-3.5 w-3.5" />
-                          ) : (
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          )}
                         </Button>
                       </div>
                     </div>

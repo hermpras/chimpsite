@@ -3,6 +3,14 @@ import path from "node:path";
 import sharp from "sharp";
 import { prisma } from "@/server/db";
 import { requireAdminSession, AdminAuthError } from "@/server/auth/session";
+import { recordAuditLog } from "@/server/audit/audit";
+import { syncActiveDropPeriodPool } from "@/server/drops/auto-replenish";
+
+function clientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim() || "unknown";
+  return request.headers.get("x-real-ip")?.trim() || "unknown";
+}
 
 const VALID_CATEGORIES = ["BG", "FUR", "CLOTHING", "HEADWEAR", "EYEWEAR"] as const;
 const VALID_RARITIES = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"] as const;
@@ -112,30 +120,66 @@ export async function POST(request: Request): Promise<Response> {
       }
     }
     const maxSupply = maxSupplyStr ? parseInt(maxSupplyStr, 10) : null;
+    const actorId = session?.userId || (session as any)?.user?.id || null;
+    const ip = clientIp(request);
+    const userAgent = request.headers.get("user-agent") ?? null;
+
+    const runTx =
+      typeof prisma.$transaction === "function"
+        ? (cb: (tx: any) => Promise<any>) => prisma.$transaction(cb)
+        : (cb: (tx: any) => Promise<any>) => cb(prisma);
 
     // Upsert trait in database
-    const trait = await prisma.trait.upsert({
-      where: { slug },
-      create: {
-        slug,
-        name,
-        category: category as (typeof VALID_CATEGORIES)[number],
-        rarity: rarity as (typeof VALID_RARITIES)[number],
-        description: description || null,
-        imageUrl,
-        maxSupply: Number.isNaN(maxSupply) ? null : maxSupply,
-        isActive: true,
-      },
-      update: {
-        name,
-        category: category as (typeof VALID_CATEGORIES)[number],
-        rarity: rarity as (typeof VALID_RARITIES)[number],
-        description: description || null,
-        imageUrl,
-        maxSupply: Number.isNaN(maxSupply) ? null : maxSupply,
-        isActive: true,
-      },
+    const trait = await runTx(async (tx) => {
+      const saved = await tx.trait.upsert({
+        where: { slug },
+        create: {
+          slug,
+          name,
+          category: category as (typeof VALID_CATEGORIES)[number],
+          rarity: rarity as (typeof VALID_RARITIES)[number],
+          description: description || null,
+          imageUrl,
+          maxSupply: Number.isNaN(maxSupply) ? null : maxSupply,
+          isActive: true,
+        },
+        update: {
+          name,
+          category: category as (typeof VALID_CATEGORIES)[number],
+          rarity: rarity as (typeof VALID_RARITIES)[number],
+          description: description || null,
+          imageUrl,
+          maxSupply: Number.isNaN(maxSupply) ? null : maxSupply,
+          isActive: true,
+        },
+      });
+
+      if (tx.auditLog) {
+        await recordAuditLog(tx, {
+          actorId,
+          actorIp: ip,
+          userAgent,
+          action: "TRAIT_CREATED",
+          entityType: "Trait",
+          entityId: saved.id,
+          newValues: {
+            slug: saved.slug,
+            name: saved.name,
+            category: saved.category,
+            rarity: saved.rarity,
+            imageUrl: saved.imageUrl,
+            description: saved.description,
+            maxSupply: saved.maxSupply,
+            isActive: saved.isActive,
+          },
+        });
+      }
+
+      return saved;
     });
+
+    // Auto-sync active drop period pool in real-time
+    await syncActiveDropPeriodPool(prisma);
 
     return Response.json({ success: true, trait });
   } catch (err: unknown) {

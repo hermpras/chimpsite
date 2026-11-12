@@ -325,11 +325,11 @@ export async function exportOpenSeaAllowlist(
 
   if (stage === "gtd") {
     targetWallets = gtdWallets;
-    filename = "chimphood-gtd-allowlist.csv";
+    filename = "elychimp-gtd-allowlist.csv";
   } else {
     // FCFS (Task 4.3): Only qualified candidates, strictly excluding GTD wallets
     targetWallets = await getFCFSWallets(prisma, program.id, gtdWalletSet, now);
-    filename = "chimphood-fcfs-allowlist.csv";
+    filename = "elychimp-fcfs-allowlist.csv";
 
     // Strict runtime disjointness assertion
     const overlapping = targetWallets.filter((w) => gtdWalletSet.has(w));

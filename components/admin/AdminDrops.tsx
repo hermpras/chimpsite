@@ -1,23 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  Flame,
-  AlertTriangle,
-  RefreshCw,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Package,
-  Layers,
-  Lock,
-  Plus,
-  Calendar,
-  Settings2,
-  X,
-  ChevronRight,
-  ShieldCheck,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -546,7 +530,6 @@ export function AdminDrops() {
             className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
             onClick={() => setShowCreateModal(true)}
           >
-            <Plus className="h-4 w-4" />
             Create Drop
           </Button>
 
@@ -572,14 +555,12 @@ export function AdminDrops() {
       {/* Action / Global Alerts */}
       {actionError && (
         <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-          <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-400" />
           <span>{actionError}</span>
         </div>
       )}
 
       {actionSuccess && (
         <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-          <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-400" />
           <span>{actionSuccess}</span>
         </div>
       )}
@@ -588,8 +569,7 @@ export function AdminDrops() {
       <Card className="border-[#163B44] bg-[#0B2026]/90">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-orange-400" />
+            <div>
               <CardTitle className="text-base text-white">
                 Live Drop Monitor & Claim Window
               </CardTitle>
@@ -683,8 +663,7 @@ export function AdminDrops() {
 
               {/* Pool Items Table */}
               <div>
-                <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-300">
-                  <Package className="h-3.5 w-3.5 text-emerald-400" />
+                <h3 className="mb-2 text-xs font-semibold text-gray-300">
                   Live Pool Trait Allocations
                 </h3>
                 {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 ? (
@@ -741,8 +720,7 @@ export function AdminDrops() {
       <Card className="border-[#163B44] bg-[#0B2026]/90">
         <CardHeader>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <Layers className="h-5 w-5 text-emerald-400" />
+            <div>
               <CardTitle className="text-base text-white">
                 Drop Seasons & Period Configurations
               </CardTitle>
@@ -840,10 +818,8 @@ export function AdminDrops() {
                           onClick={() => handleToggleDropStatus("PAUSED")}
                           className="h-8 border-amber-500/40 text-amber-300 hover:bg-amber-950/30 text-xs"
                         >
-                          {togglingStatus ? (
+                          {togglingStatus && (
                             <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Clock className="mr-1.5 h-3.5 w-3.5" />
                           )}
                           Pause Drops
                         </Button>
@@ -865,10 +841,8 @@ export function AdminDrops() {
                           onClick={() => handleToggleDropStatus("ACTIVE")}
                           className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs"
                         >
-                          {togglingStatus ? (
+                          {togglingStatus && (
                             <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Flame className="mr-1.5 h-3.5 w-3.5" />
                           )}
                           Resume Perpetual Drops
                         </Button>
@@ -889,11 +863,9 @@ export function AdminDrops() {
                         onClick={() => handleToggleDropStatus("ACTIVE")}
                         className="h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs"
                       >
-                        {togglingStatus ? (
-                          <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                        )}
+                        <RefreshCw
+                          className={`mr-1.5 h-3.5 w-3.5 ${togglingStatus ? "animate-spin" : ""}`}
+                        />
                         Restart Perpetual Drops
                       </Button>
                     )}
@@ -902,16 +874,14 @@ export function AdminDrops() {
 
                 {/* Evergreen Automation Indicator */}
                 {selectedDropDetail.status === "ACTIVE" && (
-                  <div className="flex items-center gap-2 rounded border border-emerald-500/20 bg-emerald-950/20 px-3 py-2 text-xs text-emerald-300">
-                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-400" />
+                  <div className="rounded border border-emerald-500/20 bg-emerald-950/20 px-3 py-2 text-xs text-emerald-300">
                     <span>
                       <strong>Perpetual Drop Active:</strong> Cycles automatically replenish every 2.5 hours with 250 stock. You don&apos;t need to manually create periods or toggle dates.
                     </span>
                   </div>
                 )}
                 {selectedDropDetail.status === "PAUSED" && (
-                  <div className="flex items-center gap-2 rounded border border-amber-500/20 bg-amber-950/20 px-3 py-2 text-xs text-amber-300">
-                    <AlertTriangle className="h-4 w-4 flex-shrink-0 text-amber-400" />
+                  <div className="rounded border border-amber-500/20 bg-amber-950/20 px-3 py-2 text-xs text-amber-300">
                     <span>
                       <strong>Drop is Paused:</strong> New claims and automatic cycle replenishment are paused until you click &quot;Resume Perpetual Drops&quot;.
                     </span>
@@ -924,7 +894,6 @@ export function AdminDrops() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Flame className="h-4 w-4 text-amber-400" />
                       <span className="text-xs font-semibold text-white">
                         Drop Cooldown Strategy & Hype Control
                       </span>
@@ -937,8 +906,8 @@ export function AdminDrops() {
                         }
                       >
                         {selectedDropDetail.cycleDurationHours === 5
-                          ? "🔥 5-Hour Hype Control Active"
-                          : "⚡ 2-Hour Standard Cycle Active"}
+                          ? "5-Hour Hype Control Active"
+                          : "2-Hour Standard Cycle Active"}
                       </Badge>
                     </div>
                     <p className="mt-1 text-xs text-gray-400">
@@ -956,10 +925,8 @@ export function AdminDrops() {
                         onClick={() => handleToggleCycleMode(2)}
                         className="border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/30 text-xs"
                       >
-                        {togglingCycleMode ? (
+                        {togglingCycleMode && (
                           <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Clock className="mr-1.5 h-3.5 w-3.5" />
                         )}
                         Revert to 2-Hour Standard
                       </Button>
@@ -970,10 +937,8 @@ export function AdminDrops() {
                         onClick={() => handleToggleCycleMode(5)}
                         className="bg-amber-600 hover:bg-amber-500 text-black font-medium text-xs"
                       >
-                        {togglingCycleMode ? (
+                        {togglingCycleMode && (
                           <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Flame className="mr-1.5 h-3.5 w-3.5" />
                         )}
                         Activate 5-Hour Hype Control
                       </Button>
@@ -995,8 +960,7 @@ export function AdminDrops() {
 
               {/* Periods Table */}
               <div>
-                <h3 className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-gray-300">
-                  <Clock className="h-3.5 w-3.5 text-emerald-400" />
+                <h3 className="mb-3 text-xs font-semibold text-gray-300">
                   2-Hour UTC Cycle Periods & Stock Status
                 </h3>
                 <div className="overflow-x-auto rounded-lg border border-[#163B44]">
@@ -1057,13 +1021,11 @@ export function AdminDrops() {
                             </td>
                             <td className="px-3 py-2.5">
                               {p.isStockConfigured && totalStock > 0 ? (
-                                <span className="inline-flex items-center gap-1 text-emerald-400">
-                                  <CheckCircle2 className="h-3 w-3" />
+                                <span className="text-emerald-400">
                                   {totalStock} items ({p.poolItems?.length} traits)
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-amber-400">
-                                  <AlertCircle className="h-3 w-3" />
+                                <span className="text-amber-400">
                                   Unconfigured
                                 </span>
                               )}
@@ -1098,7 +1060,6 @@ export function AdminDrops() {
                                       : "Configure trait stock"
                                   }
                                 >
-                                  <Settings2 className="mr-1 h-3 w-3" />
                                   Configure Stock
                                 </Button>
 
@@ -1115,7 +1076,6 @@ export function AdminDrops() {
                                         : "Activate period now"
                                     }
                                   >
-                                    <Flame className="mr-1 h-3 w-3" />
                                     {activatingPeriodId === p.id
                                       ? "Activating..."
                                       : "Activate"}
@@ -1138,8 +1098,7 @@ export function AdminDrops() {
       {/* SECTION 3: Emergency Close Controls */}
       <Card className="border-rose-500/30 bg-[#0B2026]/90">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-rose-400" />
+          <div>
             <CardTitle className="text-base text-white">
               Emergency Close Drop Window
             </CardTitle>
@@ -1171,16 +1130,14 @@ export function AdminDrops() {
             </div>
 
             {emergencyError && (
-              <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <div className="rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
                 <span>{emergencyError}</span>
               </div>
             )}
 
             {emergencyResult && (
               <div className="space-y-1 rounded border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-                <div className="flex items-center gap-2 font-semibold">
-                  <CheckCircle2 className="h-4 w-4" />
+                <div className="font-semibold">
                   <span>Drop Period Closed Successfully</span>
                 </div>
                 <p className="text-[11px] text-emerald-200">
@@ -1199,10 +1156,9 @@ export function AdminDrops() {
                 type="submit"
                 variant="secondary"
                 size="sm"
-                className="gap-2 text-xs text-rose-300 transition-colors hover:bg-rose-600 hover:text-white"
+                className="text-xs text-rose-300 transition-colors hover:bg-rose-600 hover:text-white"
                 disabled={closing || !dropData?.period}
               >
-                <AlertTriangle className="h-3.5 w-3.5" />
                 {closing ? "Closing Window..." : "Execute Emergency Close"}
               </Button>
             </div>
@@ -1215,15 +1171,14 @@ export function AdminDrops() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-xl border border-[#163B44] bg-[#071F24] p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-emerald-400" />
+              <div>
                 <h2 className="text-base font-semibold text-white">Create New Drop</h2>
               </div>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-xs font-medium text-gray-400 hover:text-white"
               >
-                <X className="h-5 w-5" />
+                Close
               </button>
             </div>
 
@@ -1240,7 +1195,7 @@ export function AdminDrops() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. ChimpHood Season 1 Trait Drop"
+                  placeholder="e.g. Elychimp Season 1 Trait Drop"
                   value={createTitle}
                   onChange={(e) => setCreateTitle(e.target.value)}
                   required
@@ -1254,7 +1209,7 @@ export function AdminDrops() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. chimphood-season-1"
+                  placeholder="e.g. elychimp-season-1"
                   value={createSlug}
                   onChange={(e) => setCreateSlug(e.target.value)}
                   required
@@ -1365,8 +1320,7 @@ export function AdminDrops() {
           <div className="w-full max-w-2xl rounded-xl border border-[#163B44] bg-[#071F24] p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
               <div>
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-emerald-400" />
+                <div>
                   <h2 className="text-base font-semibold text-white">
                     Configure Trait Pool Stock &ndash; Period #
                     {configuringPeriod.periodIndex}
@@ -1388,16 +1342,15 @@ export function AdminDrops() {
               </div>
               <button
                 onClick={() => setConfiguringPeriod(null)}
-                className="text-gray-400 hover:text-white"
+                className="text-xs font-medium text-gray-400 hover:text-white"
               >
-                <X className="h-5 w-5" />
+                Close
               </button>
             </div>
 
             {/* Protocol Rules Reminder */}
             <div className="mt-3 rounded-md border border-amber-500/20 bg-amber-500/10 p-2.5 text-[11px] text-amber-200/90">
-              <div className="mb-1 flex items-center gap-1.5 font-semibold text-amber-300">
-                <ShieldCheck className="h-3.5 w-3.5" />
+              <div className="mb-1 font-semibold text-amber-300">
                 Drop Protocol Rules
               </div>
               <ul className="list-disc space-y-0.5 pl-4 text-[11px]">
@@ -1442,9 +1395,8 @@ export function AdminDrops() {
                   size="sm"
                   onClick={handleAddTraitToStock}
                   disabled={!selectedTraitToAdd}
-                  className="gap-1 text-xs"
+                  className="text-xs"
                 >
-                  <Plus className="h-3.5 w-3.5" />
                   Add Trait
                 </Button>
               </div>
@@ -1531,9 +1483,9 @@ export function AdminDrops() {
                               <button
                                 type="button"
                                 onClick={() => handleRemoveTraitFromStock(item.traitId)}
-                                className="text-gray-400 hover:text-rose-400"
+                                className="text-xs text-gray-400 hover:text-rose-400 font-medium"
                               >
-                                <X className="h-4 w-4" />
+                                Remove
                               </button>
                             </td>
                           </tr>

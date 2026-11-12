@@ -881,7 +881,7 @@ export async function adminExportOpenSeaAllowlist(
 
   const csvText = await res.text();
   const disposition = res.headers.get("Content-Disposition");
-  let filename = `chimphood-${params.stage}-allowlist.csv`;
+  let filename = `elychimp-${params.stage}-allowlist.csv`;
   if (disposition) {
     const match = disposition.match(/filename="?([^";]+)"?/);
     if (match && match[1]) {

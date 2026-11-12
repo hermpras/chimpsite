@@ -37,3 +37,19 @@ export function shortenAddress(address: string): string {
   const norm = normalizeAddress(address);
   return `${norm.slice(0, 6)}...${norm.slice(-4)}`;
 }
+
+/**
+ * Return a shortened address safely for UI display.
+ * If the input is not a standard EVM address, safely shortens or falls back without throwing.
+ */
+export function safeFormatAddress(address?: string | null): string {
+  if (!address || typeof address !== "string") return "—";
+  const trimmed = address.trim();
+  if (!trimmed) return "—";
+  try {
+    return shortenAddress(trimmed);
+  } catch {
+    if (trimmed.length <= 12) return trimmed;
+    return `${trimmed.slice(0, 6)}...${trimmed.slice(-4)}`;
+  }
+}

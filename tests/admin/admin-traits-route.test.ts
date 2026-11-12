@@ -1,18 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PUT as putTrait, DELETE as deleteTrait } from "@/app/api/admin/traits/route";
+import {
+  POST as postTrait,
+  PUT as putTrait,
+  DELETE as deleteTrait,
+} from "@/app/api/admin/traits/route";
 import {
   PUT as putTraitById,
   DELETE as deleteTraitById,
 } from "@/app/api/admin/traits/[id]/route";
 import { syncActiveDropPeriodPool } from "@/server/drops/auto-replenish";
 
-const { mockRequireAdminSession, mockPrisma } = vi.hoisted(() => ({
-  mockRequireAdminSession: vi.fn(),
-  mockPrisma: {
+const { mockRequireAdminSession, mockPrisma } = vi.hoisted(() => {
+  const prismaObj: any = {
+    $transaction: vi.fn(async (cb: any) => (Array.isArray(cb) ? Promise.all(cb) : cb(prismaObj))),
+    auditLog: {
+      create: vi.fn().mockResolvedValue({ id: "audit-1" }),
+    },
     trait: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
       update: vi.fn(),
+      upsert: vi.fn(),
       delete: vi.fn(),
     },
     inventoryItem: {
@@ -35,8 +43,12 @@ const { mockRequireAdminSession, mockPrisma } = vi.hoisted(() => ({
     claim: {
       count: vi.fn(),
     },
-  },
-}));
+  };
+  return {
+    mockRequireAdminSession: vi.fn(),
+    mockPrisma: prismaObj,
+  };
+});
 
 vi.mock("@/server/db", () => ({
   prisma: mockPrisma,
@@ -66,6 +78,57 @@ describe("Admin Traits Routes — Edit & Delete Suite", () => {
     vi.clearAllMocks();
     mockRequireAdminSession.mockResolvedValue({
       user: { id: "admin-1", role: "ADMIN" },
+    });
+  });
+
+  describe("POST /api/admin/traits", () => {
+    it("returns 400 when required fields are missing", async () => {
+      const req = new Request("http://localhost:3000/api/admin/traits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Gold Chain" }),
+      });
+      const res = await postTrait(req);
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toBe("VALIDATION_ERROR");
+    });
+
+    it("successfully creates trait and records audit log", async () => {
+      mockPrisma.trait.upsert.mockResolvedValue({
+        id: "trait-new-1",
+        slug: "gold-chain",
+        name: "Gold Chain",
+        category: "CLOTHING",
+        rarity: "RARE",
+        imageUrl: "/traits/gold-chain.png",
+        isActive: true,
+      });
+
+      const req = new Request("http://localhost:3000/api/admin/traits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Gold Chain",
+          category: "CLOTHING",
+          rarity: "RARE",
+          imageUrl: "/traits/gold-chain.png",
+        }),
+      });
+      const res = await postTrait(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.trait.id).toBe("trait-new-1");
+      expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: "TRAIT_CREATED",
+            entityType: "Trait",
+            entityId: "trait-new-1",
+          }),
+        }),
+      );
     });
   });
 
@@ -141,6 +204,15 @@ describe("Admin Traits Routes — Edit & Delete Suite", () => {
           isActive: true,
         }),
       });
+      expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: "TRAIT_UPDATED",
+            entityType: "Trait",
+            entityId: "t1",
+          }),
+        }),
+      );
     });
   });
 
@@ -203,6 +275,15 @@ describe("Admin Traits Routes — Edit & Delete Suite", () => {
       expect(mockPrisma.trait.delete).toHaveBeenCalledWith({
         where: { id: "t1" },
       });
+      expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: "TRAIT_DELETED",
+            entityType: "Trait",
+            entityId: "t1",
+          }),
+        }),
+      );
     });
   });
 

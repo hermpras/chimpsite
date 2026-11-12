@@ -1,20 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import {
-  Sparkles,
-  Upload,
-  RefreshCw,
-  CheckCircle2,
-  AlertTriangle,
-  Layers,
-  Image as ImageIcon,
-  Plus,
-  X,
-  Pencil,
-  Trash2,
-  Power,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface TraitItem {
@@ -333,8 +320,7 @@ export function AdminTraits() {
       {/* Header bar */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-emerald-400" />
+          <h2 className="text-xl font-bold tracking-tight text-white">
             Trait Catalog Manager
           </h2>
           <p className="text-sm text-gray-400">
@@ -356,9 +342,7 @@ export function AdminTraits() {
             variant="primary"
             size="sm"
             onClick={() => setIsUploadOpen(true)}
-            className="flex items-center gap-1.5"
           >
-            <Plus className="h-4 w-4" />
             Upload Trait
           </Button>
         </div>
@@ -425,12 +409,10 @@ export function AdminTraits() {
         </div>
       ) : error ? (
         <div className="rounded-xl border border-rose-900/40 bg-rose-950/20 p-6 text-center text-rose-300">
-          <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-rose-400" />
           <p className="text-sm font-semibold">{error}</p>
         </div>
       ) : filteredTraits.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[#163B44] bg-[#0B2026] p-12 text-center text-gray-400">
-          <Layers className="mx-auto mb-3 h-10 w-10 text-gray-600" />
           <h3 className="text-base font-semibold text-white">No traits match filter</h3>
           <p className="mt-1 text-xs text-gray-500">
             Upload new traits or switch the category/status filter above.
@@ -466,13 +448,6 @@ export function AdminTraits() {
                 <span className="absolute top-2 right-2 rounded border border-[#163B44] bg-[#0B2026]/90 px-1.5 py-0.5 text-[9px] font-bold text-gray-300 uppercase">
                   {trait.category}
                 </span>
-                {/* Active Indicator Dot */}
-                <span
-                  title={trait.isActive ? "Active in Drop Pools" : "Inactive (Hidden from Drops)"}
-                  className={`absolute top-2 left-2 flex h-2.5 w-2.5 items-center justify-center rounded-full ${
-                    trait.isActive ? "bg-emerald-500 shadow-sm shadow-emerald-500/50" : "bg-gray-600"
-                  }`}
-                />
               </div>
 
               {/* Trait Metadata */}
@@ -512,22 +487,21 @@ export function AdminTraits() {
                   title={trait.isActive ? "Deactivate (exclude from drops)" : "Activate (include in drops)"}
                   disabled={togglingId === trait.id}
                   onClick={() => handleToggleActive(trait)}
-                  className={`flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors ${
+                  className={`flex h-7 items-center justify-center rounded-md border px-2 text-[10px] font-medium transition-colors ${
                     trait.isActive
                       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
                       : "border-[#163B44] bg-[#0B2026] text-gray-500 hover:text-gray-300"
                   }`}
                 >
-                  <Power className="h-3.5 w-3.5" />
+                  {trait.isActive ? "Deactivate" : "Activate"}
                 </button>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     title="Edit Trait Details"
                     onClick={() => openEditModal(trait)}
-                    className="flex h-7 items-center gap-1 rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2 text-[11px] font-medium text-gray-300 hover:border-[#163B44] hover:bg-[#102B33] hover:text-white transition-colors"
+                    className="flex h-7 items-center rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2 text-[11px] font-medium text-gray-300 hover:border-[#163B44] hover:bg-[#102B33] hover:text-white transition-colors"
                   >
-                    <Pencil className="h-3 w-3" />
                     Edit
                   </button>
                   <button
@@ -538,9 +512,9 @@ export function AdminTraits() {
                       setDeleteError(null);
                       setDeleteSuccess(null);
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-rose-900/40 bg-rose-950/20 text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 transition-colors"
+                    className="flex h-7 items-center justify-center rounded-md border border-rose-900/40 bg-rose-950/20 px-2 text-[11px] font-medium text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 transition-colors"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
                   </button>
                 </div>
               </div>
@@ -556,13 +530,12 @@ export function AdminTraits() {
             <button
               type="button"
               onClick={() => setIsUploadOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              className="absolute top-4 right-4 text-xs font-medium text-gray-400 hover:text-white"
             >
-              <X className="h-5 w-5" />
+              Close
             </button>
 
-            <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
-              <Upload className="h-5 w-5 text-emerald-400" />
+            <h3 className="text-lg font-bold text-white mb-1">
               Upload Trait Layer
             </h3>
             <p className="text-xs text-gray-400 mb-4">
@@ -570,15 +543,13 @@ export function AdminTraits() {
             </p>
 
             {uploadError && (
-              <div className="mb-4 rounded-lg border border-rose-900/40 bg-rose-950/20 p-3 text-xs text-rose-300 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0" />
+              <div className="mb-4 rounded-lg border border-rose-900/40 bg-rose-950/20 p-3 text-xs text-rose-300">
                 <span>{uploadError}</span>
               </div>
             )}
 
             {uploadSuccess && (
-              <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
                 <span>{uploadSuccess}</span>
               </div>
             )}
@@ -597,7 +568,7 @@ export function AdminTraits() {
                         className="h-full w-full object-contain [image-rendering:pixelated]"
                       />
                     ) : (
-                      <ImageIcon className="h-6 w-6 text-gray-600" />
+                      <span className="text-[10px] text-gray-500 font-mono">No Image</span>
                     )}
                   </div>
                   <input
@@ -714,10 +685,7 @@ export function AdminTraits() {
                       Uploading...
                     </>
                   ) : (
-                    <>
-                      <Upload className="h-4 w-4" />
-                      Save Trait
-                    </>
+                    "Save Trait"
                   )}
                 </Button>
               </div>
@@ -733,13 +701,12 @@ export function AdminTraits() {
             <button
               type="button"
               onClick={() => setEditingTrait(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              className="absolute top-4 right-4 text-xs font-medium text-gray-400 hover:text-white"
             >
-              <X className="h-5 w-5" />
+              Close
             </button>
 
-            <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
-              <Pencil className="h-5 w-5 text-emerald-400" />
+            <h3 className="text-lg font-bold text-white mb-1">
               Edit Trait: {editingTrait.name}
             </h3>
             <p className="text-xs text-gray-400 mb-4">
@@ -747,15 +714,13 @@ export function AdminTraits() {
             </p>
 
             {editError && (
-              <div className="mb-4 rounded-lg border border-rose-900/40 bg-rose-950/20 p-3 text-xs text-rose-300 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0" />
+              <div className="mb-4 rounded-lg border border-rose-900/40 bg-rose-950/20 p-3 text-xs text-rose-300">
                 <span>{editError}</span>
               </div>
             )}
 
             {editSuccess && (
-              <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
                 <span>{editSuccess}</span>
               </div>
             )}
@@ -775,7 +740,7 @@ export function AdminTraits() {
                         className="h-full w-full object-contain [image-rendering:pixelated]"
                       />
                     ) : (
-                      <ImageIcon className="h-6 w-6 text-gray-600" />
+                      <span className="text-[10px] text-gray-500 font-mono">No Image</span>
                     )}
                   </div>
                   <div className="flex-1 space-y-1">
@@ -933,31 +898,24 @@ export function AdminTraits() {
             <button
               type="button"
               onClick={() => setDeletingTrait(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              className="absolute top-4 right-4 text-xs font-medium text-gray-400 hover:text-white"
             >
-              <X className="h-5 w-5" />
+              Close
             </button>
 
-            <div className="flex items-center gap-3 text-rose-400 mb-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-rose-900/50 bg-rose-950/30">
-                <Trash2 className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">Delete Trait</h3>
-                <p className="text-xs text-gray-400">Remove from catalog and drop pools</p>
-              </div>
+            <div className="mb-3">
+              <h3 className="text-base font-bold text-white">Delete Trait</h3>
+              <p className="text-xs text-gray-400">Remove from catalog and drop pools</p>
             </div>
 
             {deleteError && (
-              <div className="mb-4 rounded-lg border border-rose-900/40 bg-rose-950/20 p-3 text-xs text-rose-300 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0" />
+              <div className="mb-4 rounded-lg border border-rose-900/40 bg-rose-950/20 p-3 text-xs text-rose-300">
                 <span>{deleteError}</span>
               </div>
             )}
 
             {deleteSuccess && (
-              <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
                 <span>{deleteSuccess}</span>
               </div>
             )}
@@ -1004,10 +962,7 @@ export function AdminTraits() {
                     Deleting...
                   </>
                 ) : (
-                  <>
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Confirm Delete
-                  </>
+                  "Confirm Delete"
                 )}
               </button>
             </div>

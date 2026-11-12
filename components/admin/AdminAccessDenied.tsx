@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import { ShieldAlert, Lock, ArrowLeft, ShieldX } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -29,8 +28,8 @@ export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="mb-8 flex items-center justify-between">
         <Link href="/">
-          <Button variant="outline" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back to Home
+          <Button variant="outline" size="sm">
+            Back to Home
           </Button>
         </Link>
         <Badge variant="warning">{error.status} Access Restricted</Badge>
@@ -40,8 +39,8 @@ export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
         <div className="space-y-8">
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardHeader className="text-center">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
-                <Lock className="h-7 w-7" />
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 font-mono text-lg font-bold text-amber-400">
+                401
               </div>
               <CardTitle className="text-2xl font-bold text-white">
                 Admin Authentication Required
@@ -66,8 +65,8 @@ export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
       ) : (
         <Card className="border-rose-500/30 bg-rose-500/5">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-rose-500/10 text-rose-400">
-              <ShieldX className="h-7 w-7" />
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-rose-500/10 font-mono text-lg font-bold text-rose-400">
+              403
             </div>
             <CardTitle className="text-2xl font-bold text-white">
               Access Forbidden: Insufficient Admin Privileges
@@ -79,9 +78,8 @@ export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
           </CardHeader>
           <CardContent className="space-y-4 text-center">
             <div className="rounded-lg border border-[#163B44] bg-[#0B2026] p-4 text-xs text-gray-400">
-              <div className="flex items-center justify-center gap-2 text-rose-300">
-                <ShieldAlert className="h-4 w-4" />
-                <span className="font-semibold">Role Verification Failed</span>
+              <div className="text-center text-rose-300">
+                <span className="font-semibold uppercase tracking-wider">Role Verification Failed</span>
               </div>
               <p className="mt-2 text-gray-400">
                 Only accounts with an assigned role (SUPER_ADMIN, ADMIN, MODERATOR, or

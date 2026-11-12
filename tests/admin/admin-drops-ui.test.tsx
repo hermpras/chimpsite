@@ -211,12 +211,12 @@ describe("Admin Drops Portal UI - B-1 Drop Configuration Component", () => {
 
     // Fill form
     fireEvent.change(
-      screen.getByPlaceholderText(/e\.g\. ChimpHood Season 1 Trait Drop/i),
+      screen.getByPlaceholderText(/e\.g\. Elychimp Season 1 Trait Drop/i),
       {
         target: { value: "Season 2 Drop" },
       },
     );
-    fireEvent.change(screen.getByPlaceholderText(/e\.g\. chimphood-season-1/i), {
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\. elychimp-season-1/i), {
       target: { value: "season-2" },
     });
 
@@ -346,7 +346,7 @@ describe("Admin Drops Portal UI - B-1 Drop Configuration Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Drop Cooldown Strategy & Hype Control")).toBeInTheDocument();
-      expect(screen.getByText("⚡ 2-Hour Standard Cycle Active")).toBeInTheDocument();
+      expect(screen.getByText("2-Hour Standard Cycle Active")).toBeInTheDocument();
     });
 
     const activateBtn = screen.getByRole("button", { name: /activate 5-hour hype control/i });
@@ -389,7 +389,7 @@ describe("Admin Drops Portal UI - B-1 Drop Configuration Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Drop Cooldown Strategy & Hype Control")).toBeInTheDocument();
-      expect(screen.getByText("🔥 5-Hour Hype Control Active")).toBeInTheDocument();
+      expect(screen.getByText("5-Hour Hype Control Active")).toBeInTheDocument();
     });
 
     const revertBtn = screen.getByRole("button", { name: /revert to 2-hour standard/i });

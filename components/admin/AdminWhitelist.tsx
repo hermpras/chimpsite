@@ -1,28 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Shield,
-  Search,
-  CheckCircle2,
-  AlertCircle,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  ListOrdered,
-  Sparkles,
-  Download,
-  FileSpreadsheet,
-  Copy,
-  Check,
-  UserCheck,
-  UserX,
-  Clock,
-  Layers,
-  RefreshCw,
-  X,
-  XCircle,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -49,17 +28,7 @@ import {
   type AdminFcfsDirectoryEntry,
 } from "@/lib/admin/client";
 import type { GtdSlotReviewItem } from "@/server/admin/slot-review";
-import { shortenAddress } from "@/lib/auth/address";
-
-function safeFormatAddress(address?: string | null): string {
-  if (!address) return "—";
-  try {
-    return shortenAddress(address);
-  } catch {
-    if (address.length <= 12) return address;
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  }
-}
+import { safeFormatAddress } from "@/lib/auth/address";
 
 export function AdminWhitelist() {
   // Global reload triggers
@@ -474,7 +443,6 @@ export function AdminWhitelist() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <Layers className="h-6 w-6 text-emerald-400" />
                 <CardTitle className="text-xl font-bold text-white">
                   {program ? program.name : "Permanent Whitelist Program"}
                 </CardTitle>
@@ -542,14 +510,12 @@ export function AdminWhitelist() {
           </div>
 
           {progStatusSuccess && (
-            <div className="mt-3 flex items-center gap-2 rounded border border-emerald-500/20 bg-emerald-500/10 p-2 text-xs text-emerald-400">
-              <CheckCircle2 className="h-4 w-4" />
+            <div className="mt-3 rounded border border-emerald-500/20 bg-emerald-500/10 p-2 text-xs text-emerald-400">
               <span>{progStatusSuccess}</span>
             </div>
           )}
           {programError && (
-            <div className="mt-3 flex items-center gap-2 rounded border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-400">
-              <AlertCircle className="h-4 w-4" />
+            <div className="mt-3 rounded border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-400">
               <span>{programError}</span>
             </div>
           )}
@@ -602,11 +568,10 @@ export function AdminWhitelist() {
                   {totalDirectoryEntries}
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
-                    <UserCheck className="h-3.5 w-3.5" />
+                  <span className="font-semibold text-emerald-400">
                     {qualifiedReadyCount} Qualified
                   </span>
-                  <span className="text-gray-500">•</span>
+                  <span className="text-gray-500">/</span>
                   <span className="text-gray-400">
                     {Math.max(0, totalDirectoryEntries - qualifiedReadyCount)} Pending
                   </span>
@@ -661,7 +626,6 @@ export function AdminWhitelist() {
         <CardHeader className="pb-3 border-b border-white/5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-emerald-400" />
               <CardTitle className="text-base text-white">GTD Post-Allocation Review</CardTitle>
               <Badge variant="outline" className="text-xs">
                 {reviewsTotal} Allocated Slots
@@ -707,13 +671,12 @@ export function AdminWhitelist() {
           {/* Search bar */}
           <form onSubmit={handleReviewSearchSubmit} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search GTD slots by wallet (0x...) or X username (@...)"
                 value={reviewSearchQuery}
                 onChange={(e) => setReviewSearchQuery(e.target.value)}
-                className="w-full rounded bg-slate-800/80 border border-white/10 pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full rounded bg-slate-800/80 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
             <Button type="submit" variant="outline" size="sm" className="text-xs">
@@ -780,19 +743,15 @@ export function AdminWhitelist() {
                         <td className="py-2.5 px-3">
                           <div className="flex flex-col gap-0.5">
                             {address ? (
-                              <div className="flex items-center gap-1 font-mono text-gray-200">
+                              <div className="flex items-center gap-1.5 font-mono text-gray-200">
                                 <span>{safeFormatAddress(address)}</span>
                                 <button
                                   type="button"
                                   onClick={() => copyToClipboard(address)}
-                                  className="text-gray-500 hover:text-white"
+                                  className="text-[10px] text-gray-500 hover:text-white transition-colors"
                                   title="Copy address"
                                 >
-                                  {copiedAddress === address ? (
-                                    <Check className="h-3 w-3 text-emerald-400" />
-                                  ) : (
-                                    <Copy className="h-3 w-3" />
-                                  )}
+                                  {copiedAddress === address ? "Copied" : "Copy"}
                                 </button>
                               </div>
                             ) : (
@@ -881,9 +840,9 @@ export function AdminWhitelist() {
                   variant="outline"
                   disabled={reviewsPage <= 1}
                   onClick={() => setReviewsPage((p) => Math.max(1, p - 1))}
-                  className="h-7 w-7 p-0"
+                  className="h-7 px-2 text-xs"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  Previous
                 </Button>
                 <span className="px-2">Page {reviewsPage}</span>
                 <Button
@@ -891,9 +850,9 @@ export function AdminWhitelist() {
                   variant="outline"
                   disabled={reviewsPage * reviewsLimit >= reviewsTotal}
                   onClick={() => setReviewsPage((p) => p + 1)}
-                  className="h-7 w-7 p-0"
+                  className="h-7 px-2 text-xs"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  Next
                 </Button>
               </div>
             </div>
@@ -908,7 +867,6 @@ export function AdminWhitelist() {
         <CardHeader className="pb-3 border-b border-white/5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
-              <ListOrdered className="h-5 w-5 text-emerald-400" />
               <CardTitle className="text-base text-white">
                 FCFS Directory (All Participants)
               </CardTitle>
@@ -961,13 +919,12 @@ export function AdminWhitelist() {
           {/* Search bar */}
           <form onSubmit={handleDirectorySearchSubmit} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search FCFS directory by wallet address or @username..."
                 value={directorySearchQuery}
                 onChange={(e) => setDirectorySearchQuery(e.target.value)}
-                className="w-full rounded bg-slate-800/80 border border-white/10 pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full rounded bg-slate-800/80 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
             <Button type="submit" variant="outline" size="sm" className="text-xs">
@@ -1044,19 +1001,15 @@ export function AdminWhitelist() {
                         </td>
                         <td className="py-2.5 px-3">
                           {address ? (
-                            <div className="flex items-center gap-1 font-mono text-gray-200">
+                            <div className="flex items-center gap-1.5 font-mono text-gray-200">
                               <span>{safeFormatAddress(address)}</span>
                               <button
                                 type="button"
                                 onClick={() => copyToClipboard(address)}
-                                className="text-gray-500 hover:text-white"
+                                className="text-[10px] text-gray-500 hover:text-white transition-colors"
                                 title="Copy address"
                               >
-                                {copiedAddress === address ? (
-                                  <Check className="h-3 w-3 text-emerald-400" />
-                                ) : (
-                                  <Copy className="h-3 w-3" />
-                                )}
+                                {copiedAddress === address ? "Copied" : "Copy"}
                               </button>
                             </div>
                           ) : (
@@ -1148,9 +1101,9 @@ export function AdminWhitelist() {
                   variant="outline"
                   disabled={directoryPage <= 1}
                   onClick={() => setDirectoryPage((p) => Math.max(1, p - 1))}
-                  className="h-7 w-7 p-0"
+                  className="h-7 px-2 text-xs"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  Previous
                 </Button>
                 <span className="px-2">Page {directoryPage}</span>
                 <Button
@@ -1158,9 +1111,9 @@ export function AdminWhitelist() {
                   variant="outline"
                   disabled={directoryPage * directoryLimit >= directoryTotal}
                   onClick={() => setDirectoryPage((p) => p + 1)}
-                  className="h-7 w-7 p-0"
+                  className="h-7 px-2 text-xs"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  Next
                 </Button>
               </div>
             </div>
@@ -1174,7 +1127,6 @@ export function AdminWhitelist() {
       <Card className="border border-white/10 bg-slate-900/60 backdrop-blur-sm">
         <CardHeader className="pb-3 border-b border-white/5">
           <div className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5 text-emerald-400" />
             <CardTitle className="text-base text-white">
               OpenSea SeaDrop Allowlist CSV Export
             </CardTitle>
@@ -1193,18 +1145,16 @@ export function AdminWhitelist() {
           {exportSuccess && (
             <div
               data-testid="export-success-banner"
-              className="flex items-center gap-2 rounded border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-400"
+              className="rounded border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-400"
             >
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>{exportSuccess}</span>
             </div>
           )}
           {exportError && (
             <div
               data-testid="export-error-banner"
-              className="flex items-center gap-2 rounded border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400"
+              className="rounded border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400"
             >
-              <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{exportError}</span>
             </div>
           )}
@@ -1229,8 +1179,7 @@ export function AdminWhitelist() {
                 {/* FLAGGED Slots Pre-Export Warning (DEC-015, DEC-020) */}
                 {flaggedCount > 0 && (
                   <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300 space-y-1">
-                    <div className="flex items-center gap-1.5 font-semibold">
-                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                    <div className="font-semibold">
                       <span>Notice: {flaggedCount} FLAGGED slot(s) included</span>
                     </div>
                     <p className="text-[11px] text-amber-200/80 leading-relaxed">
@@ -1246,9 +1195,8 @@ export function AdminWhitelist() {
                 data-testid="export-gtd-btn"
                 disabled={exportingStage !== null || !program}
                 onClick={() => handleExport("gtd")}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-2 text-xs py-2"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center text-xs py-2"
               >
-                <Download className="h-4 w-4" />
                 {exportingStage === "gtd" ? "Generating GTD CSV..." : "Download GTD CSV"}
               </Button>
             </div>
@@ -1270,8 +1218,7 @@ export function AdminWhitelist() {
                 </p>
 
                 <div className="rounded border border-white/5 bg-slate-900/50 p-2.5 text-xs text-gray-300 space-y-1">
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  <div className="text-emerald-400 font-medium">
                     <span>Disjoint Set Guarantee</span>
                   </div>
                   <p className="text-[11px] text-gray-400">
@@ -1284,9 +1231,8 @@ export function AdminWhitelist() {
                 data-testid="export-fcfs-btn"
                 disabled={exportingStage !== null || !program}
                 onClick={() => handleExport("fcfs")}
-                className="w-full bg-teal-600 hover:bg-teal-500 text-white flex items-center justify-center gap-2 text-xs py-2"
+                className="w-full bg-teal-600 hover:bg-teal-500 text-white flex items-center justify-center text-xs py-2"
               >
-                <Download className="h-4 w-4" />
                 {exportingStage === "fcfs" ? "Generating FCFS CSV..." : "Download FCFS CSV"}
               </Button>
             </div>
@@ -1301,8 +1247,7 @@ export function AdminWhitelist() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-2xl rounded-xl border border-white/15 bg-slate-900 shadow-2xl overflow-hidden my-8">
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/60">
-              <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-emerald-400" />
+              <div>
                 <h3 className="text-base font-semibold text-white">
                   GTD Slot Review Details — #{reviewDetail?.slot.slotNumber ?? "..."}
                 </h3>
@@ -1310,9 +1255,9 @@ export function AdminWhitelist() {
               <button
                 type="button"
                 onClick={closeReviewModal}
-                className="text-gray-400 hover:text-white"
+                className="text-xs font-medium text-gray-400 hover:text-white"
               >
-                <X className="h-5 w-5" />
+                Close
               </button>
             </div>
 
@@ -1379,7 +1324,7 @@ export function AdminWhitelist() {
                             >
                               <div>{cat}</div>
                               <div className="text-[10px] mt-1 font-sans">
-                                {isHeld ? "✓ Held" : "✗ Missing"}
+                                {isHeld ? "Held" : "Missing"}
                               </div>
                             </div>
                           );
@@ -1562,8 +1507,7 @@ export function AdminWhitelist() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="relative w-full max-w-lg rounded-xl border border-white/15 bg-slate-900 shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-emerald-400" />
+              <div>
                 <h3 className="text-base font-semibold text-white">
                   Manually Grant GTD Slot
                 </h3>
@@ -1571,9 +1515,9 @@ export function AdminWhitelist() {
               <button
                 type="button"
                 onClick={closeGrantModal}
-                className="text-gray-400 hover:text-white"
+                className="text-xs font-medium text-gray-400 hover:text-white"
               >
-                <X className="h-5 w-5" />
+                Close
               </button>
             </div>
 
@@ -1596,11 +1540,11 @@ export function AdminWhitelist() {
                   Verification Checklist Confirmed:
                 </div>
                 <div className="space-y-1 text-[11px]">
-                  <div>✓ EVM Wallet Connected</div>
-                  <div>✓ X (Twitter) Account Linked</div>
-                  <div>✓ All 5 Trait Categories Collected</div>
-                  <div>✓ Mandatory Campaign Tasks Completed</div>
-                  <div>✓ Clean Account Standing (Not Banned)</div>
+                  <div>EVM Wallet Connected</div>
+                  <div>X (Twitter) Account Linked</div>
+                  <div>All 5 Trait Categories Collected</div>
+                  <div>Campaign Tasks Completed</div>
+                  <div>Clean Account Standing (Not Banned)</div>
                 </div>
               </div>
 
@@ -1651,8 +1595,7 @@ export function AdminWhitelist() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="relative w-full max-w-lg rounded-xl border border-red-500/30 bg-slate-900 shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2 text-red-400">
-                <XCircle className="h-5 w-5" />
+              <div className="text-red-400">
                 <h3 className="text-base font-semibold text-white">
                   Revoke Guaranteed Slot #{revokeTarget.slotNumber}
                 </h3>
@@ -1660,15 +1603,15 @@ export function AdminWhitelist() {
               <button
                 type="button"
                 onClick={closeRevokeModal}
-                className="text-gray-400 hover:text-white"
+                className="text-xs font-medium text-gray-400 hover:text-white"
               >
-                <X className="h-5 w-5" />
+                Close
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
               <div className="p-3 rounded bg-red-500/10 border border-red-500/20 text-red-200 space-y-1">
-                <div className="font-semibold text-red-400">⚠️ Permanent Revocation Warning:</div>
+                <div className="font-semibold text-red-400">Permanent Revocation Warning:</div>
                 <p className="text-[11px] leading-relaxed">
                   This action will permanently revoke this GTD slot. The slot will be left
                   vacant, decremented from active capacity, and excluded from the OpenSea GTD

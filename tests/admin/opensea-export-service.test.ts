@@ -546,7 +546,7 @@ describe("OpenSea Allowlist Export Service", () => {
       });
     });
 
-    it("exports GTD allowlist with filename chimphood-gtd-allowlist.csv", async () => {
+    it("exports GTD allowlist with filename elychimp-gtd-allowlist.csv", async () => {
       mockPrisma.wLProgram.findFirst.mockResolvedValueOnce(frozenProgram);
 
       mockPrisma.wLSlot.findMany.mockResolvedValueOnce([
@@ -570,13 +570,13 @@ describe("OpenSea Allowlist Export Service", () => {
         programIdOrSlug: frozenProgram.id,
       });
 
-      expect(result.filename).toBe("chimphood-gtd-allowlist.csv");
+      expect(result.filename).toBe("elychimp-gtd-allowlist.csv");
       expect(result.count).toBe(1);
       expect(result.stage).toBe("gtd");
       expect(result.csv).toBe(`${validAddress1.toLowerCase()},1\n`);
     });
 
-    it("exports FCFS allowlist with filename chimphood-fcfs-allowlist.csv and guarantees disjointness", async () => {
+    it("exports FCFS allowlist with filename elychimp-fcfs-allowlist.csv and guarantees disjointness", async () => {
       mockPrisma.wLProgram.findFirst.mockResolvedValueOnce(frozenProgram);
 
       // GTD slot query (run even for FCFS to guarantee disjointness!)
@@ -631,7 +631,7 @@ describe("OpenSea Allowlist Export Service", () => {
         programIdOrSlug: frozenProgram.id,
       });
 
-      expect(result.filename).toBe("chimphood-fcfs-allowlist.csv");
+      expect(result.filename).toBe("elychimp-fcfs-allowlist.csv");
       expect(result.count).toBe(1);
       expect(result.stage).toBe("fcfs");
       expect(result.csv).toBe(`${validAddress2.toLowerCase()},1\n`);
@@ -665,7 +665,7 @@ describe("OpenSea Allowlist Export Service", () => {
       });
 
       expect(result.program.id).toBe(frozenProgram.id);
-      expect(result.filename).toBe("chimphood-gtd-allowlist.csv");
+      expect(result.filename).toBe("elychimp-gtd-allowlist.csv");
     });
   });
 });

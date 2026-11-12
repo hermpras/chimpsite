@@ -1,21 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  ScrollText,
-  Search,
-  RefreshCw,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  X,
-  ShieldAlert,
-  Calendar,
-  Filter,
-  User,
-  Layers,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -188,7 +174,6 @@ export function AdminAuditLog() {
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <ScrollText className="h-5 w-5 text-emerald-400" />
               <CardTitle className="text-xl font-bold text-white">
                 Audit Log
               </CardTitle>
@@ -221,8 +206,10 @@ export function AdminAuditLog() {
       {/* Access Denied Banner */}
       {accessDenied && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-6 text-center">
-          <ShieldAlert className="mx-auto h-8 w-8 text-red-400" />
-          <h3 className="mt-2 text-base font-bold text-white">Access Denied</h3>
+          <div className="mx-auto mb-2 font-mono text-xs font-bold uppercase tracking-widest text-red-400">
+            Access Denied
+          </div>
+          <h3 className="mt-2 text-base font-bold text-white">Insufficient Role Privileges</h3>
           <p className="mt-1 text-xs text-red-200">
             Only SUPER_ADMIN accounts are authorized to read system audit logs.
           </p>
@@ -234,7 +221,6 @@ export function AdminAuditLog() {
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-amber-300">
-              <AlertCircle className="h-5 w-5 flex-shrink-0" />
               <span className="text-xs font-medium">{error}</span>
             </div>
             <Button
@@ -331,9 +317,8 @@ export function AdminAuditLog() {
                 <Button
                   type="submit"
                   size="sm"
-                  className="flex items-center gap-1.5 text-xs"
+                  className="text-xs"
                 >
-                  <Filter className="h-3.5 w-3.5" />
                   Apply Filters
                 </Button>
                 <Button
@@ -376,7 +361,6 @@ export function AdminAuditLog() {
             </div>
           ) : logs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <ScrollText className="h-10 w-10 text-gray-600 mb-2" />
               <p className="text-sm font-medium text-gray-300">No audit logs found</p>
               <p className="mt-1 text-xs text-gray-500">
                 Try adjusting your filter criteria or date range.
@@ -468,9 +452,8 @@ export function AdminAuditLog() {
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedLog(log)}
-                            className="h-7 px-2.5 text-[11px] gap-1 font-sans"
+                            className="h-7 px-2.5 text-[11px] font-sans"
                           >
-                            <Eye className="h-3 w-3" />
                             Details
                           </Button>
                         </td>
@@ -503,9 +486,9 @@ export function AdminAuditLog() {
                   size="sm"
                   onClick={handlePrevPage}
                   disabled={offset === 0 || loading}
-                  className="h-8 gap-1 text-xs"
+                  className="h-8 text-xs"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                  Previous
                 </Button>
                 <span className="text-xs text-gray-400 px-1">
                   Page {Math.floor(offset / limit) + 1} of{" "}
@@ -516,9 +499,9 @@ export function AdminAuditLog() {
                   size="sm"
                   onClick={handleNextPage}
                   disabled={offset + limit >= totalCount || loading}
-                  className="h-8 gap-1 text-xs"
+                  className="h-8 text-xs"
                 >
-                  Next <ChevronRight className="h-3.5 w-3.5" />
+                  Next
                 </Button>
               </div>
             </div>
@@ -552,10 +535,10 @@ export function AdminAuditLog() {
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-[#102B33] hover:text-white"
+                className="rounded-lg px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-gray-400 hover:bg-[#102B33] hover:text-white border border-[#163B44]"
                 aria-label="Close details modal"
               >
-                <X className="h-5 w-5" />
+                Close
               </button>
             </div>
 

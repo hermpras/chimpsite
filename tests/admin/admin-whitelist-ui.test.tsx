@@ -484,7 +484,7 @@ describe("Admin Whitelist UI/UX Redesign (Phase 6)", () => {
 
     it("triggers GTD CSV export on button click", async () => {
       vi.mocked(adminClient.adminExportOpenSeaAllowlist).mockResolvedValueOnce({
-        filename: "chimphood-gtd-allowlist.csv",
+        filename: "elychimp-gtd-allowlist.csv",
         count: 450,
       });
 
@@ -508,7 +508,7 @@ describe("Admin Whitelist UI/UX Redesign (Phase 6)", () => {
 
     it("triggers FCFS CSV export on button click", async () => {
       vi.mocked(adminClient.adminExportOpenSeaAllowlist).mockResolvedValueOnce({
-        filename: "chimphood-fcfs-allowlist.csv",
+        filename: "elychimp-fcfs-allowlist.csv",
         count: 128,
       });
 

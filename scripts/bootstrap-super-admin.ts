@@ -2,7 +2,7 @@
 /**
  * Standalone Super Admin Bootstrap Script (Task B-3)
  *
- * Safely initializes or upgrades the primary SUPER_ADMIN role for ChimpHood
+ * Safely initializes or upgrades the primary SUPER_ADMIN role for Elychimp
  * in staging or production environments.
  *
  * Usage:

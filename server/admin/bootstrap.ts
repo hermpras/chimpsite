@@ -428,7 +428,7 @@ export async function runBootstrapCli(
 ): Promise<number> {
   if (argv.includes("--help") || argv.includes("-h")) {
     console.log(`
-ChimpHood Super Admin Bootstrap Script (Task B-3)
+Elychimp Super Admin Bootstrap Script (Task B-3)
 =================================================
 Initializes the initial SUPER_ADMIN role safely in staging and production.
 

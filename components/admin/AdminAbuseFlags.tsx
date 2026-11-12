@@ -1,22 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  ShieldAlert,
-  Search,
-  RefreshCw,
-  AlertCircle,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  Eye,
-  X,
-  UserCheck,
-  UserX,
-  Clock,
-  FileText,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -31,7 +16,7 @@ import {
   adminUpdateAbuseFlag,
   type AdminListAbuseFlagsInput,
 } from "@/lib/admin/client";
-import { shortenAddress } from "@/lib/auth/address";
+import { safeFormatAddress } from "@/lib/auth/address";
 
 export interface AdminAbuseFlagRecord {
   id: string;
@@ -262,12 +247,9 @@ export function AdminAbuseFlags() {
       {/* Header Banner */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="h-6 w-6 text-emerald-400" />
-            <h1 className="text-xl font-bold tracking-tight text-white">
-              Abuse Flags & Sybil Signals
-            </h1>
-          </div>
+          <h1 className="text-xl font-bold tracking-tight text-white">
+            Abuse Flags & Sybil Signals
+          </h1>
           <p className="mt-1 text-xs text-gray-400">
             Investigate automated sybil signals, cluster detections, and suspicious
             activities. Update investigation status and record resolution rationale.
@@ -291,23 +273,19 @@ export function AdminAbuseFlags() {
       {/* Action Success Alert */}
       {actionSuccess && (
         <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-            <span>{actionSuccess}</span>
-          </div>
+          <span>{actionSuccess}</span>
           <button
             onClick={() => setActionSuccess(null)}
-            className="text-emerald-400 hover:text-white"
+            className="text-xs font-bold uppercase text-emerald-400 hover:text-white"
           >
-            <X className="h-4 w-4" />
+            Dismiss
           </button>
         </div>
       )}
 
       {/* Global Error Alert */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
           <span>{error}</span>
         </div>
       )}
@@ -315,12 +293,9 @@ export function AdminAbuseFlags() {
       {/* Filters and Controls Card */}
       <Card className="border-[#163B44] bg-[#0B2026]/90">
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-emerald-400" />
-            <CardTitle className="text-sm font-semibold text-white">
-              Filters & Search
-            </CardTitle>
-          </div>
+          <CardTitle className="text-sm font-semibold text-white">
+            Filters & Search
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -419,7 +394,7 @@ export function AdminAbuseFlags() {
                   className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
                 />
                 <Button type="submit" variant="primary" size="sm" className="px-2.5 text-xs">
-                  <Search className="h-3.5 w-3.5" />
+                  Search
                 </Button>
               </form>
             </div>
@@ -463,7 +438,6 @@ export function AdminAbuseFlags() {
             </div>
           ) : flags.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[#163B44] py-12 text-center">
-              <ShieldAlert className="mb-3 h-10 w-10 text-gray-600" />
               <p className="text-sm font-semibold text-gray-300">
                 No abuse flags found
               </p>
@@ -504,7 +478,7 @@ export function AdminAbuseFlags() {
                         ? new Date(flag.createdAt).toLocaleString()
                         : "-";
                       const address = flag.user?.wallet?.address;
-                      const shortAddr = address ? shortenAddress(address) : "No Wallet";
+                      const shortAddr = address ? safeFormatAddress(address) : "No Wallet";
                       const xUsername = flag.user?.xIdentity?.username;
 
                       return (
@@ -516,8 +490,7 @@ export function AdminAbuseFlags() {
                             <div className="font-mono text-[11px] text-white">
                               {flag.id}
                             </div>
-                            <div className="mt-0.5 flex items-center gap-1 text-[11px] text-gray-500">
-                              <Clock className="h-3 w-3" />
+                            <div className="mt-0.5 text-[11px] text-gray-500">
                               <span>{formattedDate}</span>
                             </div>
                           </td>
@@ -557,10 +530,9 @@ export function AdminAbuseFlags() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleOpenInspect(flag)}
-                              className="gap-1 px-2.5 py-1 text-xs hover:border-emerald-500/40 hover:text-emerald-300"
+                              className="px-2.5 py-1 text-xs hover:border-emerald-500/40 hover:text-emerald-300"
                             >
-                              <Eye className="h-3.5 w-3.5" />
-                              <span>Review</span>
+                              Review
                             </Button>
                           </td>
                         </tr>
@@ -583,9 +555,9 @@ export function AdminAbuseFlags() {
                       size="sm"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page <= 1}
-                      className="gap-1 text-xs"
+                      className="text-xs"
                     >
-                      <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                      Previous
                     </Button>
                     <span className="px-2 text-gray-400">
                       Page {page} of {totalPages}
@@ -595,9 +567,9 @@ export function AdminAbuseFlags() {
                       size="sm"
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page >= totalPages}
-                      className="gap-1 text-xs"
+                      className="text-xs"
                     >
-                      Next <ChevronRight className="h-3.5 w-3.5" />
+                      Next
                     </Button>
                   </div>
                 </div>
@@ -617,25 +589,21 @@ export function AdminAbuseFlags() {
           <div className="relative w-full max-w-xl rounded-xl border border-[#163B44] bg-[#0B2026] p-6 shadow-2xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="h-5 w-5 text-emerald-400" />
-                <h3 className="text-base font-bold text-white">
-                  Investigate Abuse Flag
-                </h3>
-              </div>
+              <h3 className="text-base font-bold text-white">
+                Investigate Abuse Flag
+              </h3>
               <button
                 onClick={handleCloseInspect}
-                className="rounded p-1 text-gray-400 hover:bg-[#102B33] hover:text-white"
+                className="rounded px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-gray-400 hover:bg-[#102B33] hover:text-white border border-[#163B44]"
               >
-                <X className="h-5 w-5" />
+                Close
               </button>
             </div>
 
             {/* Modal Body */}
             <div className="mt-4 max-h-[70vh] space-y-4 overflow-y-auto pr-1 text-xs">
               {updateError && (
-                <div className="flex items-center gap-2 rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <div className="rounded border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
                   <span>{updateError}</span>
                 </div>
               )}
@@ -722,9 +690,8 @@ export function AdminAbuseFlags() {
               {/* Prior Review Notes if present */}
               {selectedFlag.reviewedAt && (
                 <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3 text-[11px]">
-                  <div className="flex items-center gap-1.5 font-semibold text-gray-300">
-                    <FileText className="h-3.5 w-3.5 text-indigo-400" />
-                    <span>Previous Review History</span>
+                  <div className="font-semibold text-gray-300">
+                    Previous Review History
                   </div>
                   <p className="mt-1 text-gray-400">
                     Reviewed on {new Date(selectedFlag.reviewedAt).toLocaleString()}

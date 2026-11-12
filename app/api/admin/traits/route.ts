@@ -2,6 +2,14 @@ import { prisma } from "@/server/db";
 import { requireAdminSession, AdminAuthError } from "@/server/auth/session";
 import { listAdminTraits, AdminDropError } from "@/server/admin/drops";
 import { syncActiveDropPeriodPool } from "@/server/drops/auto-replenish";
+import { readLimitedBody } from "@/lib/auth/body-limit";
+import { recordAuditLog } from "@/server/audit/audit";
+
+function clientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim() || "unknown";
+  return request.headers.get("x-real-ip")?.trim() || "unknown";
+}
 
 /**
  * GET /api/admin/traits
@@ -44,8 +52,9 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  let adminSession;
   try {
-    await requireAdminSession(prisma, "MANAGE_DROPS");
+    adminSession = await requireAdminSession(prisma, "MANAGE_DROPS");
   } catch (err: unknown) {
     if (err instanceof AdminAuthError) {
       return err.toResponse();
@@ -56,9 +65,24 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  const bodyResult = await readLimitedBody(request);
+  if (!bodyResult.ok) {
+    const status = bodyResult.reason === "too_large" ? 413 : 400;
+    return Response.json({ error: bodyResult.reason }, { status });
+  }
+
+  let body: any;
   try {
-    const body = await request.json();
-    const { name, slug: inputSlug, category, rarity, imageUrl, description, maxSupply } = body;
+    body = JSON.parse(bodyResult.text);
+  } catch {
+    return Response.json(
+      { error: "MALFORMED_JSON", message: "Request body must be valid JSON." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const { name, slug: inputSlug, category, rarity, imageUrl, description, maxSupply } = body || {};
 
     if (!name || !category || !imageUrl) {
       return Response.json(
@@ -74,27 +98,61 @@ export async function POST(request: Request): Promise<Response> {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
 
-    const trait = await prisma.trait.upsert({
-      where: { slug },
-      create: {
-        slug,
-        name: name.trim(),
-        category,
-        rarity: rarity || "COMMON",
-        imageUrl: imageUrl.trim(),
-        description: description?.trim() || null,
-        maxSupply: typeof maxSupply === "number" ? maxSupply : null,
-        isActive: true,
-      },
-      update: {
-        name: name.trim(),
-        category,
-        rarity: rarity || "COMMON",
-        imageUrl: imageUrl.trim(),
-        description: description?.trim() || null,
-        maxSupply: typeof maxSupply === "number" ? maxSupply : null,
-        isActive: true,
-      },
+    const actorId = adminSession?.userId || (adminSession as any)?.user?.id || null;
+    const ip = clientIp(request);
+    const userAgent = request.headers.get("user-agent") ?? null;
+
+    const runTx =
+      typeof prisma.$transaction === "function"
+        ? (cb: (tx: any) => Promise<any>) => prisma.$transaction(cb)
+        : (cb: (tx: any) => Promise<any>) => cb(prisma);
+
+    const trait = await runTx(async (tx) => {
+      const saved = await tx.trait.upsert({
+        where: { slug },
+        create: {
+          slug,
+          name: name.trim(),
+          category,
+          rarity: rarity || "COMMON",
+          imageUrl: imageUrl.trim(),
+          description: description?.trim() || null,
+          maxSupply: typeof maxSupply === "number" ? maxSupply : null,
+          isActive: true,
+        },
+        update: {
+          name: name.trim(),
+          category,
+          rarity: rarity || "COMMON",
+          imageUrl: imageUrl.trim(),
+          description: description?.trim() || null,
+          maxSupply: typeof maxSupply === "number" ? maxSupply : null,
+          isActive: true,
+        },
+      });
+
+      if (tx.auditLog) {
+        await recordAuditLog(tx, {
+          actorId,
+          actorIp: ip,
+          userAgent,
+          action: "TRAIT_CREATED",
+          entityType: "Trait",
+          entityId: saved.id,
+          newValues: {
+            slug: saved.slug,
+            name: saved.name,
+            category: saved.category,
+            rarity: saved.rarity,
+            imageUrl: saved.imageUrl,
+            description: saved.description,
+            maxSupply: saved.maxSupply,
+            isActive: saved.isActive,
+          },
+        });
+      }
+
+      return saved;
     });
 
     // Auto-sync active drop period pool in real-time
@@ -111,8 +169,9 @@ export async function POST(request: Request): Promise<Response> {
 }
 
 export async function PUT(request: Request): Promise<Response> {
+  let adminSession;
   try {
-    await requireAdminSession(prisma, "MANAGE_DROPS");
+    adminSession = await requireAdminSession(prisma, "MANAGE_DROPS");
   } catch (err: unknown) {
     if (err instanceof AdminAuthError) {
       return err.toResponse();
@@ -123,9 +182,24 @@ export async function PUT(request: Request): Promise<Response> {
     );
   }
 
+  const bodyResult = await readLimitedBody(request);
+  if (!bodyResult.ok) {
+    const status = bodyResult.reason === "too_large" ? 413 : 400;
+    return Response.json({ error: bodyResult.reason }, { status });
+  }
+
+  let body: any;
   try {
-    const body = await request.json();
-    const { id, name, category, rarity, imageUrl, description, maxSupply, isActive } = body;
+    body = JSON.parse(bodyResult.text);
+  } catch {
+    return Response.json(
+      { error: "MALFORMED_JSON", message: "Request body must be valid JSON." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const { id, name, category, rarity, imageUrl, description, maxSupply, isActive } = body || {};
 
     if (!id || typeof id !== "string") {
       return Response.json(
@@ -162,19 +236,55 @@ export async function PUT(request: Request): Promise<Response> {
       );
     }
 
-    const updated = await prisma.trait.update({
-      where: { id },
-      data: {
-        ...(name !== undefined ? { name: name.trim() } : {}),
-        ...(category !== undefined ? { category } : {}),
-        ...(rarity !== undefined ? { rarity } : {}),
-        ...(imageUrl !== undefined ? { imageUrl: imageUrl.trim() } : {}),
-        ...(description !== undefined ? { description: description?.trim() || null } : {}),
-        ...(maxSupply !== undefined
-          ? { maxSupply: typeof maxSupply === "number" ? maxSupply : null }
-          : {}),
-        ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
-      },
+    const actorId = adminSession?.userId || (adminSession as any)?.user?.id || null;
+    const ip = clientIp(request);
+    const userAgent = request.headers.get("user-agent") ?? null;
+
+    const runTx =
+      typeof prisma.$transaction === "function"
+        ? (cb: (tx: any) => Promise<any>) => prisma.$transaction(cb)
+        : (cb: (tx: any) => Promise<any>) => cb(prisma);
+
+    const updateData: any = {
+      ...(name !== undefined ? { name: name.trim() } : {}),
+      ...(category !== undefined ? { category } : {}),
+      ...(rarity !== undefined ? { rarity } : {}),
+      ...(imageUrl !== undefined ? { imageUrl: imageUrl.trim() } : {}),
+      ...(description !== undefined ? { description: description?.trim() || null } : {}),
+      ...(maxSupply !== undefined
+        ? { maxSupply: typeof maxSupply === "number" ? maxSupply : null }
+        : {}),
+      ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
+    };
+
+    const updated = await runTx(async (tx) => {
+      const res = await tx.trait.update({
+        where: { id },
+        data: updateData,
+      });
+
+      if (tx.auditLog) {
+        await recordAuditLog(tx, {
+          actorId,
+          actorIp: ip,
+          userAgent,
+          action: "TRAIT_UPDATED",
+          entityType: "Trait",
+          entityId: id,
+          oldValues: {
+            name: existing.name,
+            category: existing.category,
+            rarity: existing.rarity,
+            imageUrl: existing.imageUrl,
+            description: existing.description,
+            maxSupply: existing.maxSupply,
+            isActive: existing.isActive,
+          },
+          newValues: updateData,
+        });
+      }
+
+      return res;
     });
 
     // Auto-sync active drop period pool in real-time
@@ -193,8 +303,9 @@ export async function PUT(request: Request): Promise<Response> {
 export const PATCH = PUT;
 
 export async function DELETE(request: Request): Promise<Response> {
+  let adminSession;
   try {
-    await requireAdminSession(prisma, "MANAGE_DROPS");
+    adminSession = await requireAdminSession(prisma, "MANAGE_DROPS");
   } catch (err: unknown) {
     if (err instanceof AdminAuthError) {
       return err.toResponse();
@@ -211,8 +322,11 @@ export async function DELETE(request: Request): Promise<Response> {
 
     if (!traitId) {
       try {
-        const body = await request.json();
-        traitId = body?.id;
+        const bodyResult = await readLimitedBody(request);
+        if (bodyResult.ok) {
+          const body = JSON.parse(bodyResult.text);
+          traitId = body?.id;
+        }
       } catch {
         // no body provided
       }
@@ -236,6 +350,15 @@ export async function DELETE(request: Request): Promise<Response> {
       );
     }
 
+    const actorId = adminSession?.userId || (adminSession as any)?.user?.id || null;
+    const ip = clientIp(request);
+    const userAgent = request.headers.get("user-agent") ?? null;
+
+    const runTx =
+      typeof prisma.$transaction === "function"
+        ? (cb: (tx: any) => Promise<any>) => prisma.$transaction(cb)
+        : (cb: (tx: any) => Promise<any>) => cb(prisma);
+
     // Check if any users own this trait
     const inventoryCount = await prisma.inventoryItem.count({
       where: { traitId },
@@ -243,9 +366,27 @@ export async function DELETE(request: Request): Promise<Response> {
 
     if (inventoryCount > 0) {
       // Deactivate instead of hard delete to preserve user inventory assets
-      const deactivated = await prisma.trait.update({
-        where: { id: traitId },
-        data: { isActive: false },
+      const deactivated = await runTx(async (tx) => {
+        const res = await tx.trait.update({
+          where: { id: traitId },
+          data: { isActive: false },
+        });
+
+        if (tx.auditLog) {
+          await recordAuditLog(tx, {
+            actorId,
+            actorIp: ip,
+            userAgent,
+            action: "TRAIT_UPDATED",
+            entityType: "Trait",
+            entityId: traitId,
+            oldValues: { isActive: existing.isActive },
+            newValues: { isActive: false },
+            metadata: { reason: "OWNED_INVENTORY_PRESERVED", inventoryCount },
+          });
+        }
+
+        return res;
       });
 
       // Auto-sync active drop period pool in real-time
@@ -265,9 +406,27 @@ export async function DELETE(request: Request): Promise<Response> {
     });
 
     if (claimCount > 0) {
-      const deactivated = await prisma.trait.update({
-        where: { id: traitId },
-        data: { isActive: false },
+      const deactivated = await runTx(async (tx) => {
+        const res = await tx.trait.update({
+          where: { id: traitId },
+          data: { isActive: false },
+        });
+
+        if (tx.auditLog) {
+          await recordAuditLog(tx, {
+            actorId,
+            actorIp: ip,
+            userAgent,
+            action: "TRAIT_UPDATED",
+            entityType: "Trait",
+            entityId: traitId,
+            oldValues: { isActive: existing.isActive },
+            newValues: { isActive: false },
+            metadata: { reason: "CLAIM_HISTORY_PRESERVED", claimCount },
+          });
+        }
+
+        return res;
       });
 
       // Auto-sync active drop period pool in real-time
@@ -281,13 +440,33 @@ export async function DELETE(request: Request): Promise<Response> {
       });
     }
 
-    // Clean up unreferenced drop pool items and delete trait
-    await prisma.dropPoolItem.deleteMany({
-      where: { traitId },
-    });
+    // Clean up unreferenced drop pool items and delete trait inside transaction
+    await runTx(async (tx) => {
+      await tx.dropPoolItem.deleteMany({
+        where: { traitId },
+      });
 
-    await prisma.trait.delete({
-      where: { id: traitId },
+      await tx.trait.delete({
+        where: { id: traitId },
+      });
+
+      if (tx.auditLog) {
+        await recordAuditLog(tx, {
+          actorId,
+          actorIp: ip,
+          userAgent,
+          action: "TRAIT_DELETED",
+          entityType: "Trait",
+          entityId: traitId,
+          oldValues: {
+            name: existing.name,
+            slug: existing.slug,
+            category: existing.category,
+            rarity: existing.rarity,
+            imageUrl: existing.imageUrl,
+          },
+        });
+      }
     });
 
     // Auto-sync active drop period pool in real-time

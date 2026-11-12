@@ -14,7 +14,6 @@ import { AdminTraits } from "./AdminTraits";
 import { AdminAuditLog } from "./AdminAuditLog";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { ShieldAlert, ArrowLeft, ExternalLink } from "lucide-react";
 import { adminListEvidence } from "@/lib/admin/client";
 
 export interface SerializedAdminRole {
@@ -97,13 +96,13 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
 
             <div className="flex items-center gap-2">
               <Link href="/whitelist">
-                <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-gray-300 hover:text-white">
-                  Public Portal <ExternalLink className="h-3 w-3" />
+                <Button variant="ghost" size="sm" className="text-xs text-gray-300 hover:text-white">
+                  Public Portal
                 </Button>
               </Link>
               <Link href="/">
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs border-[#163B44] bg-[#0B2026] text-gray-300 hover:border-amber-400 hover:text-white">
-                  <ArrowLeft className="h-3 w-3" /> Site Home
+                <Button variant="outline" size="sm" className="text-xs border-[#163B44] bg-[#0B2026] text-gray-300 hover:border-amber-400 hover:text-white">
+                  Site Home
                 </Button>
               </Link>
             </div>
@@ -112,7 +111,9 @@ export function AdminDashboardClient({ adminSession }: AdminDashboardClientProps
           {/* Permission Restricted View (if user lacks specific role grant) */}
           {!isAllowed ? (
             <div className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-6 text-center">
-              <ShieldAlert className="mx-auto h-8 w-8 text-amber-400" />
+              <div className="mx-auto mb-2 font-mono text-xs uppercase tracking-widest text-amber-400 font-bold">
+                Access Restricted
+              </div>
               <h2 className="text-lg font-bold text-white">
                 {currentNav?.superAdminOnly
                   ? "Access Restricted: SUPER_ADMIN Role Required"

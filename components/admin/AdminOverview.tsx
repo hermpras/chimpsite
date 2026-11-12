@@ -1,26 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  FileCheck2,
-  Sparkles,
-  Shield,
-  Users,
-  Flame,
-  ShieldAlert,
-  ArrowRight,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  RefreshCw,
-  Copy,
-  Check,
-  ExternalLink,
-  Terminal,
-  Activity,
-  Layers,
-  Lock,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -39,7 +20,7 @@ import {
 } from "@/lib/admin/client";
 import { fetchCurrentDrop, type CurrentDropResponse } from "@/lib/drops/client";
 import type { AdminTab } from "./AdminSidebar";
-import { shortenAddress } from "@/lib/auth/address";
+import { safeFormatAddress } from "@/lib/auth/address";
 
 interface AdminOverviewProps {
   roleType: string;
@@ -202,12 +183,10 @@ export function AdminOverview({
                 className="group flex items-center gap-1.5 rounded-lg border border-[#163B44] bg-[#0B2026] px-2.5 py-1 text-white hover:border-amber-400 transition-colors"
                 title="Click to copy full address"
               >
-                <span className="font-medium text-amber-300">{shortenAddress(address || "0x0000000000000000000000000000000000000000")}</span>
-                {copiedWallet ? (
-                  <Check className="h-3 w-3 text-emerald-400" />
-                ) : (
-                  <Copy className="h-3 w-3 text-gray-500 group-hover:text-amber-400" />
-                )}
+                <span className="font-medium text-amber-300">{safeFormatAddress(address)}</span>
+                <span className="text-[10px] font-bold uppercase text-gray-500 group-hover:text-amber-400">
+                  {copiedWallet ? "Copied" : "Copy"}
+                </span>
               </button>
             </div>
 
@@ -258,7 +237,7 @@ export function AdminOverview({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* 1. Evidence Card */}
         <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-amber-400/60 shadow-sm flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <div>
               <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
                 Action Queue
@@ -267,9 +246,6 @@ export function AdminOverview({
                 Evidence Reviews
               </CardTitle>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center border border-amber-400/40 bg-amber-400/10 text-amber-400 rounded-xl">
-              <FileCheck2 className="h-5 w-5" />
-            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-baseline justify-between">
@@ -277,13 +253,12 @@ export function AdminOverview({
                 {pendingEvidenceCount !== null ? pendingEvidenceCount : "-"}
               </div>
               {pendingEvidenceCount !== null && pendingEvidenceCount > 0 ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 border border-amber-500/40 bg-amber-950/40 px-2 py-0.5 rounded-full">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
+                <span className="text-[10px] font-bold text-amber-300 border border-amber-500/40 bg-amber-950/40 px-2 py-0.5 rounded-full">
                   Action Needed
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
-                  All Caught Up ✓
+                <span className="text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                  All Caught Up
                 </span>
               )}
             </div>
@@ -294,11 +269,10 @@ export function AdminOverview({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full justify-between text-xs border border-[#163B44] bg-[#0B2026] hover:border-amber-400 hover:text-white"
+                className="w-full text-xs border border-[#163B44] bg-[#0B2026] hover:border-amber-400 hover:text-white"
                 onClick={() => onNavigateTab("evidence")}
               >
-                <span>Review Submissions</span>
-                <ArrowRight className="h-3.5 w-3.5 text-amber-400" />
+                Review Submissions
               </Button>
             </div>
           </CardContent>
@@ -306,7 +280,7 @@ export function AdminOverview({
 
         {/* 2. Whitelist Allocation Card */}
         <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-emerald-400/60 shadow-sm flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <div>
               <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
                 Allowlist Quota
@@ -314,9 +288,6 @@ export function AdminOverview({
               <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
                 Whitelist Allocation
               </CardTitle>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center border border-emerald-400/40 bg-emerald-400/10 text-emerald-400 rounded-xl">
-              <Shield className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -344,11 +315,10 @@ export function AdminOverview({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full justify-between text-xs border border-[#163B44] bg-[#0B2026] hover:border-emerald-400 hover:text-white"
+                className="w-full text-xs border border-[#163B44] bg-[#0B2026] hover:border-emerald-400 hover:text-white"
                 onClick={() => onNavigateTab("whitelist")}
               >
-                <span>Manage Whitelist</span>
-                <ArrowRight className="h-3.5 w-3.5 text-emerald-400" />
+                Manage Whitelist
               </Button>
             </div>
           </CardContent>
@@ -356,7 +326,7 @@ export function AdminOverview({
 
         {/* 3. Drops Card */}
         <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-orange-400/60 shadow-sm flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <div>
               <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">
                 Contraband Engine
@@ -364,9 +334,6 @@ export function AdminOverview({
               <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
                 Drop System Status
               </CardTitle>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center border border-orange-400/40 bg-orange-400/10 text-orange-400 rounded-xl">
-              <Flame className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -387,11 +354,10 @@ export function AdminOverview({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full justify-between text-xs border border-[#163B44] bg-[#0B2026] hover:border-orange-400 hover:text-white"
+                className="w-full text-xs border border-[#163B44] bg-[#0B2026] hover:border-orange-400 hover:text-white"
                 onClick={() => onNavigateTab("drops")}
               >
-                <span>Inspect Drops &amp; Emergency</span>
-                <ArrowRight className="h-3.5 w-3.5 text-orange-400" />
+                Inspect Drops &amp; Emergency
               </Button>
             </div>
           </CardContent>
@@ -399,7 +365,7 @@ export function AdminOverview({
 
         {/* 4. Security & Abuse Flags Card */}
         <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-rose-400/60 shadow-sm flex flex-col justify-between">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="pb-2">
             <div>
               <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
                 Sybil Surveillance
@@ -407,9 +373,6 @@ export function AdminOverview({
               <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
                 Security &amp; Abuse
               </CardTitle>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center border border-rose-400/40 bg-rose-400/10 text-rose-400 rounded-xl">
-              <ShieldAlert className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -423,7 +386,7 @@ export function AdminOverview({
                 </span>
               ) : (
                 <span className="text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
-                  Shield Nominal ✓
+                  Shield Nominal
                 </span>
               )}
             </div>
@@ -434,11 +397,10 @@ export function AdminOverview({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full justify-between text-xs border border-[#163B44] bg-[#0B2026] hover:border-rose-400 hover:text-white"
+                className="w-full text-xs border border-[#163B44] bg-[#0B2026] hover:border-rose-400 hover:text-white"
                 onClick={() => onNavigateTab("abuse-flags")}
               >
-                <span>Review Abuse Flags</span>
-                <ArrowRight className="h-3.5 w-3.5 text-rose-400" />
+                Review Abuse Flags
               </Button>
             </div>
           </CardContent>
@@ -447,14 +409,11 @@ export function AdminOverview({
 
       {/* Campaigns quick status strip */}
       <div className="flex items-center justify-between border-2 border-[#163B44] bg-[#0B2026] p-4 rounded-xl text-xs shadow-sm">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-emerald-400 shrink-0" />
-          <div>
-            <span className="font-bold text-white uppercase">Campaigns &amp; Quests:</span>
-            <span className="ml-2 text-gray-300">
-              {campaignsCount !== null ? `${campaignsCount} Promo campaigns registered in system` : "Loading campaigns..."}
-            </span>
-          </div>
+        <div>
+          <span className="font-bold text-white uppercase">Campaigns &amp; Quests:</span>
+          <span className="ml-2 text-gray-300">
+            {campaignsCount !== null ? `${campaignsCount} Promo campaigns registered in system` : "Loading campaigns..."}
+          </span>
         </div>
         <Button
           variant="outline"
@@ -462,8 +421,7 @@ export function AdminOverview({
           className="border border-[#163B44] bg-[#0B2026] text-xs text-gray-300 hover:border-emerald-400 hover:text-white"
           onClick={() => onNavigateTab("campaigns")}
         >
-          <span>Manage Campaigns</span>
-          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+          Manage Campaigns
         </Button>
       </div>
 
@@ -484,13 +442,12 @@ export function AdminOverview({
             className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-amber-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileCheck2 className="h-5 w-5 text-amber-400" />
-                <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-amber-300">
-                  Evidence Review
-                </span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-transform" />
+              <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-amber-300">
+                Evidence Review
+              </span>
+              <span className="text-xs font-bold uppercase text-gray-600 group-hover:text-amber-400">
+                Open
+              </span>
             </div>
             <p className="mt-2 text-xs text-gray-400 leading-relaxed">
               Review and approve or reject proof of work submitted by community members for task verification.
@@ -502,13 +459,12 @@ export function AdminOverview({
             className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-emerald-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Sparkles className="h-5 w-5 text-emerald-400" />
-                <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-emerald-300">
-                  Campaigns
-                </span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
+              <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-emerald-300">
+                Campaigns
+              </span>
+              <span className="text-xs font-bold uppercase text-gray-600 group-hover:text-emerald-400">
+                Open
+              </span>
             </div>
             <p className="mt-2 text-xs text-gray-400 leading-relaxed">
               Create campaigns, transition campaign lifecycle (draft, active, paused), and inspect version tasks.
@@ -520,13 +476,12 @@ export function AdminOverview({
             className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-cyan-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-cyan-400" />
-                <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-cyan-300">
-                  Whitelist
-                </span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
+              <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-cyan-300">
+                Whitelist
+              </span>
+              <span className="text-xs font-bold uppercase text-gray-600 group-hover:text-cyan-400">
+                Open
+              </span>
             </div>
             <p className="mt-2 text-xs text-gray-400 leading-relaxed">
               Trigger FIFO queue reconciliation, revoke allocated slots, and query address whitelist qualification.
@@ -538,13 +493,12 @@ export function AdminOverview({
             className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-rose-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-rose-400" />
-                <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-rose-300">
-                  Users &amp; Bans
-                </span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-rose-400 group-hover:translate-x-0.5 transition-transform" />
+              <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-rose-300">
+                Users &amp; Bans
+              </span>
+              <span className="text-xs font-bold uppercase text-gray-600 group-hover:text-rose-400">
+                Open
+              </span>
             </div>
             <p className="mt-2 text-xs text-gray-400 leading-relaxed">
               Enforce targeted account bans across scopes (Full, Claim, Gift, WL) or revoke existing ban penalties.
@@ -556,13 +510,12 @@ export function AdminOverview({
             className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-orange-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Flame className="h-5 w-5 text-orange-400" />
-                <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-orange-300">
-                  Drops
-                </span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-orange-400 group-hover:translate-x-0.5 transition-transform" />
+              <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-orange-300">
+                Drops
+              </span>
+              <span className="text-xs font-bold uppercase text-gray-600 group-hover:text-orange-400">
+                Open
+              </span>
             </div>
             <p className="mt-2 text-xs text-gray-400 leading-relaxed">
               Monitor active trait drop windows and execute emergency close procedures when required.
@@ -574,13 +527,12 @@ export function AdminOverview({
             className="group cursor-pointer rounded-xl border-2 border-[#163B44] bg-[#0B2026] p-5 transition-all hover:border-pink-400 hover:shadow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ShieldAlert className="h-5 w-5 text-pink-400" />
-                <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-pink-300">
-                  Abuse Flags
-                </span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-pink-400 group-hover:translate-x-0.5 transition-transform" />
+              <span className="font-display text-base uppercase tracking-wider text-white group-hover:text-pink-300">
+                Abuse Flags
+              </span>
+              <span className="text-xs font-bold uppercase text-gray-600 group-hover:text-pink-400">
+                Open
+              </span>
             </div>
             <p className="mt-2 text-xs text-gray-400 leading-relaxed">
               Review flagged Sybil clusters, bot activities, and manage abuse investigation statuses.
@@ -591,12 +543,11 @@ export function AdminOverview({
 
       {/* Operational Governance Cheat Sheet (Replaces blank notice) */}
       <div className="rounded-2xl border-2 border-[#163B44] bg-gradient-to-r from-[#0B2026] via-[#102B33] to-[#0B2026] p-5 sm:p-6 shadow-sm space-y-4 text-xs">
-        <div className="flex items-center gap-2.5 text-amber-400 border-b border-[#163B44] pb-3">
-          <Terminal className="h-5 w-5" />
+        <div className="flex items-center justify-between text-amber-400 border-b border-[#163B44] pb-3">
           <h3 className="font-display text-base uppercase tracking-wider text-white">
             Operational Governance Cheat Sheet
           </h3>
-          <span className="ml-auto text-[10px] text-gray-500 uppercase">
+          <span className="text-[10px] text-gray-500 uppercase">
             Protocol Ground Truth
           </span>
         </div>

@@ -1,18 +1,6 @@
 "use client";
 
 import React from "react";
-import {
-  LayoutDashboard,
-  FileCheck2,
-  Flame,
-  ShieldAlert,
-  Users,
-  Sparkles,
-  Shield,
-  ScrollText,
-  X,
-  Menu,
-} from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 
 export type AdminTab =
@@ -29,59 +17,50 @@ export type AdminTab =
 export interface NavItem {
   id: AdminTab;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
   requiredPermission?: string;
   superAdminOnly?: boolean;
 }
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "overview", label: "Overview" },
   {
     id: "evidence",
     label: "Evidence Review",
-    icon: FileCheck2,
     requiredPermission: "REVIEW_EVIDENCE",
   },
   {
     id: "campaigns",
     label: "Campaigns",
-    icon: Sparkles,
     requiredPermission: "MANAGE_CAMPAIGNS",
   },
   {
     id: "whitelist",
     label: "Whitelist",
-    icon: Shield,
     requiredPermission: "MANAGE_WL",
   },
   {
     id: "users-bans",
     label: "Users & Bans",
-    icon: Users,
     requiredPermission: "MANAGE_BANS",
   },
   {
     id: "abuse-flags",
     label: "Abuse Flags",
-    icon: ShieldAlert,
     requiredPermission: "REVIEW_FLAGS",
   },
   {
     id: "drops",
     label: "Drops",
-    icon: Flame,
     requiredPermission: "MANAGE_DROPS",
   },
   {
     id: "traits",
     label: "Trait Manager",
-    icon: Sparkles,
     requiredPermission: "MANAGE_DROPS",
   },
   {
     id: "audit-log",
     label: "Audit Log",
-    icon: ScrollText,
     superAdminOnly: true,
   },
 ];
@@ -123,7 +102,6 @@ export function AdminSidebar({
   const renderNavLinks = () => (
     <nav className="space-y-1 px-3 py-4">
       {ADMIN_NAV_ITEMS.filter((item) => !item.superAdminOnly || isSuperAdmin).map((item) => {
-        const Icon = item.icon;
         const isActive = activeTab === item.id;
         const allowed = hasPerm(item.requiredPermission);
 
@@ -140,14 +118,7 @@ export function AdminSidebar({
                 : "text-gray-300 hover:bg-[#102B33]/60 hover:text-white border border-transparent"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <Icon
-                className={`h-5 w-5 transition-colors ${
-                  isActive
-                    ? "text-amber-400"
-                    : "text-gray-400 group-hover:text-gray-200"
-                }`}
-              />
+            <div className="flex items-center">
               <span>{item.label}</span>
             </div>
 
@@ -186,10 +157,10 @@ export function AdminSidebar({
         </div>
         <button
           onClick={onToggleMobile}
-          className="rounded p-1.5 text-gray-300 hover:bg-[#102B33] hover:text-white"
+          className="rounded px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-gray-300 hover:bg-[#102B33] hover:text-white border border-[#163B44]"
           aria-label="Toggle admin sidebar"
         >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {mobileOpen ? "Close" : "Menu"}
         </button>
       </div>
 
@@ -208,8 +179,8 @@ export function AdminSidebar({
                 </span>
                 <Badge variant="default" className="text-[10px]">{roleType}</Badge>
               </div>
-              <button onClick={onToggleMobile} className="text-gray-400 hover:text-white">
-                <X className="h-5 w-5" />
+              <button onClick={onToggleMobile} className="text-xs uppercase font-bold text-gray-400 hover:text-white">
+                Close
               </button>
             </div>
             {renderNavLinks()}
