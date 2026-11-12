@@ -91,7 +91,7 @@ export function AdminUsersBans() {
   const handleBanUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!banUserId.trim() || !banReason.trim()) {
-      setBanError("User ID and Reason are required.");
+      setBanError("Target User and Reason are required.");
       return;
     }
 
@@ -185,12 +185,12 @@ export function AdminUsersBans() {
                   htmlFor="ban-user-id"
                   className="mb-1 block text-xs font-medium text-gray-400"
                 >
-                  Target User ID *
+                  Target User ID, X Username, or Wallet *
                 </label>
                 <input
                   id="ban-user-id"
                   type="text"
-                  placeholder="e.g. clx123abc456 (or select from User Directory below)"
+                  placeholder="e.g. @username, 0x1234..., or cuid (or select from User Directory below)"
                   value={banUserId}
                   onChange={(e) => setBanUserId(e.target.value)}
                   required
@@ -558,7 +558,10 @@ export function AdminUsersBans() {
                             size="sm"
                             className="h-6 px-2 text-[11px] hover:text-rose-300"
                             onClick={() => {
-                              setBanUserId(u.id);
+                              const identifier = u.xIdentity?.username
+                                ? `@${u.xIdentity.username}`
+                                : (u.wallet?.address || u.id);
+                              setBanUserId(identifier);
                               window.scrollTo({ top: 0, behavior: "smooth" });
                             }}
                           >

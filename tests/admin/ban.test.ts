@@ -32,6 +32,8 @@ function createMockPrisma() {
     inventoryItems: [] as any[],
     traits: [] as any[],
     gifts: [] as any[],
+    xIdentities: [] as any[],
+    walletIdentities: [] as any[],
   };
 
   const hooks = {
@@ -99,6 +101,32 @@ function createMockPrisma() {
       adminRole: {
         findUnique: vi.fn(async ({ where }: any) => {
           return store.adminRoles.find((r) => r.userId === where.userId) || null;
+        }),
+      },
+      xIdentity: {
+        findFirst: vi.fn(async ({ where }: any) => {
+          const expected = where?.username?.equals?.toLowerCase();
+          const found = store.xIdentities.find(
+            (x) => x.username.toLowerCase() === expected,
+          );
+          if (!found) return null;
+          const user = store.users.find((u) => u.id === found.userId);
+          const adminRole =
+            store.adminRoles.find((r) => r.userId === user?.id) || null;
+          return { ...found, user: user ? { ...user, adminRole } : null };
+        }),
+      },
+      walletIdentity: {
+        findFirst: vi.fn(async ({ where }: any) => {
+          const expected = where?.address?.equals?.toLowerCase();
+          const found = store.walletIdentities.find(
+            (w) => w.address.toLowerCase() === expected,
+          );
+          if (!found) return null;
+          const user = store.users.find((u) => u.id === found.userId);
+          const adminRole =
+            store.adminRoles.find((r) => r.userId === user?.id) || null;
+          return { ...found, user: user ? { ...user, adminRole } : null };
         }),
       },
       banRecord: {
@@ -371,6 +399,16 @@ describe("Admin Ban Service (banUser)", () => {
       role: "USER",
       isBanned: false,
     });
+    mockPrisma._store.xIdentities.push({
+      id: "x-target-1",
+      userId: "user-target-1",
+      username: "target_x",
+    });
+    mockPrisma._store.walletIdentities.push({
+      id: "w-target-1",
+      userId: "user-target-1",
+      address: "0x111122223333444455556666777788889999aaaa",
+    });
   });
 
   describe("Input Validation", () => {
@@ -559,6 +597,45 @@ describe("Admin Ban Service (banUser)", () => {
           now,
         }),
       ).rejects.toThrow("Target user does not exist.");
+    });
+
+    it("successfully resolves target user by X username with @", async () => {
+      const res = await banUser(mockPrisma, {
+        userId: "@target_x",
+        adminUserId: "admin-1",
+        reason: "X bot activity",
+        now,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.userId).toBe("user-target-1");
+      expect(res.isBanned).toBe(true);
+    });
+
+    it("successfully resolves target user by X username without @ (case-insensitive)", async () => {
+      const res = await banUser(mockPrisma, {
+        userId: "TARGET_X",
+        adminUserId: "admin-1",
+        reason: "X spammer",
+        now,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.userId).toBe("user-target-1");
+      expect(res.isBanned).toBe(true);
+    });
+
+    it("successfully resolves target user by EVM wallet address", async () => {
+      const res = await banUser(mockPrisma, {
+        userId: "0x111122223333444455556666777788889999AAAA",
+        adminUserId: "admin-1",
+        reason: "Sybil wallet",
+        now,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.userId).toBe("user-target-1");
+      expect(res.isBanned).toBe(true);
     });
   });
 

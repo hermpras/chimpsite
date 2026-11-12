@@ -85,11 +85,11 @@ describe("Local Testing - Admin Dashboard Users & Bans UI", () => {
         expect(screen.getByText("BANNED")).toBeInTheDocument();
       });
 
-      // Clicking "Ban" next to user-cuid-123 auto-populates the Target User ID field
+      // Clicking "Ban" next to user-cuid-123 auto-populates the Target User field with @username
       const banButtons = screen.getAllByRole("button", { name: "Ban" });
       fireEvent.click(banButtons[0]);
 
-      expect(screen.getByLabelText(/Target User ID/i)).toHaveValue("user-cuid-123");
+      expect(screen.getByLabelText(/Target User ID/i)).toHaveValue("@chimp_trader");
 
       // Clicking "Revoke" next to banned user auto-populates the Ban Record ID field
       const revokeButton = screen.getByRole("button", { name: "Revoke" });
@@ -484,7 +484,7 @@ describe("Local Testing - Admin Dashboard Users & Bans UI", () => {
       fireEvent.submit(form);
 
       expect(adminClient.adminBanUser).not.toHaveBeenCalled();
-      expect(screen.getByText("User ID and Reason are required.")).toBeInTheDocument();
+      expect(screen.getByText("Target User and Reason are required.")).toBeInTheDocument();
     });
 
     it("prevents ban revocation submission when Ban Record ID is empty", async () => {

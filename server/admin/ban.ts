@@ -182,12 +182,59 @@ export async function banUser(
 
   return await prisma.$transaction(async (tx) => {
     // 1. Fetch target user with adminRole
-    const targetUser = await tx.user.findUnique({
+    // Supports resolving by: User ID (CUID), X username (with or without leading @), or EVM Wallet address (0x...)
+    let targetUser = await tx.user.findUnique({
       where: { id: validated.userId },
       include: {
         adminRole: true,
       },
     });
+
+    if (!targetUser) {
+      // Try resolving by X username (with or without leading @)
+      const cleanUsername = validated.userId.replace(/^@/, "").trim();
+      if (cleanUsername) {
+        const xIdentity = await tx.xIdentity.findFirst({
+          where: {
+            username: {
+              equals: cleanUsername,
+              mode: "insensitive",
+            },
+          },
+          include: {
+            user: {
+              include: {
+                adminRole: true,
+              },
+            },
+          },
+        });
+        if (xIdentity?.user) {
+          targetUser = xIdentity.user;
+        }
+      }
+    }
+
+    if (!targetUser && (validated.userId.startsWith("0x") || validated.userId.startsWith("0X"))) {
+      // Try resolving by EVM wallet address
+      const wallet = await tx.walletIdentity.findFirst({
+        where: {
+          address: {
+            equals: validated.userId.trim().toLowerCase(),
+          },
+        },
+        include: {
+          user: {
+            include: {
+              adminRole: true,
+            },
+          },
+        },
+      });
+      if (wallet?.user) {
+        targetUser = wallet.user;
+      }
+    }
 
     if (!targetUser) {
       throw new AdminBanError("USER_NOT_FOUND", "Target user does not exist.", 404);
@@ -358,6 +405,7 @@ export async function banUser(
       },
       metadata: {
         targetUserId: targetUser.id,
+        inputTarget: validated.userId,
         adminUserId: validated.adminUserId,
         banRecordId: banRecord.id,
         banType: banRecord.banType,
