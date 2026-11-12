@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import {
   Card,
@@ -112,15 +112,41 @@ export function isFollowLikeRepostTask(sub: EvidenceSubmissionItem): boolean {
   return false;
 }
 
+export type EvidenceAuditStatus = "NEEDS_AUDIT" | "AUDITED" | "REJECTED";
+
+export function getSubmissionAuditStatus(sub: EvidenceSubmissionItem): EvidenceAuditStatus {
+  if (sub.status === "REJECTED") {
+    return "REJECTED";
+  }
+  if (sub.status === "PENDING_REVIEW") {
+    return "NEEDS_AUDIT";
+  }
+  const isAutoVerified =
+    !sub.reviewerId ||
+    Boolean(sub.reviewerNotes?.toLowerCase().startsWith("auto-verified"));
+
+  if (isAutoVerified) {
+    return "NEEDS_AUDIT";
+  }
+
+  return "AUDITED";
+}
+
+export type FilterAuditStatus = "NEEDS_AUDIT" | "AUDITED" | "REJECTED" | "ALL";
+
 export function AdminEvidenceReview() {
-  const [filterStatus, setFilterStatus] = useState<
-    "ALL" | "PENDING_REVIEW" | "APPROVED" | "REJECTED"
-  >("PENDING_REVIEW");
+  const [filterAuditStatus, setFilterAuditStatus] = useState<FilterAuditStatus>("NEEDS_AUDIT");
   const [taskScopeFilter, setTaskScopeFilter] = useState<
     "ALL" | "REPLY_QUOTE_ONLY"
   >("ALL");
   const [submissions, setSubmissions] = useState<EvidenceSubmissionItem[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [countsSummary, setCountsSummary] = useState<{
+    needsAudit: number;
+    audited: number;
+    rejected: number;
+    all: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -131,20 +157,43 @@ export function AdminEvidenceReview() {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+  const localCounts = useMemo(() => {
+    let needsAudit = 0;
+    let audited = 0;
+    let rejected = 0;
+    for (const sub of submissions) {
+      const st = getSubmissionAuditStatus(sub);
+      if (st === "NEEDS_AUDIT") needsAudit++;
+      else if (st === "AUDITED") audited++;
+      else if (st === "REJECTED") rejected++;
+    }
+    return {
+      needsAudit,
+      audited,
+      rejected,
+      all: submissions.length,
+    };
+  }, [submissions]);
+
+  const counts = countsSummary ?? localCounts;
+
   useEffect(() => {
     let isMounted = true;
     const input: AdminListEvidenceInput = {
-      limit: 50,
+      limit: 100,
     };
-    if (filterStatus !== "ALL") {
-      input.status = filterStatus;
+    if (filterAuditStatus !== "ALL") {
+      input.auditStatus = filterAuditStatus;
     }
 
     adminListEvidence(input)
-      .then((res) => {
+      .then((res: any) => {
         if (isMounted) {
           setSubmissions(res.submissions || []);
           setTotalCount(res.total ?? res.submissions?.length ?? 0);
+          if (res.counts) {
+            setCountsSummary(res.counts);
+          }
           setError(null);
           setLoading(false);
         }
@@ -159,7 +208,7 @@ export function AdminEvidenceReview() {
     return () => {
       isMounted = false;
     };
-  }, [filterStatus, reloadKey]);
+  }, [filterAuditStatus, reloadKey]);
 
   const handleReview = async (
     submissionId: string,
@@ -169,13 +218,25 @@ export function AdminEvidenceReview() {
     setError(null);
     setActionSuccess(null);
     try {
-      const notes = reviewNotes[submissionId] || null;
+      const notes =
+        reviewNotes[submissionId] ||
+        (decision === "APPROVED"
+          ? "Audited & confirmed by admin"
+          : "Rejected during admin audit");
+
       await adminReviewEvidence(submissionId, {
         status: decision,
         reviewerNotes: notes,
       });
+      const wasPending =
+        submissions.find((s) => s.id === submissionId)?.status === "PENDING_REVIEW";
+
       setActionSuccess(
-        `Submission ${submissionId.slice(0, 8)} successfully ${decision.toLowerCase()}!`,
+        decision === "APPROVED"
+          ? wasPending
+            ? `Submission ${submissionId.slice(0, 8)} successfully approved!`
+            : `Submission ${submissionId.slice(0, 8)} confirmed valid by admin!`
+          : `Submission ${submissionId.slice(0, 8)} successfully rejected!`,
       );
       // Trigger reload
       setReloadKey((k) => k + 1);
@@ -199,6 +260,12 @@ export function AdminEvidenceReview() {
   };
 
   const filteredSubmissions = submissions.filter((sub) => {
+    if (filterAuditStatus !== "ALL") {
+      const auditStatus = getSubmissionAuditStatus(sub);
+      if (auditStatus !== filterAuditStatus) {
+        return false;
+      }
+    }
     if (taskScopeFilter === "REPLY_QUOTE_ONLY") {
       return !isFollowLikeRepostTask(sub);
     }
@@ -247,19 +314,29 @@ export function AdminEvidenceReview() {
       <div className="flex flex-col gap-3 border-b border-[#163B44] pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-2 text-xs font-medium text-gray-400">
-            Status:
+            Audit Status:
           </span>
-          {(["PENDING_REVIEW", "APPROVED", "REJECTED", "ALL"] as const).map((status) => (
+          {[
+            { key: "NEEDS_AUDIT", label: "Needs Audit", count: counts.needsAudit },
+            { key: "AUDITED", label: "Audited & Verified", count: counts.audited },
+            { key: "REJECTED", label: "Rejected", count: counts.rejected },
+            { key: "ALL", label: "All Submissions", count: counts.all },
+          ].map(({ key, label, count }) => (
             <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
+              key={key}
+              type="button"
+              onClick={() => setFilterAuditStatus(key as FilterAuditStatus)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                filterStatus === status
-                  ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
+                filterAuditStatus === key
+                  ? key === "NEEDS_AUDIT"
+                    ? "border border-amber-500/40 bg-amber-500/20 text-amber-300"
+                    : key === "REJECTED"
+                    ? "border border-rose-500/40 bg-rose-500/20 text-rose-300"
+                    : "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                   : "text-gray-400 hover:bg-[#102B33]/60 hover:text-white"
               }`}
             >
-              {status === "ALL" ? "All Submissions" : status.replace("_", " ")}
+              {label} ({count})
             </button>
           ))}
         </div>
@@ -319,7 +396,7 @@ export function AdminEvidenceReview() {
             </h3>
             <p className="mt-1 text-xs text-gray-500">
               There are no evidence records matching the current filter (
-              {filterStatus.replace("_", " ")}
+              {filterAuditStatus.replace("_", " ")}
               {taskScopeFilter === "REPLY_QUOTE_ONLY" ? " / Reply & Quote Only" : ""}).
             </p>
             {hiddenCount > 0 && taskScopeFilter === "REPLY_QUOTE_ONLY" && (
@@ -344,6 +421,9 @@ export function AdminEvidenceReview() {
             const isRejected = sub.status === "REJECTED";
             const isBusy = reviewingId === sub.id;
             const isFollowLikeRepost = isFollowLikeRepostTask(sub);
+            const auditStatus = getSubmissionAuditStatus(sub);
+            const isNeedsAudit = auditStatus === "NEEDS_AUDIT";
+            const isAudited = auditStatus === "AUDITED";
 
             const xUsername =
               sub.user?.xIdentity?.username ||
@@ -451,16 +531,24 @@ export function AdminEvidenceReview() {
                         <span className="font-mono text-xs font-semibold text-emerald-400">
                           ID: {sub.id}
                         </span>
-                        <Badge
-                          variant={
-                            isApproved ? "success" : isRejected ? "warning" : "outline"
-                          }
-                        >
-                          {sub.status.replace("_", " ")}
-                        </Badge>
-                        {isFollowLikeRepost && (
-                          <span className="rounded bg-[#102B33]/80 px-2 py-0.5 text-[10px] text-gray-400 border border-[#163B44]/60">
-                            Auto-Verified
+                        {isNeedsAudit && (
+                          <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-500/30">
+                            Needs Audit
+                          </span>
+                        )}
+                        {isAudited && (
+                          <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 border border-emerald-500/30">
+                            Audited &amp; Verified
+                          </span>
+                        )}
+                        {isRejected && (
+                          <span className="rounded bg-rose-500/20 px-2 py-0.5 text-[10px] font-semibold text-rose-300 border border-rose-500/30">
+                            Rejected
+                          </span>
+                        )}
+                        {isNeedsAudit && isApproved && (
+                          <span className="rounded bg-[#102B33]/80 px-2 py-0.5 text-[10px] text-cyan-300 border border-cyan-500/40">
+                            Auto-Approved
                           </span>
                         )}
                         {sub.task?.taskType && (
@@ -530,9 +618,19 @@ export function AdminEvidenceReview() {
                         </div>
                         {sub.reviewedAt && (
                           <div>
-                            <span className="text-gray-500">Reviewed:</span>{" "}
+                            <span className="text-gray-500">
+                              {isAudited ? "Audited At:" : "Processed:"}
+                            </span>{" "}
                             <span className="text-gray-300">
                               {new Date(sub.reviewedAt).toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                        {isAudited && sub.reviewerId && (
+                          <div>
+                            <span className="text-gray-500">Auditor:</span>{" "}
+                            <span className="font-mono text-xs text-gray-300" title={sub.reviewerId}>
+                              {sub.reviewerId.length > 12 ? `${sub.reviewerId.slice(0, 10)}...` : sub.reviewerId}
                             </span>
                           </div>
                         )}
@@ -597,18 +695,20 @@ export function AdminEvidenceReview() {
                           id={`notes-${sub.id}`}
                           type="text"
                           placeholder={
-                            isPending
+                            isNeedsAudit
                               ? "Optional reason or feedback..."
-                              : "Review completed"
+                              : isAudited
+                              ? "Reason for rejection if invalid..."
+                              : "Reason for re-approval..."
                           }
-                          value={reviewNotes[sub.id] ?? sub.reviewerNotes ?? ""}
+                          value={reviewNotes[sub.id] ?? (isAudited || isRejected ? sub.reviewerNotes ?? "" : "")}
                           onChange={(e) =>
                             setReviewNotes((prev) => ({
                               ...prev,
                               [sub.id]: e.target.value,
                             }))
                           }
-                          disabled={isBusy || !isPending}
+                          disabled={isBusy}
                           className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
@@ -619,26 +719,32 @@ export function AdminEvidenceReview() {
                           size="sm"
                           className="flex-1 text-xs"
                           onClick={() => handleReview(sub.id, "APPROVED")}
-                          disabled={isBusy || !isPending}
+                          disabled={isBusy || isAudited}
                         >
-                          Approve
+                          {isPending
+                            ? "Approve"
+                            : isAudited
+                            ? "Confirmed Valid"
+                            : "Confirm Valid"}
                         </Button>
                         <Button
                           variant="secondary"
                           size="sm"
                           className="flex-1 text-xs text-rose-300 hover:bg-rose-900/30 hover:text-rose-200"
                           onClick={() => handleReview(sub.id, "REJECTED")}
-                          disabled={isBusy || !isPending}
+                          disabled={isBusy || isRejected}
                         >
                           Reject
                         </Button>
                       </div>
 
-                      {!isPending && (
-                        <span className="block text-center text-[11px] text-gray-500 italic">
-                          Previously {sub.status.toLowerCase()}
-                        </span>
-                      )}
+                      <span className="block text-center text-[11px] text-gray-500 italic">
+                        {isNeedsAudit
+                          ? "Needs admin audit (Auto-approved by system)"
+                          : isAudited
+                          ? "Audited & confirmed valid by admin"
+                          : "Rejected by admin (Can be re-approved)"}
+                      </span>
                     </div>
                   </div>
                 </CardContent>

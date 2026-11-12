@@ -1369,7 +1369,23 @@ export function AdminWhitelist() {
                               </Badge>
                             </div>
                             <div className="text-gray-400 truncate">
-                              Proof: <span className="text-gray-300">{sub.payload}</span>
+                              Proof:{" "}
+                              {sub.payload &&
+                              (sub.payload.startsWith("http://") ||
+                                sub.payload.startsWith("https://")) ? (
+                                <a
+                                  href={sub.payload}
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  className="text-cyan-400 hover:text-cyan-300 hover:underline inline-block max-w-[85%] truncate align-bottom"
+                                >
+                                  {sub.payload}
+                                </a>
+                              ) : (
+                                <span className="text-gray-300">
+                                  {sub.payload || "-"}
+                                </span>
+                              )}
                             </div>
                             {sub.reviewerNotes && (
                               <div className="text-[11px] text-gray-400">

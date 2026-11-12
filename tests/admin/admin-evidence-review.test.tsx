@@ -116,9 +116,9 @@ describe("AdminEvidenceReview Component Unit Tests", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("3. Tombol Approve/Reject dinonaktifkan untuk submission non-pending dan teks Re-review permitted dihapus", async () => {
+  it("3. Submission APPROVED dapat ditolak (Reject) oleh admin jika terbukti palsu saat post-audit", async () => {
     const mockList = vi.mocked(adminClient.adminListEvidence);
-    mockList.mockResolvedValueOnce({
+    mockList.mockResolvedValue({
       submissions: [
         {
           id: "sub-approved-test",
@@ -127,6 +127,7 @@ describe("AdminEvidenceReview Component Unit Tests", () => {
           status: "APPROVED",
           createdAt: "2026-10-24T09:00:00.000Z",
           reviewedAt: "2026-10-24T10:00:00.000Z",
+          reviewerId: "admin-reviewer-01",
           reviewerNotes: "Verified proof",
           payload: "https://x.com/proof/1",
           submissionType: "URL",
@@ -139,25 +140,78 @@ describe("AdminEvidenceReview Component Unit Tests", () => {
 
     render(<AdminEvidenceReview />);
 
+    // Switch to Audited & Verified tab
+    const auditedTab = screen.getByRole("button", { name: /Audited & Verified/i });
+    fireEvent.click(auditedTab);
+
     await waitFor(() => {
       expect(screen.getByText("ID: sub-approved-test")).toBeInTheDocument();
     });
 
-    // Check that Approve and Reject buttons are disabled
-    const approveBtn = screen.getByRole("button", { name: "Approve" });
+    // Check that Confirmed Valid is disabled (already audited), but Reject is enabled for post-audit
+    const confirmedBtn = screen.getByRole("button", { name: "Confirmed Valid" });
     const rejectBtn = screen.getByRole("button", { name: "Reject" });
-    expect(approveBtn).toBeDisabled();
-    expect(rejectBtn).toBeDisabled();
+    expect(confirmedBtn).toBeDisabled();
+    expect(rejectBtn).not.toBeDisabled();
 
-    // Check feedback input is disabled
-    const noteInput = screen.getByPlaceholderText("Review completed");
-    expect(noteInput).toBeDisabled();
+    // Check feedback input is enabled for rejection reason
+    const noteInput = screen.getByPlaceholderText("Reason for rejection if invalid...");
+    expect(noteInput).not.toBeDisabled();
 
-    // Check that "Re-review permitted" is NOT rendered
-    expect(screen.queryByText(/Re-review permitted/i)).not.toBeInTheDocument();
+    // Check that status text is rendered
+    expect(
+      screen.getByText("Audited & confirmed valid by admin"),
+    ).toBeInTheDocument();
+  });
 
-    // Check that "Previously approved" status text is rendered
-    expect(screen.getByText("Previously approved")).toBeInTheDocument();
+  it("3b. Submission auto-approved (Needs Audit) memiliki tombol Confirm Valid yang aktif untuk menandai sudah diaudit", async () => {
+    const mockList = vi.mocked(adminClient.adminListEvidence);
+    const mockReview = vi.mocked(adminClient.adminReviewEvidence);
+    mockList.mockResolvedValue({
+      submissions: [
+        {
+          id: "sub-auto-audit-test",
+          taskId: "task-004b",
+          userId: "user-004b",
+          status: "APPROVED",
+          createdAt: "2026-10-24T09:00:00.000Z",
+          reviewedAt: "2026-10-24T09:00:00.000Z",
+          reviewerNotes: "Auto-verified via social action",
+          payload: "https://x.com/proof/auto-audit",
+          submissionType: "URL",
+        } as any,
+      ],
+      total: 1,
+      limit: 50,
+      offset: 0,
+    });
+    mockReview.mockResolvedValueOnce({ success: true } as any);
+
+    render(<AdminEvidenceReview />);
+
+    await waitFor(() => {
+      expect(screen.getByText("ID: sub-auto-audit-test")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("Needs Audit")).toBeInTheDocument();
+    expect(screen.getByText("Auto-Approved")).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole("button", { name: "Confirm Valid" });
+    const rejectBtn = screen.getByRole("button", { name: "Reject" });
+    expect(confirmBtn).not.toBeDisabled();
+    expect(rejectBtn).not.toBeDisabled();
+
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(mockReview).toHaveBeenCalledWith("sub-auto-audit-test", {
+        status: "APPROVED",
+        reviewerNotes: "Audited & confirmed by admin",
+      });
+      expect(
+        screen.getByText(/Submission sub-auto confirmed valid by admin!/i),
+      ).toBeInTheDocument();
+    });
   });
 
   it("4. Submission PENDING_REVIEW memiliki tombol Approve/Reject yang aktif dan dapat direview", async () => {
