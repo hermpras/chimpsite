@@ -145,6 +145,20 @@ function createMockPrisma() {
         if (where?.status) {
           list = list.filter((e) => e.status === where.status);
         }
+        if (where?.OR) {
+          list = list.filter((e) =>
+            where.OR.some((cond: any) => {
+              if (cond.status && cond.reviewerId === null) {
+                return e.status === cond.status && !e.reviewerId;
+              }
+              if (cond.status) return e.status === cond.status;
+              return false;
+            }),
+          );
+        }
+        if (where?.reviewerId && typeof where.reviewerId === "object" && "not" in where.reviewerId) {
+          list = list.filter((e) => Boolean(e.reviewerId));
+        }
         if (where?.taskId) {
           list = list.filter((e) => e.taskId === where.taskId);
         }
@@ -173,6 +187,20 @@ function createMockPrisma() {
         let list = [...store.evidenceSubmissions];
         if (where?.status) {
           list = list.filter((e) => e.status === where.status);
+        }
+        if (where?.OR) {
+          list = list.filter((e) =>
+            where.OR.some((cond: any) => {
+              if (cond.status && cond.reviewerId === null) {
+                return e.status === cond.status && !e.reviewerId;
+              }
+              if (cond.status) return e.status === cond.status;
+              return false;
+            }),
+          );
+        }
+        if (where?.reviewerId && typeof where.reviewerId === "object" && "not" in where.reviewerId) {
+          list = list.filter((e) => Boolean(e.reviewerId));
         }
         if (where?.taskId) {
           list = list.filter((e) => e.taskId === where.taskId);
@@ -578,6 +606,18 @@ describe("Task 4-D Evidence Review Service (server/admin/evidence.ts)", () => {
       });
       expect(result.total).toBe(2);
       expect(result.submissions.map((s) => s.id)).toEqual(["ev_1", "ev_2"]);
+    });
+
+    it("filters submissions by auditStatus NEEDS_AUDIT and AUDITED", async () => {
+      const needsAudit = await listAdminEvidence(mock.client as unknown as PrismaClient, {
+        auditStatus: "NEEDS_AUDIT",
+      });
+      expect(needsAudit.submissions.map((s) => s.id)).toEqual(["ev_1"]);
+
+      const audited = await listAdminEvidence(mock.client as unknown as PrismaClient, {
+        auditStatus: "AUDITED",
+      });
+      expect(audited.submissions.map((s) => s.id)).toEqual(["ev_2"]);
     });
 
     it("throws 422 INVALID_STATUS on invalid status filter", async () => {

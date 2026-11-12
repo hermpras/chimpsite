@@ -24,6 +24,7 @@ export async function GET(request: Request): Promise<Response> {
 
   const url = new URL(request.url);
   const statusParam = url.searchParams.get("status") || undefined;
+  const auditStatusParam = url.searchParams.get("auditStatus") || undefined;
   const taskIdParam = url.searchParams.get("taskId") || undefined;
   const userIdParam = url.searchParams.get("userId") || undefined;
   const limitParam = url.searchParams.get("limit");
@@ -35,6 +36,7 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const result = await listAdminEvidence(prisma, {
       status: statusParam,
+      auditStatus: auditStatusParam,
       taskId: taskIdParam,
       userId: userIdParam,
       limit,

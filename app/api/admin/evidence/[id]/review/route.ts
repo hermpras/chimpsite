@@ -67,6 +67,7 @@ export async function POST(
       adminUserId: adminSession.userId,
       status: status as any,
       reviewerNotes: reviewerNotes as any,
+      allowStatusOverride: true,
       ipAddress: clientIp(request),
       userAgent: request.headers.get("user-agent") ?? null,
     });

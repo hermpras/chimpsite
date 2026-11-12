@@ -71,7 +71,8 @@ export async function adminReconcileQueue(
 }
 
 export interface AdminListEvidenceInput {
-  status?: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+  status?: "PENDING_REVIEW" | "APPROVED" | "REJECTED" | string;
+  auditStatus?: "NEEDS_AUDIT" | "AUDITED" | "REJECTED" | "ALL" | string;
   taskId?: string;
   userId?: string;
   limit?: number;
@@ -81,6 +82,7 @@ export interface AdminListEvidenceInput {
 export async function adminListEvidence(input?: AdminListEvidenceInput) {
   const params = new URLSearchParams();
   if (input?.status) params.set("status", input.status);
+  if (input?.auditStatus && input.auditStatus !== "ALL") params.set("auditStatus", input.auditStatus);
   if (input?.taskId) params.set("taskId", input.taskId);
   if (input?.userId) params.set("userId", input.userId);
   if (input?.limit !== undefined) params.set("limit", String(input.limit));

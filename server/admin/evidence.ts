@@ -44,6 +44,7 @@ export interface ReviewEvidenceInput {
   adminUserId: string;
   status: EvidenceStatus | string;
   reviewerNotes?: string | null;
+  allowStatusOverride?: boolean;
   ipAddress?: string | null;
   userAgent?: string | null;
   now?: Date;
@@ -58,6 +59,7 @@ export interface ReviewEvidenceResult {
 
 export interface ListEvidenceFilter {
   status?: EvidenceStatus | string;
+  auditStatus?: "NEEDS_AUDIT" | "AUDITED" | "REJECTED" | "ALL" | string;
   taskId?: string;
   userId?: string;
   limit?: number;
@@ -86,6 +88,12 @@ export interface ListEvidenceResult {
   total: number;
   limit: number;
   offset: number;
+  counts?: {
+    needsAudit: number;
+    audited: number;
+    rejected: number;
+    all: number;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -189,8 +197,8 @@ export async function reviewEvidence(
       );
     }
 
-    // 2. Invariant: only PENDING_REVIEW submissions can be reviewed
-    if (existingSubmission.status !== "PENDING_REVIEW") {
+    // 2. Invariant: only PENDING_REVIEW submissions can be reviewed, unless allowStatusOverride is true
+    if (existingSubmission.status !== "PENDING_REVIEW" && !input.allowStatusOverride) {
       throw new AdminEvidenceError(
         "SUBMISSION_ALREADY_REVIEWED",
         `Evidence submission has already been reviewed (current status: ${existingSubmission.status}).`,
@@ -228,7 +236,55 @@ export async function reviewEvidence(
       },
     });
 
-    // 5. Record AuditLog inside same transaction
+    // 5. If rejecting evidence, automatically flag any active Whitelist slot held by user
+    if (targetStatus === "REJECTED" && (tx as any).wLSlot?.findFirst) {
+      const activeSlot = await (tx as any).wLSlot.findFirst({
+        where: {
+          userId: existingSubmission.userId,
+          status: { in: ["ALLOCATED", "CONFIRMED"] },
+        },
+      });
+
+      if (activeSlot && (tx as any).wLSlot.update) {
+        const flagNote = reviewerNotes
+          ? `Evidence rejected: ${reviewerNotes}`
+          : `Evidence rejected for task: ${existingSubmission.task?.title || existingSubmission.taskId}`;
+
+        await (tx as any).wLSlot.update({
+          where: { id: activeSlot.id },
+          data: {
+            reviewStatus: "FLAGGED",
+            reviewNotes: flagNote,
+            reviewedAt: now,
+            reviewedBy: adminUserId,
+          },
+        });
+
+        await recordAuditLog(tx, {
+          actorId: adminUserId,
+          actorIp: input.ipAddress ?? null,
+          userAgent: input.userAgent ?? null,
+          action: "WL_SLOT_REVIEW_STATUS_UPDATED",
+          entityType: "WLSlot",
+          entityId: activeSlot.id,
+          oldValues: {
+            reviewStatus: activeSlot.reviewStatus,
+            reviewNotes: activeSlot.reviewNotes,
+          },
+          newValues: {
+            reviewStatus: "FLAGGED",
+            reviewNotes: flagNote,
+          },
+          metadata: {
+            reason: "EVIDENCE_REJECTED",
+            evidenceSubmissionId: submissionId,
+            taskId: existingSubmission.taskId,
+          },
+        });
+      }
+    }
+
+    // 6. Record AuditLog inside same transaction
     const audit = await recordAuditLog(tx, {
       actorId: adminUserId,
       actorIp: input.ipAddress ?? null,
@@ -270,21 +326,19 @@ export async function reviewEvidence(
     };
   });
 
-  // Safely trigger automatic Whitelist eligibility evaluation if evidence is APPROVED
-  if (targetStatus === "APPROVED") {
-    try {
-      if (
-        typeof (prisma as any).wLProgram?.findFirst === "function" ||
-        typeof (prisma as any).wLProgram?.findUnique === "function"
-      ) {
-        await triggerAutomaticEligibilityEvaluation(prisma, {
-          userId: reviewResult.candidateUserId,
-          now,
-        });
-      }
-    } catch (evalErr) {
-      console.error("Automatic WL eligibility evaluation warning on evidence approval:", evalErr);
+  // Safely trigger automatic Whitelist eligibility evaluation upon review decision
+  try {
+    if (
+      typeof (prisma as any).wLProgram?.findFirst === "function" ||
+      typeof (prisma as any).wLProgram?.findUnique === "function"
+    ) {
+      await triggerAutomaticEligibilityEvaluation(prisma, {
+        userId: reviewResult.candidateUserId,
+        now,
+      });
     }
+  } catch (evalErr) {
+    console.error("Automatic WL eligibility evaluation warning on evidence review:", evalErr);
   }
 
   return {
@@ -304,7 +358,20 @@ export async function listAdminEvidence(
 ): Promise<ListEvidenceResult> {
   const where: Prisma.EvidenceSubmissionWhereInput = {};
 
-  if (filter.status) {
+  if (filter.auditStatus) {
+    const rawAudit = String(filter.auditStatus).trim().toUpperCase();
+    if (rawAudit === "NEEDS_AUDIT") {
+      where.OR = [
+        { status: "PENDING_REVIEW" },
+        { status: "APPROVED", reviewerId: null },
+      ];
+    } else if (rawAudit === "AUDITED") {
+      where.status = "APPROVED";
+      where.reviewerId = { not: null };
+    } else if (rawAudit === "REJECTED") {
+      where.status = "REJECTED";
+    }
+  } else if (filter.status) {
     const raw = String(filter.status).trim().toUpperCase();
     if (!["PENDING_REVIEW", "APPROVED", "REJECTED"].includes(raw)) {
       throw new AdminEvidenceError(
@@ -356,6 +423,37 @@ export async function listAdminEvidence(
     prisma.evidenceSubmission.count({ where }),
   ]);
 
+  let counts: { needsAudit: number; audited: number; rejected: number; all: number } | undefined = undefined;
+  try {
+    const [needsAuditCount, auditedCount, rejectedCount] = await Promise.all([
+      prisma.evidenceSubmission.count({
+        where: {
+          OR: [
+            { status: "PENDING_REVIEW" },
+            { status: "APPROVED", reviewerId: null },
+          ],
+        },
+      }),
+      prisma.evidenceSubmission.count({
+        where: {
+          status: "APPROVED",
+          reviewerId: { not: null },
+        },
+      }),
+      prisma.evidenceSubmission.count({
+        where: { status: "REJECTED" },
+      }),
+    ]);
+    counts = {
+      needsAudit: needsAuditCount,
+      audited: auditedCount,
+      rejected: rejectedCount,
+      all: needsAuditCount + auditedCount + rejectedCount,
+    };
+  } catch {
+    // If client/mock does not support advanced count where clauses, omit counts safely
+  }
+
   return {
     submissions: (submissions as any[]).map((s) => ({
       ...formatEvidenceSubmissionOutput(s),
@@ -380,6 +478,7 @@ export async function listAdminEvidence(
     total,
     limit,
     offset,
+    ...(counts ? { counts } : {}),
   };
 }
 
