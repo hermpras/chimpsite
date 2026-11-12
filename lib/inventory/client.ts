@@ -49,7 +49,7 @@ export async function fetchUserInventory(
  */
 export async function equipUserTrait(
   itemId: string,
-): Promise<{ success: boolean; itemId: string; category: string }> {
+): Promise<{ success: boolean; itemId: string; category: string; avatarUpdatedAt?: number }> {
   const res = await fetch("/api/user/inventory/equip", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

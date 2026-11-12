@@ -13,6 +13,7 @@ export interface UserAvatarProps {
   fallbackIconClassName?: string;
   showRefreshButton?: boolean;
   onRefresh?: () => Promise<void> | void;
+  layers?: Array<{ category: string; imageUrl?: string | null }>;
 }
 
 const SIZE_CONTAINER_CLASSES = {
@@ -40,6 +41,7 @@ export function UserAvatar({
   fallbackIconClassName,
   showRefreshButton = false,
   onRefresh,
+  layers,
 }: UserAvatarProps) {
   const [internalVersion, setInternalVersion] = useState<number | null>(() => {
     if (typeof window !== "undefined") {
@@ -200,8 +202,8 @@ export function UserAvatar({
       <div
         className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[#163B44] bg-[#0B2026] shadow-inner ${containerClass} ${className}`}
       >
-        {/* Loading overlay */}
-        {!imgLoaded && (
+        {/* Loading overlay - only show if no instant client layers are available */}
+        {!imgLoaded && (!layers || layers.length === 0) && (
           <div
             data-testid="avatar-loading"
             className="absolute inset-0 z-10 flex items-center justify-center bg-[#0B2026]/90 text-emerald-400 font-mono text-[9px] uppercase tracking-wider"
@@ -223,19 +225,36 @@ export function UserAvatar({
           onLoad={() => setLoadedKey(currentKey)}
           onError={() => setErrorKey(currentKey)}
         />
+
+        {/* Instant Client-Side Layer Stack if provided (e.g. from Profile page) */}
+        {layers &&
+          layers.map((layer) => {
+            if (!layer.imageUrl) return null;
+            return (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                key={`${layer.category}-${layer.imageUrl}`}
+                src={layer.imageUrl}
+                alt={`${layer.category} layer`}
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover [image-rendering:pixelated]"
+              />
+            );
+          })}
       </div>
 
-      {/* Optional Refresh/Re-render Button (visually hidden on luxury profile card, accessible for programmatic/test refresh) */}
+      {/* Optional Refresh/Re-render Button */}
       {showRefreshButton && !isSm && (
         <button
           type="button"
           data-testid="avatar-refresh-btn"
           onClick={handleManualReRender}
           disabled={isReRendering}
-          className="sr-only"
+          className="absolute -right-1.5 -bottom-1.5 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-cyan-500/40 bg-[#071F24] text-cyan-300 shadow-[0_2px_8px_rgba(0,0,0,0.5)] hover:border-cyan-400 hover:bg-[#102B33] hover:text-white cursor-pointer transition-all active:scale-95"
           title="Re-render Avatar"
         >
-          Re-render Avatar
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${isReRendering ? "animate-spin text-cyan-400" : ""}`}
+          />
         </button>
       )}
     </div>

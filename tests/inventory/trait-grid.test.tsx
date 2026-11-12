@@ -321,7 +321,7 @@ describe("TraitGrid Component & Profile Inventory States", () => {
         expect(screen.getByTestId("trait-grid")).toBeInTheDocument();
         expect(screen.getByText("Diamond Grill")).toBeInTheDocument();
         expect(screen.getByText("Pilot Cap")).toBeInTheDocument();
-        expect(screen.getByText("2 Items")).toBeInTheDocument();
+        expect(screen.getByText(/2 Items/)).toBeInTheDocument();
       });
     });
 

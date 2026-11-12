@@ -446,9 +446,9 @@ function ProfileContent() {
     );
 
     try {
-      await inventoryClient.equipUserTrait(item.id);
+      const equipRes = await inventoryClient.equipUserTrait(item.id);
       // Bust avatar cache and trigger immediate visual update
-      const newVersion = Date.now();
+      const newVersion = equipRes?.avatarUpdatedAt || Date.now();
       setAvatarVersion(newVersion);
       if (typeof window !== "undefined") {
         try {
@@ -787,6 +787,10 @@ function ProfileContent() {
                     size="xl"
                     showRefreshButton={status === "authenticated" && inventoryItems.length > 0}
                     onRefresh={handleRefreshAll}
+                    layers={TRAIT_CATEGORIES.map((cat) => ({
+                      category: cat,
+                      imageUrl: inventoryMeta.equippedByCategory[cat]?.trait?.imageUrl,
+                    }))}
                     className="rounded-2xl border border-cyan-500/30 shadow-inner [image-rendering:pixelated] bg-[#05181e]"
                   />
                 </div>
@@ -1399,9 +1403,6 @@ function ProfileContent() {
                         <h4 className="font-display text-base uppercase tracking-wider text-white">
                           Wardrobe Studio
                         </h4>
-                        <p className="text-[11px] text-[#8AA8B2]">
-                          Live Persona Engine
-                        </p>
                       </div>
 
                       {/* Live Layered Pixel-Art Stage */}

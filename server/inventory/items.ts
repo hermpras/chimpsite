@@ -115,7 +115,7 @@ export async function equipInventoryItem(
   prisma: PrismaClient | any,
   userId: string,
   itemId: string,
-): Promise<{ success: boolean; itemId: string; category: string }> {
+): Promise<{ success: boolean; itemId: string; category: string; avatarUpdatedAt?: number }> {
   if (!userId || !userId.trim()) {
     throw new InventoryError("UNAUTHENTICATED", "Authentication required.", 401);
   }
@@ -183,15 +183,19 @@ export async function equipInventoryItem(
   }
 
   // Trigger avatar re-render
-  let renderUpdatedAt: number | null = null;
+  let avatarUpdatedAt: number | undefined = undefined;
   try {
     const { renderUserAvatar } = await import("./avatar-renderer");
     const rendered = await renderUserAvatar(prisma, userId).catch((err: unknown) => {
       console.warn(`[equipInventoryItem] Background avatar render failed for user ${userId}:`, err);
+      return null;
     });
+    if (rendered?.updatedAt) {
+      avatarUpdatedAt = rendered.updatedAt.getTime();
+    }
   } catch (renderErr: unknown) {
     console.warn(`[equipInventoryItem] Error triggering avatar render:`, renderErr);
   }
 
-  return { success: true, itemId, category };
+  return { success: true, itemId, category, avatarUpdatedAt };
 }

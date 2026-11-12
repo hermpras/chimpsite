@@ -44,58 +44,79 @@ export async function GET(
   try {
     let record = await getAvatarRecord(prisma, identifier);
 
-    // If record exists in DB but PNG has not been rendered yet (e.g. background render pending/failed)
+    const url = new URL(request.url);
+    const requestedVersion = url.searchParams.get("v");
+    const requestedTimestamp = requestedVersion ? Number(requestedVersion) : null;
+    const currentRecordVersion = record?.updatedAt ? record.updatedAt.getTime() : 0;
+
+    // Check if client requested a newer version (e.g. after equipping a trait)
+    const isStale = Boolean(
+      requestedTimestamp &&
+        Number.isFinite(requestedTimestamp) &&
+        requestedTimestamp > currentRecordVersion + 1000,
+    );
+
+    // If record exists in DB but PNG has not been rendered yet (or client requested a newer version),
     // attempt lazy on-demand render
-    if (!record?.pngBuffer) {
+    if (!record?.pngBuffer || isStale) {
       if (!record?.userId) {
-        // User not found in database — do not attempt expensive render on arbitrary identifiers
-        return new Response("Avatar not found", {
-          status: 404,
-          headers: { "Content-Type": "text/plain" },
-        });
-      }
-
-      // Protect against CPU exhaustion: rate-limit fallback lazy renders per target user
-      try {
-        const rateLimitKey = `avatar-lazy-render:${record.userId}`;
-        const limit = await checkRateLimit(
-          rateLimitKey,
-          AVATAR_RENDER_RATE_LIMIT_MAX,
-          AVATAR_RENDER_RATE_LIMIT_WINDOW_MS,
-        );
-        if (!limit.allowed) {
-          return new Response("Too many render requests. Please try again later.", {
-            status: 429,
-            headers: {
-              "Content-Type": "text/plain",
-              "Retry-After": String(limit.retryAfterSeconds),
-            },
-          });
-        }
-      } catch (rateErr) {
-        console.error("GET /api/renders/avatar/[id] rate limit failure:", rateErr);
-        return new Response("Rate limit service temporarily unavailable", {
-          status: 500,
-          headers: { "Content-Type": "text/plain" },
-        });
-      }
-
-      try {
-        const targetUserId = record.userId;
-        const rendered = await renderUserAvatar(prisma, targetUserId);
-        record = {
-          userId: rendered.userId,
-          pngBuffer: rendered.pngBuffer,
-          updatedAt: rendered.updatedAt,
-        };
-      } catch (renderErr) {
-        if (renderErr instanceof AvatarRenderError && renderErr.code === "NO_INVENTORY") {
-          return new Response("Avatar not found: user has no active inventory", {
+        if (!record?.pngBuffer) {
+          // User not found in database — do not attempt expensive render on arbitrary identifiers
+          return new Response("Avatar not found", {
             status: 404,
             headers: { "Content-Type": "text/plain" },
           });
         }
-        // Fall through to 404 if render not possible
+      } else {
+        // Protect against CPU exhaustion: rate-limit fallback lazy renders per target user
+        try {
+          const rateLimitKey = `avatar-lazy-render:${record.userId}`;
+          const limit = await checkRateLimit(
+            rateLimitKey,
+            AVATAR_RENDER_RATE_LIMIT_MAX,
+            AVATAR_RENDER_RATE_LIMIT_WINDOW_MS,
+          );
+          if (!limit.allowed) {
+            if (!record?.pngBuffer) {
+              return new Response("Too many render requests. Please try again later.", {
+                status: 429,
+                headers: {
+                  "Content-Type": "text/plain",
+                  "Retry-After": String(limit.retryAfterSeconds),
+                },
+              });
+            }
+          } else {
+            try {
+              const targetUserId = record.userId;
+              const rendered = await renderUserAvatar(prisma, targetUserId);
+              record = {
+                userId: rendered.userId,
+                pngBuffer: rendered.pngBuffer,
+                updatedAt: rendered.updatedAt,
+              };
+            } catch (renderErr) {
+              if (renderErr instanceof AvatarRenderError && renderErr.code === "NO_INVENTORY") {
+                if (!record?.pngBuffer) {
+                  return new Response("Avatar not found: user has no active inventory", {
+                    status: 404,
+                    headers: { "Content-Type": "text/plain" },
+                  });
+                }
+              }
+              console.warn(`[avatar-route] Lazy re-render for ${record.userId} failed:`, renderErr);
+              // Fall through to serving existing record if render failed
+            }
+          }
+        } catch (rateErr) {
+          console.error("GET /api/renders/avatar/[id] rate limit failure:", rateErr);
+          if (!record?.pngBuffer) {
+            return new Response("Rate limit service temporarily unavailable", {
+              status: 500,
+              headers: { "Content-Type": "text/plain" },
+            });
+          }
+        }
       }
     }
 

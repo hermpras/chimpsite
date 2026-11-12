@@ -124,7 +124,16 @@ export async function fetchLayerBuffer(
     );
   }
 
-  // 1. Remote HTTP/HTTPS URL: preserve existing fetch behavior
+  // 1. Data URI: parse inline base64 image without touching disk or network
+  if (imageUrl.startsWith("data:")) {
+    const commaIdx = imageUrl.indexOf(",");
+    if (commaIdx !== -1) {
+      const base64Data = imageUrl.slice(commaIdx + 1);
+      return Buffer.from(base64Data, "base64");
+    }
+  }
+
+  // 2. Remote HTTP/HTTPS URL: preserve existing fetch behavior
   if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
     let response: Response;
     try {
@@ -149,7 +158,7 @@ export async function fetchLayerBuffer(
     return Buffer.from(arrayBuffer);
   }
 
-  // 2. Local relative trait path: must strictly reside in public/traits/
+  // 3. Local relative trait path: must strictly reside in public/traits/
   const cleanPath = imageUrl.split(/[?#]/)[0];
 
   let decodedPath: string;
@@ -188,6 +197,13 @@ export async function fetchLayerBuffer(
     );
   }
 
+  const candidateDirs = [
+    TRAITS_BASE_DIR,
+    path.resolve(process.cwd(), "public", "traits"),
+    path.resolve(process.cwd(), ".next", "server", "public", "traits"),
+    path.resolve(process.cwd(), ".next", "standalone", "public", "traits"),
+  ];
+
   const resolvedPath = path.resolve(TRAITS_BASE_DIR, relativePath);
   if (!resolvedPath.startsWith(TRAITS_BASE_DIR + path.sep)) {
     throw new AvatarRenderError(
@@ -197,57 +213,84 @@ export async function fetchLayerBuffer(
     );
   }
 
-  try {
-    return await readFile(resolvedPath);
-  } catch (fsErr: unknown) {
-    const code = (fsErr as { code?: string })?.code;
-    if (code === "ENOENT") {
-      // Fallback for Vercel Serverless environment where public assets might be served via CDN
-      const baseUrl = getBaseUrl();
-      if (baseUrl) {
+  let readBuffer: Buffer | null = null;
+  let lastFsErr: unknown = null;
+
+  for (const dir of candidateDirs) {
+    const candidatePath = path.resolve(dir, relativePath);
+    if (candidatePath.startsWith(dir + path.sep)) {
+      try {
+        readBuffer = await readFile(candidatePath);
+        break;
+      } catch (err) {
+        lastFsErr = err;
+      }
+    }
+  }
+
+  if (readBuffer) {
+    return readBuffer;
+  }
+
+  const code = (lastFsErr as { code?: string })?.code;
+  if (code === "ENOENT" || !lastFsErr) {
+    // Fallback for Vercel Serverless environment where public assets might be served via CDN
+    const baseUrl = getBaseUrl();
+    if (baseUrl) {
+      try {
+        const absoluteUrl = new URL(imageUrl, baseUrl).toString();
+        let response: Response;
         try {
-          const absoluteUrl = new URL(imageUrl, baseUrl).toString();
-          let response: Response;
-          try {
+          const headers: Record<string, string> = {};
+          if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+            headers["x-vercel-protection-bypass"] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+          }
+          if (process.env.VERCEL_PROTECTION_BYPASS) {
+            headers["x-vercel-set-bypass-cookie"] = "true";
+            headers["x-vercel-protection-bypass"] = process.env.VERCEL_PROTECTION_BYPASS;
+          }
+          if (Object.keys(headers).length > 0) {
+            response = await fetchFn(absoluteUrl, { headers });
+          } else {
             response = await fetchFn(absoluteUrl);
-          } catch {
-            throw new AvatarRenderError(
-              "FETCH_LAYER_FAILED",
-              `Failed to fetch trait layer from "${imageUrl}": network error.`,
-              502,
-            );
           }
+        } catch {
+          throw new AvatarRenderError(
+            "FETCH_LAYER_FAILED",
+            `Failed to fetch trait layer from "${imageUrl}": network error.`,
+            502,
+          );
+        }
 
-          if (!response.ok) {
-            throw new AvatarRenderError(
-              "FETCH_LAYER_FAILED",
-              `Failed to fetch trait layer from "${imageUrl}": HTTP ${response.status}.`,
-              response.status === 404 ? 404 : 502,
-            );
-          }
+        if (!response.ok) {
+          throw new AvatarRenderError(
+            "FETCH_LAYER_FAILED",
+            `Failed to fetch trait layer from "${imageUrl}": HTTP ${response.status}.`,
+            response.status === 404 ? 404 : 502,
+          );
+        }
 
-          const arrayBuffer = await response.arrayBuffer();
-          return Buffer.from(arrayBuffer);
-        } catch (fallbackErr) {
-          if (fallbackErr instanceof AvatarRenderError) {
-            throw fallbackErr;
-          }
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      } catch (fallbackErr) {
+        if (fallbackErr instanceof AvatarRenderError) {
+          throw fallbackErr;
         }
       }
-
-      throw new AvatarRenderError(
-        "FETCH_LAYER_FAILED",
-        `Trait layer file not found: "${imageUrl}".`,
-        404,
-      );
     }
 
     throw new AvatarRenderError(
       "FETCH_LAYER_FAILED",
-      `Failed to read trait layer from "${imageUrl}": ${fsErr instanceof Error ? fsErr.message : "filesystem error"}.`,
-      500,
+      `Trait layer file not found: "${imageUrl}".`,
+      404,
     );
   }
+
+  throw new AvatarRenderError(
+    "FETCH_LAYER_FAILED",
+    `Failed to read trait layer from "${imageUrl}": ${lastFsErr instanceof Error ? lastFsErr.message : "filesystem error"}.`,
+    500,
+  );
 }
 
 /**

@@ -112,7 +112,33 @@ export async function GET(request: Request): Promise<Response> {
     });
   }
 
-  const record = await getAvatarRecord(prisma, identifier);
+  let record = await getAvatarRecord(prisma, identifier);
+
+  const requestedVersion = url.searchParams.get("v");
+  const requestedTimestamp = requestedVersion ? Number(requestedVersion) : null;
+  const currentRecordVersion = record?.updatedAt ? record.updatedAt.getTime() : 0;
+
+  const isStale = Boolean(
+    requestedTimestamp &&
+      Number.isFinite(requestedTimestamp) &&
+      requestedTimestamp > currentRecordVersion + 1000,
+  );
+
+  if (!record?.pngBuffer || isStale) {
+    if (record?.userId) {
+      try {
+        const rendered = await renderUserAvatar(prisma, record.userId);
+        record = {
+          userId: rendered.userId,
+          pngBuffer: rendered.pngBuffer,
+          updatedAt: rendered.updatedAt,
+        };
+      } catch (renderErr) {
+        console.warn(`[avatar-get-route] Lazy re-render for ${record.userId} failed:`, renderErr);
+      }
+    }
+  }
+
   if (!record || !record.pngBuffer) {
     return new Response("Avatar not found", {
       status: 404,

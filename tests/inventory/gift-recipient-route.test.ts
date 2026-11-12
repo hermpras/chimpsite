@@ -81,7 +81,7 @@ describe("/api/gifts/recipient route", () => {
     expect(res.status).toBe(404);
     const data = await res.json();
     expect(data.error).toBe("RECIPIENT_NOT_FOUND");
-    expect(data.message).toContain("No ChimpHood account found linked to @nonexistent");
+    expect(data.message).toContain("No Elysium account found linked to @nonexistent");
   });
 
   it("finds recipient by X username, normalizes @ prefix, and checks rules", async () => {

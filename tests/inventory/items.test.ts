@@ -386,7 +386,7 @@ describe("Task 3-A: Inventory Service & API (server/inventory/items.ts & route.t
 
       const result = await equipInventoryItem(mockPrisma, userId, itemId);
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         success: true,
         itemId,
         category: "HEADWEAR",
