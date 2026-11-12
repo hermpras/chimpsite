@@ -1554,12 +1554,12 @@ export default function WhitelistPage() {
                                 {taskStatus.key !== "NOT_SUBMITTED" && (
                                   taskStatus.key === "APPROVED" ? (
                                     <span
-                                      className="inline-flex items-center justify-center h-7 w-7 rounded-full border border-emerald-500/50 bg-gradient-to-b from-emerald-950/70 to-[#041d18]/90 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)] ring-1 ring-emerald-500/20 backdrop-blur-sm transition-all duration-200 hover:border-emerald-400 hover:shadow-[0_0_16px_rgba(16,185,129,0.45)] hover:scale-105"
+                                      className="inline-flex items-center justify-center h-[34px] w-[34px] rounded-full border border-emerald-500/50 bg-gradient-to-b from-[#0B382B]/95 via-[#06261D]/95 to-[#031A13]/95 text-emerald-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_0_16px_rgba(16,185,129,0.25)] backdrop-blur-xl transition-all duration-200 hover:border-emerald-400 hover:scale-105"
                                       title="Task Completed"
                                       aria-label="Completed"
                                     >
                                       <Check
-                                        className="h-3.5 w-3.5 text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]"
+                                        className="h-4 w-4 text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]"
                                         strokeWidth={2.75}
                                       />
                                     </span>
@@ -1575,41 +1575,51 @@ export default function WhitelistPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={() => markTaskOpened(task.id)}
-                                  className="group relative overflow-hidden inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#34B7DD]/40 bg-[#071F24] px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:border-[#34B7DD] hover:bg-[#102B33] hover:shadow-[0_0_15px_rgba(52,183,221,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                                  className="inline-block"
                                 >
-                                  <span>OPEN X</span>
+                                  <Button variant="secondary" size="sm" type="button">
+                                    <span>OPEN X</span>
+                                  </Button>
                                 </a>
 
                                 {taskStatus.key === "APPROVED" ? (
-                                  <button
+                                  <Button
+                                    variant="success"
+                                    size="sm"
                                     disabled
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-3.5 py-2 text-xs font-bold text-emerald-300"
+                                    className="disabled:opacity-90 cursor-default"
                                   >
                                     <span>DONE</span>
-                                  </button>
+                                  </Button>
                                 ) : isCountingDown ? (
-                                  <button
+                                  <Button
+                                    variant="gold"
+                                    size="sm"
                                     disabled
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-amber-500/50 bg-amber-950/50 px-3.5 py-2 text-xs font-bold text-amber-300 animate-pulse"
+                                    className="animate-pulse cursor-not-allowed"
                                   >
                                     <span>VERIFYING ({countdownSeconds}s)...</span>
-                                  </button>
+                                  </Button>
                                 ) : !isTaskOpened ? (
-                                  <button
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
                                     disabled
                                     title="Please click 'OPEN X' first"
-                                    className="inline-flex cursor-not-allowed items-center justify-center gap-1 rounded-xl border border-[#163B44] bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-600 opacity-60"
+                                    className="opacity-40 border-[#163B44] bg-[#051D22]/60 text-zinc-500 cursor-not-allowed shadow-none hover:border-[#163B44] hover:text-zinc-500"
                                   >
                                     <span>VERIFY TASK</span>
-                                  </button>
+                                  </Button>
                                 ) : isProofRequired && !taskInput.payload.trim() ? (
-                                  <button
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
                                     disabled
                                     title="Paste your reply or quote link first"
-                                    className="inline-flex cursor-not-allowed items-center justify-center rounded-xl border border-[#163B44] bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-600 opacity-60"
+                                    className="opacity-40 border-[#163B44] bg-[#051D22]/60 text-zinc-500 cursor-not-allowed shadow-none hover:border-[#163B44] hover:text-zinc-500"
                                   >
                                     <span>VERIFY TASK</span>
-                                  </button>
+                                  </Button>
                                 ) : status !== "authenticated" ? (
                                   <Button
                                     variant="primary"

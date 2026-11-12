@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "gold";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "gold" | "success";
   size?: "sm" | "md" | "lg";
 }
 
@@ -32,6 +32,8 @@ export function Button({
       "border border-[#34B7DD]/60 bg-gradient-to-b from-[#0D343F]/95 via-[#07242C]/95 to-[#04191F]/95 font-extrabold text-[#E0F5FA] shadow-[inset_0_1px_1px_rgba(255,255,255,0.35),inset_0_0_24px_rgba(52,183,221,0.12),0_8px_24px_rgba(0,0,0,0.6)] backdrop-blur-2xl hover:border-[#6DE0FF] hover:from-[#134452] hover:via-[#0A2E38] hover:to-[#052129] hover:text-white hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.65),0_0_32px_rgba(52,183,221,0.45)] active:scale-[0.98]",
     outline:
       "border border-[#34B7DD]/40 bg-[#07242C]/60 text-[#DBF2F9] font-extrabold shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-[#34B7DD]/80 hover:bg-[#0E3A47]/80 hover:text-white active:scale-[0.98]",
+    success:
+      "border border-emerald-500/60 bg-gradient-to-b from-[#0B382B]/95 via-[#06261D]/95 to-[#031A13]/95 font-extrabold text-emerald-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),inset_0_0_24px_rgba(16,185,129,0.15),0_8px_24px_rgba(0,0,0,0.6)] backdrop-blur-2xl hover:border-emerald-400 hover:text-emerald-200 active:scale-[0.98]",
     ghost:
       "bg-transparent text-[#8AA8B2] font-bold hover:text-[#DBF2F9] hover:bg-[#102B33]/60",
   };
