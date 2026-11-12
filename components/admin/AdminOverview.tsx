@@ -125,18 +125,11 @@ export function AdminOverview({
       {/* Top Banner & Refresh Action */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-[#163B44] pb-5">
         <div className="space-y-2">
-          {/* Eyebrow status */}
-          <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider">
-            <span className="inline-flex items-center gap-1.5 border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 font-bold text-amber-300">
-              <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
-              COMMAND CONSOLE
-            </span>
-            <span className="border border-[#163B44] bg-[#0B2026] px-2.5 py-0.5 font-bold text-[#34B7DD]">
-              Elysium
-            </span>
-            <span className="border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 font-bold text-emerald-300">
-              Real-time Invariant Surveillance
-            </span>
+          {/* Protocol Meta Breadcrumb */}
+          <div className="flex items-center gap-2 text-xs font-mono font-medium tracking-wider text-[#34B7DD] uppercase">
+            <span>Elychimp Protocol</span>
+            <span className="text-[#163B44]">•</span>
+            <span>Elysium Network</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -184,7 +177,7 @@ export function AdminOverview({
                 title="Click to copy full address"
               >
                 <span className="font-medium text-amber-300">{safeFormatAddress(address)}</span>
-                <span className="text-[10px] font-bold uppercase text-gray-500 group-hover:text-amber-400">
+                <span className="text-xs font-semibold uppercase text-gray-400 group-hover:text-amber-400">
                   {copiedWallet ? "Copied" : "Copy"}
                 </span>
               </button>
@@ -192,39 +185,38 @@ export function AdminOverview({
 
             <div className="flex items-center gap-2">
               <span className="text-gray-400">User ID:</span>
-              <span className="font-mono text-gray-300 bg-[#0B2026] px-2 py-0.5 rounded border border-[#163B44] text-[11px]">
+              <span className="font-mono text-gray-300 bg-[#0B2026] px-2 py-0.5 rounded border border-[#163B44] text-xs">
                 {userId}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-gray-400">Grants:</span>
-              <Badge variant="outline" className="text-[10px] font-bold text-cyan-300 border-cyan-500/40 bg-cyan-950/30">
+              <Badge variant="outline" className="text-xs font-semibold text-cyan-300 border-cyan-500/40 bg-cyan-950/30">
                 {permissions.includes("*") ? "All Permissions (*)" : `${permissions.length} Grants`}
               </Badge>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 text-xs">
-            <span className="inline-flex items-center gap-1.5 border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-1 text-[11px] font-bold text-emerald-300 rounded-lg">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Node: Elysium
+            <span className="border border-[#163B44] bg-[#04181C] px-3 py-1 text-xs font-mono font-medium text-emerald-400 rounded-lg">
+              Elysium Network
             </span>
           </div>
         </div>
 
         {/* Active grants pill row */}
         <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[#163B44] pt-3">
-          <span className="text-[10px] uppercase font-bold text-gray-500 mr-1">
+          <span className="text-xs uppercase font-bold text-gray-400 mr-1">
             Active Grants:
           </span>
           {permissions.length === 0 ? (
-            <span className="text-[10px] text-gray-500">None assigned</span>
+            <span className="text-xs text-gray-400">None assigned</span>
           ) : (
             permissions.map((p) => (
               <span
                 key={p}
-                className="rounded border border-[#163B44] bg-[#04181C] px-2 py-0.5 text-[10px] text-gray-300"
+                className="rounded border border-[#163B44] bg-[#04181C] px-2 py-0.5 text-xs text-gray-300 font-mono"
               >
                 {p}
               </span>
@@ -233,19 +225,14 @@ export function AdminOverview({
         </div>
       </div>
 
-      {/* Module Quick Metric Cards — The "Sekali Lihat Langsung Paham" HUD */}
+      {/* Module Quick Metric Cards — The Executive Overview Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* 1. Evidence Card */}
-        <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-amber-400/60 shadow-sm flex flex-col justify-between">
+        <Card className="border border-[#163B44] bg-gradient-to-b from-[#0B2026] to-[#04181C] hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-950/20 rounded-2xl transition-all duration-300 flex flex-col justify-between">
           <CardHeader className="pb-2">
-            <div>
-              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                Action Queue
-              </span>
-              <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
-                Evidence Reviews
-              </CardTitle>
-            </div>
+            <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
+              Evidence Reviews
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-baseline justify-between">
@@ -253,11 +240,11 @@ export function AdminOverview({
                 {pendingEvidenceCount !== null ? pendingEvidenceCount : "-"}
               </div>
               {pendingEvidenceCount !== null && pendingEvidenceCount > 0 ? (
-                <span className="text-[10px] font-bold text-amber-300 border border-amber-500/40 bg-amber-950/40 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-semibold text-amber-300 border border-amber-500/40 bg-amber-950/40 px-2.5 py-0.5 rounded-full">
                   Action Needed
                 </span>
               ) : (
-                <span className="text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-semibold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-0.5 rounded-full">
                   All Caught Up
                 </span>
               )}
@@ -279,23 +266,18 @@ export function AdminOverview({
         </Card>
 
         {/* 2. Whitelist Allocation Card */}
-        <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-emerald-400/60 shadow-sm flex flex-col justify-between">
+        <Card className="border border-[#163B44] bg-gradient-to-b from-[#0B2026] to-[#04181C] hover:border-emerald-400/50 hover:shadow-lg hover:shadow-emerald-950/20 rounded-2xl transition-all duration-300 flex flex-col justify-between">
           <CardHeader className="pb-2">
-            <div>
-              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                Allowlist Quota
-              </span>
-              <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
-                Whitelist Allocation
-              </CardTitle>
-            </div>
+            <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
+              Whitelist Allocation
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-baseline justify-between">
               <div className="font-display text-3xl font-black text-white">
                 {allocatedSlots} <span className="text-xs text-gray-500 font-normal">/ {totalSlots}</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-0.5 rounded-full">
                 {fillPercentage}% Full
               </span>
             </div>
@@ -325,23 +307,18 @@ export function AdminOverview({
         </Card>
 
         {/* 3. Drops Card */}
-        <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-orange-400/60 shadow-sm flex flex-col justify-between">
+        <Card className="border border-[#163B44] bg-gradient-to-b from-[#0B2026] to-[#04181C] hover:border-[#34B7DD]/50 hover:shadow-lg hover:shadow-cyan-950/20 rounded-2xl transition-all duration-300 flex flex-col justify-between">
           <CardHeader className="pb-2">
-            <div>
-              <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">
-                Contraband Engine
-              </span>
-              <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
-                Drop System Status
-              </CardTitle>
-            </div>
+            <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
+              Drop System Status
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-baseline justify-between">
               <div className="font-display text-2xl font-black text-white">
                 {dropData?.active ? "Active" : "Closed"}
               </div>
-              <Badge variant={dropData?.active ? "success" : "warning"} className="text-[10px]">
+              <Badge variant={dropData?.active ? "success" : "warning"}>
                 {dropData?.period ? `Period #${dropData.period.periodIndex}` : "Idle"}
               </Badge>
             </div>
@@ -354,7 +331,7 @@ export function AdminOverview({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs border border-[#163B44] bg-[#0B2026] hover:border-orange-400 hover:text-white"
+                className="w-full text-xs border border-[#163B44] bg-[#0B2026] hover:border-[#34B7DD] hover:text-white"
                 onClick={() => onNavigateTab("drops")}
               >
                 Inspect Drops &amp; Emergency
@@ -364,16 +341,11 @@ export function AdminOverview({
         </Card>
 
         {/* 4. Security & Abuse Flags Card */}
-        <Card className="border-2 border-[#163B44] bg-[#0B2026] transition-all hover:border-rose-400/60 shadow-sm flex flex-col justify-between">
+        <Card className="border border-[#163B44] bg-gradient-to-b from-[#0B2026] to-[#04181C] hover:border-rose-400/50 hover:shadow-lg hover:shadow-rose-950/20 rounded-2xl transition-all duration-300 flex flex-col justify-between">
           <CardHeader className="pb-2">
-            <div>
-              <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
-                Sybil Surveillance
-              </span>
-              <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
-                Security &amp; Abuse
-              </CardTitle>
-            </div>
+            <CardTitle className="font-display text-lg uppercase tracking-wider text-white">
+              Security &amp; Abuse
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-baseline justify-between">
@@ -381,11 +353,11 @@ export function AdminOverview({
                 {openFlagsCount !== null ? openFlagsCount : "0"}
               </div>
               {openFlagsCount !== null && openFlagsCount > 0 ? (
-                <span className="text-[10px] font-bold text-rose-300 border border-rose-500/40 bg-rose-950/40 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-semibold text-rose-300 border border-rose-500/40 bg-rose-950/40 px-2.5 py-0.5 rounded-full">
                   Investigate
                 </span>
               ) : (
-                <span className="text-[10px] font-bold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-semibold text-emerald-300 border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-0.5 rounded-full">
                   Shield Nominal
                 </span>
               )}
@@ -547,36 +519,36 @@ export function AdminOverview({
           <h3 className="font-display text-base uppercase tracking-wider text-white">
             Operational Governance Cheat Sheet
           </h3>
-          <span className="text-[10px] text-gray-500 uppercase">
+          <span className="text-xs text-gray-400 uppercase font-semibold">
             Protocol Ground Truth
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-gray-300">
-          <div className="border border-[#163B44] bg-[#04181C] p-3 rounded-xl space-y-1">
-            <span className="font-bold text-emerald-400 uppercase">1. GTD Hard Cap</span>
-            <p className="text-gray-400 text-[11px] leading-relaxed">
+          <div className="border border-[#163B44] bg-[#04181C] p-3.5 rounded-xl space-y-1.5">
+            <span className="font-bold text-emerald-400 uppercase text-xs">1. GTD Hard Cap</span>
+            <p className="text-gray-300 text-xs leading-relaxed">
               Strictly 1,000 slots. Concurrency protected by database row locks. Auto-allocated upon meeting 5 requirements.
             </p>
           </div>
 
-          <div className="border border-[#163B44] bg-[#04181C] p-3 rounded-xl space-y-1">
-            <span className="font-bold text-amber-400 uppercase">2. Drop Clock Cycle</span>
-            <p className="text-gray-400 text-[11px] leading-relaxed">
+          <div className="border border-[#163B44] bg-[#04181C] p-3.5 rounded-xl space-y-1.5">
+            <span className="font-bold text-amber-400 uppercase text-xs">2. Drop Clock Cycle</span>
+            <p className="text-gray-300 text-xs leading-relaxed">
               2-hour UTC cycles. First 30 minutes open for claims. Strictly 1 claim per period per wallet.
             </p>
           </div>
 
-          <div className="border border-[#163B44] bg-[#04181C] p-3 rounded-xl space-y-1">
-            <span className="font-bold text-pink-400 uppercase">3. Gifting Guard</span>
-            <p className="text-gray-400 text-[11px] leading-relaxed">
+          <div className="border border-[#163B44] bg-[#04181C] p-3.5 rounded-xl space-y-1.5">
+            <span className="font-bold text-pink-400 uppercase text-xs">3. Gifting Guard</span>
+            <p className="text-gray-300 text-xs leading-relaxed">
               Sender must retain ≥ 1 trait in category. Equipped avatar traits cannot be transferred.
             </p>
           </div>
 
-          <div className="border border-[#163B44] bg-[#04181C] p-3 rounded-xl space-y-1">
-            <span className="font-bold text-rose-400 uppercase">4. Anti-Sybil Policy</span>
-            <p className="text-gray-400 text-[11px] leading-relaxed">
+          <div className="border border-[#163B44] bg-[#04181C] p-3.5 rounded-xl space-y-1.5">
+            <span className="font-bold text-rose-400 uppercase text-xs">4. Anti-Sybil Policy</span>
+            <p className="text-gray-300 text-xs leading-relaxed">
               Strict 1:1 EVM to X binding. Slot revocation results in permanent disqualification (DEC-022).
             </p>
           </div>
