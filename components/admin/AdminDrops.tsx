@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import {
   Card,
@@ -30,6 +30,66 @@ import {
   type TraitStockItemInput,
 } from "@/lib/admin/client";
 
+function renderPaginationNumbers(
+  currentPage: number,
+  totalPages: number,
+  onPageChange: (page: number) => void,
+) {
+  if (totalPages <= 1) return null;
+
+  let pages: (number | string)[] = [];
+  if (totalPages <= 7) {
+    pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  } else if (currentPage <= 4) {
+    pages = [1, 2, 3, 4, 5, "...", totalPages];
+  } else if (currentPage >= totalPages - 3) {
+    pages = [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  } else {
+    pages = [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      {pages.map((p, idx) =>
+        typeof p === "number" ? (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => onPageChange(p)}
+            className={`h-7 min-w-[28px] rounded px-2 text-xs font-mono transition-colors ${
+              p === currentPage
+                ? "bg-emerald-600 font-semibold text-white shadow-sm shadow-emerald-950"
+                : "border border-[#163B44] bg-[#071F24] text-gray-400 hover:border-emerald-500/50 hover:text-white"
+            }`}
+          >
+            {p}
+          </button>
+        ) : (
+          <span key={idx} className="px-1 text-xs text-gray-500 select-none">
+            {p}
+          </span>
+        ),
+      )}
+    </div>
+  );
+}
+
+function getRarityStyle(rarity: string) {
+  const r = (rarity || "").toUpperCase();
+  switch (r) {
+    case "LEGENDARY":
+      return "border-amber-500/40 bg-amber-500/10 text-amber-300";
+    case "EPIC":
+      return "border-purple-500/40 bg-purple-500/10 text-purple-300";
+    case "RARE":
+      return "border-cyan-500/40 bg-cyan-500/10 text-cyan-300";
+    case "MYTHIC":
+      return "border-rose-500/40 bg-rose-500/10 text-rose-300";
+    default:
+      return "border-gray-600/40 bg-gray-500/10 text-gray-300";
+  }
+}
+
 export function AdminDrops() {
   const [dropData, setDropData] = useState<CurrentDropResponse | null>(null);
   const [loadingCurrent, setLoadingCurrent] = useState(true);
@@ -42,6 +102,20 @@ export function AdminDrops() {
   const [loadingDrops, setLoadingDrops] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [dropsError, setDropsError] = useState<string | null>(null);
+
+  // Live Pool Trait Allocations pagination & filters
+  const [poolPage, setPoolPage] = useState(1);
+  const [poolPageSize, setPoolPageSize] = useState(8);
+  const [poolSearch, setPoolSearch] = useState("");
+  const [poolCategoryFilter, setPoolCategoryFilter] = useState("ALL");
+
+  // Periods Table pagination & filters
+  const [periodPage, setPeriodPage] = useState(1);
+  const [periodPageSize, setPeriodPageSize] = useState(10);
+  const [periodFilter, setPeriodFilter] = useState<
+    "ALL" | "ACTIVE" | "CONFIGURED" | "UNCONFIGURED" | "ENDED"
+  >("ALL");
+  const [periodSearch, setPeriodSearch] = useState("");
 
   // Traits catalog
   const [traits, setTraits] = useState<AdminTraitRecord[]>([]);
@@ -244,6 +318,13 @@ export function AdminDrops() {
       isMounted = false;
     };
   }, [selectedDropId, reloadKey]);
+
+  // Reset periods pagination & filter when drop selection changes
+  useEffect(() => {
+    setPeriodPage(1);
+    setPeriodFilter("ALL");
+    setPeriodSearch("");
+  }, [selectedDropId]);
 
   // Handle Emergency Close
   const handleEmergencyClose = async (e: React.FormEvent) => {
@@ -504,6 +585,115 @@ export function AdminDrops() {
   const totalModalStock = stockItems.reduce((acc, i) => acc + (i.stock || 0), 0);
   const totalModalWeight = stockItems.reduce((acc, i) => acc + (i.weight || 100), 0);
 
+  // Live Pool items derived data
+  const rawPoolItems = useMemo(
+    () => dropData?.stock?.poolItems || [],
+    [dropData?.stock?.poolItems],
+  );
+
+  const poolCategories = useMemo(() => {
+    const set = new Set<string>();
+    rawPoolItems.forEach((i) => {
+      if (i.category) set.add(i.category);
+    });
+    return Array.from(set).sort();
+  }, [rawPoolItems]);
+
+  const filteredPoolItems = useMemo(() => {
+    const q = poolSearch.trim().toLowerCase();
+    return rawPoolItems.filter((item) => {
+      const matchesSearch =
+        !q ||
+        item.traitName.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q) ||
+        item.rarity.toLowerCase().includes(q);
+      const matchesCategory =
+        poolCategoryFilter === "ALL" ||
+        item.category.toLowerCase() === poolCategoryFilter.toLowerCase();
+      return matchesSearch && matchesCategory;
+    });
+  }, [rawPoolItems, poolSearch, poolCategoryFilter]);
+
+  const totalPoolPages = Math.max(1, Math.ceil(filteredPoolItems.length / poolPageSize));
+
+  const paginatedPoolItems = useMemo(() => {
+    const start = (poolPage - 1) * poolPageSize;
+    return filteredPoolItems.slice(start, start + poolPageSize);
+  }, [filteredPoolItems, poolPage, poolPageSize]);
+
+  // Periods derived data (sorted newest to oldest)
+  const allPeriods: any[] = useMemo(() => {
+    const list = selectedDropDetail?.periods ? [...selectedDropDetail.periods] : [];
+    return list.sort((a, b) => {
+      if (b.periodIndex !== undefined && a.periodIndex !== undefined) {
+        return b.periodIndex - a.periodIndex;
+      }
+      return new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime();
+    });
+  }, [selectedDropDetail?.periods]);
+
+  const periodStats = useMemo(() => {
+    let active = 0;
+    let configured = 0;
+    let unconfigured = 0;
+    let ended = 0;
+
+    for (const p of allPeriods) {
+      if (p.status === "ACTIVE") {
+        active++;
+      } else if (p.status === "ENDED") {
+        ended++;
+      } else if (p.isStockConfigured) {
+        configured++;
+      } else {
+        unconfigured++;
+      }
+    }
+
+    const activePeriod = allPeriods.find((p) => p.status === "ACTIVE") || null;
+
+    return {
+      total: allPeriods.length,
+      active,
+      configured,
+      unconfigured,
+      ended,
+      activePeriod,
+    };
+  }, [allPeriods]);
+
+  const filteredPeriods = useMemo(() => {
+    const q = periodSearch.trim().replace(/^#/, "");
+    return allPeriods.filter((p) => {
+      if (periodFilter === "ACTIVE" && p.status !== "ACTIVE") return false;
+      if (
+        periodFilter === "CONFIGURED" &&
+        (!p.isStockConfigured || p.status === "ACTIVE" || p.status === "ENDED")
+      )
+        return false;
+      if (
+        periodFilter === "UNCONFIGURED" &&
+        (p.isStockConfigured || p.status === "ENDED")
+      )
+        return false;
+      if (periodFilter === "ENDED" && p.status !== "ENDED") return false;
+
+      if (q) {
+        const periodIdxStr = String(p.periodIndex);
+        if (!periodIdxStr.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [allPeriods, periodFilter, periodSearch]);
+
+  const totalPeriodPages = Math.max(1, Math.ceil(filteredPeriods.length / periodPageSize));
+
+  const paginatedPeriods = useMemo(() => {
+    const start = (periodPage - 1) * periodPageSize;
+    return filteredPeriods.slice(start, start + periodPageSize);
+  }, [filteredPeriods, periodPage, periodPageSize]);
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -662,53 +852,196 @@ export function AdminDrops() {
               </div>
 
               {/* Pool Items Table */}
-              <div>
-                <h3 className="mb-2 text-xs font-semibold text-gray-300">
-                  Live Pool Trait Allocations
-                </h3>
-                {dropData.stock?.poolItems && dropData.stock.poolItems.length > 0 ? (
-                  <div className="overflow-x-auto rounded-lg border border-[#163B44]">
-                    <table className="w-full text-left text-xs text-gray-300">
-                      <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
-                        <tr>
-                          <th className="px-3 py-2">Trait Name</th>
-                          <th className="px-3 py-2">Category</th>
-                          <th className="px-3 py-2">Rarity</th>
-                          <th className="px-3 py-2">Remaining Stock</th>
-                          <th className="px-3 py-2">Weight</th>
-                          <th className="px-3 py-2">Probability</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-800/60">
-                        {dropData.stock.poolItems.map((item) => (
-                          <tr key={item.poolItemId} className="hover:bg-[#051D22]/50">
-                            <td className="px-3 py-2 font-medium text-white">
-                              {item.traitName}
-                            </td>
-                            <td className="px-3 py-2 text-gray-400">{item.category}</td>
-                            <td className="px-3 py-2">
-                              <Badge variant="outline" className="text-[10px]">
-                                {item.rarity}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2 font-mono text-emerald-400">
-                              {item.remainingStock}
-                            </td>
-                            <td className="px-3 py-2 font-mono text-gray-400">
-                              {item.weight}
-                            </td>
-                            <td className="px-3 py-2 font-mono text-gray-300">
-                              {item.probabilityPercent.toFixed(1)}%
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              <div className="space-y-3">
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs font-semibold text-gray-200">
+                        Live Pool Trait Allocations
+                      </h3>
+                      {rawPoolItems.length > 0 && (
+                        <span className="rounded-full border border-[#163B44] bg-[#071F24] px-2 py-0.5 font-mono text-[10px] text-gray-400">
+                          {rawPoolItems.length} Traits
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      Inventory distribution and drop probabilities active in the current cycle.
+                    </p>
                   </div>
-                ) : (
+
+                  {rawPoolItems.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Search */}
+                      <input
+                        type="text"
+                        placeholder="Search trait or rarity..."
+                        value={poolSearch}
+                        onChange={(e) => {
+                          setPoolSearch(e.target.value);
+                          setPoolPage(1);
+                        }}
+                        className="h-8 w-44 rounded-md border border-[#163B44] bg-[#071F24] px-2.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                      />
+
+                      {/* Category Filter */}
+                      {poolCategories.length > 0 && (
+                        <select
+                          value={poolCategoryFilter}
+                          onChange={(e) => {
+                            setPoolCategoryFilter(e.target.value);
+                            setPoolPage(1);
+                          }}
+                          className="h-8 rounded-md border border-[#163B44] bg-[#071F24] px-2 text-xs text-gray-300 focus:border-emerald-500 focus:outline-none"
+                        >
+                          <option value="ALL">All Categories</option>
+                          {poolCategories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {/* Page Size */}
+                      <select
+                        value={poolPageSize}
+                        onChange={(e) => {
+                          setPoolPageSize(Number(e.target.value));
+                          setPoolPage(1);
+                        }}
+                        className="h-8 rounded-md border border-[#163B44] bg-[#071F24] px-2 text-xs text-gray-300 focus:border-emerald-500 focus:outline-none"
+                      >
+                        <option value={8}>8 / page</option>
+                        <option value={16}>16 / page</option>
+                        <option value={24}>24 / page</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {rawPoolItems.length === 0 ? (
                   <div className="rounded border border-[#163B44] bg-[#051D22]/50 p-4 text-center text-xs text-gray-500">
                     No pool items configured for this drop.
                   </div>
+                ) : filteredPoolItems.length === 0 ? (
+                  <div className="rounded border border-[#163B44] bg-[#051D22]/50 p-6 text-center text-xs text-gray-400">
+                    No traits match your filter criteria.
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPoolSearch("");
+                        setPoolCategoryFilter("ALL");
+                        setPoolPage(1);
+                      }}
+                      className="ml-2 text-emerald-400 underline hover:text-emerald-300"
+                    >
+                      Reset Filter
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto rounded-lg border border-[#163B44]">
+                      <table className="w-full text-left text-xs text-gray-300">
+                        <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
+                          <tr>
+                            <th className="px-3 py-2">Trait Name</th>
+                            <th className="px-3 py-2">Category</th>
+                            <th className="px-3 py-2">Rarity</th>
+                            <th className="px-3 py-2">Remaining Stock</th>
+                            <th className="px-3 py-2">Weight</th>
+                            <th className="px-3 py-2">Probability</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800/60">
+                          {paginatedPoolItems.map((item) => (
+                            <tr
+                              key={item.poolItemId}
+                              className="transition-colors hover:bg-[#051D22]/50"
+                            >
+                              <td className="px-3 py-2 font-medium text-white">
+                                {item.traitName}
+                              </td>
+                              <td className="px-3 py-2 text-gray-400">{item.category}</td>
+                              <td className="px-3 py-2">
+                                <span
+                                  className={`inline-block rounded border px-1.5 py-0.5 text-[10px] font-medium ${getRarityStyle(
+                                    item.rarity,
+                                  )}`}
+                                >
+                                  {item.rarity}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 font-mono">
+                                {item.remainingStock > 0 ? (
+                                  <span className="font-semibold text-emerald-400">
+                                    {item.remainingStock}
+                                    {item.allocatedStock ? (
+                                      <span className="font-normal text-gray-500">
+                                        {" "}
+                                        / {item.allocatedStock}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                ) : (
+                                  <span className="text-rose-400">0 (Depleted)</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 font-mono text-gray-400">
+                                {item.weight}
+                              </td>
+                              <td className="px-3 py-2 font-mono text-gray-200">
+                                {item.probabilityPercent.toFixed(1)}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination Bar */}
+                    <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between text-xs text-gray-400">
+                      <div>
+                        Showing {(poolPage - 1) * poolPageSize + 1}–
+                        {Math.min(poolPage * poolPageSize, filteredPoolItems.length)} of{" "}
+                        {filteredPoolItems.length} traits
+                        {filteredPoolItems.length !== rawPoolItems.length && (
+                          <span className="text-gray-500">
+                            {" "}
+                            (filtered from {rawPoolItems.length})
+                          </span>
+                        )}
+                      </div>
+
+                      {totalPoolPages > 1 && (
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={poolPage <= 1}
+                            onClick={() => setPoolPage((p) => Math.max(1, p - 1))}
+                            className="h-7 px-2.5 text-xs text-gray-300"
+                          >
+                            Previous
+                          </Button>
+
+                          {renderPaginationNumbers(poolPage, totalPoolPages, setPoolPage)}
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={poolPage >= totalPoolPages}
+                            onClick={() =>
+                              setPoolPage((p) => Math.min(totalPoolPages, p + 1))
+                            }
+                            className="h-7 px-2.5 text-xs text-gray-300"
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -788,10 +1121,10 @@ export function AdminDrops() {
                         }
                       >
                         {selectedDropDetail.status === "ACTIVE"
-                          ? "🟢 ACTIVE (EVERGREEN)"
+                          ? "ACTIVE (EVERGREEN)"
                           : selectedDropDetail.status === "PAUSED"
-                            ? "🟡 PAUSED"
-                            : "🔴 ENDED"}
+                            ? "PAUSED"
+                            : "ENDED"}
                       </Badge>
                     </div>
                     <p className="mt-0.5 text-xs text-gray-400">
@@ -959,136 +1292,298 @@ export function AdminDrops() {
               </div>
 
               {/* Periods Table */}
-              <div>
-                <h3 className="mb-3 text-xs font-semibold text-gray-300">
-                  2-Hour UTC Cycle Periods & Stock Status
-                </h3>
-                <div className="overflow-x-auto rounded-lg border border-[#163B44]">
-                  <table className="w-full text-left text-xs text-gray-300">
-                    <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
-                      <tr>
-                        <th className="px-3 py-2.5">Period</th>
-                        <th className="px-3 py-2.5">UTC Window</th>
-                        <th className="px-3 py-2.5">Claim Window (30m)</th>
-                        <th className="px-3 py-2.5">Config Freeze (15m Lead)</th>
-                        <th className="px-3 py-2.5">Stock Status</th>
-                        <th className="px-3 py-2.5">Status</th>
-                        <th className="px-3 py-2.5 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-800/60">
-                      {selectedDropDetail.periods?.map((p: any) => {
-                        const configCheck = canPeriodBeConfigured(p);
-                        const totalStock = p.poolItems?.reduce(
-                          (acc: number, item: any) => acc + item.allocatedStock,
-                          0,
-                        );
-                        const canActivate =
-                          p.status === "CONFIGURED" &&
-                          p.isStockConfigured &&
-                          totalStock > 0 &&
-                          new Date() >= new Date(p.startsAt) &&
-                          new Date() <= new Date(p.endsAt);
+              <div className="space-y-3">
+                {/* Header & Quick Action */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs font-semibold text-gray-200">
+                        2-Hour UTC Cycle Periods & Stock Status
+                      </h3>
+                      {periodStats.total > 0 && (
+                        <span className="rounded-full border border-[#163B44] bg-[#071F24] px-2 py-0.5 font-mono text-[10px] text-gray-400">
+                          {periodStats.total} Periods
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      Schedule timeline, stock allocations, and manual override activation controls.
+                    </p>
+                  </div>
 
-                        return (
-                          <tr key={p.id} className="hover:bg-[#051D22]/50">
-                            <td className="px-3 py-2.5 font-medium text-white">
-                              #{p.periodIndex}
-                            </td>
-                            <td className="px-3 py-2.5 font-mono text-[11px] text-gray-300">
-                              {new Date(p.startsAt).toISOString().substring(11, 16)}{" "}
-                              &ndash; {new Date(p.endsAt).toISOString().substring(11, 16)}{" "}
-                              UTC
-                            </td>
-                            <td className="px-3 py-2.5 font-mono text-[11px] text-gray-400">
-                              {new Date(p.startsAt).toISOString().substring(11, 16)}{" "}
-                              &ndash;{" "}
-                              {new Date(new Date(p.startsAt).getTime() + 30 * 60 * 1000)
-                                .toISOString()
-                                .substring(11, 16)}{" "}
-                              UTC
-                            </td>
-                            <td className="px-3 py-2.5 text-[11px]">
-                              <span
-                                className={`font-mono ${
-                                  p.isStockLocked ? "text-rose-400" : "text-emerald-400"
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Period Number Search */}
+                    <input
+                      type="text"
+                      placeholder="Filter period #..."
+                      value={periodSearch}
+                      onChange={(e) => {
+                        setPeriodSearch(e.target.value);
+                        setPeriodPage(1);
+                      }}
+                      className="h-8 w-36 rounded-md border border-[#163B44] bg-[#071F24] px-2.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    />
+
+                    {/* Page Size */}
+                    <select
+                      value={periodPageSize}
+                      onChange={(e) => {
+                        setPeriodPageSize(Number(e.target.value));
+                        setPeriodPage(1);
+                      }}
+                      className="h-8 rounded-md border border-[#163B44] bg-[#071F24] px-2 text-xs text-gray-300 focus:border-emerald-500 focus:outline-none"
+                    >
+                      <option value={10}>10 / page</option>
+                      <option value={20}>20 / page</option>
+                      <option value={50}>50 / page</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Filter Tabs */}
+                <div className="flex flex-wrap items-center gap-1.5 border-b border-[#163B44]/60 pb-2">
+                  {[
+                    { key: "ALL", label: "All", count: periodStats.total },
+                    { key: "ACTIVE", label: "Active", count: periodStats.active },
+                    { key: "CONFIGURED", label: "Configured", count: periodStats.configured },
+                    { key: "UNCONFIGURED", label: "Unconfigured", count: periodStats.unconfigured },
+                    { key: "ENDED", label: "Ended", count: periodStats.ended },
+                  ].map((tab) => {
+                    const isActive = periodFilter === tab.key;
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => {
+                          setPeriodFilter(tab.key as any);
+                          setPeriodPage(1);
+                        }}
+                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                          isActive
+                            ? "bg-emerald-600/20 border border-emerald-500/50 text-emerald-300 font-semibold"
+                            : "border border-[#163B44] bg-[#071F24] text-gray-400 hover:text-white hover:border-[#225764]"
+                        }`}
+                      >
+                        {tab.label}
+                        <span className="ml-1.5 font-mono text-[10px] text-gray-400">
+                          ({tab.count})
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Table or Empty State */}
+                {filteredPeriods.length === 0 ? (
+                  <div className="rounded-lg border border-[#163B44] bg-[#051D22]/50 p-6 text-center text-xs text-gray-400">
+                    No periods match your filter criteria.
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPeriodFilter("ALL");
+                        setPeriodSearch("");
+                        setPeriodPage(1);
+                      }}
+                      className="ml-2 text-emerald-400 underline hover:text-emerald-300"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto rounded-lg border border-[#163B44]">
+                      <table className="w-full text-left text-xs text-gray-300">
+                        <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
+                          <tr>
+                            <th className="px-3 py-2.5">Period</th>
+                            <th className="px-3 py-2.5">UTC Window</th>
+                            <th className="px-3 py-2.5">Claim Window (30m)</th>
+                            <th className="px-3 py-2.5">Config Freeze (15m Lead)</th>
+                            <th className="px-3 py-2.5">Stock Status</th>
+                            <th className="px-3 py-2.5">Status</th>
+                            <th className="px-3 py-2.5 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800/60">
+                          {paginatedPeriods.map((p: any) => {
+                            const configCheck = canPeriodBeConfigured(p);
+                            const totalStock = p.poolItems?.reduce(
+                              (acc: number, item: any) => acc + item.allocatedStock,
+                              0,
+                            );
+                            const canActivate =
+                              p.status === "CONFIGURED" &&
+                              p.isStockConfigured &&
+                              totalStock > 0 &&
+                              new Date() >= new Date(p.startsAt) &&
+                              new Date() <= new Date(p.endsAt);
+                            const isLive = p.status === "ACTIVE";
+
+                            return (
+                              <tr
+                                key={p.id}
+                                className={`transition-colors ${
+                                  isLive
+                                    ? "bg-emerald-950/25 border-l-2 border-l-emerald-400 hover:bg-emerald-950/35"
+                                    : "hover:bg-[#051D22]/50"
                                 }`}
                               >
-                                {new Date(p.configLockAt).toISOString().substring(11, 16)}{" "}
-                                UTC
-                              </span>{" "}
-                              {p.isStockLocked ? "(Locked)" : "(Open)"}
-                            </td>
-                            <td className="px-3 py-2.5">
-                              {p.isStockConfigured && totalStock > 0 ? (
-                                <span className="text-emerald-400">
-                                  {totalStock} items ({p.poolItems?.length} traits)
-                                </span>
-                              ) : (
-                                <span className="text-amber-400">
-                                  Unconfigured
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2.5">
-                              <Badge
-                                variant={
-                                  p.status === "ACTIVE"
-                                    ? "success"
-                                    : p.status === "CONFIGURED"
-                                      ? "default"
-                                      : p.status === "CANCELLED"
-                                        ? "warning"
-                                        : "warning"
-                                }
-                                className="text-[10px]"
-                              >
-                                {p.status}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2.5 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 text-[11px]"
-                                  onClick={() => handleOpenStockModal(p)}
-                                  disabled={!configCheck.allowed}
-                                  title={
-                                    !configCheck.allowed
-                                      ? configCheck.reason
-                                      : "Configure trait stock"
-                                  }
-                                >
-                                  Configure Stock
-                                </Button>
-
-                                {p.status === "CONFIGURED" && (
-                                  <Button
-                                    variant="primary"
-                                    size="sm"
-                                    className="h-7 bg-emerald-600 text-[11px] text-white hover:bg-emerald-500"
-                                    onClick={() => handleActivatePeriod(p.id)}
-                                    disabled={!canActivate || activatingPeriodId === p.id}
-                                    title={
-                                      !canActivate
-                                        ? "Period can only be activated when time window arrives and stock is valid"
-                                        : "Activate period now"
-                                    }
+                                <td className="px-3 py-2.5 font-medium text-white">
+                                  <span>#{p.periodIndex}</span>
+                                  {isLive && (
+                                    <Badge
+                                      variant="success"
+                                      className="ml-1.5 text-[9px] px-1 py-0 font-bold uppercase tracking-wider"
+                                    >
+                                      Live
+                                    </Badge>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2.5 font-mono text-[11px] text-gray-300">
+                                  {new Date(p.startsAt).toISOString().substring(11, 16)}{" "}
+                                  &ndash;{" "}
+                                  {new Date(p.endsAt).toISOString().substring(11, 16)} UTC
+                                </td>
+                                <td className="px-3 py-2.5 font-mono text-[11px] text-gray-400">
+                                  {new Date(p.startsAt).toISOString().substring(11, 16)}{" "}
+                                  &ndash;{" "}
+                                  {new Date(
+                                    new Date(p.startsAt).getTime() + 30 * 60 * 1000,
+                                  )
+                                    .toISOString()
+                                    .substring(11, 16)}{" "}
+                                  UTC
+                                </td>
+                                <td className="px-3 py-2.5 text-[11px]">
+                                  <span
+                                    className={`font-mono ${
+                                      p.isStockLocked ? "text-rose-400" : "text-emerald-400"
+                                    }`}
                                   >
-                                    {activatingPeriodId === p.id
-                                      ? "Activating..."
-                                      : "Activate"}
-                                  </Button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                                    {new Date(p.configLockAt)
+                                      .toISOString()
+                                      .substring(11, 16)}{" "}
+                                    UTC
+                                  </span>{" "}
+                                  {p.isStockLocked ? "(Locked)" : "(Open)"}
+                                </td>
+                                <td className="px-3 py-2.5">
+                                  {p.isStockConfigured && totalStock > 0 ? (
+                                    <span className="text-emerald-400">
+                                      {totalStock} items ({p.poolItems?.length} traits)
+                                    </span>
+                                  ) : (
+                                    <span className="text-amber-400">Unconfigured</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2.5">
+                                  <Badge
+                                    variant={
+                                      p.status === "ACTIVE"
+                                        ? "success"
+                                        : p.status === "CONFIGURED"
+                                          ? "default"
+                                          : p.status === "CANCELLED"
+                                            ? "warning"
+                                            : "warning"
+                                    }
+                                    className="text-[10px]"
+                                  >
+                                    {p.status}
+                                  </Badge>
+                                </td>
+                                <td className="px-3 py-2.5 text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 text-[11px]"
+                                      onClick={() => handleOpenStockModal(p)}
+                                      disabled={!configCheck.allowed}
+                                      title={
+                                        !configCheck.allowed
+                                          ? configCheck.reason
+                                          : "Configure trait stock"
+                                      }
+                                    >
+                                      Configure Stock
+                                    </Button>
+
+                                    {p.status === "CONFIGURED" && (
+                                      <Button
+                                        variant="primary"
+                                        size="sm"
+                                        className="h-7 bg-emerald-600 text-[11px] text-white hover:bg-emerald-500"
+                                        onClick={() => handleActivatePeriod(p.id)}
+                                        disabled={!canActivate || activatingPeriodId === p.id}
+                                        title={
+                                          !canActivate
+                                            ? "Period can only be activated when time window arrives and stock is valid"
+                                            : "Activate period now"
+                                        }
+                                      >
+                                        {activatingPeriodId === p.id
+                                          ? "Activating..."
+                                          : "Activate"}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Periods Pagination Bar */}
+                    <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between text-xs text-gray-400">
+                      <div>
+                        Showing {(periodPage - 1) * periodPageSize + 1}–
+                        {Math.min(periodPage * periodPageSize, filteredPeriods.length)} of{" "}
+                        {filteredPeriods.length} periods
+                        {filteredPeriods.length !== periodStats.total && (
+                          <span className="text-gray-500">
+                            {" "}
+                            (filtered from {periodStats.total})
+                          </span>
+                        )}
+                      </div>
+
+                      {totalPeriodPages > 1 && (
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={periodPage <= 1}
+                            onClick={() => setPeriodPage((p) => Math.max(1, p - 1))}
+                            className="h-7 px-2.5 text-xs text-gray-300"
+                          >
+                            Previous
+                          </Button>
+
+                          {renderPaginationNumbers(
+                            periodPage,
+                            totalPeriodPages,
+                            setPeriodPage,
+                          )}
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={periodPage >= totalPeriodPages}
+                            onClick={() =>
+                              setPeriodPage((p) => Math.min(totalPeriodPages, p + 1))
+                            }
+                            className="h-7 px-2.5 text-xs text-gray-300"
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
