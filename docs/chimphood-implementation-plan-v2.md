@@ -1,10 +1,10 @@
 # ChimpHood Implementation Plan v2
 
-**Document Version**: 2.4.3
-**Date**: November 1, 2026
-**Status**: DEC-022 RECORDED — GTD REVOCATION FULL DISQUALIFICATION ENFORCED
+**Document Version**: 2.4.4
+**Date**: November 12, 2026
+**Status**: DEC-023 RECORDED — OPTIMISTIC AUTO-APPROVAL & POST-AUDIT MODERATION QUEUE ENFORCED
 **Author**: Engineering Team & System Architect
-**Supersedes**: Stage 1–6 Planning in `docs/handoff.md` & Implementation Plan v2.0.0 / v2.1.0 / v2.2.0 / v2.3.0 / v2.3.1 / v2.3.2 / v2.3.3 / v2.3.4 / v2.3.5 / v2.3.6 / v2.3.7 / v2.3.8 / v2.3.9 / v2.4.0 / v2.4.1 / v2.4.2
+**Supersedes**: Stage 1–6 Planning in `docs/handoff.md` & Implementation Plan v2.0.0 through v2.4.3
 **Target Workspace**: `/Users/hermawanprastiyanto/Desktop/ChimpHood Site`
 
 ---
@@ -61,6 +61,7 @@ The following architectural and business decisions have been formally approved a
 | **DEC-020** | OpenSea CSV Export | **Strictly Disjoint & Pre-Export Audit**: `FLAGGED` slots stay in GTD CSV as long as they are not explicitly revoked. Revoked users never enter CSV. A pre-export inspection summary alerts admin to any `FLAGGED` active slots before download. `chimphood-fcfs-allowlist.csv` strictly exports only qualified FCFS participants who satisfy all 5 requirements, excluding banned accounts and GTD slot holders. CSV files are strictly disjoint, lowercase, limit 1, no headers. | `FINAL` |
 | **DEC-021** | WL Initial Capacity | **Canonical Whitelist Capacity (1,000 Slots)**: Kapasitas awal canonical `WLProgram` ChimpHood ditetapkan secara definitif sebesar **1.000 slot** (bukan 2.000 slot). Nilai 1.000 slot ini akan digunakan sebagai konfigurasi canonical `WLProgram` nantinya. Pembuatan record `WLProgram` dan eksekusi SQL write/seed ditunda (deferred) sampai dua backend safeguards selesai diverifikasi secara penuh. | `FINAL` |
 | **DEC-022** | GTD Revocation Disqualification | **Full Whitelist Program Disqualification on GTD Revocation**: Jika slot GTD user dicabut (`REVOKED_MANUAL_ADMIN` atau `REVOKED_SYSTEM`), user otomatis tidak eligible untuk seluruh program Whitelist, termasuk OpenSea FCFS. `WLQueueEntry` tetap disimpan untuk kebutuhan audit dan integritas urutan tie-breaker, namun peserta revoked strictly dieksklusi dari export CSV OpenSea FCFS dan diklasifikasikan sebagai `bannedOrDisqualifiedCount` pada pre-export summary audit. API `GET /api/whitelist/status` strictly memprioritaskan status `REVOKED` di atas `FCFS_REGISTERED` jika user memiliki riwayat slot revoked dan tidak memiliki slot GTD aktif. Engine kualifikasi (`evaluateUserQualification`) memblokir auto-restoration dan auto-promotion, mengembalikan `phase: "REVOKED"` dengan `qualified: false`. Pemulihan hanya dapat dilakukan oleh admin berwenang melalui tindakan eksplisit yang tercatat di `AuditLog`. | `FINAL` |
+| **DEC-023** | Evidence Flow & Moderation | **Optimistic Auto-Approval with Post-Audit Moderation Queue & Automatic Whitelist Slot Sync**: <br>1. **User Experience (`/whitelist`)**: Bukti tugas yang diunggah peserta publik langsung otomatis disetujui (Approved / status hijau) tanpa status antrean "Pending Review" guna menjaga onboarding bebas hambatan (zero friction).<br>2. **Admin Evidence Moderation (`/admin?tab=evidence`)**: Seluruh bukti tersimpan dengan status audit internal (`NEEDS_AUDIT`, `AUDITED`, `REJECTED`). Panel admin default ke antrean `Needs Audit (X)` yang mengelompokkan bukti auto-approved yang belum diverifikasi mata admin manusia. Tombol `Confirm Valid` mencatat `reviewerId` admin dan mengubah status menjadi `AUDITED`.<br>3. **Whitelist Slot Flagging & Re-Evaluation Sync**: Admin memiliki hak pembatalan/penolakan (`allowStatusOverride: true`). Jika admin menolak (`Reject`) bukti tugas, sistem dalam transaksi yang sama otomatis menandai slot Whitelist aktif user sebagai `reviewStatus: "FLAGGED"` (`reason: "EVIDENCE_REJECTED"`), mencatat `AuditLog`, dan memicu evaluasi kelayakan secara instan (`triggerAutomaticEligibilityEvaluation`). Portal user `/whitelist` menampilkan alert merah dengan feedback admin untuk perbaikan bukti.<br>4. **Clickable Proof Links**: Seluruh URL bukti (`sub.payload`) pada kartu review dan modal detail Whitelist wajib berupa tautan aktif eksternal (`target="_blank" rel="noreferrer noopener"`).<br>5. **Zero-Icon Rule**: Seluruh UI antrean audit, status badges, dan tombol moderasi mematuhi aturan ketat tanpa icon. | `FINAL` |
 
 ---
 
@@ -962,6 +963,7 @@ The following items are explicitly **OUT OF SCOPE**:
 13. Ekspor CSV OpenSea SeaDrop strictly disjoint, lowercase, limit 1, tanpa header.
 14. **Aturan Gift dipertahankan persis tanpa perubahan (DEC-009).**
 15. **Full Whitelist Disqualification on GTD Revocation (DEC-022):** Pencabutan slot GTD (`REVOKED_MANUAL_ADMIN` atau `REVOKED_SYSTEM`) mendiskualifikasi user dari seluruh program WL termasuk OpenSea FCFS. Status `REVOKED` diprioritaskan di atas `FCFS_REGISTERED` pada status API, dieksklusi dari CSV OpenSea FCFS, dilarang auto-restoration/auto-promotion, dan pemulihan hanya melalui tindakan eksplisit admin yang diaudit.
+16. **Optimistic Auto-Approval & Post-Audit Moderation Queue (DEC-023):** User publik di `/whitelist` mendapatkan auto-approve instan tanpa antrean `Pending Review`. Admin memoderasi bukti di `/admin?tab=evidence` melalui antrean default `Needs Audit (X)` dan tab `Audited & Verified (Y)`. Penolakan bukti (`Reject`) otomatis men-flag slot Whitelist aktif user (`reviewStatus: "FLAGGED"`), memicu re-evaluasi kelayakan, dan mengirim alert koreksi ke user. Seluruh link bukti tugas dapat diklik langsung (`target="_blank"`), dan UI mematuhi aturan strict zero-icon.
 
 ### 11.13 Daftar Asumsi Teknis `NEEDS VERIFICATION`
 1. **Kebutuhan Migration Production DB Parity**: Perlu diverifikasi kesiapan eksekusi migration DDL penambahan enum `WLSlotReviewStatus` dan kolom `reviewStatus` pada live PostgreSQL Supabase Seoul tanpa mengganggu transaksi live. (Constraint `@@unique([programId, slotNumber])` sudah terverifikasi ada).
