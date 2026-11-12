@@ -244,6 +244,28 @@ export function AdminDrops() {
     }
   }, [claimRemainingMs, nextDropRemainingMs, isClaimWindowActive, dropData?.active, periodEndsMs]);
 
+  // Escape key handler & body scroll lock for modals
+  useEffect(() => {
+    const isAnyModalOpen = showCreateModal || Boolean(configuringPeriod);
+    if (!isAnyModalOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (configuringPeriod) setConfiguringPeriod(null);
+        else if (showCreateModal) setShowCreateModal(false);
+      }
+    };
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showCreateModal, configuringPeriod]);
+
   // 1. Fetch current live drop monitor
   useEffect(() => {
     let isMounted = true;
@@ -790,36 +812,33 @@ export function AdminDrops() {
               {/* Drop Metadata Bar */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                 <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
-                  <span className="block text-[11px] text-gray-400">Drop Title</span>
+                  <span className="block text-xs text-gray-400">Drop Title</span>
                   <span className="text-sm font-semibold text-white">
                     {dropData.drop.title}
                   </span>
-                  <span className="block font-mono text-[10px] text-gray-500">
+                  <span className="block font-mono text-xs text-gray-400">
                     {dropData.drop.slug}
                   </span>
                 </div>
 
                 <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
-                  <span className="block text-[11px] text-gray-400">Claim Window</span>
+                  <span className="block text-xs text-gray-400">Claim Window</span>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span
-                      className={`h-2 w-2 rounded-full ${
-                        isClaimWindowActive
-                          ? "animate-pulse bg-emerald-400"
-                          : "bg-amber-400"
+                      className={`text-sm font-semibold ${
+                        isClaimWindowActive ? "text-emerald-400" : "text-amber-400"
                       }`}
-                    />
-                    <span className="text-sm font-semibold text-white">
+                    >
                       {isClaimWindowActive ? "Active (Open)" : "Closed (Cooldown)"}
                     </span>
                   </div>
-                  <span className="mt-0.5 block font-mono text-[11px] text-gray-400">
+                  <span className="mt-0.5 block font-mono text-xs text-gray-300">
                     {isClaimWindowActive
                       ? `${formatRemaining(claimRemainingMs)} remaining`
                       : `Next drop in ${formatRemaining(nextDropRemainingMs)}`}
                   </span>
                   {!isClaimWindowActive && periodEndsMs > 0 && (
-                    <span className="block text-[10px] text-gray-500">
+                    <span className="block text-xs text-gray-400">
                       Cycle starts at{" "}
                       {new Date(periodEndsMs).toLocaleTimeString([], {
                         hour: "2-digit",
@@ -830,22 +849,22 @@ export function AdminDrops() {
                 </div>
 
                 <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
-                  <span className="block text-[11px] text-gray-400">Total Remaining</span>
+                  <span className="block text-xs text-gray-400">Total Remaining</span>
                   <span className="text-sm font-semibold text-emerald-400">
                     {dropData.stock?.totalRemaining ?? 0} /{" "}
                     {dropData.stock?.totalAllocated ?? 0}
                   </span>
-                  <span className="block text-[10px] text-gray-400">
+                  <span className="block text-xs text-gray-400">
                     {dropData.stock?.isExhausted ? "Stock Exhausted" : "Available"}
                   </span>
                 </div>
 
                 <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
-                  <span className="block text-[11px] text-gray-400">Stock Lock</span>
+                  <span className="block text-xs text-gray-400">Stock Lock</span>
                   <span className="text-sm font-semibold text-white">
                     {dropData.period?.isStockLocked ? "Locked" : "Unlocked"}
                   </span>
-                  <span className="block text-[10px] text-gray-400">
+                  <span className="block text-xs text-gray-400">
                     Period: {dropData.period?.status ?? "N/A"}
                   </span>
                 </div>
@@ -860,12 +879,12 @@ export function AdminDrops() {
                         Live Pool Trait Allocations
                       </h3>
                       {rawPoolItems.length > 0 && (
-                        <span className="rounded-full border border-[#163B44] bg-[#071F24] px-2 py-0.5 font-mono text-[10px] text-gray-400">
+                        <span className="rounded-full border border-[#163B44] bg-[#071F24] px-2.5 py-0.5 font-mono text-xs text-gray-300">
                           {rawPoolItems.length} Traits
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-xs text-gray-400">
                       Inventory distribution and drop probabilities active in the current cycle.
                     </p>
                   </div>
@@ -943,7 +962,7 @@ export function AdminDrops() {
                   <>
                     <div className="overflow-x-auto rounded-lg border border-[#163B44]">
                       <table className="w-full text-left text-xs text-gray-300">
-                        <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
+                        <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                           <tr>
                             <th className="px-3 py-2">Trait Name</th>
                             <th className="px-3 py-2">Category</th>
@@ -965,7 +984,7 @@ export function AdminDrops() {
                               <td className="px-3 py-2 text-gray-400">{item.category}</td>
                               <td className="px-3 py-2">
                                 <span
-                                  className={`inline-block rounded border px-1.5 py-0.5 text-[10px] font-medium ${getRarityStyle(
+                                  className={`inline-block rounded border px-2 py-0.5 text-xs font-semibold uppercase ${getRarityStyle(
                                     item.rarity,
                                   )}`}
                                 >
@@ -1116,8 +1135,8 @@ export function AdminDrops() {
                         }
                         className={
                           selectedDropDetail.status === "ENDED"
-                            ? "border-rose-500/50 text-rose-400 text-[10px]"
-                            : "text-[10px]"
+                            ? "border-rose-500/50 text-rose-400 text-xs font-semibold"
+                            : "text-xs font-semibold"
                         }
                       >
                         {selectedDropDetail.status === "ACTIVE"
@@ -1301,12 +1320,12 @@ export function AdminDrops() {
                         2-Hour UTC Cycle Periods & Stock Status
                       </h3>
                       {periodStats.total > 0 && (
-                        <span className="rounded-full border border-[#163B44] bg-[#071F24] px-2 py-0.5 font-mono text-[10px] text-gray-400">
+                        <span className="rounded-full border border-[#163B44] bg-[#071F24] px-2.5 py-0.5 font-mono text-xs text-gray-300">
                           {periodStats.total} Periods
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-xs text-gray-400">
                       Schedule timeline, stock allocations, and manual override activation controls.
                     </p>
                   </div>
@@ -1365,7 +1384,7 @@ export function AdminDrops() {
                         }`}
                       >
                         {tab.label}
-                        <span className="ml-1.5 font-mono text-[10px] text-gray-400">
+                        <span className="ml-1.5 font-mono text-xs text-gray-400">
                           ({tab.count})
                         </span>
                       </button>
@@ -1393,7 +1412,7 @@ export function AdminDrops() {
                   <>
                     <div className="overflow-x-auto rounded-lg border border-[#163B44]">
                       <table className="w-full text-left text-xs text-gray-300">
-                        <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
+                        <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-xs font-semibold uppercase tracking-wider text-gray-400">
                           <tr>
                             <th className="px-3 py-2.5">Period</th>
                             <th className="px-3 py-2.5">UTC Window</th>
@@ -1433,18 +1452,18 @@ export function AdminDrops() {
                                   {isLive && (
                                     <Badge
                                       variant="success"
-                                      className="ml-1.5 text-[9px] px-1 py-0 font-bold uppercase tracking-wider"
+                                      className="ml-1.5 text-xs px-1.5 py-0 font-bold uppercase tracking-wider"
                                     >
                                       Live
                                     </Badge>
                                   )}
                                 </td>
-                                <td className="px-3 py-2.5 font-mono text-[11px] text-gray-300">
+                                <td className="px-3 py-2.5 font-mono text-xs text-gray-300">
                                   {new Date(p.startsAt).toISOString().substring(11, 16)}{" "}
                                   &ndash;{" "}
                                   {new Date(p.endsAt).toISOString().substring(11, 16)} UTC
                                 </td>
-                                <td className="px-3 py-2.5 font-mono text-[11px] text-gray-400">
+                                <td className="px-3 py-2.5 font-mono text-xs text-gray-400">
                                   {new Date(p.startsAt).toISOString().substring(11, 16)}{" "}
                                   &ndash;{" "}
                                   {new Date(
@@ -1454,7 +1473,7 @@ export function AdminDrops() {
                                     .substring(11, 16)}{" "}
                                   UTC
                                 </td>
-                                <td className="px-3 py-2.5 text-[11px]">
+                                <td className="px-3 py-2.5 text-xs">
                                   <span
                                     className={`font-mono ${
                                       p.isStockLocked ? "text-rose-400" : "text-emerald-400"
@@ -1487,7 +1506,7 @@ export function AdminDrops() {
                                             ? "warning"
                                             : "warning"
                                     }
-                                    className="text-[10px]"
+                                    className="text-xs"
                                   >
                                     {p.status}
                                   </Badge>
@@ -1497,7 +1516,7 @@ export function AdminDrops() {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="h-7 text-[11px]"
+                                      className="h-7 text-xs"
                                       onClick={() => handleOpenStockModal(p)}
                                       disabled={!configCheck.allowed}
                                       title={
@@ -1513,7 +1532,7 @@ export function AdminDrops() {
                                       <Button
                                         variant="primary"
                                         size="sm"
-                                        className="h-7 bg-emerald-600 text-[11px] text-white hover:bg-emerald-500"
+                                        className="h-7 bg-emerald-600 text-xs text-white hover:bg-emerald-500"
                                         onClick={() => handleActivatePeriod(p.id)}
                                         disabled={!canActivate || activatingPeriodId === p.id}
                                         title={
@@ -1635,7 +1654,7 @@ export function AdminDrops() {
                 <div className="font-semibold">
                   <span>Drop Period Closed Successfully</span>
                 </div>
-                <p className="text-[11px] text-emerald-200">
+                <p className="text-xs text-emerald-200">
                   Closed Period:{" "}
                   {emergencyResult.periodId ?? emergencyResult.period?.id ?? "Terminated"}{" "}
                   (Audit Log: {emergencyResult.auditLogId})
@@ -1644,7 +1663,7 @@ export function AdminDrops() {
             )}
 
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[11px] text-gray-500">
+              <span className="text-xs text-gray-400">
                 Target Period ID: {dropData?.period?.id ?? "None active"}
               </span>
               <Button
@@ -1663,7 +1682,12 @@ export function AdminDrops() {
 
       {/* MODAL 1: Create Drop Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCreateModal(false);
+          }}
+        >
           <div className="w-full max-w-lg rounded-xl border border-[#163B44] bg-[#071F24] p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
               <div>
@@ -1694,7 +1718,7 @@ export function AdminDrops() {
                   value={createTitle}
                   onChange={(e) => setCreateTitle(e.target.value)}
                   required
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -1708,7 +1732,7 @@ export function AdminDrops() {
                   value={createSlug}
                   onChange={(e) => setCreateSlug(e.target.value)}
                   required
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -1722,9 +1746,9 @@ export function AdminDrops() {
                     value={createStartsAt}
                     onChange={(e) => setCreateStartsAt(e.target.value)}
                     required
-                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                   />
-                  <span className="mt-1 block text-[10px] text-gray-500">
+                  <span className="mt-1 block text-xs text-gray-400">
                     Must align to 2h UTC cycle (00:00, 02:00, etc.)
                   </span>
                 </div>
@@ -1738,7 +1762,7 @@ export function AdminDrops() {
                     value={createEndsAt}
                     onChange={(e) => setCreateEndsAt(e.target.value)}
                     required
-                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1752,7 +1776,7 @@ export function AdminDrops() {
                   placeholder="Optional description of the drop campaign..."
                   value={createDescription}
                   onChange={(e) => setCreateDescription(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -1763,7 +1787,7 @@ export function AdminDrops() {
                 <select
                   value={createStatus}
                   onChange={(e) => setCreateStatus(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 >
                   <option value="DRAFT">DRAFT</option>
                   <option value="SCHEDULED">SCHEDULED</option>
@@ -1811,7 +1835,12 @@ export function AdminDrops() {
 
       {/* MODAL 2: Configure Stock per Trait Modal */}
       {configuringPeriod && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfiguringPeriod(null);
+          }}
+        >
           <div className="w-full max-w-2xl rounded-xl border border-[#163B44] bg-[#071F24] p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
               <div>
@@ -1844,11 +1873,11 @@ export function AdminDrops() {
             </div>
 
             {/* Protocol Rules Reminder */}
-            <div className="mt-3 rounded-md border border-amber-500/20 bg-amber-500/10 p-2.5 text-[11px] text-amber-200/90">
+            <div className="mt-3 rounded-md border border-amber-500/20 bg-amber-500/10 p-2.5 text-xs text-amber-200/90">
               <div className="mb-1 font-semibold text-amber-300">
                 Drop Protocol Rules
               </div>
-              <ul className="list-disc space-y-0.5 pl-4 text-[11px]">
+              <ul className="list-disc space-y-0.5 pl-4 text-xs">
                 <li>Stock must be set at least 15 minutes before period start.</li>
                 <li>Stock cannot be modified after period starts.</li>
                 <li>Equal probability (weight 100) applied by default across traits.</li>
@@ -1873,7 +1902,7 @@ export function AdminDrops() {
                 <select
                   value={selectedTraitToAdd}
                   onChange={(e) => setSelectedTraitToAdd(e.target.value)}
-                  className="flex-1 rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="flex-1 rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 >
                   <option value="">-- Select Trait to Allocate --</option>
                   {traits
@@ -1899,7 +1928,7 @@ export function AdminDrops() {
               {/* Trait Allocations List */}
               <div className="max-h-60 overflow-y-auto rounded-lg border border-[#163B44]">
                 <table className="w-full text-left text-xs text-gray-300">
-                  <thead className="sticky top-0 border-b border-[#163B44] bg-[#0B2026]/80 text-[11px] text-gray-400">
+                  <thead className="sticky top-0 z-10 border-b border-[#163B44] bg-[#0B2026] text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <tr>
                       <th className="px-3 py-2">Trait Name</th>
                       <th className="px-3 py-2">Category</th>
@@ -1909,7 +1938,7 @@ export function AdminDrops() {
                       <th className="px-3 py-2 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800/60">
+                  <tbody className="divide-y divide-[#163B44]/40">
                     {stockItems.length === 0 ? (
                       <tr>
                         <td
@@ -1930,12 +1959,12 @@ export function AdminDrops() {
                             : "0.0";
 
                         return (
-                          <tr key={item.traitId} className="hover:bg-[#051D22]/50">
+                          <tr key={item.traitId} className="hover:bg-[#102B33]/40 transition-colors">
                             <td className="px-3 py-2 font-medium text-white">
                               {traitMeta?.name ?? item.traitId}
                             </td>
                             <td className="px-3 py-2 text-gray-400">
-                              <Badge variant="outline" className="text-[10px]">
+                              <Badge variant="outline" className="text-xs">
                                 {traitMeta?.category ?? "UNKNOWN"}
                               </Badge>
                             </td>
@@ -1952,7 +1981,7 @@ export function AdminDrops() {
                                     parseInt(e.target.value, 10) || 0,
                                   )
                                 }
-                                className="w-20 rounded border border-[#163B44] bg-[#0B2026] px-2 py-1 font-mono text-xs text-white focus:border-emerald-500 focus:outline-none"
+                                className="w-20 rounded border border-[#163B44] bg-[#04181C] px-2 py-1 font-mono text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                               />
                             </td>
                             <td className="px-3 py-2">
@@ -1968,7 +1997,7 @@ export function AdminDrops() {
                                     parseInt(e.target.value, 10) || 100,
                                   )
                                 }
-                                className="w-16 rounded border border-[#163B44] bg-[#0B2026] px-2 py-1 font-mono text-xs text-white focus:border-emerald-500 focus:outline-none"
+                                className="w-16 rounded border border-[#163B44] bg-[#04181C] px-2 py-1 font-mono text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                               />
                             </td>
                             <td className="px-3 py-2 font-mono text-gray-300">

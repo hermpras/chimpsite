@@ -316,7 +316,7 @@ export function AdminUsersBans() {
                     <div className="font-semibold">
                       Account Already Banned
                     </div>
-                    <p className="text-[11px] text-amber-200">
+                    <p className="text-xs text-amber-200">
                       An active ban with the same or encompassing scope already exists.
                       Existing Ban ID:{" "}
                       {banResult.banRecord?.id ?? banResult.banId ?? "Registered"} (Scope:{" "}
@@ -328,7 +328,7 @@ export function AdminUsersBans() {
                     <div className="font-semibold">
                       Ban Applied Successfully
                     </div>
-                    <p className="text-[11px] text-emerald-200">
+                    <p className="text-xs text-emerald-200">
                       Ban ID: {banResult.banRecord?.id ?? banResult.banId ?? "Registered"}{" "}
                       (Scope: {banResult.banRecord?.scope ?? banScope})
                     </p>
@@ -405,7 +405,7 @@ export function AdminUsersBans() {
                   <div className="font-semibold">
                     Ban Revoked Successfully
                   </div>
-                  <p className="text-[11px] text-emerald-200">
+                  <p className="text-xs text-emerald-200">
                     User account restored. Audit Log ID: {revokeResult.auditLogId}
                   </p>
                 </div>
@@ -462,7 +462,7 @@ export function AdminUsersBans() {
                 placeholder="Search by wallet address (0x...), User CUID, or X username..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 py-1.5 px-3 text-xs text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#04181C] py-1.5 px-3 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
               />
             </div>
             <Button
@@ -500,9 +500,9 @@ export function AdminUsersBans() {
           )}
 
           {/* Users Table */}
-          <div className="overflow-x-auto rounded-lg border border-[#163B44]">
+          <div className="overflow-x-auto rounded-lg border border-[#163B44] max-h-[580px] overflow-y-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-[#163B44] bg-[#0B2026]/80 text-gray-400">
+              <thead className="sticky top-0 z-10 border-b border-[#163B44] bg-[#0B2026] text-xs font-semibold uppercase tracking-wider text-gray-400">
                 <tr>
                   <th className="px-3 py-2.5 font-medium">User ID</th>
                   <th className="px-3 py-2.5 font-medium">Wallet Address</th>
@@ -512,7 +512,7 @@ export function AdminUsersBans() {
                   <th className="px-3 py-2.5 text-right font-medium">Quick Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/60 bg-[#0B2026]/40 text-gray-300">
+              <tbody className="divide-y divide-[#163B44]/40 bg-[#0B2026]/40 text-gray-300">
                 {loadingUsers && users.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-500">
@@ -527,7 +527,7 @@ export function AdminUsersBans() {
                   </tr>
                 ) : (
                   users.map((u) => (
-                    <tr key={u.id} className="transition-colors hover:bg-[#102B33]/30">
+                    <tr key={u.id} className="transition-colors hover:bg-[#102B33]/40">
                       <td className="px-3 py-2.5 font-mono text-gray-200">
                         <div className="flex items-center gap-1.5">
                           <span title={u.id}>{u.id}</span>
@@ -597,11 +597,11 @@ export function AdminUsersBans() {
                       </td>
                       <td className="px-3 py-2.5">
                         {u.isBanned ? (
-                          <Badge variant="warning" className="text-[10px]">
+                          <Badge variant="warning">
                             BANNED
                           </Badge>
                         ) : (
-                          <Badge variant="default" className="text-[10px]">
+                          <Badge variant="default">
                             ACTIVE
                           </Badge>
                         )}
@@ -612,7 +612,7 @@ export function AdminUsersBans() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-[11px] hover:text-rose-300"
+                            className="h-7 px-2.5 text-xs hover:text-rose-300"
                             onClick={() => {
                               const identifier = u.xIdentity?.username
                                 ? `@${u.xIdentity.username}`
@@ -628,7 +628,7 @@ export function AdminUsersBans() {
                               type="button"
                               variant="secondary"
                               size="sm"
-                              className="h-6 px-2 text-[11px] text-emerald-300 hover:text-emerald-200"
+                              className="h-7 px-2.5 text-xs text-emerald-300 hover:text-emerald-200"
                               onClick={() => {
                                 setRevokeBanId(u.activeBan!.id);
                                 window.scrollTo({ top: 0, behavior: "smooth" });

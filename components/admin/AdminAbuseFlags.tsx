@@ -134,6 +134,26 @@ export function AdminAbuseFlags() {
     setUpdateError(null);
   };
 
+  // Escape key handler & body scroll lock for inspection modal
+  useEffect(() => {
+    if (!inspectModalOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleCloseInspect();
+      }
+    };
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [inspectModalOpen]);
+
   const handleUpdateStatusSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFlag) return;
@@ -168,26 +188,26 @@ export function AdminAbuseFlags() {
     switch (severity?.toUpperCase()) {
       case "CRITICAL":
         return (
-          <span className="inline-flex items-center rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[11px] font-semibold text-rose-300">
+          <span className="inline-flex items-center rounded-full border border-rose-500/30 bg-rose-500/15 px-2.5 py-0.5 text-xs font-semibold text-rose-300">
             CRITICAL
           </span>
         );
       case "HIGH":
         return (
-          <span className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-500/15 px-2 py-0.5 text-[11px] font-semibold text-orange-300">
+          <span className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-500/15 px-2.5 py-0.5 text-xs font-semibold text-orange-300">
             HIGH
           </span>
         );
       case "MEDIUM":
         return (
-          <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+          <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
             MEDIUM
           </span>
         );
       case "LOW":
       default:
         return (
-          <span className="inline-flex items-center rounded-full border border-gray-600/40 bg-[#102B33]/40 px-2 py-0.5 text-[11px] font-semibold text-gray-300">
+          <span className="inline-flex items-center rounded-full border border-gray-600/40 bg-[#102B33]/40 px-2.5 py-0.5 text-xs font-semibold text-gray-300">
             LOW
           </span>
         );
@@ -199,26 +219,26 @@ export function AdminAbuseFlags() {
     switch (status?.toUpperCase()) {
       case "OPEN":
         return (
-          <span className="inline-flex items-center rounded-full border border-sky-500/30 bg-sky-500/15 px-2 py-0.5 text-[11px] font-semibold text-sky-300">
+          <span className="inline-flex items-center rounded-full border border-sky-500/30 bg-sky-500/15 px-2.5 py-0.5 text-xs font-semibold text-sky-300">
             OPEN
           </span>
         );
       case "UNDER_REVIEW":
         return (
-          <span className="inline-flex items-center rounded-full border border-purple-500/30 bg-purple-500/15 px-2 py-0.5 text-[11px] font-semibold text-purple-300">
+          <span className="inline-flex items-center rounded-full border border-purple-500/30 bg-purple-500/15 px-2.5 py-0.5 text-xs font-semibold text-purple-300">
             UNDER REVIEW
           </span>
         );
       case "CONFIRMED_ACTION_TAKEN":
         return (
-          <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
+          <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
             CONFIRMED
           </span>
         );
       case "DISMISSED":
       default:
         return (
-          <span className="inline-flex items-center rounded-full border border-gray-600/40 bg-[#102B33]/40 px-2 py-0.5 text-[11px] font-semibold text-gray-400">
+          <span className="inline-flex items-center rounded-full border border-gray-600/40 bg-[#102B33]/40 px-2.5 py-0.5 text-xs font-semibold text-gray-400">
             DISMISSED
           </span>
         );
@@ -314,7 +334,7 @@ export function AdminAbuseFlags() {
                   setStatusFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="OPEN">OPEN</option>
@@ -339,7 +359,7 @@ export function AdminAbuseFlags() {
                   setSeverityFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
               >
                 <option value="ALL">All Severities</option>
                 <option value="CRITICAL">CRITICAL</option>
@@ -364,7 +384,7 @@ export function AdminAbuseFlags() {
                   setFlagTypeFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
               >
                 <option value="ALL">All Signal Types</option>
                 <option value="SYBIL_WALLET_CLUSTER">Sybil Wallet Cluster</option>
@@ -391,7 +411,7 @@ export function AdminAbuseFlags() {
                   placeholder="Filter by User CUID..."
                   value={userQuery}
                   onChange={(e) => setUserQuery(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-2.5 py-1.5 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
                 <Button type="submit" variant="primary" size="sm" className="px-2.5 text-xs">
                   Search
@@ -460,9 +480,9 @@ export function AdminAbuseFlags() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="overflow-x-auto rounded-lg border border-[#163B44]">
+              <div className="overflow-x-auto rounded-lg border border-[#163B44] max-h-[580px] overflow-y-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="border-b border-[#163B44] bg-[#0B2026]/75 text-[11px] font-semibold text-gray-400 uppercase">
+                  <thead className="sticky top-0 z-10 border-b border-[#163B44] bg-[#0B2026] text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3">Flag & Time</th>
                       <th className="px-4 py-3">User & Account</th>
@@ -472,7 +492,7 @@ export function AdminAbuseFlags() {
                       <th className="px-4 py-3 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800/50 text-gray-300">
+                  <tbody className="divide-y divide-[#163B44]/40 text-gray-300">
                     {flags.map((flag) => {
                       const formattedDate = flag.createdAt
                         ? new Date(flag.createdAt).toLocaleString()
@@ -487,10 +507,10 @@ export function AdminAbuseFlags() {
                           className="transition-colors hover:bg-[#102B33]/30"
                         >
                           <td className="px-4 py-3">
-                            <div className="font-mono text-[11px] text-white">
+                            <div className="font-mono text-xs text-white">
                               {flag.id}
                             </div>
-                            <div className="mt-0.5 text-[11px] text-gray-500">
+                            <div className="mt-0.5 text-xs text-gray-400">
                               <span>{formattedDate}</span>
                             </div>
                           </td>
@@ -501,12 +521,12 @@ export function AdminAbuseFlags() {
                                 {shortAddr}
                               </span>
                               {flag.user?.isBanned && (
-                                <span className="rounded bg-rose-500/20 px-1 py-0.2 text-[9px] font-bold text-rose-300">
+                                <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-xs font-bold text-rose-300">
                                   BANNED
                                 </span>
                               )}
                             </div>
-                            <div className="mt-0.5 text-[11px] text-gray-400">
+                            <div className="mt-0.5 text-xs text-gray-400">
                               {xUsername ? `@${xUsername}` : `ID: ${flag.userId.slice(0, 10)}...`}
                             </div>
                           </td>
@@ -613,24 +633,24 @@ export function AdminAbuseFlags() {
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-gray-300">Target Account</span>
                   {selectedFlag.user?.isBanned ? (
-                    <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-bold text-rose-300">
+                    <span className="rounded bg-rose-500/20 px-2 py-0.5 text-xs font-bold text-rose-300">
                       ACCOUNT BANNED
                     </span>
                   ) : (
-                    <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300">
+                    <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300">
                       ACTIVE USER
                     </span>
                   )}
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-gray-400">
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-300">
                   <div>
-                    <span className="text-gray-500">Wallet:</span>{" "}
+                    <span className="text-gray-400">Wallet:</span>{" "}
                     <span className="font-mono text-gray-200">
                       {selectedFlag.user?.wallet?.address || "None"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500">X Handle:</span>{" "}
+                    <span className="text-gray-400">X Handle:</span>{" "}
                     <span className="text-gray-200">
                       {selectedFlag.user?.xIdentity?.username
                         ? `@${selectedFlag.user.xIdentity.username}`
@@ -638,7 +658,7 @@ export function AdminAbuseFlags() {
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-gray-500">User ID:</span>{" "}
+                    <span className="text-gray-400">User ID:</span>{" "}
                     <span className="font-mono text-gray-300">{selectedFlag.userId}</span>
                   </div>
                 </div>
@@ -653,19 +673,19 @@ export function AdminAbuseFlags() {
                     {renderStatusBadge(selectedFlag.status)}
                   </div>
                 </div>
-                <div className="mt-2 space-y-1 text-[11px] text-gray-400">
+                <div className="mt-2 space-y-1.5 text-xs text-gray-300">
                   <div>
-                    <span className="text-gray-500">Flag Type:</span>{" "}
+                    <span className="text-gray-400">Flag Type:</span>{" "}
                     <span className="font-medium text-gray-200">
                       {formatFlagType(selectedFlag.flagType)}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Flag ID:</span>{" "}
+                    <span className="text-gray-400">Flag ID:</span>{" "}
                     <span className="font-mono text-gray-300">{selectedFlag.id}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Detected At:</span>{" "}
+                    <span className="text-gray-400">Detected At:</span>{" "}
                     <span className="text-gray-300">
                       {selectedFlag.createdAt
                         ? new Date(selectedFlag.createdAt).toLocaleString()
@@ -677,10 +697,10 @@ export function AdminAbuseFlags() {
                 {/* Raw Telemetry Details */}
                 {selectedFlag.details && (
                   <div className="mt-3">
-                    <div className="mb-1 text-[10px] font-semibold text-gray-400 uppercase">
+                    <div className="mb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Detection Telemetry / Details:
                     </div>
-                    <pre className="max-h-36 overflow-x-auto rounded border border-[#163B44] bg-[#04181C] p-2.5 font-mono text-[11px] text-emerald-400">
+                    <pre className="max-h-36 overflow-x-auto rounded border border-[#163B44] bg-[#04181C] p-2.5 font-mono text-xs text-emerald-400">
                       {JSON.stringify(selectedFlag.details, null, 2)}
                     </pre>
                   </div>
@@ -689,7 +709,7 @@ export function AdminAbuseFlags() {
 
               {/* Prior Review Notes if present */}
               {selectedFlag.reviewedAt && (
-                <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3 text-[11px]">
+                <div className="rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3 text-xs">
                   <div className="font-semibold text-gray-300">
                     Previous Review History
                   </div>
@@ -718,7 +738,7 @@ export function AdminAbuseFlags() {
                     id="update-status-select"
                     value={updateStatus}
                     onChange={(e) => setUpdateStatus(e.target.value)}
-                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                   >
                     <option value="OPEN">OPEN (Pending investigation)</option>
                     <option value="UNDER_REVIEW">UNDER_REVIEW (Investigation in progress)</option>
@@ -737,7 +757,7 @@ export function AdminAbuseFlags() {
                     >
                       Resolution Notes
                     </label>
-                    <span className="text-[10px] text-gray-500">
+                    <span className="text-xs text-gray-400">
                       {updateNotes.length} / 2048
                     </span>
                   </div>
@@ -748,7 +768,7 @@ export function AdminAbuseFlags() {
                     value={updateNotes}
                     maxLength={2048}
                     onChange={(e) => setUpdateNotes(e.target.value)}
-                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026] p-2.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#04181C] p-2.5 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                   />
                 </div>
 

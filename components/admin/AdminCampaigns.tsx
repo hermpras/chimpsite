@@ -198,6 +198,29 @@ export function AdminCampaigns() {
     };
   }, [reloadKey]);
 
+  // Escape key handler & body scroll lock for modals
+  useEffect(() => {
+    const isAnyModalOpen = showAddTaskModal || Boolean(editingTask) || Boolean(deletingTask);
+    if (!isAnyModalOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (deletingTask) setDeletingTask(null);
+        else if (editingTask) setEditingTask(null);
+        else if (showAddTaskModal) setShowAddTaskModal(false);
+      }
+    };
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showAddTaskModal, editingTask, deletingTask]);
+
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSlug.trim() || !newTitle.trim() || !newWlProgramId.trim()) {
@@ -745,7 +768,7 @@ export function AdminCampaigns() {
                   <button
                     type="button"
                     onClick={() => setManualProgramEntry(!manualProgramEntry)}
-                    className="text-[11px] text-emerald-400 hover:underline"
+                    className="text-xs text-emerald-400 hover:underline font-medium"
                   >
                     {manualProgramEntry ? "Select from list" : "Enter manually"}
                   </button>
@@ -859,12 +882,12 @@ export function AdminCampaigns() {
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-white">{task.title}</span>
               </div>
-              <div className="flex items-center gap-2 font-mono text-[11px] text-gray-400">
+              <div className="flex items-center gap-2 font-mono text-xs text-gray-400">
                 <span>code: {task.taskCode}</span>
                 <span>type: {task.taskType}</span>
               </div>
               {task.description && (
-                <p className="text-[11px] text-gray-400">{task.description}</p>
+                <p className="text-xs text-gray-300">{task.description}</p>
               )}
             </div>
           ))}
@@ -935,7 +958,7 @@ export function AdminCampaigns() {
                         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                           <Badge
                             variant={isRequired ? "default" : "outline"}
-                            className="text-[10px]"
+                            className="text-xs"
                           >
                             {isRequired ? "Required for WL" : "Optional"}
                           </Badge>
@@ -943,20 +966,20 @@ export function AdminCampaigns() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-gray-400">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-gray-400">
                       <span>code: {task.taskCode}</span>
                       <span>/</span>
                       <span>type: {task.taskType}</span>
                     </div>
 
                     {task.description && (
-                      <p className="text-[11px] leading-relaxed text-gray-300">
+                      <p className="text-xs leading-relaxed text-gray-300">
                         {task.description}
                       </p>
                     )}
 
                     {tweetUrl && (
-                      <div className="flex items-center gap-1.5 rounded border border-[#163B44] bg-[#04181C]/80 px-2.5 py-1.5 text-[11px] text-emerald-400">
+                      <div className="flex items-center gap-1.5 rounded border border-[#163B44] bg-[#04181C]/80 px-2.5 py-1.5 text-xs text-emerald-400">
                         <span className="truncate" title={tweetUrl}>
                           Target: {tweetUrl}
                         </span>
@@ -1084,36 +1107,36 @@ export function AdminCampaigns() {
                             Version {v.versionNumber}
                           </span>
                           {v.isCurrent && (
-                            <Badge variant="success" className="text-[10px]">
+                            <Badge variant="success" className="text-xs">
                               Current
                             </Badge>
                           )}
                         </div>
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-xs">
                           {v.compatibilityMode}
                         </Badge>
                       </div>
 
-                      <div className="text-[11px] text-gray-400">
+                      <div className="text-xs text-gray-400">
                         <span>Period: {startsAt} – {endsAt}</span>
                       </div>
 
                       {v.changeNotes ? (
-                        <p className="line-clamp-2 text-[11px] text-gray-300">
+                        <p className="line-clamp-2 text-xs text-gray-300">
                           {v.changeNotes}
                         </p>
                       ) : (
-                        <p className="text-[11px] text-gray-500 italic">
+                        <p className="text-xs text-gray-400 italic">
                           No change notes recorded.
                         </p>
                       )}
 
-                      <div className="flex items-center justify-between border-t border-[#163B44] pt-2 text-[11px]">
+                      <div className="flex items-center justify-between border-t border-[#163B44] pt-2 text-xs">
                         <span className="text-gray-400">{taskCount} tasks</span>
                         <Button
                           variant={isSelected ? "primary" : "outline"}
                           size="sm"
-                          className="h-6 px-2 text-[10px]"
+                          className="h-7 px-2.5 text-xs"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedVersionId(v.id);
@@ -1146,25 +1169,25 @@ export function AdminCampaigns() {
                       </div>
                       <div className="flex items-center gap-2">
                         {activeSnapshot.isCurrent ? (
-                          <Badge variant="success" className="text-[10px]">
+                          <Badge variant="success" className="text-xs">
                             Current
                           </Badge>
                         ) : (
                           <Badge
                             variant="outline"
-                            className="border-amber-500/40 text-[10px] text-amber-300"
+                            className="border-amber-500/40 text-xs text-amber-300"
                           >
                             Read-Only Snapshot
                           </Badge>
                         )}
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-xs">
                           {activeSnapshot.tasks?.length ?? 0} tasks
                         </Badge>
                       </div>
                     </div>
 
                     {!activeSnapshot.isCurrent && (
-                      <div className="mt-2 rounded border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] text-amber-200">
+                      <div className="mt-2 rounded border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-200">
                         <span>
                           This historical version is read-only. Tasks and requirements cannot be edited or deleted to preserve carry-over audit integrity.
                         </span>
@@ -1195,27 +1218,27 @@ export function AdminCampaigns() {
                                 <div className="flex items-center gap-1.5">
                                   <Badge
                                     variant={isRequired ? "default" : "outline"}
-                                    className="text-[10px]"
+                                    className="text-xs"
                                   >
                                     {isRequired ? "Required for WL" : "Optional"}
                                   </Badge>
                                 </div>
                               </div>
 
-                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-gray-400">
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-gray-400">
                                 <span>code: {task.taskCode}</span>
                                 <span>/</span>
                                 <span>type: {task.taskType}</span>
                               </div>
 
                               {task.description && (
-                                <p className="text-[11px] text-gray-300">
+                                <p className="text-xs text-gray-300">
                                   {task.description}
                                 </p>
                               )}
 
                               {tweetUrl && (
-                                <div className="flex items-center gap-1.5 rounded border border-[#163B44] bg-[#04181C]/80 px-2 py-1 text-[11px] text-emerald-400">
+                                <div className="flex items-center gap-1.5 rounded border border-[#163B44] bg-[#04181C]/80 px-2.5 py-1.5 text-xs text-emerald-400">
                                   <span className="truncate" title={tweetUrl}>
                                     Target: {tweetUrl}
                                   </span>
@@ -1311,7 +1334,7 @@ export function AdminCampaigns() {
                     disabled
                     className="w-full cursor-not-allowed rounded-md border border-[#163B44] bg-[#051D22]/60 px-3 py-2 font-mono text-xs text-gray-400 focus:outline-none"
                   />
-                  <span className="mt-1 block text-[11px] text-gray-500">
+                  <span className="mt-1 block text-xs text-gray-400">
                     slug: {camp.slug} (Permanent URL identifier)
                   </span>
                 </div>
@@ -1331,7 +1354,7 @@ export function AdminCampaigns() {
                     disabled
                     className="w-full cursor-not-allowed rounded-md border border-[#163B44] bg-[#051D22]/60 px-3 py-2 font-mono text-xs text-emerald-400/80 focus:outline-none"
                   />
-                  <span className="mt-1 block font-mono text-[11px] text-gray-500">
+                  <span className="mt-1 block font-mono text-xs text-gray-400">
                     {camp.wlProgramId} (Permanent whitelist allocation binding)
                   </span>
                 </div>
@@ -1421,8 +1444,13 @@ export function AdminCampaigns() {
     const versionNum = selectedCampaign.currentVersion?.versionNumber ?? 1;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-        <Card className="w-full max-w-lg border-[#163B44] bg-[#0B2026] shadow-2xl">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setShowAddTaskModal(false);
+        }}
+      >
+        <Card className="w-full max-w-lg border-[#163B44] bg-[#071F24] shadow-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
               <CardTitle className="text-base text-white">
@@ -1456,9 +1484,9 @@ export function AdminCampaigns() {
                   value={addTaskCode}
                   onChange={(e) => setAddTaskCode(e.target.value.toUpperCase())}
                   required
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 font-mono text-xs uppercase text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 font-mono text-xs uppercase text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
-                <span className="mt-1 block text-[11px] text-gray-500">
+                <span className="mt-1 block text-xs text-gray-400">
                   Permanent identifier. Cannot be modified once created.
                 </span>
               </div>
@@ -1477,7 +1505,7 @@ export function AdminCampaigns() {
                   value={addTaskTitle}
                   onChange={(e) => setAddTaskTitle(e.target.value)}
                   required
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -1492,7 +1520,7 @@ export function AdminCampaigns() {
                   id="add-task-type"
                   value={addTaskType}
                   onChange={(e) => setAddTaskType(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 >
                   <option value="SOCIAL_X_FOLLOW">SOCIAL_X_FOLLOW (Follow)</option>
                   <option value="SOCIAL_X_LIKE">SOCIAL_X_LIKE (Like)</option>
@@ -1516,7 +1544,7 @@ export function AdminCampaigns() {
                   placeholder="https://x.com/Elychimp/status/1234567890"
                   value={addTaskTweetUrl}
                   onChange={(e) => setAddTaskTweetUrl(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -1533,7 +1561,7 @@ export function AdminCampaigns() {
                   placeholder="Instructions for participants..."
                   value={addTaskDescription}
                   onChange={(e) => setAddTaskDescription(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -1589,8 +1617,13 @@ export function AdminCampaigns() {
       isRequirementChanged;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-        <Card className="w-full max-w-lg border-[#163B44] bg-[#0B2026] shadow-2xl">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setEditingTask(null);
+        }}
+      >
+        <Card className="w-full max-w-lg border-[#163B44] bg-[#071F24] shadow-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
               <CardTitle className="text-base text-white">
@@ -1616,7 +1649,7 @@ export function AdminCampaigns() {
                   <div className="rounded-md border border-[#163B44] bg-[#0B2026]/90 px-3 py-2 font-mono text-xs text-gray-300">
                     {editingTask.taskCode}
                   </div>
-                  <span className="mt-1 block text-[10px] text-gray-500">
+                  <span className="mt-1 block text-xs text-gray-400">
                     Permanent identifier (immutable).
                   </span>
                 </div>
@@ -1625,7 +1658,7 @@ export function AdminCampaigns() {
                   <div className="rounded-md border border-[#163B44] bg-[#0B2026]/90 px-3 py-2 font-mono text-xs text-gray-300">
                     {editingTask.taskType}
                   </div>
-                  <span className="mt-1 block text-[10px] text-gray-500">
+                  <span className="mt-1 block text-xs text-gray-400">
                     Type fixed upon creation.
                   </span>
                 </div>
@@ -1644,7 +1677,7 @@ export function AdminCampaigns() {
                   value={editTaskTitle}
                   onChange={(e) => setEditTaskTitle(e.target.value)}
                   required
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -1661,7 +1694,7 @@ export function AdminCampaigns() {
                   placeholder="https://x.com/Elychimp/status/..."
                   value={editTaskTweetUrl}
                   onChange={(e) => setEditTaskTweetUrl(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -1677,7 +1710,7 @@ export function AdminCampaigns() {
                   rows={2}
                   value={editTaskDescription}
                   onChange={(e) => setEditTaskDescription(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-2 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -1695,7 +1728,7 @@ export function AdminCampaigns() {
               </div>
 
               {triggersNewVersion && (
-                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-200">
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
                   <div>
                     <span className="font-semibold text-amber-300">
                       Automatic Campaign Version Bump:
@@ -1740,8 +1773,13 @@ export function AdminCampaigns() {
     const versionNum = selectedCampaign.currentVersion?.versionNumber ?? 1;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-        <Card className="w-full max-w-md border-rose-500/30 bg-[#0B2026] shadow-2xl">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setDeletingTask(null);
+        }}
+      >
+        <Card className="w-full max-w-md border-rose-500/30 bg-[#071F24] shadow-2xl">
           <CardHeader className="pb-3">
             <CardTitle className="text-base text-rose-300">
               Delete Task Confirmation
@@ -1981,7 +2019,7 @@ export function AdminCampaigns() {
                           {isPrimary && (
                             <Badge
                               variant="outline"
-                              className="border-emerald-500/40 text-[10px] text-emerald-400"
+                              className="border-emerald-500/40 text-xs text-emerald-400 font-semibold"
                             >
                               Main Campaign
                             </Badge>

@@ -532,27 +532,27 @@ export function AdminEvidenceReview() {
                           ID: {sub.id}
                         </span>
                         {isNeedsAudit && (
-                          <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-500/30">
+                          <span className="rounded bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300 border border-amber-500/30">
                             Needs Audit
                           </span>
                         )}
                         {isAudited && (
-                          <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 border border-emerald-500/30">
+                          <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
                             Audited &amp; Verified
                           </span>
                         )}
                         {isRejected && (
-                          <span className="rounded bg-rose-500/20 px-2 py-0.5 text-[10px] font-semibold text-rose-300 border border-rose-500/30">
+                          <span className="rounded bg-rose-500/20 px-2 py-0.5 text-xs font-semibold text-rose-300 border border-rose-500/30">
                             Rejected
                           </span>
                         )}
                         {isNeedsAudit && isApproved && (
-                          <span className="rounded bg-[#102B33]/80 px-2 py-0.5 text-[10px] text-cyan-300 border border-cyan-500/40">
+                          <span className="rounded bg-[#102B33]/80 px-2 py-0.5 text-xs text-cyan-300 border border-cyan-500/40">
                             Auto-Approved
                           </span>
                         )}
                         {sub.task?.taskType && (
-                          <span className="rounded bg-[#102B33]/80 px-2 py-0.5 text-[11px] font-mono text-gray-300">
+                          <span className="rounded bg-[#102B33]/80 px-2 py-0.5 text-xs font-mono text-gray-300">
                             {sub.task.taskType.replace("SOCIAL_X_", "")}
                           </span>
                         )}
@@ -564,7 +564,7 @@ export function AdminEvidenceReview() {
                           <span className="font-medium text-gray-200">
                             {sub.task?.title || sub.task?.taskCode || sub.taskId}
                           </span>
-                          <div className="mt-0.5 text-[11px] font-mono text-gray-500">
+                          <div className="mt-0.5 text-xs font-mono text-gray-400">
                             Task ID: {sub.taskId}
                           </div>
                         </div>
@@ -596,7 +596,7 @@ export function AdminEvidenceReview() {
                                 <button
                                   type="button"
                                   onClick={() => handleCopyWallet(walletAddress)}
-                                  className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
+                                  className="text-xs text-gray-400 hover:text-gray-200 transition-colors"
                                   title="Copy wallet address"
                                 >
                                   {copiedWallet === walletAddress ? "Copied" : "Copy"}
@@ -607,7 +607,7 @@ export function AdminEvidenceReview() {
                             )}
                           </div>
 
-                          <div className="mt-0.5 text-[11px] font-mono text-gray-500">
+                          <div className="mt-0.5 text-xs font-mono text-gray-400">
                             User ID: {sub.userId}
                           </div>
                         </div>
@@ -639,7 +639,7 @@ export function AdminEvidenceReview() {
                       {/* Evidence Payload - Hidden for FOLLOW, LIKE, REPOST */}
                       {!isFollowLikeRepost ? (
                         <div className="mt-3 rounded-lg border border-[#163B44] bg-[#051D22]/60 p-3">
-                          <span className="mb-1 block text-[11px] font-semibold text-gray-400">
+                          <span className="mb-1 block text-xs font-semibold text-gray-300">
                             Submitted Evidence Content:
                           </span>
                           {proofUrl && (
@@ -666,7 +666,7 @@ export function AdminEvidenceReview() {
                           )}
                         </div>
                       ) : (
-                        <div className="mt-2 rounded border border-[#163B44]/50 bg-[#0B2026]/20 px-2.5 py-1.5 text-[11px] text-gray-400">
+                        <div className="mt-2 rounded border border-[#163B44]/50 bg-[#0B2026]/20 px-2.5 py-1.5 text-xs text-gray-300">
                           <span>Auto-verified social task — manual proof content hidden</span>
                         </div>
                       )}
@@ -738,7 +738,7 @@ export function AdminEvidenceReview() {
                         </Button>
                       </div>
 
-                      <span className="block text-center text-[11px] text-gray-500 italic">
+                      <span className="block text-center text-xs text-gray-400 italic">
                         {isNeedsAudit
                           ? "Needs admin audit (Auto-approved by system)"
                           : isAudited

@@ -126,6 +126,26 @@ export function AdminAuditLog() {
     };
   }, [fetchLogs, offset, limit, appliedFilters]);
 
+  // Escape key handler & body scroll lock for detail modal
+  useEffect(() => {
+    if (!selectedLog) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedLog(null);
+      }
+    };
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedLog]);
+
   const handleApplyFilters = (e: React.FormEvent) => {
     e.preventDefault();
     const newFilters = {
@@ -177,10 +197,10 @@ export function AdminAuditLog() {
               <CardTitle className="text-xl font-bold text-white">
                 Audit Log
               </CardTitle>
-              <Badge variant="default" className="text-[10px]">
+              <Badge variant="default">
                 SUPER_ADMIN ONLY
               </Badge>
-              <Badge variant="outline" className="text-[10px] text-gray-400">
+              <Badge variant="outline" className="text-gray-400">
                 READ-ONLY
               </Badge>
             </div>
@@ -251,7 +271,7 @@ export function AdminAuditLog() {
                     value={actionInput}
                     onChange={(e) => setActionInput(e.target.value)}
                     placeholder="e.g. BAN_USER"
-                    className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-1.5 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                   />
                 </div>
               </div>
@@ -266,7 +286,7 @@ export function AdminAuditLog() {
                   value={entityTypeInput}
                   onChange={(e) => setEntityTypeInput(e.target.value)}
                   placeholder="e.g. User, WLSlot"
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-1.5 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -280,7 +300,7 @@ export function AdminAuditLog() {
                   value={actorIdInput}
                   onChange={(e) => setActorIdInput(e.target.value)}
                   placeholder="User ID..."
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-1.5 text-xs text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -293,7 +313,7 @@ export function AdminAuditLog() {
                   type="date"
                   value={fromInput}
                   onChange={(e) => setFromInput(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-1.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
 
@@ -306,7 +326,7 @@ export function AdminAuditLog() {
                   type="date"
                   value={toInput}
                   onChange={(e) => setToInput(e.target.value)}
-                  className="w-full rounded-md border border-[#163B44] bg-[#0B2026]/80 px-3 py-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-md border border-[#163B44] bg-[#04181C] px-3 py-1.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 focus:outline-none"
                 />
               </div>
             </div>
@@ -367,9 +387,9 @@ export function AdminAuditLog() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border border-[#163B44] max-h-[580px] overflow-y-auto">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-[#163B44] bg-[#051D22]/60 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                <thead className="sticky top-0 z-10 border-b border-[#163B44] bg-[#0B2026] text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <tr>
                     <th className="px-4 py-3">Timestamp</th>
                     <th className="px-4 py-3">Actor</th>
@@ -379,7 +399,7 @@ export function AdminAuditLog() {
                     <th className="px-4 py-3 text-right">Details</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800/60 font-mono">
+                <tbody className="divide-y divide-[#163B44]/40 font-mono">
                   {logs.map((log) => {
                     const actorAddr = log.actor?.wallet?.address;
                     const actorDisplay = actorAddr && isValidAddress(actorAddr)
@@ -412,14 +432,14 @@ export function AdminAuditLog() {
                                     ? "warning"
                                     : "outline"
                                 }
-                                className="text-[9px] px-1 py-0"
+                                className="text-xs px-2 py-0.5"
                               >
                                 {log.actor.role}
                               </Badge>
                             )}
                           </div>
                           {log.actorId && (
-                            <div className="text-[10px] text-gray-500 truncate max-w-[120px]" title={log.actorId}>
+                            <div className="text-xs text-gray-400 truncate max-w-[140px]" title={log.actorId}>
                               ID: {log.actorId}
                             </div>
                           )}
@@ -427,14 +447,14 @@ export function AdminAuditLog() {
 
                         {/* Action */}
                         <td className="whitespace-nowrap px-4 py-3 font-sans">
-                          <Badge variant="default" className="text-[10px]">
+                          <Badge variant="default">
                             {log.action}
                           </Badge>
                         </td>
 
                         {/* Entity Type */}
                         <td className="whitespace-nowrap px-4 py-3 text-gray-300 font-sans">
-                          <span className="rounded bg-[#102B33]/80 px-1.5 py-0.5 text-[11px] text-gray-300">
+                          <span className="rounded bg-[#102B33]/80 px-2 py-0.5 text-xs text-gray-300 font-mono">
                             {log.entityType}
                           </span>
                         </td>
@@ -452,7 +472,7 @@ export function AdminAuditLog() {
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedLog(log)}
-                            className="h-7 px-2.5 text-[11px] font-sans"
+                            className="h-7 px-2.5 text-xs font-sans"
                           >
                             Details
                           </Button>
@@ -516,6 +536,9 @@ export function AdminAuditLog() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="audit-detail-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedLog(null);
+          }}
         >
           <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-[#163B44] bg-[#071F24] p-6 shadow-2xl">
             {/* Modal Header */}

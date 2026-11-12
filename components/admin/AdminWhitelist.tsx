@@ -433,13 +433,36 @@ export function AdminWhitelist() {
   const validCount = reviews.filter((r) => r.reviewStatus === "VALID").length;
   const totalNeedsReview = flaggedCount + notReviewedCount + underReviewCount;
 
+  // Escape key handler & body scroll lock for modals
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(selectedReviewSlotId || grantCandidate || revokeTarget);
+    if (!isAnyModalOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (revokeTarget) closeRevokeModal();
+        else if (grantCandidate) closeGrantModal();
+        else if (selectedReviewSlotId) closeReviewModal();
+      }
+    };
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedReviewSlotId, grantCandidate, revokeTarget]);
+
   return (
     <div className="space-y-6">
       {/* --------------------------------------------------------------------- */}
       {/* SECTION 1: PROGRAM OVERVIEW & METRICS CARDS                            */}
       {/* --------------------------------------------------------------------- */}
-      <Card className="border border-white/10 bg-slate-900/60 backdrop-blur-sm">
-        <CardHeader className="pb-4 border-b border-white/5">
+      <Card className="border border-[#163B44] bg-[#0B2026]">
+        <CardHeader className="pb-4 border-b border-[#163B44]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
@@ -482,7 +505,7 @@ export function AdminWhitelist() {
                       e.target.value as "UPCOMING" | "OPEN" | "PAUSED" | "FINALIZED" | "CLOSED",
                     )
                   }
-                  className="rounded bg-slate-800 border border-white/10 px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50"
+                  className="rounded bg-[#04181C] border border-[#163B44] px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40 disabled:opacity-50"
                   title={program.status === "CLOSED" ? "Program is permanently CLOSED and cannot be reopened." : undefined}
                 >
                   <option value="UPCOMING">UPCOMING</option>
@@ -496,7 +519,7 @@ export function AdminWhitelist() {
                   variant="outline"
                   disabled={loadingProgram || loadingSummary}
                   onClick={() => setReloadKey((k) => k + 1)}
-                  className="h-8 w-8 p-0 border-white/10 text-gray-300 hover:text-white"
+                  className="h-8 w-8 p-0 border-[#163B44] text-gray-300 hover:text-white hover:bg-[#102B33]/60"
                   title="Refresh Overview"
                 >
                   <RefreshCw
@@ -524,12 +547,12 @@ export function AdminWhitelist() {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* 1. GTD Slots Capacity */}
-            <div className="rounded-lg border border-white/5 bg-slate-800/40 p-4 space-y-3">
+            <div className="rounded-lg border border-[#163B44] bg-[#04181C]/80 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-400">GTD Capacity</span>
                 <Badge
                   variant={vacantSlots > 0 ? "success" : "warning"}
-                  className="text-[11px]"
+                  className="text-xs"
                 >
                   {vacantSlots > 0 ? `${vacantSlots} Vacant` : "Capacity Full"}
                 </Badge>
@@ -541,7 +564,7 @@ export function AdminWhitelist() {
                     / {totalSlots}
                   </span>
                 </div>
-                <div className="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-[#0B2026] border border-[#163B44]/50 rounded-full h-2 overflow-hidden">
                   <div
                     className={`h-2 rounded-full transition-all duration-300 ${
                       capacityPercent >= 100 ? "bg-amber-500" : "bg-emerald-500"
@@ -550,16 +573,16 @@ export function AdminWhitelist() {
                   />
                 </div>
               </div>
-              <p className="text-[11px] text-gray-400">
+              <p className="text-xs text-gray-400">
                 {capacityPercent}% filled. Instant allocation for qualified users.
               </p>
             </div>
 
             {/* 2. FCFS Directory Total */}
-            <div className="rounded-lg border border-white/5 bg-slate-800/40 p-4 space-y-3">
+            <div className="rounded-lg border border-[#163B44] bg-[#04181C]/80 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-400">FCFS Directory</span>
-                <Badge variant="default" className="text-[11px]">
+                <Badge variant="default" className="text-xs">
                   EVM + X Linked
                 </Badge>
               </div>
@@ -577,21 +600,21 @@ export function AdminWhitelist() {
                   </span>
                 </div>
               </div>
-              <p className="text-[11px] text-gray-400">
+              <p className="text-xs text-gray-400">
                 Chronologically ordered registry. Zero auto-promotion queues.
               </p>
             </div>
 
             {/* 3. Needs Review Counter */}
-            <div className="rounded-lg border border-white/5 bg-slate-800/40 p-4 space-y-3">
+            <div className="rounded-lg border border-[#163B44] bg-[#04181C]/80 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-400">Needs Review</span>
                 {flaggedCount > 0 ? (
-                  <Badge variant="warning" className="text-[11px]">
+                  <Badge variant="warning" className="text-xs">
                     {flaggedCount} Flagged
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-[11px] text-gray-400">
+                  <Badge variant="outline" className="text-xs text-gray-400">
                     Normal
                   </Badge>
                 )}
@@ -600,16 +623,16 @@ export function AdminWhitelist() {
                 {totalNeedsReview}{" "}
                 <span className="text-sm font-normal text-gray-400">Total</span>
               </div>
-              <div className="grid grid-cols-3 gap-1 pt-1 text-[11px]">
-                <div className="rounded bg-slate-900/60 p-1 text-center">
+              <div className="grid grid-cols-3 gap-1 pt-1 text-xs">
+                <div className="rounded bg-[#0B2026] border border-[#163B44]/40 p-1.5 text-center">
                   <div className="text-gray-400">Unreviewed</div>
                   <div className="font-semibold text-gray-300">{notReviewedCount}</div>
                 </div>
-                <div className="rounded bg-slate-900/60 p-1 text-center">
+                <div className="rounded bg-[#0B2026] border border-[#163B44]/40 p-1.5 text-center">
                   <div className="text-blue-400">In Review</div>
                   <div className="font-semibold text-blue-300">{underReviewCount}</div>
                 </div>
-                <div className="rounded bg-slate-900/60 p-1 text-center">
+                <div className="rounded bg-[#0B2026] border border-[#163B44]/40 p-1.5 text-center">
                   <div className="text-amber-400">Flagged</div>
                   <div className="font-semibold text-amber-300">{flaggedCount}</div>
                 </div>
@@ -622,8 +645,8 @@ export function AdminWhitelist() {
       {/* --------------------------------------------------------------------- */}
       {/* SECTION 2: GTD POST-ALLOCATION REVIEW CONSOLE (Task 6.3)             */}
       {/* --------------------------------------------------------------------- */}
-      <Card className="border border-white/10 bg-slate-900/60 backdrop-blur-sm">
-        <CardHeader className="pb-3 border-b border-white/5">
+      <Card className="border border-[#163B44] bg-[#0B2026]">
+        <CardHeader className="pb-3 border-b border-[#163B44]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <CardTitle className="text-base text-white">GTD Post-Allocation Review</CardTitle>
@@ -633,7 +656,7 @@ export function AdminWhitelist() {
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-1 bg-slate-950/60 p-1 rounded-lg border border-white/5">
+            <div className="flex flex-wrap gap-1 bg-[#04181C] p-1 rounded-lg border border-[#163B44]">
               {(
                 [
                   { key: "ALL", label: "All" },
@@ -652,7 +675,7 @@ export function AdminWhitelist() {
                   className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                     reviewsTab === tab.key
                       ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                      : "text-gray-400 hover:text-white hover:bg-[#102B33]/60"
                   }`}
                 >
                   {tab.label}
@@ -676,7 +699,7 @@ export function AdminWhitelist() {
                 placeholder="Search GTD slots by wallet (0x...) or X username (@...)"
                 value={reviewSearchQuery}
                 onChange={(e) => setReviewSearchQuery(e.target.value)}
-                className="w-full rounded bg-slate-800/80 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full rounded bg-[#04181C] border border-[#163B44] px-3 py-2 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
               />
             </div>
             <Button type="submit" variant="outline" size="sm" className="text-xs">
@@ -706,9 +729,9 @@ export function AdminWhitelist() {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded border border-white/5">
+          <div className="overflow-x-auto rounded-lg border border-[#163B44] max-h-[580px] overflow-y-auto">
             <table className="w-full text-left text-xs text-gray-300">
-              <thead className="bg-slate-950/80 text-[11px] uppercase tracking-wider text-gray-400 border-b border-white/5">
+              <thead className="sticky top-0 z-10 bg-[#0B2026] text-xs font-semibold uppercase tracking-wider text-gray-400 border-b border-[#163B44]">
                 <tr>
                   <th className="py-2.5 px-3">Slot #</th>
                   <th className="py-2.5 px-3">Participant</th>
@@ -718,7 +741,7 @@ export function AdminWhitelist() {
                   <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[#163B44]/40">
                 {loadingReviews ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-500">
@@ -736,7 +759,7 @@ export function AdminWhitelist() {
                     const address = slot.user?.wallet?.address;
                     const username = slot.user?.xIdentity?.username;
                     return (
-                      <tr key={slot.id} className="hover:bg-white/[0.02] transition-colors">
+                      <tr key={slot.id} className="hover:bg-[#102B33]/40 transition-colors">
                         <td className="py-2.5 px-3 font-mono font-bold text-white">
                           #{slot.slotNumber.toString().padStart(3, "0")}
                         </td>
@@ -748,7 +771,7 @@ export function AdminWhitelist() {
                                 <button
                                   type="button"
                                   onClick={() => copyToClipboard(address)}
-                                  className="text-[10px] text-gray-500 hover:text-white transition-colors"
+                                  className="text-xs text-gray-400 hover:text-white transition-colors"
                                   title="Copy address"
                                 >
                                   {copiedAddress === address ? "Copied" : "Copy"}
@@ -758,17 +781,17 @@ export function AdminWhitelist() {
                               <span className="text-gray-500">No wallet</span>
                             )}
                             {username ? (
-                              <span className="text-[11px] text-blue-400">
+                              <span className="text-xs text-blue-400">
                                 @{username}
                               </span>
                             ) : (
-                              <span className="text-[11px] text-gray-500">No X linked</span>
+                              <span className="text-xs text-gray-400">No X linked</span>
                             )}
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 text-[11px] text-gray-400">
+                        <td className="py-2.5 px-3 text-xs text-gray-400">
                           <div>{new Date(slot.allocatedAt).toLocaleDateString()}</div>
-                          <span className="text-[10px] text-gray-500">
+                          <span className="text-xs text-gray-400">
                             {slot.allocatedBy || "SYSTEM"}
                           </span>
                         </td>
@@ -783,12 +806,12 @@ export function AdminWhitelist() {
                                 ? "default"
                                 : "outline"
                             }
-                            className="text-[10px]"
+                            className="text-xs"
                           >
                             {slot.reviewStatus}
                           </Badge>
                         </td>
-                        <td className="py-2.5 px-3 text-[11px] text-gray-400">
+                        <td className="py-2.5 px-3 text-xs text-gray-400">
                           {safeFormatAddress(slot.reviewedBy)}
                         </td>
                         <td className="py-2.5 px-3 text-right">
@@ -863,8 +886,8 @@ export function AdminWhitelist() {
       {/* --------------------------------------------------------------------- */}
       {/* SECTION 3: FCFS DIRECTORY (ALL PARTICIPANTS) (Task 6.4)               */}
       {/* --------------------------------------------------------------------- */}
-      <Card className="border border-white/10 bg-slate-900/60 backdrop-blur-sm">
-        <CardHeader className="pb-3 border-b border-white/5">
+      <Card className="border border-[#163B44] bg-[#0B2026]">
+        <CardHeader className="pb-3 border-b border-[#163B44]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <CardTitle className="text-base text-white">
@@ -876,7 +899,7 @@ export function AdminWhitelist() {
             </div>
 
             {/* Filter Toggle */}
-            <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-white/5">
+            <div className="flex items-center gap-1 bg-[#04181C] p-1 rounded-lg border border-[#163B44]">
               <button
                 type="button"
                 onClick={() => {
@@ -886,7 +909,7 @@ export function AdminWhitelist() {
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   !directoryQualifiedOnly
                     ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                    : "text-gray-400 hover:text-white"
+                    : "text-gray-400 hover:text-white hover:bg-[#102B33]/60"
                 }`}
               >
                 All Participants
@@ -900,7 +923,7 @@ export function AdminWhitelist() {
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   directoryQualifiedOnly
                     ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                    : "text-gray-400 hover:text-white"
+                    : "text-gray-400 hover:text-white hover:bg-[#102B33]/60"
                 }`}
               >
                 Fully Qualified Only
@@ -924,7 +947,7 @@ export function AdminWhitelist() {
                 placeholder="Search FCFS directory by wallet address or @username..."
                 value={directorySearchQuery}
                 onChange={(e) => setDirectorySearchQuery(e.target.value)}
-                className="w-full rounded bg-slate-800/80 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full rounded bg-[#04181C] border border-[#163B44] px-3 py-2 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
               />
             </div>
             <Button type="submit" variant="outline" size="sm" className="text-xs">
@@ -953,9 +976,9 @@ export function AdminWhitelist() {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded border border-white/5">
+          <div className="overflow-x-auto rounded-lg border border-[#163B44] max-h-[580px] overflow-y-auto">
             <table className="w-full text-left text-xs text-gray-300">
-              <thead className="bg-slate-950/80 text-[11px] uppercase tracking-wider text-gray-400 border-b border-white/5">
+              <thead className="sticky top-0 z-10 bg-[#0B2026] text-xs font-semibold uppercase tracking-wider text-gray-400 border-b border-[#163B44]">
                 <tr>
                   <th className="py-2.5 px-3">Join #</th>
                   <th className="py-2.5 px-3">Wallet</th>
@@ -965,7 +988,7 @@ export function AdminWhitelist() {
                   <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[#163B44]/40">
                 {loadingDirectory ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-500">
@@ -995,7 +1018,7 @@ export function AdminWhitelist() {
                     }
 
                     return (
-                      <tr key={entry.id} className="hover:bg-white/[0.02] transition-colors">
+                      <tr key={entry.id} className="hover:bg-[#102B33]/40 transition-colors">
                         <td className="py-2.5 px-3 font-mono font-bold text-white">
                           #{entry.queueNumber}
                         </td>
@@ -1006,7 +1029,7 @@ export function AdminWhitelist() {
                               <button
                                 type="button"
                                 onClick={() => copyToClipboard(address)}
-                                className="text-[10px] text-gray-500 hover:text-white transition-colors"
+                                className="text-xs text-gray-400 hover:text-white transition-colors"
                                 title="Copy address"
                               >
                                 {copiedAddress === address ? "Copied" : "Copy"}
@@ -1028,7 +1051,7 @@ export function AdminWhitelist() {
                             {/* Trait category badge */}
                             <Badge
                               variant={qual.heldCategoriesCount === 5 ? "success" : "default"}
-                              className="text-[10px]"
+                              className="text-xs"
                             >
                               {qual.heldCategoriesCount}/5 Traits
                             </Badge>
@@ -1036,7 +1059,7 @@ export function AdminWhitelist() {
                             {/* Campaign tasks badge */}
                             <Badge
                               variant={qual.tasksCompleted ? "success" : "warning"}
-                              className="text-[10px]"
+                              className="text-xs"
                             >
                               {qual.tasksCompleted ? "Tasks Done" : "Tasks Incomplete"}
                             </Badge>
@@ -1045,7 +1068,7 @@ export function AdminWhitelist() {
                             {qual.isBanned && (
                               <Badge
                                 variant="outline"
-                                className="text-[10px] text-red-400 border-red-500/30 bg-red-500/10"
+                                className="text-xs text-red-400 border-red-500/30 bg-red-500/10"
                               >
                                 Banned
                               </Badge>
@@ -1055,14 +1078,14 @@ export function AdminWhitelist() {
                             {qual.isFullyQualified && (
                               <Badge
                                 variant="outline"
-                                className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-bold"
+                                className="text-xs text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-bold"
                               >
                                 Ready
                               </Badge>
                             )}
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 text-[11px] text-gray-400">
+                        <td className="py-2.5 px-3 text-xs text-gray-400">
                           {new Date(entry.joinedAt).toLocaleDateString()}
                         </td>
                         <td className="py-2.5 px-3 text-right">
@@ -1124,13 +1147,13 @@ export function AdminWhitelist() {
       {/* --------------------------------------------------------------------- */}
       {/* SECTION 4: OPENSEA ALLOWLIST CSV EXPORT (Task 6.6)                    */}
       {/* --------------------------------------------------------------------- */}
-      <Card className="border border-white/10 bg-slate-900/60 backdrop-blur-sm">
-        <CardHeader className="pb-3 border-b border-white/5">
+      <Card className="border border-[#163B44] bg-[#0B2026]">
+        <CardHeader className="pb-3 border-b border-[#163B44]">
           <div className="flex items-center gap-2">
             <CardTitle className="text-base text-white">
               OpenSea SeaDrop Allowlist CSV Export
             </CardTitle>
-            <Badge variant="success" className="text-[10px]">
+            <Badge variant="success" className="text-xs">
               Strict Disjoint Guarantee
             </Badge>
           </div>
@@ -1161,7 +1184,7 @@ export function AdminWhitelist() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Card 1: GTD Allowlist Export */}
-            <div className="rounded-lg border border-white/10 bg-slate-800/40 p-5 space-y-4 flex flex-col justify-between">
+            <div className="rounded-lg border border-[#163B44] bg-[#04181C]/80 p-5 space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-white text-sm">
@@ -1182,7 +1205,7 @@ export function AdminWhitelist() {
                     <div className="font-semibold">
                       <span>Notice: {flaggedCount} FLAGGED slot(s) included</span>
                     </div>
-                    <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                    <p className="text-xs text-amber-200/90 leading-relaxed">
                       Active FLAGGED slots remain in the GTD export because they have not been
                       revoked. To exclude an account, revoke its slot with an official reason before
                       exporting.
@@ -1202,7 +1225,7 @@ export function AdminWhitelist() {
             </div>
 
             {/* Card 2: FCFS Allowlist Export */}
-            <div className="rounded-lg border border-white/10 bg-slate-800/40 p-5 space-y-4 flex flex-col justify-between">
+            <div className="rounded-lg border border-[#163B44] bg-[#04181C]/80 p-5 space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-white text-sm">
@@ -1217,11 +1240,11 @@ export function AdminWhitelist() {
                   directory participants and active GTD holders are excluded (DEC-017, DEC-020).
                 </p>
 
-                <div className="rounded border border-white/5 bg-slate-900/50 p-2.5 text-xs text-gray-300 space-y-1">
+                <div className="rounded border border-[#163B44]/60 bg-[#0B2026] p-2.5 text-xs text-gray-300 space-y-1">
                   <div className="text-emerald-400 font-medium">
                     <span>Disjoint Set Guarantee</span>
                   </div>
-                  <p className="text-[11px] text-gray-400">
+                  <p className="text-xs text-gray-400">
                     Runtime verification ensures zero wallet overlap between GTD and FCFS lists.
                   </p>
                 </div>
@@ -1244,9 +1267,14 @@ export function AdminWhitelist() {
       {/* MODAL 1: REVIEW DETAILS MODAL (Task 6.3)                              */}
       {/* --------------------------------------------------------------------- */}
       {selectedReviewSlotId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="relative w-full max-w-2xl rounded-xl border border-white/15 bg-slate-900 shadow-2xl overflow-hidden my-8">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/60">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeReviewModal();
+          }}
+        >
+          <div className="relative w-full max-w-2xl rounded-xl border border-[#163B44] bg-[#071F24] shadow-2xl overflow-hidden my-8">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#163B44] bg-[#04181C]">
               <div>
                 <h3 className="text-base font-semibold text-white">
                   GTD Slot Review Details — #{reviewDetail?.slot.slotNumber ?? "..."}
@@ -1274,7 +1302,7 @@ export function AdminWhitelist() {
               ) : reviewDetail ? (
                 <>
                   {/* User Profile Info */}
-                  <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-slate-800/40 border border-white/5">
+                  <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-[#04181C] border border-[#163B44]">
                     <div>
                       <span className="text-gray-400">Wallet Address:</span>
                       <div className="flex items-center gap-1 font-mono font-bold text-white mt-0.5">
@@ -1304,7 +1332,7 @@ export function AdminWhitelist() {
                         variant={
                           reviewDetail.traits.hasAllCategories ? "success" : "default"
                         }
-                        className="text-[10px]"
+                        className="text-xs"
                       >
                         {reviewDetail.traits.heldCategoriesCount}/5 Categories Owned
                       </Badge>
@@ -1319,11 +1347,11 @@ export function AdminWhitelist() {
                               className={`p-2 rounded border text-xs font-mono font-medium ${
                                 isHeld
                                   ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                                  : "border-white/5 bg-slate-800/30 text-gray-500"
+                                  : "border-[#163B44]/40 bg-[#04181C] text-gray-500"
                               }`}
                             >
                               <div>{cat}</div>
-                              <div className="text-[10px] mt-1 font-sans">
+                              <div className="text-xs mt-1 font-sans">
                                 {isHeld ? "Held" : "Missing"}
                               </div>
                             </div>
@@ -1343,7 +1371,7 @@ export function AdminWhitelist() {
                       </span>
                     </div>
                     {reviewDetail.campaigns.submissions.length === 0 ? (
-                      <div className="p-3 rounded bg-slate-800/30 text-gray-400 text-center">
+                      <div className="p-3 rounded bg-[#04181C] border border-[#163B44]/40 text-gray-400 text-center">
                         No evidence submissions recorded for this user.
                       </div>
                     ) : (
@@ -1351,13 +1379,13 @@ export function AdminWhitelist() {
                         {reviewDetail.campaigns.submissions.map((sub) => (
                           <div
                             key={sub.id}
-                            className="p-3 rounded bg-slate-800/40 border border-white/5 space-y-1"
+                            className="p-3 rounded bg-[#04181C] border border-[#163B44] space-y-1"
                           >
                             <div className="flex items-center justify-between">
                               <span className="font-medium text-white">{sub.taskTitle}</span>
                               <Badge
                                 variant={sub.status === "APPROVED" ? "success" : "outline"}
-                                className={`text-[10px] ${
+                                className={`text-xs ${
                                   sub.status === "REJECTED"
                                     ? "text-red-400 border-red-500/30 bg-red-500/10"
                                     : sub.status === "PENDING_REVIEW"
@@ -1388,7 +1416,7 @@ export function AdminWhitelist() {
                               )}
                             </div>
                             {sub.reviewerNotes && (
-                              <div className="text-[11px] text-gray-400">
+                              <div className="text-xs text-gray-400">
                                 Note: {sub.reviewerNotes}
                               </div>
                             )}
@@ -1399,7 +1427,7 @@ export function AdminWhitelist() {
                   </div>
 
                   {/* 3. Status Transition & Notes */}
-                  <div className="space-y-3 pt-2 border-t border-white/10">
+                  <div className="space-y-3 pt-2 border-t border-[#163B44]">
                     <span className="font-semibold text-white">3. Review Decision</span>
                     <div className="grid grid-cols-4 gap-2">
                       {(
@@ -1421,7 +1449,7 @@ export function AdminWhitelist() {
                                 : s.key === "FLAGGED"
                                 ? "border-amber-500 bg-amber-500/20 text-amber-300"
                                 : "border-blue-500 bg-blue-500/20 text-blue-300"
-                              : "border-white/10 bg-slate-800/40 text-gray-400 hover:text-white"
+                              : "border-[#163B44] bg-[#04181C] text-gray-400 hover:text-white hover:bg-[#102B33]/60"
                           }`}
                         >
                           {s.label}
@@ -1437,7 +1465,7 @@ export function AdminWhitelist() {
                         value={editReviewNotes}
                         onChange={(e) => setEditReviewNotes(e.target.value)}
                         placeholder="Internal notes regarding audit findings, Sybil risk, or evidence validation..."
-                        className="w-full rounded bg-slate-800 border border-white/10 p-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        className="w-full rounded bg-[#04181C] border border-[#163B44] p-2 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
                       />
                     </div>
 
@@ -1454,10 +1482,10 @@ export function AdminWhitelist() {
                   </div>
 
                   {/* 4. Slot Audit History */}
-                  <div className="space-y-2 pt-2 border-t border-white/10">
+                  <div className="space-y-2 pt-2 border-t border-[#163B44]">
                     <span className="font-semibold text-white">4. Review Audit History</span>
                     {reviewDetail.auditHistory.length === 0 ? (
-                      <div className="text-gray-500 text-[11px]">
+                      <div className="text-gray-400 text-xs">
                         No prior audit log updates for this slot.
                       </div>
                     ) : (
@@ -1465,10 +1493,10 @@ export function AdminWhitelist() {
                         {reviewDetail.auditHistory.map((log) => (
                           <div
                             key={log.id}
-                            className="flex items-center justify-between p-2 rounded bg-slate-950/40 border border-white/5 text-[11px]"
+                            className="flex items-center justify-between p-2 rounded bg-[#04181C] border border-[#163B44]/40 text-xs"
                           >
                             <span className="font-mono text-gray-300">{log.action}</span>
-                            <span className="text-gray-500">
+                            <span className="text-gray-400">
                               {new Date(log.createdAt).toLocaleString()}
                             </span>
                           </div>
@@ -1480,7 +1508,7 @@ export function AdminWhitelist() {
               ) : null}
             </div>
 
-            <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-slate-950/60">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-[#163B44] bg-[#04181C]">
               <Button
                 variant="outline"
                 size="sm"
@@ -1520,9 +1548,14 @@ export function AdminWhitelist() {
       {/* MODAL 2: MANUAL GTD GRANT MODAL (Task 6.4)                            */}
       {/* --------------------------------------------------------------------- */}
       {grantCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-lg rounded-xl border border-white/15 bg-slate-900 shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeGrantModal();
+          }}
+        >
+          <div className="relative w-full max-w-lg rounded-xl border border-[#163B44] bg-[#071F24] shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
               <div>
                 <h3 className="text-base font-semibold text-white">
                   Manually Grant GTD Slot
@@ -1538,7 +1571,7 @@ export function AdminWhitelist() {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 rounded bg-slate-800/50 border border-white/5 space-y-1">
+              <div className="p-3 rounded bg-[#04181C] border border-[#163B44] space-y-1">
                 <div className="text-gray-400">Candidate Wallet:</div>
                 <div className="font-mono font-bold text-white">
                   {grantCandidate.user.walletAddress}
@@ -1555,7 +1588,7 @@ export function AdminWhitelist() {
                 <div className="font-semibold text-emerald-400">
                   Verification Checklist Confirmed:
                 </div>
-                <div className="space-y-1 text-[11px]">
+                <div className="space-y-1 text-xs">
                   <div>EVM Wallet Connected</div>
                   <div>X (Twitter) Account Linked</div>
                   <div>All 5 Trait Categories Collected</div>
@@ -1571,7 +1604,7 @@ export function AdminWhitelist() {
                   value={grantNotes}
                   onChange={(e) => setGrantNotes(e.target.value)}
                   placeholder="Reason for manual allocation (e.g. community reward or contest winner)..."
-                  className="w-full rounded bg-slate-800 border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded bg-[#04181C] border border-[#163B44] px-3 py-2 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
                 />
               </div>
 
@@ -1587,7 +1620,7 @@ export function AdminWhitelist() {
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#163B44]">
               <Button variant="ghost" size="sm" onClick={closeGrantModal} className="text-xs">
                 Cancel
               </Button>
@@ -1608,9 +1641,14 @@ export function AdminWhitelist() {
       {/* MODAL 3: GUARDED REVOCATION MODAL (Task 6.5)                          */}
       {/* --------------------------------------------------------------------- */}
       {revokeTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-lg rounded-xl border border-red-500/30 bg-slate-900 shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeRevokeModal();
+          }}
+        >
+          <div className="relative w-full max-w-lg rounded-xl border border-rose-500/30 bg-[#071F24] shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#163B44] pb-3">
               <div className="text-red-400">
                 <h3 className="text-base font-semibold text-white">
                   Revoke Guaranteed Slot #{revokeTarget.slotNumber}
@@ -1628,7 +1666,7 @@ export function AdminWhitelist() {
             <div className="space-y-3 text-xs">
               <div className="p-3 rounded bg-red-500/10 border border-red-500/20 text-red-200 space-y-1">
                 <div className="font-semibold text-red-400">Permanent Revocation Warning:</div>
-                <p className="text-[11px] leading-relaxed">
+                <p className="text-xs leading-relaxed">
                   This action will permanently revoke this GTD slot. The slot will be left
                   vacant, decremented from active capacity, and excluded from the OpenSea GTD
                   export. You may subsequently grant the vacant slot to an eligible FCFS
@@ -1636,7 +1674,7 @@ export function AdminWhitelist() {
                 </p>
               </div>
 
-              <div className="p-3 rounded bg-slate-800/50 border border-white/5 space-y-1">
+              <div className="p-3 rounded bg-[#04181C] border border-[#163B44] space-y-1">
                 <div className="text-gray-400">Target User:</div>
                 <div className="font-mono text-white">
                   {revokeTarget.walletAddress || "Unknown Address"}
@@ -1652,8 +1690,8 @@ export function AdminWhitelist() {
                     Reason for Revocation *
                   </label>
                   <span
-                    className={`text-[10px] ${
-                      revokeReason.trim().length >= 5 ? "text-emerald-400" : "text-gray-500"
+                    className={`text-xs ${
+                      revokeReason.trim().length >= 5 ? "text-emerald-400" : "text-gray-400"
                     }`}
                   >
                     ({revokeReason.trim().length} / 5 min chars)
@@ -1664,7 +1702,7 @@ export function AdminWhitelist() {
                   value={revokeReason}
                   onChange={(e) => setRevokeReason(e.target.value)}
                   placeholder="Official reason for revocation (e.g. Account flagged for sybil cluster #12; failed evidence verification)..."
-                  className="w-full rounded bg-slate-800 border border-white/10 p-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                  className="w-full rounded bg-[#04181C] border border-[#163B44] p-2.5 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40"
                 />
               </div>
 
@@ -1680,7 +1718,7 @@ export function AdminWhitelist() {
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#163B44]">
               <Button variant="ghost" size="sm" onClick={closeRevokeModal} className="text-xs">
                 Cancel
               </Button>
