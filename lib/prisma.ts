@@ -7,18 +7,28 @@ const globalForPrisma = globalThis as unknown as {
   pgPool?: Pool;
 };
 
+export function parseDatabasePoolMax(envVal?: string): number {
+  if (typeof envVal !== "string") {
+    return 1;
+  }
+  const trimmed = envVal.trim();
+  if (!/^[1-9]\d*$/.test(trimmed)) {
+    return 1;
+  }
+  const parsed = Number(trimmed);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
 function getOrCreatePool(connectionString: string): Pool {
   if (globalForPrisma.pgPool) {
     return globalForPrisma.pgPool;
   }
 
-  const maxConnections = process.env.DATABASE_POOL_MAX
-    ? parseInt(process.env.DATABASE_POOL_MAX, 10)
-    : 10;
+  const maxConnections = parseDatabasePoolMax(process.env.DATABASE_POOL_MAX);
 
   const pool = new Pool({
     connectionString,
-    max: Number.isFinite(maxConnections) && maxConnections > 0 ? maxConnections : 10,
+    max: maxConnections,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 20_000,
   });
