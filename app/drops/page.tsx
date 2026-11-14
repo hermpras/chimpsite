@@ -805,8 +805,8 @@ export default function DropsPage() {
                           </p>
                         )}
                         {claimMessage && (
-                          <div className="mt-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-center shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                            <p className="text-xs sm:text-sm font-semibold text-emerald-300">
+                          <div className="mt-2.5 rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 text-center shadow-[0_0_15px_rgba(16,185,129,0.12)]">
+                            <p className="text-xs font-semibold text-emerald-300 leading-snug tracking-tight [text-wrap:balance]">
                               {claimMessage}
                             </p>
                           </div>
