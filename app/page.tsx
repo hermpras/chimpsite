@@ -182,7 +182,7 @@ export default function HomePage() {
                 PHASE 01
               </div>
               <h4 className="mt-2 font-display text-xl uppercase text-[#F8F7F4]">
-                Sign In with Ethereum
+                Sign In
               </h4>
               <p className="mt-2 text-xs sm:text-sm leading-snug text-[#B8D7E0]">
                 Connect your EVM wallet via SIWE and link your X account.

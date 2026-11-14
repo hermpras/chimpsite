@@ -47,7 +47,7 @@ export function AdminAccessDenied({ error }: AdminAccessDeniedProps) {
               </CardTitle>
               <CardDescription className="text-gray-300">
                 {error.message ||
-                  "This section requires an active Sign-In with Ethereum (SIWE) administrator session."}
+                  "This section requires an active Sign-In (SIWE) administrator session."}
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center text-sm text-gray-400">
