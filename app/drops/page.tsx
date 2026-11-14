@@ -665,7 +665,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] py-2.5"
+                            className="w-full py-3"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -677,7 +677,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] py-2.5"
+                            className="w-full py-3"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -689,7 +689,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5 flex items-center justify-center"
+                            className="w-full py-3 flex items-center justify-center"
                             onClick={() => void login()}
                           >
                             <span>Sign In</span>
@@ -706,7 +706,7 @@ export default function DropsPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-xs sm:text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-wait py-3"
+                            className="w-full cursor-wait py-3"
                             disabled
                           >
                             <span className="flex items-center justify-center gap-2">
@@ -736,7 +736,7 @@ export default function DropsPage() {
                           <Link
                             href="/whitelist#tasks"
                             aria-label={`Complete Quests on Whitelist (${completedTasks}/${totalTasks})`}
-                            className="w-full rounded-xl border border-yellow-300/70 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-xs sm:text-sm uppercase tracking-wider text-black shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:via-yellow-200 hover:to-amber-400 hover:shadow-[0_0_32px_rgba(245,158,11,0.55)] hover:scale-[1.01] active:scale-[0.99] py-3 px-3 flex items-center justify-center gap-2 transition-all"
+                            className="w-full rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] font-sans font-black text-xs sm:text-sm uppercase tracking-[0.16em] text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_24px_rgba(52,183,221,0.35)] hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_12px_32px_rgba(52,183,221,0.55)] active:scale-[0.98] py-3 px-3 flex items-center justify-center gap-2 transition-all cursor-pointer"
                           >
                             <span>Complete Quests</span>
                             <span className="rounded-md bg-black/15 px-1.5 py-0.5 text-xs font-black tracking-normal">
@@ -764,7 +764,7 @@ export default function DropsPage() {
                         ) : isWindowActive ? (
                           <button
                             type="button"
-                            className="w-full rounded-xl border border-yellow-300/80 bg-gradient-to-b from-yellow-300 via-amber-400 to-amber-500 font-sans font-black text-xs sm:text-sm uppercase tracking-[0.16em] text-[#1c1202] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_24px_rgba(245,158,11,0.4)] hover:from-yellow-200 hover:via-amber-300 hover:to-amber-400 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_12px_32px_rgba(245,158,11,0.6)] active:scale-[0.98] transition-all cursor-pointer py-3 flex items-center justify-center"
+                            className="w-full rounded-xl border border-[#7AE5FF]/80 bg-gradient-to-b from-[#4ED5F8] via-[#34B7DD] to-[#1E97BC] font-sans font-black text-xs sm:text-sm uppercase tracking-[0.16em] text-[#021418] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.85),0_8px_24px_rgba(52,183,221,0.35)] hover:from-[#72E2FF] hover:via-[#42C8EC] hover:to-[#26A6CC] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_12px_32px_rgba(52,183,221,0.55)] active:scale-[0.98] transition-all cursor-pointer py-3 flex items-center justify-center"
                             onClick={handleClaim}
                           >
                             Claim Trait Now

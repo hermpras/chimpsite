@@ -830,7 +830,7 @@ export function SyndicateShareCardModal({
             <Button
               onClick={handleDownloadCard}
               disabled={isGenerating}
-              variant="gold"
+              variant="secondary"
               size="lg"
               className="w-full"
             >

@@ -1593,7 +1593,7 @@ export default function WhitelistPage() {
                                   </Button>
                                 ) : isCountingDown ? (
                                   <Button
-                                    variant="gold"
+                                    variant="primary"
                                     size="sm"
                                     disabled
                                     className="animate-pulse cursor-not-allowed"

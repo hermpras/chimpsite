@@ -256,7 +256,7 @@ export default function HomePage() {
 
               <div className="mt-8 pt-4 border-t border-[#163B44]">
                 <Link href="/whitelist" className="block w-full">
-                  <Button variant="gold" size="lg" className="w-full justify-center">
+                  <Button variant="primary" size="lg" className="w-full justify-center">
                     GET ON THE LIST
                   </Button>
                 </Link>
