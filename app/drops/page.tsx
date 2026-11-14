@@ -420,8 +420,10 @@ export default function DropsPage() {
       setClaimMessage(
         `Successfully claimed ${res.inventoryItem.trait.name} (Edition #${res.inventoryItem.edition})!`
       );
-      // Refresh drop info & user inventory
-      await Promise.all([loadDropData(), loadUserInventory(address)]);
+      // Refresh drop info & user inventory in the background without blocking the lootbox reveal
+      void Promise.all([loadDropData(), loadUserInventory(address)]).catch((refreshErr) => {
+        console.error("Failed background drop/inventory reload:", refreshErr);
+      });
     } catch (err: unknown) {
       const msg = (err as Error).message || "Failed to claim drop.";
       setClaimError(msg);
