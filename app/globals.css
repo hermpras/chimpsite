@@ -192,6 +192,22 @@ button,
   animation: mobileItemCascade 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@keyframes elysiumLaser {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-elysium-laser {
+  animation: elysiumLaser 0.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee {
     animation: none;

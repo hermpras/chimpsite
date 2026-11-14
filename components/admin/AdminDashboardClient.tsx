@@ -2,19 +2,58 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { AdminSidebar, type AdminTab, ADMIN_NAV_ITEMS } from "./AdminSidebar";
 import { AdminOverview } from "./AdminOverview";
-import { AdminEvidenceReview } from "./AdminEvidenceReview";
-import { AdminCampaigns } from "./AdminCampaigns";
-import { AdminWhitelist } from "./AdminWhitelist";
-import { AdminUsersBans } from "./AdminUsersBans";
-import { AdminAbuseFlags } from "./AdminAbuseFlags";
-import { AdminDrops } from "./AdminDrops";
-import { AdminTraits } from "./AdminTraits";
-import { AdminAuditLog } from "./AdminAuditLog";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ElychimpSpinner } from "@/components/ui/ElychimpSpinner";
 import { adminListEvidence } from "@/lib/admin/client";
+
+function AdminTabFallback() {
+  return (
+    <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-[#163B44] bg-[#071F24]/60 p-8 backdrop-blur-md">
+      <ElychimpSpinner size="md" />
+      <span className="mt-3 font-mono text-xs font-bold uppercase tracking-wider text-[#34B7DD]">
+        Loading Section...
+      </span>
+    </div>
+  );
+}
+
+// Code-split heavy sub-panels to dramatically optimize initial admin bundle size
+const AdminEvidenceReview = dynamic(
+  () => import("./AdminEvidenceReview").then((m) => m.AdminEvidenceReview),
+  { loading: AdminTabFallback }
+);
+const AdminCampaigns = dynamic(
+  () => import("./AdminCampaigns").then((m) => m.AdminCampaigns),
+  { loading: AdminTabFallback }
+);
+const AdminWhitelist = dynamic(
+  () => import("./AdminWhitelist").then((m) => m.AdminWhitelist),
+  { loading: AdminTabFallback }
+);
+const AdminUsersBans = dynamic(
+  () => import("./AdminUsersBans").then((m) => m.AdminUsersBans),
+  { loading: AdminTabFallback }
+);
+const AdminAbuseFlags = dynamic(
+  () => import("./AdminAbuseFlags").then((m) => m.AdminAbuseFlags),
+  { loading: AdminTabFallback }
+);
+const AdminDrops = dynamic(
+  () => import("./AdminDrops").then((m) => m.AdminDrops),
+  { loading: AdminTabFallback }
+);
+const AdminTraits = dynamic(
+  () => import("./AdminTraits").then((m) => m.AdminTraits),
+  { loading: AdminTabFallback }
+);
+const AdminAuditLog = dynamic(
+  () => import("./AdminAuditLog").then((m) => m.AdminAuditLog),
+  { loading: AdminTabFallback }
+);
 
 export interface SerializedAdminRole {
   id: string;
