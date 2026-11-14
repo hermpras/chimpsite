@@ -692,7 +692,7 @@ export default function DropsPage() {
                             className="w-full rounded-xl border border-yellow-300/60 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 font-black text-sm uppercase tracking-wider text-black shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:from-amber-300 hover:to-yellow-300 transition-all py-2.5 flex items-center justify-center"
                             onClick={() => void login()}
                           >
-                            <span>Sign In with Ethereum</span>
+                            <span>Sign In</span>
                           </Button>
                         ) : status !== "authenticated" ? (
                           <button

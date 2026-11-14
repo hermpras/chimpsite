@@ -288,7 +288,7 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       expect(mockLogin).toHaveBeenCalledTimes(1);
     });
 
-    it("shows actionable 'Sign In with Ethereum' button when status is wallet-only and calls login on click", async () => {
+    it("shows actionable 'Sign In' button when status is wallet-only and calls login on click", async () => {
       const mockLogin = vi.fn();
       vi.mocked(siweHook.useSiweAuth).mockReturnValue({
         status: "wallet-only",
@@ -306,7 +306,7 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
 
       let siweBtn: HTMLElement | null = null;
       await waitFor(() => {
-        siweBtn = screen.getByRole("button", { name: /Sign In with Ethereum/i });
+        siweBtn = screen.getByRole("button", { name: /Sign In/i });
         expect(siweBtn).toBeInTheDocument();
         expect(siweBtn).not.toBeDisabled();
       });
