@@ -209,7 +209,8 @@ async function signLogin(signer: TestSigner, nonce: string, overrides?: SignOver
   const message = new SiweMessage({
     domain: overrides?.domain ?? DOMAIN,
     address: overrides?.address ?? signer.address,
-    statement: "Sign in to ChimpHood",
+    statement:
+      "Sign in to Elychimp. This is free and does not send a transaction or give any permission.",
     uri: overrides?.uri ?? URI,
     version: "1",
     chainId: overrides?.chainId ?? 1,

@@ -48,7 +48,7 @@ describe("buildSiweMessage", () => {
     expect(parsed.chainId).toBe(1);
     expect(parsed.nonce).toBe("testnonce123");
     expect(parsed.version).toBe("1");
-    expect(parsed.statement).toContain("ChimpHood");
+    expect(parsed.statement).toContain("Elychimp");
     // Expiration mirrors the nonce TTL (10 minutes from issuedAt).
     // Tolerance covers the milliseconds between the two Date constructions.
     const ttlMs =

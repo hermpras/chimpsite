@@ -7,8 +7,9 @@
  */
 import { SiweMessage } from "siwe";
 
-/** Statement embedded in every ChimpHood SIWE message. */
-export const SIWE_STATEMENT = "Sign in to ChimpHood";
+/** Statement embedded in every Elychimp SIWE message. */
+export const SIWE_STATEMENT =
+  "Sign in to Elychimp. This is free and does not send a transaction or give any permission.";
 
 /** Machine-readable client error with a user-facing message. */
 export class SiweClientError extends Error {
