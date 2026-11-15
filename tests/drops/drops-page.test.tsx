@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import React from "react";
 import DropsPage from "@/app/drops/page";
 import * as dropsClient from "@/lib/drops/client";
@@ -178,6 +178,11 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       logout: vi.fn(),
       dismissError: vi.fn(),
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   describe("1. Render & Initialization", () => {
@@ -1149,6 +1154,415 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
         expect(dropsClient.fetchUserDropStatus).toHaveBeenCalledTimes(2);
       });
+    });
+  });
+
+  describe("19. P1.3: Client-Side Countdown Jitter & Standby Recovery", () => {
+    it("delays cycle rollover refresh using rollover jitter delay", async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0.5); // 1000 + 0.5 * 2500 = 2250ms
+
+      const pastPeriodDrop: dropsClient.CurrentDropResponse = {
+        ...mockActiveDrop,
+        claimWindow: {
+          isActive: false,
+          startsAt: pastDate,
+          endsAt: pastDate,
+          timeRemainingMs: 0,
+        },
+        period: {
+          ...mockActiveDrop.period!,
+          endsAt: pastDate,
+        },
+        nextCycle: {
+          startsAt: pastDate,
+          endsAt: futureDate,
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(pastPeriodDrop);
+
+      render(<DropsPage />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // Advance by 1000ms: with old hardcoded delay this would fire. With jitter (2250ms), it must still be pending.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // Advance another 1250ms (total 2250ms): jitter timer expires and triggers refetch
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1250);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
+    });
+
+    it("delays claim-window closure refresh using rollover jitter delay", async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0.4); // 1000 + 0.4 * 2500 = 2000ms
+
+      const closingWindowDrop: dropsClient.CurrentDropResponse = {
+        ...mockActiveDrop,
+        claimWindow: {
+          isActive: true,
+          startsAt: pastDate,
+          endsAt: pastDate,
+          timeRemainingMs: 0,
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(closingWindowDrop);
+
+      render(<DropsPage />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // At 1500ms: still pending
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1500);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // At 2000ms: expires and triggers refetch
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(500);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
+    });
+
+    it("executes manual refresh immediately without waiting for jitter timer", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockActiveDrop);
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+      });
+
+      const refreshBtn = screen.getByTitle("Refresh Drop Status");
+      fireEvent.click(refreshBtn);
+
+      await waitFor(() => {
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("executes error retry button immediately without waiting for jitter timer", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop)
+        .mockRejectedValueOnce(new Error("Network failed"))
+        .mockResolvedValueOnce(mockActiveDrop);
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Try Again/i })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /Try Again/i }));
+
+      await waitFor(() => {
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("executes post-claim refresh immediately without waiting for jitter timer", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockActiveDrop);
+      vi.mocked(dropsClient.fetchUserDropStatus).mockResolvedValue({
+        authenticated: true,
+        userHasClaimed: false,
+        userEligibility: mockActiveDrop.userEligibility ?? null,
+      });
+      vi.mocked(dropsClient.claimDropItem).mockResolvedValue({
+        success: true,
+        inventoryItem: {
+          id: "inv-p1",
+          edition: 1,
+          trait: { name: "Golden Katana" },
+        },
+      });
+
+      render(<DropsPage />);
+
+      let claimBtn: HTMLElement | null = null;
+      await waitFor(() => {
+        claimBtn = screen.getByRole("button", { name: /Claim Trait Now/i });
+        expect(claimBtn).not.toBeDisabled();
+      });
+
+      fireEvent.click(claimBtn!);
+
+      await waitFor(() => {
+        expect(dropsClient.claimDropItem).toHaveBeenCalledTimes(1);
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("preserves exact countdown display at 00:00:00 while jitter timer is pending", async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0.5); // 2250ms
+
+      const rolloverDrop: dropsClient.CurrentDropResponse = {
+        ...mockActiveDrop,
+        claimWindow: {
+          isActive: false,
+          startsAt: pastDate,
+          endsAt: pastDate,
+          timeRemainingMs: 0,
+        },
+        period: {
+          ...mockActiveDrop.period!,
+          endsAt: pastDate,
+        },
+        nextCycle: {
+          startsAt: pastDate,
+          endsAt: futureDate,
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(rolloverDrop);
+
+      render(<DropsPage />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      // Display shows 00:00:00 (metric card and claim button)
+      expect(screen.getAllByText("Opens in 00:00:00").length).toBeGreaterThanOrEqual(1);
+
+      // Advance by 1000ms (timer pending): display must remain untouched!
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+
+      expect(screen.getAllByText("Opens in 00:00:00").length).toBeGreaterThanOrEqual(1);
+
+      vi.useRealTimers();
+    });
+
+    it("schedules a retry when receiving the actual P0.3 standby response", async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0.5); // Standby jitter: 2000 + 0.5 * 2000 = 3000ms
+
+      const standbyResponse: dropsClient.CurrentDropResponse = {
+        active: true,
+        message: "Drop cycle initializing. Please standby.",
+        drop: mockActiveDrop.drop,
+        nextCycle: {
+          startsAt: pastDate,
+          endsAt: futureDate,
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(standbyResponse);
+
+      render(<DropsPage />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // Before jitter expires (2000ms): not yet retried
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // When standby jitter expires (3000ms): retried!
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
+    });
+
+    it("bounds standby retries at MAX_STANDBY_RETRIES and stops polling", async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0); // 2000ms each
+
+      const standbyResponse: dropsClient.CurrentDropResponse = {
+        active: true,
+        message: "Drop cycle initializing. Please standby.",
+        drop: mockActiveDrop.drop,
+        nextCycle: {
+          startsAt: pastDate,
+          endsAt: futureDate,
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(standbyResponse);
+
+      render(<DropsPage />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // Step through 5 retries (5 * 2000ms = 10000ms)
+      for (let i = 1; i <= 5; i++) {
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(2000);
+        });
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1 + i);
+      }
+
+      // 6th interval: should NOT fire because bounded retry limit (5) was reached
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10000);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(6); // 1 initial + 5 retries = 6
+
+      // Confirms exhausted message is displayed
+      expect(
+        screen.getByText(
+          /Drop cycle initialization taking longer than expected. Please click Refresh to try again./i,
+        ),
+      ).toBeInTheDocument();
+
+      vi.useRealTimers();
+    });
+
+    it("cancels standby retries when a valid active period is received", async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0.5); // 3000ms
+
+      const standbyResponse: dropsClient.CurrentDropResponse = {
+        active: true,
+        message: "Drop cycle initializing. Please standby.",
+        drop: mockActiveDrop.drop,
+        nextCycle: {
+          startsAt: pastDate,
+          endsAt: futureDate,
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop)
+        .mockResolvedValueOnce(standbyResponse)
+        .mockResolvedValueOnce(mockActiveDrop); // 2nd fetch succeeds with active period
+
+      render(<DropsPage />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // Advance to trigger retry 1
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+
+      // Advance by another 15000ms: no more retries occur because active period arrived
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15000);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
+    });
+
+    it("cancels pending rollover and standby timers on unmount", async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0.5); // 3000ms
+
+      const standbyResponse: dropsClient.CurrentDropResponse = {
+        active: true,
+        message: "Drop cycle initializing. Please standby.",
+        drop: mockActiveDrop.drop,
+        nextCycle: {
+          startsAt: pastDate,
+          endsAt: futureDate,
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(standbyResponse);
+
+      const { unmount } = render(<DropsPage />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // Unmount while standby timer is pending
+      unmount();
+
+      // Advance timers by 10000ms
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10000);
+      });
+
+      // No new fetch must occur after unmount
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+
+    it("does not schedule duplicate refresh for the same rollover boundary", async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0.5); // 2250ms
+
+      const pastPeriodDrop: dropsClient.CurrentDropResponse = {
+        ...mockActiveDrop,
+        claimWindow: {
+          isActive: false,
+          startsAt: pastDate,
+          endsAt: pastDate,
+          timeRemainingMs: 0,
+        },
+        period: {
+          ...mockActiveDrop.period!,
+          endsAt: pastDate,
+        },
+        nextCycle: {
+          startsAt: pastDate,
+          endsAt: futureDate,
+        },
+      };
+
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(pastPeriodDrop);
+
+      const { rerender } = render(<DropsPage />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+
+      // Trigger a re-render while timer is counting down
+      rerender(<DropsPage />);
+
+      // Advance past the 2250ms jitter delay
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2250);
+      });
+
+      // Exactly 1 refetch must have happened (total 2)
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+
+      // Advance another 5000ms: no duplicate refetch for the same boundary
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+      });
+      expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
     });
   });
 });

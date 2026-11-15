@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { RefreshCw } from "lucide-react";
 import {
@@ -20,6 +20,11 @@ import {
   claimDropItem,
   type CurrentDropResponse,
 } from "@/lib/drops/client";
+import {
+  getRolloverJitterDelay,
+  getStandbyJitterDelay,
+  JITTER_CONFIG,
+} from "@/lib/drops/jitter";
 import {
   fetchUserInventory,
   type InventoryItemData,
@@ -160,6 +165,10 @@ export default function DropsPage() {
   const [lootboxError, setLootboxError] = useState<string | null>(null);
   const [claimedPeriodId, setClaimedPeriodId] = useState<string | null>(null);
 
+  // Standby recovery state (P0.3 Redis distributed lock recovery)
+  const [standbyRetryCount, setStandbyRetryCount] = useState<number>(0);
+  const isStandbyExhausted = standbyRetryCount >= JITTER_CONFIG.MAX_STANDBY_RETRIES;
+
   // X Connection State
   const [isConnectingX, setIsConnectingX] = useState<boolean>(false);
   const [connectXError, setConnectXError] = useState<string | null>(null);
@@ -282,6 +291,9 @@ export default function DropsPage() {
       };
       setDropData(merged);
       setFetchError(null);
+      if (merged.period || !merged.active) {
+        setStandbyRetryCount(0);
+      }
       return merged;
     } catch (err: unknown) {
       console.error("Failed to load drop:", err);
@@ -332,6 +344,9 @@ export default function DropsPage() {
           };
           setDropData(merged);
           setFetchError(null);
+          if (merged.period || !merged.active) {
+            setStandbyRetryCount(0);
+          }
           setIsLoading(false);
         }
       })
@@ -434,22 +449,90 @@ export default function DropsPage() {
       Boolean(claimedPeriodId && claimedPeriodId === dropData?.period?.id) ||
       Boolean(claimMessage && claimedPeriodId === dropData?.period?.id));
 
-  // Auto-refresh when a timer reaches 0 (triggers rollover when next drop starts)
+  // Explicit detection of P0.3 Redis distributed lock standby state using only actual CurrentDropResponse fields
+  const isStandby = Boolean(
+    dropData?.active &&
+      !dropData?.period &&
+      ((dropData?.message &&
+        (dropData.message.toLowerCase().includes("standby") ||
+          dropData.message.toLowerCase().includes("initializing"))) ||
+        Boolean(
+          dropData?.nextCycle?.startsAt &&
+            new Date(dropData.nextCycle.startsAt).getTime() <= currentTime,
+        )),
+  );
+
+  // Standby recovery strategy (P0.3 Redis distributed lock contention)
+  useEffect(() => {
+    if (!isStandby || isStandbyExhausted) return;
+
+    const delay = getStandbyJitterDelay();
+    const timer = setTimeout(() => {
+      setStandbyRetryCount((prev) => prev + 1);
+      void loadDropData();
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [
+    isStandby,
+    isStandbyExhausted,
+    standbyRetryCount,
+    loadDropData,
+  ]);
+
+  // Explicit boolean trigger flags: using booleans prevents 1-second clock ticks
+  // of an unrelated timer from cancelling pending jitter timers.
+  const isClaimWindowExpired = Boolean(
+    isWindowActive && claimRemainingMs === 0 && claimWindowEndsMs > 0,
+  );
+  const isCycleRolloverDue = Boolean(
+    !isWindowActive && nextDropRemainingMs === 0 && periodEndsMs > 0,
+  );
+
+  // Rollover tracking refs to prevent duplicate scheduling for the same cycle/window boundary
+  const scheduledRolloverRef = useRef<number | null>(null);
+  const scheduledClaimCloseRef = useRef<number | null>(null);
+
+  // Auto-refresh when a timer reaches 0 (triggers rollover when next drop starts or claim window closes)
   useEffect(() => {
     if (!dropData?.active) return;
+    if (isStandby) return; // Handled by Standby Recovery Effect above
 
-    if (isWindowActive && claimRemainingMs === 0 && claimWindowEndsMs > 0) {
+    if (isClaimWindowExpired) {
+      if (scheduledClaimCloseRef.current === claimWindowEndsMs) return;
+      scheduledClaimCloseRef.current = claimWindowEndsMs;
+
+      const delay = getRolloverJitterDelay();
       const timer = setTimeout(() => {
         void loadDropData();
-      }, 1000);
+      }, delay);
       return () => clearTimeout(timer);
-    } else if (!isWindowActive && nextDropRemainingMs === 0 && periodEndsMs > 0) {
+    } else if (isCycleRolloverDue) {
+      if (scheduledRolloverRef.current === periodEndsMs) return;
+      scheduledRolloverRef.current = periodEndsMs;
+
+      const delay = getRolloverJitterDelay();
       const timer = setTimeout(() => {
         void loadDropData();
-      }, 1000);
+      }, delay);
       return () => clearTimeout(timer);
+    } else {
+      if (!isClaimWindowExpired) {
+        scheduledClaimCloseRef.current = null;
+      }
+      if (!isCycleRolloverDue) {
+        scheduledRolloverRef.current = null;
+      }
     }
-  }, [claimRemainingMs, nextDropRemainingMs, isWindowActive, dropData?.active, claimWindowEndsMs, periodEndsMs, loadDropData]);
+  }, [
+    isClaimWindowExpired,
+    isCycleRolloverDue,
+    dropData?.active,
+    isStandby,
+    claimWindowEndsMs,
+    periodEndsMs,
+    loadDropData,
+  ]);
 
   async function handleClaim() {
     if (!dropData?.drop || !dropData?.period) return;
@@ -1348,7 +1431,11 @@ export default function DropsPage() {
             ) : (
               <div className="rounded-2xl border border-[#163B44] bg-white/[0.02] p-8 text-center backdrop-blur-sm">
                 <p className="text-sm text-gray-400 uppercase tracking-wider">
-                  No active drop event currently in progress. Cycles renew on UTC schedule.
+                  {isStandby
+                    ? isStandbyExhausted
+                      ? "Drop cycle initialization taking longer than expected. Please click Refresh to try again."
+                      : dropData?.message || "Drop cycle initializing. Please standby."
+                    : "No active drop event currently in progress. Cycles renew on UTC schedule."}
                 </p>
               </div>
             )}
