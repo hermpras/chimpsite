@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET } from "@/app/api/drops/current/route";
+import {
+  __clearTestDistributedLocks,
+  __setTestRedis,
+} from "@/lib/redis/lock";
 
 const {
   mockDropFindFirst,
@@ -7,13 +11,23 @@ const {
   mockDropPeriodFindFirst,
   mockClaimFindFirst,
   mockClaimFindMany,
+  mockEnsureActiveCyclePeriod,
 } = vi.hoisted(() => ({
   mockDropFindFirst: vi.fn(),
   mockDropUpdate: vi.fn(),
   mockDropPeriodFindFirst: vi.fn(),
   mockClaimFindFirst: vi.fn(),
   mockClaimFindMany: vi.fn(),
+  mockEnsureActiveCyclePeriod: vi.fn(),
 }));
+
+vi.mock("@/server/drops/auto-replenish", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/server/drops/auto-replenish")>();
+  return {
+    ...actual,
+    ensureActiveCyclePeriod: mockEnsureActiveCyclePeriod,
+  };
+});
 
 vi.mock("@/server/db", () => ({
   prisma: {
@@ -39,6 +53,8 @@ vi.mock("@/server/db", () => ({
 describe("GET /api/drops/current (Public Drop Endpoint)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __clearTestDistributedLocks();
+    mockEnsureActiveCyclePeriod.mockRejectedValue(new Error("Auto-replenish notice in GET /api/drops/current"));
     vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
@@ -759,6 +775,337 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
       const cycleStart = new Date(data.nextCycle.startsAt).getTime();
       const cycleEnd = new Date(data.nextCycle.endsAt).getTime();
       expect(cycleEnd - cycleStart).toBe(2 * 60 * 60 * 1000);
+    });
+  });
+
+  describe("P0.3 Redis Distributed Lock Auto-Replenish", () => {
+    const activeDrop = {
+      id: "drop-p03",
+      slug: "genesis-drop",
+      title: "ChimpHood Genesis Drop",
+      description: "Genesis public trait drop",
+      status: "ACTIVE",
+      startsAt: new Date("2026-11-14T00:00:00.000Z"),
+      endsAt: new Date("2099-12-31T23:59:59.999Z"),
+      cycleDurationHours: 2,
+    };
+
+    const mockPool = [
+      {
+        id: "pi-bg",
+        traitId: "trait-bg",
+        allocatedStock: 85,
+        claimedStock: 0,
+        remainingStock: 85,
+        weight: 85,
+        trait: { id: "trait-bg", name: "Cyber Jungle", category: "BG", rarity: "COMMON" },
+      },
+    ];
+
+    const replenishedPeriod = {
+      id: "period-replenished",
+      dropId: "drop-p03",
+      periodIndex: 13,
+      startsAt: new Date(Date.now() - 5 * 60 * 1000),
+      endsAt: new Date(Date.now() + 115 * 60 * 1000),
+      status: "ACTIVE",
+      isStockLocked: true,
+      poolItems: mockPool,
+    };
+
+    it("does NOT request Redis distributed lock if activePeriod already exists with pool stock", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+      mockDropPeriodFindFirst.mockResolvedValue(replenishedPeriod);
+
+      const mockSet = vi.fn();
+      const mockEval = vi.fn();
+      __setTestRedis({ set: mockSet, eval: mockEval } as any);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.active).toBe(true);
+      expect(data.period.id).toBe("period-replenished");
+      // Redis must not be touched
+      expect(mockSet).not.toHaveBeenCalled();
+      expect(mockEval).not.toHaveBeenCalled();
+    });
+
+    it("acquires distributed lock as Leader, double-checks DB, calls ensureActiveCyclePeriod, and safely releases lock", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+      // Initial query finds no active period, double-check query also finds no active period
+      mockDropPeriodFindFirst.mockResolvedValue(null);
+
+      const mockSet = vi.fn().mockResolvedValue("OK");
+      const mockEval = vi.fn().mockResolvedValue(1);
+      __setTestRedis({ set: mockSet, eval: mockEval } as any);
+
+      mockEnsureActiveCyclePeriod.mockResolvedValue(replenishedPeriod);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.stringContaining("lock:drop-replenish:drop-p03:"),
+        expect.any(String),
+        { nx: true, ex: 15 },
+      );
+      expect(mockEnsureActiveCyclePeriod).toHaveBeenCalledTimes(1);
+      expect(mockEval).toHaveBeenCalledTimes(1);
+      expect(data.active).toBe(true);
+      expect(data.period.id).toBe("period-replenished");
+    });
+
+    it("Leader skips ensureActiveCyclePeriod if double-check query discovers period was already created", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+
+      let findCount = 0;
+      mockDropPeriodFindFirst.mockImplementation(async (args: any) => {
+        findCount++;
+        // 1st call (pre-check): null. 2nd call (leader double-check): found!
+        if (findCount === 2) {
+          return replenishedPeriod;
+        }
+        return null;
+      });
+
+      const mockSet = vi.fn().mockResolvedValue("OK");
+      const mockEval = vi.fn().mockResolvedValue(1);
+      __setTestRedis({ set: mockSet, eval: mockEval } as any);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      // Double-check avoided redundant DB replenishment!
+      expect(mockEnsureActiveCyclePeriod).not.toHaveBeenCalled();
+      expect(mockEval).toHaveBeenCalledTimes(1); // Lock still safely released in finally
+      expect(data.active).toBe(true);
+      expect(data.period.id).toBe("period-replenished");
+    });
+
+    it("Follower does NOT execute ensureActiveCyclePeriod when lock is held by another instance (CONTENTION)", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+
+      let callCount = 0;
+      mockDropPeriodFindFirst.mockImplementation(async () => {
+        callCount++;
+        // 1st call: null. 2nd call (after follower 300ms wait): period is now ready!
+        if (callCount > 1) {
+          return replenishedPeriod;
+        }
+        return null;
+      });
+
+      // Contention: another worker has the lock
+      const mockSet = vi.fn().mockResolvedValue(null);
+      const mockEval = vi.fn();
+      __setTestRedis({ set: mockSet, eval: mockEval } as any);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      // Follower must NEVER execute ensureActiveCyclePeriod
+      expect(mockEnsureActiveCyclePeriod).not.toHaveBeenCalled();
+      expect(mockEval).not.toHaveBeenCalled(); // Follower has no lock to release
+      expect(data.active).toBe(true);
+      expect(data.period.id).toBe("period-replenished");
+    });
+
+    it("Follower returns standby response when period is still not ready after bounded wait", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+      mockDropPeriodFindFirst.mockResolvedValue(null);
+
+      // Lock held by leader
+      const mockSet = vi.fn().mockResolvedValue(null);
+      __setTestRedis({ set: mockSet, eval: vi.fn() } as any);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(mockEnsureActiveCyclePeriod).not.toHaveBeenCalled();
+      expect(data.active).toBe(true);
+      expect(data.periodActive).toBe(false);
+      expect(data.message).toBe("Drop cycle initializing. Please standby.");
+      expect(data.period).toBeUndefined();
+      expect(data.drop).toEqual(
+        expect.objectContaining({
+          id: "drop-p03",
+          status: "ACTIVE",
+          cycleDurationHours: 2,
+        }),
+      );
+    });
+
+    it("Standby response strictly sets nextCycle.startsAt to current cycle start, NOT two hours in the future", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+      mockDropPeriodFindFirst.mockResolvedValue(null);
+
+      const mockSet = vi.fn().mockResolvedValue(null);
+      __setTestRedis({ set: mockSet, eval: vi.fn() } as any);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      const data = await res.json();
+
+      expect(data.nextCycle).toBeDefined();
+      expect(data.nextCycle.startsAt).toBeDefined();
+      expect(data.nextCycle.endsAt).toBeDefined();
+
+      const startMs = new Date(data.nextCycle.startsAt).getTime();
+      const endMs = new Date(data.nextCycle.endsAt).getTime();
+      const nowMs = Date.now();
+
+      // startsAt must be <= nowMs (the beginning of the active 2-hour window currently being initialized)
+      expect(startMs).toBeLessThanOrEqual(nowMs);
+      // endsAt must be exactly 2 hours after startsAt
+      expect(endMs - startMs).toBe(2 * 60 * 60 * 1000);
+    });
+
+    it("falls back to PostgreSQL auto-replenishment when Redis is offline (REDIS_FAILURE)", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+      mockDropPeriodFindFirst.mockResolvedValue(null);
+
+      const mockSet = vi.fn().mockRejectedValue(new Error("Upstash REST Connection Refused"));
+      __setTestRedis({ set: mockSet, eval: vi.fn() } as any);
+
+      mockEnsureActiveCyclePeriod.mockResolvedValue(replenishedPeriod);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      // Fallback: ensureActiveCyclePeriod was executed under PostgreSQL advisory lock
+      expect(mockEnsureActiveCyclePeriod).toHaveBeenCalledTimes(1);
+      expect(data.active).toBe(true);
+      expect(data.period.id).toBe("period-replenished");
+    });
+
+    it("falls back to PostgreSQL auto-replenishment when Redis operations time out (>2000ms)", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+      mockDropPeriodFindFirst.mockResolvedValue(null);
+
+      const hangingSet = vi.fn().mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 2500)),
+      );
+      __setTestRedis({ set: hangingSet, eval: vi.fn() } as any);
+
+      mockEnsureActiveCyclePeriod.mockResolvedValue(replenishedPeriod);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(mockEnsureActiveCyclePeriod).toHaveBeenCalledTimes(1);
+      expect(data.active).toBe(true);
+      expect(data.period.id).toBe("period-replenished");
+    });
+
+    it("safely releases lock in finally block even if leader process throws during replenishment", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+      mockDropPeriodFindFirst.mockResolvedValue(null);
+
+      const mockSet = vi.fn().mockResolvedValue("OK");
+      const mockEval = vi.fn().mockResolvedValue(1);
+      __setTestRedis({ set: mockSet, eval: mockEval } as any);
+
+      mockEnsureActiveCyclePeriod.mockRejectedValue(new Error("Simulated database timeout"));
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+
+      // Lock release must be executed in finally block with the acquired token
+      expect(mockEval).toHaveBeenCalledTimes(1);
+      expect(mockEval).toHaveBeenCalledWith(
+        expect.stringContaining("redis.call(\"get\", KEYS[1]) == ARGV[1]"),
+        [expect.stringContaining("lock:drop-replenish:drop-p03:")],
+        [expect.any(String)],
+      );
+    });
+
+    it("simulates 5 concurrent requests at rollover: exactly 1 Leader replenishes, 4 Followers wait and succeed without duplicate runs", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+
+      let isReplenished = false;
+      let lockAcquired = false;
+
+      const mockRedis = {
+        set: vi.fn().mockImplementation(async () => {
+          if (!lockAcquired) {
+            lockAcquired = true;
+            return "OK"; // First request wins lock
+          }
+          return null; // Subsequent concurrent requests encounter contention
+        }),
+        eval: vi.fn().mockImplementation(async () => {
+          lockAcquired = false;
+          return 1;
+        }),
+      };
+      __setTestRedis(mockRedis as any);
+
+      mockDropPeriodFindFirst.mockImplementation(async () => {
+        return isReplenished ? replenishedPeriod : null;
+      });
+
+      mockEnsureActiveCyclePeriod.mockImplementation(async () => {
+        isReplenished = true;
+        return replenishedPeriod;
+      });
+
+      // Dispatch 5 concurrent requests simultaneously
+      const requests = Array.from({ length: 5 }, () =>
+        GET(new Request("http://localhost:3000/api/drops/current", { method: "GET" })),
+      );
+
+      const responses = await Promise.all(requests);
+      const results = await Promise.all(responses.map((r) => r.json()));
+
+      // All 5 requests succeed with 200 OK
+      for (const res of responses) {
+        expect(res.status).toBe(200);
+      }
+
+      // All 5 requests received the exact same active period
+      for (const result of results) {
+        expect(result.active).toBe(true);
+        expect(result.period.id).toBe("period-replenished");
+      }
+
+      // Crucial invariant: ensureActiveCyclePeriod was executed EXACTLY ONCE across all 5 concurrent instances
+      expect(mockEnsureActiveCyclePeriod).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves exact normal response structure with all public fields", async () => {
+      mockDropFindFirst.mockResolvedValue(activeDrop);
+      mockDropPeriodFindFirst.mockResolvedValue(replenishedPeriod);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      const data = await res.json();
+
+      expect(data).toHaveProperty("active", true);
+      expect(data).toHaveProperty("userHasClaimed");
+      expect(data).toHaveProperty("drop");
+      expect(data).toHaveProperty("period");
+      expect(data).toHaveProperty("claimWindow");
+      expect(data).toHaveProperty("stock");
+      expect(data.stock).toHaveProperty("totalAllocated");
+      expect(data.stock).toHaveProperty("totalRemaining");
+      expect(data.stock).toHaveProperty("poolItems");
+      expect(data.stock.poolItems[0]).toHaveProperty("probabilityPercent");
     });
   });
 });

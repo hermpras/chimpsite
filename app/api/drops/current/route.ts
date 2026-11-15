@@ -10,6 +10,11 @@ import {
   type UserDropEligibilityResult,
 } from "@/server/drops/claim";
 import { ensureActiveCyclePeriod } from "@/server/drops/auto-replenish";
+import {
+  acquireDistributedLock,
+  releaseDistributedLock,
+  getDropReplenishLockKey,
+} from "@/lib/redis/lock";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -92,22 +97,113 @@ export async function GET(request: Request): Promise<Response> {
     );
   }
 
+  const cycleDurationHours = (drop as any).cycleDurationHours ?? 2;
+  const cycleDurationMs = cycleDurationHours * 60 * 60 * 1000;
+  const calculatedCycle = getUtcCycleForTime(now, cycleDurationHours, drop.startsAt);
+
   // If no active period exists for this 2-hour cycle, or if existing period has no pool items,
-  // auto-replenish from the default 250-stock template (unless explicitly marked PENDING_CONFIG)
+  // auto-replenish protected by Redis distributed lock (Task P0.3)
   if (
     !activePeriod ||
     (activePeriod.status !== "PENDING_CONFIG" &&
       (!activePeriod.poolItems || activePeriod.poolItems.length === 0))
   ) {
-    try {
-      activePeriod = await ensureActiveCyclePeriod(prisma, drop, now);
-    } catch (err) {
-      console.warn("Auto-replenish notice in GET /api/drops/current:", err);
+    const lockKey = getDropReplenishLockKey(drop.id, calculatedCycle.startsAt.getTime());
+    const lockResult = await acquireDistributedLock(lockKey, 15);
+
+    if (lockResult.status === "ACQUIRED") {
+      try {
+        // Double-check PostgreSQL to verify if another instance completed replenishment
+        const doubleCheckPeriod = prisma.dropPeriod?.findFirst
+          ? await prisma.dropPeriod.findFirst({
+              where: {
+                dropId: drop.id,
+                startsAt: { lte: now },
+                endsAt: { gte: now },
+              },
+              orderBy: { startsAt: "desc" },
+              include: {
+                poolItems: {
+                  include: { trait: true },
+                },
+              },
+            })
+          : null;
+
+        if (
+          doubleCheckPeriod &&
+          doubleCheckPeriod.status === "ACTIVE" &&
+          doubleCheckPeriod.poolItems &&
+          doubleCheckPeriod.poolItems.length > 0
+        ) {
+          activePeriod = doubleCheckPeriod;
+        } else {
+          activePeriod = await ensureActiveCyclePeriod(prisma, drop, now);
+        }
+      } catch (err) {
+        console.warn("Auto-replenish notice in GET /api/drops/current (leader):", err);
+      } finally {
+        await releaseDistributedLock(lockKey, lockResult.token);
+      }
+    } else if (lockResult.status === "CONTENTION") {
+      // Follower: another instance is currently running replenishment.
+      // Wait up to 300ms, then re-check PostgreSQL for the newly committed period.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const followerCheckPeriod = prisma.dropPeriod?.findFirst
+        ? await prisma.dropPeriod.findFirst({
+            where: {
+              dropId: drop.id,
+              startsAt: { lte: now },
+              endsAt: { gte: now },
+            },
+            orderBy: { startsAt: "desc" },
+            include: {
+              poolItems: {
+                include: { trait: true },
+              },
+            },
+          })
+        : null;
+
+      if (
+        followerCheckPeriod &&
+        followerCheckPeriod.status === "ACTIVE" &&
+        followerCheckPeriod.poolItems &&
+        followerCheckPeriod.poolItems.length > 0
+      ) {
+        activePeriod = followerCheckPeriod;
+      } else {
+        // Leader hasn't finished yet: return standby response with startsAt = calculatedCycle.startsAt
+        // so frontend timer triggers auto-refresh after 1s rather than counting down 2 hours
+        return Response.json({
+          active: true,
+          periodActive: false,
+          message: "Drop cycle initializing. Please standby.",
+          drop: {
+            id: drop.id,
+            slug: drop.slug,
+            title: drop.title,
+            description: drop.description,
+            status: drop.status,
+            cycleDurationHours,
+          },
+          nextCycle: {
+            startsAt: calculatedCycle.startsAt.toISOString(),
+            endsAt: calculatedCycle.endsAt.toISOString(),
+          },
+        });
+      }
+    } else {
+      // REDIS_FAILURE (timeout, network outage, auth error):
+      // Fallback directly to PostgreSQL existing path; PostgreSQL advisory transaction lock protects DB integrity
+      try {
+        activePeriod = await ensureActiveCyclePeriod(prisma, drop, now);
+      } catch (err) {
+        console.warn("Auto-replenish notice in GET /api/drops/current (fallback):", err);
+      }
     }
   }
-
-  const cycleDurationHours = (drop as any).cycleDurationHours ?? 2;
-  const cycleDurationMs = cycleDurationHours * 60 * 60 * 1000;
 
   // Query next chronological period strictly starting at or after the active period ends,
   // or starting after current time if no active period exists. Exclude CANCELLED periods.
@@ -149,7 +245,6 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   if (!activePeriod) {
-    const calculatedCycle = getUtcCycleForTime(now, cycleDurationHours, drop.startsAt);
     const nextStartsAt = nextPeriod
       ? new Date(nextPeriod.startsAt)
       : now < calculatedCycle.startsAt
