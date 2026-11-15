@@ -84,6 +84,39 @@ export async function fetchCurrentDrop(): Promise<CurrentDropResponse> {
   }
 }
 
+export interface UserDropEligibilityData {
+  isEligible: boolean;
+  hasWallet: boolean;
+  hasLinkedX: boolean;
+  xUsername: string | null;
+  totalMandatoryTasksCount: number;
+  completedMandatoryTasksCount: number;
+  areMandatoryTasksCompleted: boolean;
+  isBanned?: boolean;
+  hasAllocatedSlot?: boolean;
+  missingRequirements: string[];
+}
+
+export interface UserDropStatusResponse {
+  authenticated: boolean;
+  userHasClaimed?: boolean;
+  userEligibility?: UserDropEligibilityData | null;
+  error?: string;
+  message?: string;
+}
+
+export async function fetchUserDropStatus(): Promise<UserDropStatusResponse> {
+  try {
+    const res = await fetch("/api/drops/user-status");
+    if (!res.ok) {
+      return { authenticated: false };
+    }
+    return res.json();
+  } catch {
+    return { authenticated: false };
+  }
+}
+
 export async function claimDropItem(dropId: string, periodId: string) {
   const res = await fetch("/api/drops/claim", {
     method: "POST",

@@ -8,6 +8,7 @@ import * as siweHook from "@/hooks/useSiweAuth";
 
 vi.mock("@/lib/drops/client", () => ({
   fetchCurrentDrop: vi.fn(),
+  fetchUserDropStatus: vi.fn(),
   claimDropItem: vi.fn(),
 }));
 
@@ -160,6 +161,9 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockActiveDrop);
+    vi.mocked(dropsClient.fetchUserDropStatus).mockResolvedValue({
+      authenticated: true,
+    });
     vi.mocked(inventoryClient.fetchUserInventory).mockResolvedValue({
       items: [],
     });
@@ -1062,6 +1066,89 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       expect(screen.getByTestId("recent-pull-pull-2")).toHaveTextContent(
         "Cyber Helmet (#14)",
       );
+    });
+  });
+
+  describe("18. P1.1: Public/Private Data Separation & Client Merging", () => {
+    it("fetches public data and private status concurrently when authenticated", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockActiveDrop);
+      vi.mocked(dropsClient.fetchUserDropStatus).mockResolvedValue({
+        authenticated: true,
+        userHasClaimed: false,
+        userEligibility: {
+          isEligible: true,
+          hasWallet: true,
+          hasLinkedX: true,
+          xUsername: "p1_1_user",
+          totalMandatoryTasksCount: 3,
+          completedMandatoryTasksCount: 3,
+          areMandatoryTasksCompleted: true,
+          missingRequirements: [],
+        },
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+        expect(dropsClient.fetchUserDropStatus).toHaveBeenCalledTimes(1);
+        expect(screen.getByRole("button", { name: /Claim Trait Now/i })).toBeInTheDocument();
+      });
+    });
+
+    it("does NOT call fetchUserDropStatus when unauthenticated", async () => {
+      vi.mocked(siweHook.useSiweAuth).mockReturnValue({
+        status: "signed-out",
+        sessionAddress: null,
+        walletAddress: null,
+        userId: null,
+        error: null,
+        busyMessage: null,
+        login: vi.fn(),
+        logout: vi.fn(),
+        dismissError: vi.fn(),
+      });
+
+      render(<DropsPage />);
+
+      await waitFor(() => {
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(1);
+        expect(dropsClient.fetchUserDropStatus).not.toHaveBeenCalled();
+        expect(screen.getByRole("button", { name: /Connect Wallet/i })).toBeInTheDocument();
+      });
+    });
+
+    it("re-fetches both public drop and private user status after a successful claim", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockActiveDrop);
+      vi.mocked(dropsClient.fetchUserDropStatus).mockResolvedValue({
+        authenticated: true,
+        userHasClaimed: false,
+        userEligibility: mockActiveDrop.userEligibility ?? null,
+      });
+      vi.mocked(dropsClient.claimDropItem).mockResolvedValue({
+        success: true,
+        inventoryItem: {
+          id: "inv-p1",
+          edition: 1,
+          trait: { name: "Golden Katana" },
+        },
+      });
+
+      render(<DropsPage />);
+
+      let claimBtn: HTMLElement | null = null;
+      await waitFor(() => {
+        claimBtn = screen.getByRole("button", { name: /Claim Trait Now/i });
+        expect(claimBtn).not.toBeDisabled();
+      });
+
+      fireEvent.click(claimBtn!);
+
+      await waitFor(() => {
+        expect(dropsClient.claimDropItem).toHaveBeenCalledWith("drop-test-1", "period-test-1");
+        expect(dropsClient.fetchCurrentDrop).toHaveBeenCalledTimes(2);
+        expect(dropsClient.fetchUserDropStatus).toHaveBeenCalledTimes(2);
+      });
     });
   });
 });

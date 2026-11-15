@@ -1,14 +1,9 @@
 import { prisma } from "@/server/db";
-import { authenticateRequest } from "@/server/auth/session";
 import {
   getUtcCycleForTime,
   isWithinClaimWindow,
 } from "@/server/drops/schedule";
-import {
-  calculateTransparentProbabilities,
-  checkUserDropEligibility,
-  type UserDropEligibilityResult,
-} from "@/server/drops/claim";
+import { calculateTransparentProbabilities } from "@/server/drops/claim";
 import { ensureActiveCyclePeriod } from "@/server/drops/auto-replenish";
 import {
   acquireDistributedLock,
@@ -17,7 +12,10 @@ import {
 } from "@/lib/redis/lock";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+
+const PUBLIC_CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=5, stale-while-revalidate=10",
+};
 
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
@@ -53,24 +51,27 @@ export async function GET(request: Request): Promise<Response> {
     });
 
     const defaultCycle = getUtcCycleForTime(now);
-    return Response.json({
-      active: false,
-      message:
-        nonActiveDrop?.status === "PAUSED"
-          ? "Drop event is currently paused by administrator."
-          : nonActiveDrop?.status === "SCHEDULED"
-            ? "Drop event is scheduled."
-            : "No drop event is currently active.",
-      drop: nonActiveDrop
-        ? {
-            id: nonActiveDrop.id,
-            slug: nonActiveDrop.slug,
-            title: nonActiveDrop.title,
-            status: nonActiveDrop.status,
-          }
-        : undefined,
-      nextCycle: defaultCycle,
-    });
+    return Response.json(
+      {
+        active: false,
+        message:
+          nonActiveDrop?.status === "PAUSED"
+            ? "Drop event is currently paused by administrator."
+            : nonActiveDrop?.status === "SCHEDULED"
+              ? "Drop event is scheduled."
+              : "No drop event is currently active.",
+        drop: nonActiveDrop
+          ? {
+              id: nonActiveDrop.id,
+              slug: nonActiveDrop.slug,
+              title: nonActiveDrop.title,
+              status: nonActiveDrop.status,
+            }
+          : undefined,
+        nextCycle: defaultCycle,
+      },
+      { headers: PUBLIC_CACHE_HEADERS },
+    );
   }
 
   // Find active period scoped strictly to current time window (startsAt <= now <= endsAt)
@@ -176,23 +177,26 @@ export async function GET(request: Request): Promise<Response> {
       } else {
         // Leader hasn't finished yet: return standby response with startsAt = calculatedCycle.startsAt
         // so frontend timer triggers auto-refresh after 1s rather than counting down 2 hours
-        return Response.json({
-          active: true,
-          periodActive: false,
-          message: "Drop cycle initializing. Please standby.",
-          drop: {
-            id: drop.id,
-            slug: drop.slug,
-            title: drop.title,
-            description: drop.description,
-            status: drop.status,
-            cycleDurationHours,
+        return Response.json(
+          {
+            active: true,
+            periodActive: false,
+            message: "Drop cycle initializing. Please standby.",
+            drop: {
+              id: drop.id,
+              slug: drop.slug,
+              title: drop.title,
+              description: drop.description,
+              status: drop.status,
+              cycleDurationHours,
+            },
+            nextCycle: {
+              startsAt: calculatedCycle.startsAt.toISOString(),
+              endsAt: calculatedCycle.endsAt.toISOString(),
+            },
           },
-          nextCycle: {
-            startsAt: calculatedCycle.startsAt.toISOString(),
-            endsAt: calculatedCycle.endsAt.toISOString(),
-          },
-        });
+          { headers: { "Cache-Control": "no-store, max-age=0" } },
+        );
       }
     } else {
       // REDIS_FAILURE (timeout, network outage, auth error):
@@ -254,34 +258,37 @@ export async function GET(request: Request): Promise<Response> {
       ? new Date(nextPeriod.endsAt)
       : new Date(nextStartsAt.getTime() + cycleDurationMs);
 
-    return Response.json({
-      active: true,
-      drop: {
-        id: drop.id,
-        slug: drop.slug,
-        title: drop.title,
-        description: drop.description,
-        status: drop.status,
-        cycleDurationHours,
+    return Response.json(
+      {
+        active: true,
+        drop: {
+          id: drop.id,
+          slug: drop.slug,
+          title: drop.title,
+          description: drop.description,
+          status: drop.status,
+          cycleDurationHours,
+        },
+        periodActive: false,
+        message: "Drop is active, but current period is between cycles.",
+        nextCycle: {
+          startsAt: nextStartsAt.toISOString(),
+          endsAt: nextEndsAt.toISOString(),
+        },
+        ...(nextPeriod
+          ? {
+              nextPeriod: {
+                id: nextPeriod.id,
+                periodIndex: nextPeriod.periodIndex,
+                startsAt: new Date(nextPeriod.startsAt).toISOString(),
+                endsAt: new Date(nextPeriod.endsAt).toISOString(),
+                status: nextPeriod.status,
+              },
+            }
+          : {}),
       },
-      periodActive: false,
-      message: "Drop is active, but current period is between cycles.",
-      nextCycle: {
-        startsAt: nextStartsAt.toISOString(),
-        endsAt: nextEndsAt.toISOString(),
-      },
-      ...(nextPeriod
-        ? {
-            nextPeriod: {
-              id: nextPeriod.id,
-              periodIndex: nextPeriod.periodIndex,
-              startsAt: new Date(nextPeriod.startsAt).toISOString(),
-              endsAt: new Date(nextPeriod.endsAt).toISOString(),
-              status: nextPeriod.status,
-            },
-          }
-        : {}),
-    });
+      { headers: PUBLIC_CACHE_HEADERS },
+    );
   }
 
   const claimWindowActive =
@@ -298,27 +305,6 @@ export async function GET(request: Request): Promise<Response> {
     (acc, item) => acc + item.allocatedStock,
     0,
   );
-
-  let userHasClaimed = false;
-  let userEligibility: UserDropEligibilityResult | null = null;
-  try {
-    const session = await authenticateRequest(prisma);
-    if (session) {
-      userEligibility = await checkUserDropEligibility(prisma, session.userId, now);
-      if (activePeriod && prisma.claim?.findFirst) {
-        const existingClaim = await prisma.claim.findFirst({
-          where: {
-            userId: session.userId,
-            periodId: activePeriod.id,
-          },
-          select: { id: true },
-        });
-        userHasClaimed = Boolean(existingClaim);
-      }
-    }
-  } catch {
-    // Non-blocking optional check
-  }
 
   let recentPulls: Array<{
     id: string;
@@ -389,53 +375,54 @@ export async function GET(request: Request): Promise<Response> {
     ? new Date(nextPeriod.endsAt)
     : new Date(activePeriodEndsAt!.getTime() + cycleDurationMs);
 
-  return Response.json({
-    active: true,
-    userHasClaimed,
-    userEligibility: userEligibility ?? undefined,
-    ...(recentPulls.length > 0 ? { recentPulls } : {}),
-    drop: {
-      id: drop.id,
-      slug: drop.slug,
-      title: drop.title,
-      description: drop.description,
-      status: drop.status,
-      cycleDurationHours,
+  return Response.json(
+    {
+      active: true,
+      ...(recentPulls.length > 0 ? { recentPulls } : {}),
+      drop: {
+        id: drop.id,
+        slug: drop.slug,
+        title: drop.title,
+        description: drop.description,
+        status: drop.status,
+        cycleDurationHours,
+      },
+      period: {
+        id: activePeriod.id,
+        periodIndex: activePeriod.periodIndex,
+        startsAt: activePeriod.startsAt,
+        endsAt: activePeriod.endsAt,
+        status: activePeriod.status,
+        isStockLocked: activePeriod.isStockLocked,
+      },
+      claimWindow: {
+        isActive: claimWindowActive,
+        startsAt: activePeriod.startsAt,
+        endsAt: claimWindowEndsAt,
+        timeRemainingMs: timeRemainingWindowMs,
+      },
+      nextCycle: {
+        startsAt: nextCycleStartsAt.toISOString(),
+        endsAt: nextCycleEndsAt.toISOString(),
+      },
+      ...(nextPeriod
+        ? {
+            nextPeriod: {
+              id: nextPeriod.id,
+              periodIndex: nextPeriod.periodIndex,
+              startsAt: new Date(nextPeriod.startsAt).toISOString(),
+              endsAt: new Date(nextPeriod.endsAt).toISOString(),
+              status: nextPeriod.status,
+            },
+          }
+        : {}),
+      stock: {
+        totalAllocated: totalAllocatedStock,
+        totalRemaining: totalRemainingStock,
+        isExhausted: totalRemainingStock === 0,
+        poolItems: probabilities,
+      },
     },
-    period: {
-      id: activePeriod.id,
-      periodIndex: activePeriod.periodIndex,
-      startsAt: activePeriod.startsAt,
-      endsAt: activePeriod.endsAt,
-      status: activePeriod.status,
-      isStockLocked: activePeriod.isStockLocked,
-    },
-    claimWindow: {
-      isActive: claimWindowActive,
-      startsAt: activePeriod.startsAt,
-      endsAt: claimWindowEndsAt,
-      timeRemainingMs: timeRemainingWindowMs,
-    },
-    nextCycle: {
-      startsAt: nextCycleStartsAt.toISOString(),
-      endsAt: nextCycleEndsAt.toISOString(),
-    },
-    ...(nextPeriod
-      ? {
-          nextPeriod: {
-            id: nextPeriod.id,
-            periodIndex: nextPeriod.periodIndex,
-            startsAt: new Date(nextPeriod.startsAt).toISOString(),
-            endsAt: new Date(nextPeriod.endsAt).toISOString(),
-            status: nextPeriod.status,
-          },
-        }
-      : {}),
-    stock: {
-      totalAllocated: totalAllocatedStock,
-      totalRemaining: totalRemainingStock,
-      isExhausted: totalRemainingStock === 0,
-      poolItems: probabilities,
-    },
-  });
+    { headers: PUBLIC_CACHE_HEADERS },
+  );
 }

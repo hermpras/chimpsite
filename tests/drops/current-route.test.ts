@@ -67,6 +67,7 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
 
     const res = await GET(req);
     expect(res.status).toBe(200);
+    expect(res.headers.get("Cache-Control")).toBe("public, s-maxage=5, stale-while-revalidate=10");
     const data = await res.json();
     expect(data.active).toBe(false);
     expect(data.message).toBe("No drop event is currently active.");
@@ -1088,7 +1089,7 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
       expect(mockEnsureActiveCyclePeriod).toHaveBeenCalledTimes(1);
     });
 
-    it("preserves exact normal response structure with all public fields", async () => {
+    it("preserves exact normal response structure with all public fields and edge cache headers", async () => {
       mockDropFindFirst.mockResolvedValue(activeDrop);
       mockDropPeriodFindFirst.mockResolvedValue(replenishedPeriod);
 
@@ -1096,8 +1097,10 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
       const res = await GET(req);
       const data = await res.json();
 
+      expect(res.headers.get("Cache-Control")).toBe("public, s-maxage=5, stale-while-revalidate=10");
       expect(data).toHaveProperty("active", true);
-      expect(data).toHaveProperty("userHasClaimed");
+      expect(data).not.toHaveProperty("userHasClaimed");
+      expect(data).not.toHaveProperty("userEligibility");
       expect(data).toHaveProperty("drop");
       expect(data).toHaveProperty("period");
       expect(data).toHaveProperty("claimWindow");

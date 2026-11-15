@@ -16,6 +16,7 @@ import { useCurrentTime } from "@/lib/hooks/useCurrentTime";
 import { useSiweAuth } from "@/hooks/useSiweAuth";
 import {
   fetchCurrentDrop,
+  fetchUserDropStatus,
   claimDropItem,
   type CurrentDropResponse,
 } from "@/lib/drops/client";
@@ -250,15 +251,38 @@ export default function DropsPage() {
   const isUserEligible = Boolean(userEligibility?.isEligible);
   const hasAllocatedSlot = Boolean(userEligibility?.hasAllocatedSlot);
 
-  // Fetch current drop data
+  // Fetch current drop data (public drop metadata + private user status when authenticated)
   const loadDropData = useCallback(async () => {
     setIsLoading(true);
     setFetchError(null);
     try {
-      const data = await fetchCurrentDrop();
-      setDropData(data);
+      const [data, userStatus] = await Promise.all([
+        fetchCurrentDrop(),
+        status === "authenticated"
+          ? fetchUserDropStatus()
+          : Promise.resolve(null),
+      ]);
+      const merged: CurrentDropResponse = {
+        ...data,
+        ...(userStatus?.authenticated
+          ? {
+              userHasClaimed:
+                userStatus.userHasClaimed !== undefined
+                  ? userStatus.userHasClaimed
+                  : data.userHasClaimed,
+              userEligibility:
+                userStatus.userEligibility !== undefined
+                  ? (userStatus.userEligibility ?? undefined)
+                  : data.userEligibility,
+            }
+          : {
+              userHasClaimed: false,
+              userEligibility: undefined,
+            }),
+      };
+      setDropData(merged);
       setFetchError(null);
-      return data;
+      return merged;
     } catch (err: unknown) {
       console.error("Failed to load drop:", err);
       const msg =
@@ -270,7 +294,7 @@ export default function DropsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [status]);
 
   // Fetch or re-fetch drop data on initial mount and whenever auth status changes
   useEffect(() => {
@@ -280,10 +304,33 @@ export default function DropsPage() {
     if (status === "authenticated") {
       setDropData((prev) => (prev ? { ...prev, userEligibility: undefined } : null));
     }
-    fetchCurrentDrop()
-      .then((data) => {
+    Promise.all([
+      fetchCurrentDrop(),
+      status === "authenticated"
+        ? fetchUserDropStatus()
+        : Promise.resolve(null),
+    ])
+      .then(([data, userStatus]) => {
         if (isMounted) {
-          setDropData(data);
+          const merged: CurrentDropResponse = {
+            ...data,
+            ...(userStatus?.authenticated
+              ? {
+                  userHasClaimed:
+                    userStatus.userHasClaimed !== undefined
+                      ? userStatus.userHasClaimed
+                      : data.userHasClaimed,
+                  userEligibility:
+                    userStatus.userEligibility !== undefined
+                      ? (userStatus.userEligibility ?? undefined)
+                      : data.userEligibility,
+                }
+              : {
+                  userHasClaimed: false,
+                  userEligibility: undefined,
+                }),
+          };
+          setDropData(merged);
           setFetchError(null);
           setIsLoading(false);
         }
