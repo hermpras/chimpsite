@@ -40,24 +40,20 @@ export async function GET(): Promise<Response> {
       );
     }
 
-    // Find active period scoped to current time window
-    const activePeriod = prisma.dropPeriod?.findFirst
-      ? await prisma.dropPeriod.findFirst({
-          where: {
-            dropId: drop.id,
-            startsAt: { lte: now },
-            endsAt: { gte: now },
-          },
-          select: { id: true },
-        })
-      : null;
-
-    // Check user eligibility
-    const userEligibility = await checkUserDropEligibility(
-      prisma,
-      session.userId,
-      now,
-    );
+    // Find active period scoped to current time window and evaluate user eligibility concurrently
+    const [activePeriod, userEligibility] = await Promise.all([
+      prisma.dropPeriod?.findFirst
+        ? prisma.dropPeriod.findFirst({
+            where: {
+              dropId: drop.id,
+              startsAt: { lte: now },
+              endsAt: { gte: now },
+            },
+            select: { id: true },
+          })
+        : Promise.resolve(null),
+      checkUserDropEligibility(prisma, session.userId, now),
+    ]);
 
     // Check if user has already claimed in this active period
     let userHasClaimed = false;

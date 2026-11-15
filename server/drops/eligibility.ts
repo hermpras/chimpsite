@@ -47,19 +47,39 @@ export async function checkUserDropEligibility(
   // 1. Fetch user with wallet, xIdentity, active claim bans, and active/confirmed wlSlots
   const user = await prismaOrTx.user?.findUnique({
     where: { id: userId },
-    include: {
-      wallet: true,
-      xIdentity: true,
+    select: {
+      id: true,
+      wallet: {
+        select: {
+          address: true,
+        },
+      },
+      xIdentity: {
+        select: {
+          xId: true,
+          username: true,
+        },
+      },
       banRecords: {
         where: {
           isActive: true,
           scope: { in: ["FULL_SYSTEM", "CLAIM_RESTRICTED"] },
           OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
         },
+        select: {
+          id: true,
+          isActive: true,
+          expiresAt: true,
+          scope: true,
+        },
       },
       wlSlots: {
         where: {
           status: { in: ["ALLOCATED", "CONFIRMED"] },
+        },
+        select: {
+          id: true,
+          status: true,
         },
       },
     },
@@ -106,9 +126,11 @@ export async function checkUserDropEligibility(
 
   // Check if user already holds an allocated or confirmed Whitelist slot
   let hasAllocatedSlot = false;
-  if (Array.isArray(user.wlSlots) && user.wlSlots.length > 0) {
-    hasAllocatedSlot = true;
+  if (Array.isArray(user.wlSlots)) {
+    // Whitelist slot relation was explicitly loaded: non-empty means slot held, empty array means no slot
+    hasAllocatedSlot = user.wlSlots.length > 0;
   } else if (typeof prismaOrTx.wLSlot?.findFirst === "function") {
+    // Fallback only if wlSlots relation is unavailable in partial mock
     const slot = await prismaOrTx.wLSlot.findFirst({
       where: {
         userId,
@@ -155,6 +177,50 @@ export async function checkUserDropEligibility(
       },
     });
 
+    // P1.2: Batch query current-version mandatory TaskProgress records
+    interface TaskPair {
+      versionId: string;
+      taskId: string;
+    }
+    const currentTaskPairs: TaskPair[] = [];
+
+    for (const campaign of campaigns) {
+      const currentVersion = campaign.versions?.[0];
+      if (!currentVersion || !currentVersion.tasks) continue;
+      for (const task of currentVersion.tasks) {
+        currentTaskPairs.push({
+          versionId: currentVersion.id,
+          taskId: task.id,
+        });
+      }
+    }
+
+    const hasBatchSupport = typeof prismaOrTx.taskProgress?.findMany === "function";
+    const progressMap = new Map<string, any>();
+
+    if (hasBatchSupport && currentTaskPairs.length > 0) {
+      // Execute 1 batch query with exact (versionId, taskId) pairs via OR clause scoped by userId
+      const batchProgresses: any[] = await prismaOrTx.taskProgress.findMany({
+        where: {
+          userId,
+          OR: currentTaskPairs.map((pair) => ({
+            versionId: pair.versionId,
+            taskId: pair.taskId,
+          })),
+        },
+        include: {
+          evidenceSubmissions: {
+            where: { status: "APPROVED" },
+            select: { id: true },
+          },
+        },
+      });
+
+      for (const p of batchProgresses) {
+        progressMap.set(`${p.versionId}:${p.taskId}`, p);
+      }
+    }
+
     for (const campaign of campaigns) {
       const currentVersion = campaign.versions?.[0];
       if (!currentVersion || !currentVersion.tasks) continue;
@@ -163,7 +229,14 @@ export async function checkUserDropEligibility(
         totalMandatoryTasksCount++;
 
         let isTaskDone = false;
-        if (typeof prismaOrTx.taskProgress?.findUnique === "function") {
+
+        if (hasBatchSupport) {
+          const progress = progressMap.get(`${currentVersion.id}:${task.id}`);
+          isTaskDone =
+            progress?.status === "VERIFIED" ||
+            Boolean(progress?.evidenceSubmissions && progress.evidenceSubmissions.length > 0);
+        } else if (typeof prismaOrTx.taskProgress?.findUnique === "function") {
+          // Backward-compatible fallback for partial mocks without findMany
           const progress = await prismaOrTx.taskProgress.findUnique({
             where: {
               userId_versionId_taskId: {
@@ -184,7 +257,7 @@ export async function checkUserDropEligibility(
             Boolean(progress?.evidenceSubmissions && progress.evidenceSubmissions.length > 0);
         }
 
-        // Carry-over check for LEGACY_CARRIED versions
+        // Carry-over check for LEGACY_CARRIED versions (Requirement B: Preserve serial dynamic traversal)
         if (
           !isTaskDone &&
           currentVersion.compatibilityMode === "LEGACY_CARRIED" &&
