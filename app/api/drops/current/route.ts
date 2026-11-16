@@ -209,53 +209,49 @@ export async function GET(request: Request): Promise<Response> {
     }
   }
 
-  // Query next chronological period strictly starting at or after the active period ends,
-  // or starting after current time if no active period exists. Exclude CANCELLED periods.
-  const activePeriodStartsAt = activePeriod ? new Date(activePeriod.startsAt) : null;
-  const activePeriodEndsAt = activePeriod ? new Date(activePeriod.endsAt) : null;
-
-  let nextPeriod = prisma.dropPeriod?.findFirst
-    ? await prisma.dropPeriod.findFirst({
-        where: {
-          dropId: drop.id,
-          startsAt: activePeriodEndsAt ? { gte: activePeriodEndsAt } : { gt: now },
-          status: { not: "CANCELLED" as const },
-        },
-        orderBy: { startsAt: "asc" },
-        include: {
-          poolItems: {
-            include: { trait: true },
-          },
-        },
-      })
-    : null;
-
-  // Fallback for tests providing mock drop.periods
-  if (!nextPeriod && (drop as any).periods?.length) {
-    const minStart = activePeriodEndsAt ?? now;
-    const isExactBoundaryAllowed = Boolean(activePeriodEndsAt);
-    nextPeriod =
-      (drop as any).periods
-        .filter((p: any) => {
-          if (p.status === "CANCELLED") return false;
-          const pStart = new Date(p.startsAt).getTime();
-          const target = minStart.getTime();
-          return isExactBoundaryAllowed ? pStart >= target : pStart > target;
-        })
-        .sort(
-          (a: any, b: any) =>
-            new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-        )[0] ?? null;
-  }
-
+  // If no active period exists for current time window (e.g. between cycles),
+  // query next upcoming period strictly starting after current time to expose countdown.
+  // Note: Q4 (Recent Claims) is NOT queried on this path.
   if (!activePeriod) {
-    const nextStartsAt = nextPeriod
-      ? new Date(nextPeriod.startsAt)
+    const nextPeriod = prisma.dropPeriod?.findFirst
+      ? await prisma.dropPeriod.findFirst({
+          where: {
+            dropId: drop.id,
+            startsAt: { gt: now },
+            status: { not: "CANCELLED" as const },
+          },
+          orderBy: { startsAt: "asc" },
+          select: {
+            id: true,
+            periodIndex: true,
+            startsAt: true,
+            endsAt: true,
+            status: true,
+          },
+        })
+      : null;
+
+    let resolvedNextPeriod = nextPeriod;
+    if (!resolvedNextPeriod && (drop as any).periods?.length) {
+      resolvedNextPeriod =
+        (drop as any).periods
+          .filter((p: any) => {
+            if (p.status === "CANCELLED") return false;
+            return new Date(p.startsAt).getTime() > now.getTime();
+          })
+          .sort(
+            (a: any, b: any) =>
+              new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+          )[0] ?? null;
+    }
+
+    const nextStartsAt = resolvedNextPeriod
+      ? new Date(resolvedNextPeriod.startsAt)
       : now < calculatedCycle.startsAt
         ? calculatedCycle.startsAt
         : calculatedCycle.endsAt;
-    const nextEndsAt = nextPeriod
-      ? new Date(nextPeriod.endsAt)
+    const nextEndsAt = resolvedNextPeriod
+      ? new Date(resolvedNextPeriod.endsAt)
       : new Date(nextStartsAt.getTime() + cycleDurationMs);
 
     return Response.json(
@@ -275,14 +271,14 @@ export async function GET(request: Request): Promise<Response> {
           startsAt: nextStartsAt.toISOString(),
           endsAt: nextEndsAt.toISOString(),
         },
-        ...(nextPeriod
+        ...(resolvedNextPeriod
           ? {
               nextPeriod: {
-                id: nextPeriod.id,
-                periodIndex: nextPeriod.periodIndex,
-                startsAt: new Date(nextPeriod.startsAt).toISOString(),
-                endsAt: new Date(nextPeriod.endsAt).toISOString(),
-                status: nextPeriod.status,
+                id: resolvedNextPeriod.id,
+                periodIndex: resolvedNextPeriod.periodIndex,
+                startsAt: new Date(resolvedNextPeriod.startsAt).toISOString(),
+                endsAt: new Date(resolvedNextPeriod.endsAt).toISOString(),
+                status: resolvedNextPeriod.status,
               },
             }
           : {}),
@@ -291,9 +287,13 @@ export async function GET(request: Request): Promise<Response> {
     );
   }
 
+  // Active period exists: evaluate boundaries & stock aggregations
+  const activePeriodStartsAt = new Date(activePeriod.startsAt);
+  const activePeriodEndsAt = new Date(activePeriod.endsAt);
+
   const claimWindowActive =
-    activePeriod.status === "ACTIVE" && isWithinClaimWindow(activePeriodStartsAt!, now);
-  const claimWindowEndsAt = new Date(activePeriodStartsAt!.getTime() + 30 * 60 * 1000);
+    activePeriod.status === "ACTIVE" && isWithinClaimWindow(activePeriodStartsAt, now);
+  const claimWindowEndsAt = new Date(activePeriodStartsAt.getTime() + 30 * 60 * 1000);
   const timeRemainingWindowMs = Math.max(0, claimWindowEndsAt.getTime() - now.getTime());
 
   const probabilities = calculateTransparentProbabilities(activePeriod.poolItems);
@@ -306,74 +306,108 @@ export async function GET(request: Request): Promise<Response> {
     0,
   );
 
-  let recentPulls: Array<{
-    id: string;
-    traitName: string;
-    category: string;
-    rarity: string;
-    edition: number;
-    imageUrl?: string;
-    claimedBy: string;
-    periodIndex: number;
-    claimedAt: string;
-  }> = [];
-
-  try {
-    if (prisma.claim?.findMany) {
-      const claims = await prisma.claim.findMany({
-        where: {
-          dropId: drop.id,
-          status: "SUCCESS",
-        },
-        orderBy: { claimedAt: "desc" },
-        take: 8,
-        include: {
-          period: { select: { periodIndex: true } },
-          inventoryItem: {
-            include: { trait: true },
+  // Deferred Parallelization (Stage 7C.7G):
+  // Run Q3 (Next Period) and Q4 (Recent Claims) concurrently via Promise.all.
+  // Q4 is fully error-isolated: errors or timeouts return [] and never fail the endpoint.
+  const [nextPeriodResult, claimsResult] = await Promise.all([
+    // Q3: Next chronological period starting at or after activePeriodEndsAt
+    prisma.dropPeriod?.findFirst
+      ? prisma.dropPeriod.findFirst({
+          where: {
+            dropId: drop.id,
+            startsAt: { gte: activePeriodEndsAt },
+            status: { not: "CANCELLED" as const },
           },
-          user: {
-            select: {
-              wallet: { select: { address: true } },
-              xIdentity: { select: { username: true } },
+          orderBy: { startsAt: "asc" },
+          select: {
+            id: true,
+            periodIndex: true,
+            startsAt: true,
+            endsAt: true,
+            status: true,
+          },
+        })
+      : Promise.resolve(null),
+
+    // Q4: Recent claims with isolated error handling (non-blocking optional query)
+    (async () => {
+      try {
+        if (!prisma.claim?.findMany) return [];
+        return await prisma.claim.findMany({
+          where: {
+            dropId: drop.id,
+            status: "SUCCESS",
+          },
+          orderBy: { claimedAt: "desc" },
+          take: 8,
+          include: {
+            period: { select: { periodIndex: true } },
+            inventoryItem: {
+              include: { trait: true },
+            },
+            user: {
+              select: {
+                wallet: { select: { address: true } },
+                xIdentity: { select: { username: true } },
+              },
             },
           },
-        },
-      });
+        });
+      } catch {
+        // Non-blocking optional query: isolated failure defaults to empty array
+        return [];
+      }
+    })(),
+  ]);
 
-      recentPulls = claims.map((c) => {
-        const addr = c.user?.wallet?.address || "";
-        const shortAddr =
-          addr.length >= 10
-            ? `${addr.slice(0, 6)}...${addr.slice(-4)}`
-            : "Anonymous";
-        const claimedBy = c.user?.xIdentity?.username
-          ? `@${c.user.xIdentity.username}`
-          : shortAddr;
+  let nextPeriod = nextPeriodResult;
 
-        return {
-          id: c.id,
-          traitName: c.inventoryItem.trait.name,
-          category: c.inventoryItem.trait.category,
-          rarity: c.inventoryItem.trait.rarity,
-          edition: c.inventoryItem.edition,
-          imageUrl: c.inventoryItem.trait.imageUrl || undefined,
-          claimedBy,
-          periodIndex: c.period?.periodIndex ?? activePeriod.periodIndex,
-          claimedAt: c.claimedAt.toISOString(),
-        };
-      });
-    }
-  } catch {
-    // Non-blocking optional query
+  // Fallback for tests providing mock drop.periods
+  if (!nextPeriod && (drop as any).periods?.length) {
+    const minStart = activePeriodEndsAt;
+    nextPeriod =
+      (drop as any).periods
+        .filter((p: any) => {
+          if (p.status === "CANCELLED") return false;
+          const pStart = new Date(p.startsAt).getTime();
+          const target = minStart.getTime();
+          return pStart >= target;
+        })
+        .sort(
+          (a: any, b: any) =>
+            new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+        )[0] ?? null;
   }
+
+  const recentPulls = (claimsResult || []).map((c) => {
+    const addr = c.user?.wallet?.address || "";
+    const shortAddr =
+      addr.length >= 10
+        ? `${addr.slice(0, 6)}...${addr.slice(-4)}`
+        : "Anonymous";
+    const claimedBy = c.user?.xIdentity?.username
+      ? `@${c.user.xIdentity.username}`
+      : shortAddr;
+
+    return {
+      id: c.id,
+      traitName: c.inventoryItem.trait.name,
+      category: c.inventoryItem.trait.category,
+      rarity: c.inventoryItem.trait.rarity,
+      edition: c.inventoryItem.edition,
+      imageUrl: c.inventoryItem.trait.imageUrl || undefined,
+      claimedBy,
+      periodIndex: c.period?.periodIndex ?? activePeriod.periodIndex,
+      claimedAt: c.claimedAt instanceof Date ? c.claimedAt.toISOString() : new Date(c.claimedAt).toISOString(),
+    };
+  });
 
   const nextCycleStartsAt = nextPeriod
     ? new Date(nextPeriod.startsAt)
-    : activePeriodEndsAt!;
+    : activePeriodEndsAt;
   const nextCycleEndsAt = nextPeriod
     ? new Date(nextPeriod.endsAt)
-    : new Date(activePeriodEndsAt!.getTime() + cycleDurationMs);
+    : new Date(activePeriodEndsAt.getTime() + cycleDurationMs);
 
   return Response.json(
     {

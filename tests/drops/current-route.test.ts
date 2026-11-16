@@ -1111,4 +1111,366 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
       expect(data.stock.poolItems[0]).toHaveProperty("probabilityPercent");
     });
   });
+
+  describe("Deferred Parallelization (Q3 + Q4) Hardening", () => {
+    const baseDrop = {
+      id: "drop-parallel",
+      slug: "genesis-drop",
+      title: "ChimpHood Genesis Drop",
+      description: "Genesis public trait drop",
+      status: "ACTIVE",
+      startsAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      endsAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      cycleDurationHours: 2,
+    };
+
+    const mockPool = [
+      {
+        id: "item-1",
+        traitId: "trait-bg",
+        allocatedStock: 100,
+        claimedStock: 20,
+        remainingStock: 80,
+        weight: 100,
+        trait: {
+          id: "trait-bg",
+          name: "Cyber Jungle",
+          category: "BG",
+          rarity: "COMMON",
+        },
+      },
+    ];
+
+    const activePeriod = {
+      id: "period-active-1",
+      dropId: "drop-parallel",
+      periodIndex: 1,
+      startsAt: new Date(Date.now() - 10 * 60 * 1000),
+      endsAt: new Date(Date.now() + 110 * 60 * 1000),
+      status: "ACTIVE",
+      isStockLocked: true,
+      poolItems: mockPool,
+    };
+
+    const upcomingPeriod = {
+      id: "period-upcoming-2",
+      dropId: "drop-parallel",
+      periodIndex: 2,
+      startsAt: new Date(Date.now() + 120 * 60 * 1000),
+      endsAt: new Date(Date.now() + 240 * 60 * 1000),
+      status: "CONFIGURED",
+      isStockLocked: false,
+      poolItems: [],
+    };
+
+    const sampleClaims = [
+      {
+        id: "claim-1",
+        claimedAt: new Date(Date.now() - 5000),
+        period: { periodIndex: 1 },
+        inventoryItem: {
+          edition: 1,
+          trait: {
+            id: "trait-bg",
+            name: "Cyber Jungle",
+            category: "BG",
+            rarity: "COMMON",
+            imageUrl: "https://elychimp.io/traits/cyber-jungle.png",
+          },
+        },
+        user: {
+          wallet: { address: "0x1234567890abcdef1234567890abcdef12345678" },
+          xIdentity: { username: "chimp_master" },
+        },
+      },
+      {
+        id: "claim-2",
+        claimedAt: new Date(Date.now() - 10000),
+        period: { periodIndex: 1 },
+        inventoryItem: {
+          edition: 2,
+          trait: {
+            id: "trait-clothing",
+            name: "Stealth Hoodie",
+            category: "CLOTHING",
+            rarity: "RARE",
+            imageUrl: null,
+          },
+        },
+        user: {
+          wallet: { address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd" },
+          xIdentity: null,
+        },
+      },
+    ];
+
+    it("1. Q4 successful result: formats recentPulls correctly with query filters, ordering, and take", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return activePeriod;
+        if (query.where?.startsAt?.gte) return upcomingPeriod;
+        return null;
+      });
+      mockClaimFindMany.mockResolvedValue(sampleClaims);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.active).toBe(true);
+      expect(data.recentPulls).toBeDefined();
+      expect(data.recentPulls).toHaveLength(2);
+
+      expect(data.recentPulls[0]).toEqual({
+        id: "claim-1",
+        traitName: "Cyber Jungle",
+        category: "BG",
+        rarity: "COMMON",
+        edition: 1,
+        imageUrl: "https://elychimp.io/traits/cyber-jungle.png",
+        claimedBy: "@chimp_master",
+        periodIndex: 1,
+        claimedAt: sampleClaims[0].claimedAt.toISOString(),
+      });
+
+      expect(data.recentPulls[1]).toEqual({
+        id: "claim-2",
+        traitName: "Stealth Hoodie",
+        category: "CLOTHING",
+        rarity: "RARE",
+        edition: 2,
+        imageUrl: undefined,
+        claimedBy: "0xabcd...abcd",
+        periodIndex: 1,
+        claimedAt: sampleClaims[1].claimedAt.toISOString(),
+      });
+
+      expect(mockClaimFindMany).toHaveBeenCalledWith({
+        where: {
+          dropId: "drop-parallel",
+          status: "SUCCESS",
+        },
+        orderBy: { claimedAt: "desc" },
+        take: 8,
+        include: {
+          period: { select: { periodIndex: true } },
+          inventoryItem: {
+            include: { trait: true },
+          },
+          user: {
+            select: {
+              wallet: { select: { address: true } },
+              xIdentity: { select: { username: true } },
+            },
+          },
+        },
+      });
+    });
+
+    it("2. Q4 empty result: omits recentPulls key from response payload", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return activePeriod;
+        if (query.where?.startsAt?.gte) return upcomingPeriod;
+        return null;
+      });
+      mockClaimFindMany.mockResolvedValue([]);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.active).toBe(true);
+      expect(data).not.toHaveProperty("recentPulls");
+    });
+
+    it("3. Q4 database error: isolates error, does not fail endpoint, returns 200 without recentPulls", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return activePeriod;
+        if (query.where?.startsAt?.gte) return upcomingPeriod;
+        return null;
+      });
+      mockClaimFindMany.mockRejectedValue(new Error("Transient connection pool timeout"));
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.active).toBe(true);
+      expect(data.period.id).toBe("period-active-1");
+      expect(data).not.toHaveProperty("recentPulls");
+    });
+
+    it("4. Q2 failure: propagates error when active period query fails", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockRejectedValue(new Error("Active period query connection lost"));
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      await expect(GET(req)).rejects.toThrow("Active period query connection lost");
+      expect(mockClaimFindMany).not.toHaveBeenCalled();
+    });
+
+    it("5. Q2 null / between cycles: returns between-cycles response and DOES NOT call Q4", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return null;
+        if (query.where?.startsAt?.gt) return upcomingPeriod;
+        return null;
+      });
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.active).toBe(true);
+      expect(data.periodActive).toBe(false);
+      expect(data.message).toBe("Drop is active, but current period is between cycles.");
+      expect(mockClaimFindMany).not.toHaveBeenCalled();
+    });
+
+    it("6. Replenishment / standby: follower standby return DOES NOT execute Q4", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockResolvedValue(null);
+
+      // Follower contention in Redis
+      const mockSet = vi.fn().mockResolvedValue(null);
+      __setTestRedis({ set: mockSet, eval: vi.fn() } as any);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.message).toBe("Drop cycle initializing. Please standby.");
+      expect(mockClaimFindMany).not.toHaveBeenCalled();
+    });
+
+    it("7. Q3/Q4 scheduling: executes Q3 and Q4 concurrently without sequential blocking", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+
+      let q3Started = false;
+      let q4Started = false;
+      let resolveQ3: (val: any) => void;
+      let resolveQ4: (val: any) => void;
+
+      const q3Promise = new Promise((resolve) => {
+        resolveQ3 = resolve;
+      });
+      const q4Promise = new Promise((resolve) => {
+        resolveQ4 = resolve;
+      });
+
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        // Q2: active period query
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) {
+          return activePeriod;
+        }
+        // Q3: next period query
+        if (query.where?.startsAt?.gte) {
+          q3Started = true;
+          return await q3Promise;
+        }
+        return null;
+      });
+
+      mockClaimFindMany.mockImplementation(async () => {
+        q4Started = true;
+        return await q4Promise;
+      });
+
+      const requestPromise = GET(
+        new Request("http://localhost:3000/api/drops/current", { method: "GET" }),
+      );
+
+      // Yield microtasks to allow Q2 to finish and Q3/Q4 to both launch concurrently
+      await new Promise((r) => setTimeout(r, 25));
+
+      // Assert that BOTH Q3 and Q4 are running concurrently while promises are still pending
+      expect(q3Started).toBe(true);
+      expect(q4Started).toBe(true);
+
+      resolveQ3!(upcomingPeriod);
+      resolveQ4!(sampleClaims);
+
+      const res = await requestPromise;
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.nextPeriod.id).toBe("period-upcoming-2");
+      expect(data.recentPulls).toHaveLength(2);
+    });
+
+    it("8. PeriodIndex fallback: falls back to activePeriod.periodIndex if claim.period is undefined", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return activePeriod;
+        if (query.where?.startsAt?.gte) return upcomingPeriod;
+        return null;
+      });
+
+      mockClaimFindMany.mockResolvedValue([
+        {
+          id: "claim-missing-period",
+          claimedAt: new Date(),
+          period: null,
+          inventoryItem: {
+            edition: 1,
+            trait: {
+              id: "trait-bg",
+              name: "Cyber Jungle",
+              category: "BG",
+              rarity: "COMMON",
+            },
+          },
+          user: {
+            wallet: { address: "0x1234567890abcdef1234567890abcdef12345678" },
+          },
+        },
+      ]);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.recentPulls).toBeDefined();
+      expect(data.recentPulls[0].periodIndex).toBe(activePeriod.periodIndex);
+    });
+
+    it("9. Unhandled rejection: ensures Q4 rejection is caught cleanly with zero unhandled rejections", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return activePeriod;
+        if (query.where?.startsAt?.gte) return upcomingPeriod;
+        return null;
+      });
+
+      const unhandledRejections: any[] = [];
+      const listener = (reason: any) => {
+        unhandledRejections.push(reason);
+      };
+      process.on("unhandledRejection", listener);
+
+      try {
+        mockClaimFindMany.mockRejectedValue(new Error("Async unhandled test error"));
+
+        const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+        const res = await GET(req);
+        expect(res.status).toBe(200);
+        const data = await res.json();
+
+        expect(data.active).toBe(true);
+        expect(data).not.toHaveProperty("recentPulls");
+
+        await new Promise((r) => setTimeout(r, 15));
+        expect(unhandledRejections).toHaveLength(0);
+      } finally {
+        process.removeListener("unhandledRejection", listener);
+      }
+    });
+  });
 });
