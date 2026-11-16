@@ -14,15 +14,106 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL must target the isolated test database.");
+const ALLOWED_QUERY_PARAMS = new Map<string, Set<string>>([
+  ["schema", new Set(["public"])],
+  ["sslmode", new Set(["disable", "prefer"])],
+]);
+
+/**
+ * Validates that the database connection string strictly targets local PostgreSQL
+ * with the exact database name "chimphood_test".
+ *
+ * Enforces strict isolation:
+ * - Protocols: strictly "postgresql:" or "postgres:".
+ * - Hostname: strictly local loopback ("localhost", "127.0.0.1", "::1").
+ * - Port: strictly standard PostgreSQL port 5432 or default (empty).
+ * - Pathname: strictly "/chimphood_test" without variation, trailing slashes, or subpaths.
+ * - Fragments: strictly rejected.
+ * - Query Parameters: strictly whitelisted ("schema=public", "sslmode=disable|prefer").
+ *   Disallows all target-altering parameters (e.g., host, hostaddr, port, database, dbname, options, socket, etc.).
+ *
+ * Throws informative errors without leaking credentials or passwords.
+ */
+export function validateLocalTestDatabaseUrl(rawUrl?: string): string {
+  if (!rawUrl || typeof rawUrl !== "string" || rawUrl.trim() === "") {
+    throw new Error(
+      "[DATABASE_SECURITY_GUARD] DATABASE_URL environment variable is not set. Execution aborted to protect remote environments.",
+    );
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error(
+      "[DATABASE_SECURITY_GUARD] Invalid or malformed DATABASE_URL. Execution aborted.",
+    );
+  }
+
+  const validProtocols = new Set(["postgres:", "postgresql:"]);
+  if (!validProtocols.has(parsed.protocol)) {
+    throw new Error(
+      `[DATABASE_SECURITY_GUARD] Invalid protocol "${parsed.protocol}". Expected "postgresql:" or "postgres:".`,
+    );
+  }
+
+  const normalizedHost = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  const allowedHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+  if (!allowedHosts.has(normalizedHost)) {
+    throw new Error(
+      `[DATABASE_SECURITY_GUARD] Target host "${normalizedHost}" is not an allowed local loopback host (localhost, 127.0.0.1, ::1). Refusing to connect to remote or unverified host.`,
+    );
+  }
+
+  if (parsed.port !== "" && parsed.port !== "5432") {
+    throw new Error(
+      `[DATABASE_SECURITY_GUARD] Port "${parsed.port}" is not allowed. Expected default PostgreSQL port 5432.`,
+    );
+  }
+
+  if (parsed.pathname !== "/chimphood_test") {
+    throw new Error(
+      `[DATABASE_SECURITY_GUARD] Target database is not allowed. Pathname must be exactly "/chimphood_test" without variation. Received "${parsed.pathname}". Execution aborted.`,
+    );
+  }
+
+  if (parsed.hash && parsed.hash !== "") {
+    throw new Error(
+      `[DATABASE_SECURITY_GUARD] URL fragments ("#...") are not allowed in DATABASE_URL. Execution aborted.`,
+    );
+  }
+
+  const paramKeys = Array.from(parsed.searchParams.keys());
+  for (const key of paramKeys) {
+    const allowedValues = ALLOWED_QUERY_PARAMS.get(key);
+    if (!allowedValues) {
+      throw new Error(
+        `[DATABASE_SECURITY_GUARD] Disallowed query parameter "${key}". Parameters that alter connection target or behavior are strictly prohibited.`,
+      );
+    }
+    const values = parsed.searchParams.getAll(key);
+    if (values.length > 1) {
+      throw new Error(
+        `[DATABASE_SECURITY_GUARD] Duplicate query parameter "${key}" is not allowed.`,
+      );
+    }
+    if (!allowedValues.has(values[0])) {
+      throw new Error(
+        `[DATABASE_SECURITY_GUARD] Invalid value "${values[0]}" for query parameter "${key}".`,
+      );
+    }
+  }
+
+  return rawUrl;
 }
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString }),
-});
+
+let prisma: PrismaClient | null = null;
 
 async function main() {
+  const connectionString = validateLocalTestDatabaseUrl(process.env.DATABASE_URL);
+  prisma = new PrismaClient({
+    adapter: new PrismaPg({ connectionString }),
+  });
   const dropId = process.env.DROP_ID || "drop-load-test";
   const periodId = process.env.PERIOD_ID || "period-load-test";
 
@@ -150,11 +241,20 @@ async function main() {
   }
 }
 
-main()
-  .catch((e) => {
-    console.error("Verification script failed:", e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+const isDirectRun =
+  !process.env.VITEST &&
+  Boolean(process.argv[1]) &&
+  process.argv[1].includes("verify-stock-invariants");
+
+if (isDirectRun) {
+  main()
+    .catch((e) => {
+      console.error("Verification script failed:", e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      if (prisma) {
+        await prisma.$disconnect();
+      }
+    });
+}
