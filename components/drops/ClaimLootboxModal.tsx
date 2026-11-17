@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { equipUserTrait } from "@/lib/inventory/client";
 
 export interface WonTraitData {
   id: string;
@@ -32,6 +33,7 @@ interface ClaimLootboxModalProps {
   isLoading?: boolean;
   error?: string | null;
   periodIndex?: number;
+  onEquipSuccess?: (itemId: string) => void;
 }
 
 const RARITY_THEME: Record<
@@ -184,18 +186,60 @@ export function ClaimLootboxModal({
   isLoading = false,
   error = null,
   periodIndex,
+  onEquipSuccess,
 }: ClaimLootboxModalProps) {
   const [phase, setPhase] = useState<"ROLLING" | "REVEAL" | "ERROR">("ROLLING");
   const [currentRollIndex, setCurrentRollIndex] = useState(0);
   const [messageIndex, setMessageIndex] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const saved = localStorage.getItem("elychimp_drops_sound_enabled");
+      return saved !== null ? saved === "true" : true;
+    } catch {
+      return true;
+    }
+  });
   const [minRollingDone, setMinRollingDone] = useState(false);
+  const [isEquipping, setIsEquipping] = useState(false);
+  const [isEquipped, setIsEquipped] = useState(false);
+  const [equipError, setEquipError] = useState<string | null>(null);
   const modalContainerRef = useRef<HTMLDivElement>(null);
   const soundEnabledRef = useRef(soundEnabled);
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
   }, [soundEnabled]);
+
+  // Reset equip state when modal opens or claimed item changes
+  useEffect(() => {
+    if (isOpen) {
+      setIsEquipping(false);
+      setIsEquipped(false);
+      setEquipError(null);
+    }
+  }, [isOpen, claimedItem?.id]);
+
+  async function handleEquipNow() {
+    if (!claimedItem?.id || isEquipping || isEquipped) return;
+    setIsEquipping(true);
+    setEquipError(null);
+    try {
+      await equipUserTrait(claimedItem.id);
+      setIsEquipped(true);
+      if (soundEnabledRef.current) {
+        playTone("click");
+      }
+      if (onEquipSuccess) {
+        onEquipSuccess(claimedItem.id);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to equip trait.";
+      setEquipError(msg);
+    } finally {
+      setIsEquipping(false);
+    }
+  }
 
   // Focus trap & Escape key handler
   useEffect(() => {
@@ -320,13 +364,16 @@ export function ClaimLootboxModal({
   // Share on X (Twitter) URL
   const tweetText = wonTrait
     ? encodeURIComponent(
-        `Just pulled ${wonTrait.name} (${wonRarity}) in the @Elychimp Drop! Edition #${claimedItem?.edition} • Deployed on @Enter_elysium (Elysium).\n\nRule the streets:`
+        `Just unlocked ${wonTrait.name} (${wonRarity} #${claimedItem?.edition}) on @Elychimp Genesis Drop! Deployed on @Enter_elysium (Elysium).\n\nClaim your periodic drop capsule:`
       )
     : "";
-  const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://elychimp.xyz";
+  const shareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/drops`
+      : "https://elychimp.xyz/drops";
   const tweetHref = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(
     shareUrl
-  )}`;
+  )}&hashtags=Elychimp,Elysium,NFT`;
 
   return (
     <div
@@ -391,6 +438,9 @@ export function ClaimLootboxModal({
           onClick={() => {
             const next = !soundEnabled;
             setSoundEnabled(next);
+            try {
+              localStorage.setItem("elychimp_drops_sound_enabled", String(next));
+            } catch {}
             if (next) playTone("click");
           }}
           className="rounded-lg border border-cyan-500/30 bg-[#07242c]/80 px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-300 hover:border-cyan-400 hover:text-white backdrop-blur transition-all cursor-pointer shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
@@ -588,13 +638,34 @@ export function ClaimLootboxModal({
 
             {/* Action Buttons (Zero Icons) */}
             <div className="mt-6 flex w-full flex-col gap-2.5">
-              <Link
-                href="/profile"
-                onClick={onClose}
-                className="flex w-full items-center justify-center rounded-xl border border-emerald-400/80 bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 py-3.5 font-sans text-xs sm:text-sm font-black uppercase tracking-[0.16em] text-[#02140d] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.7),0_8px_24px_rgba(16,185,129,0.35)] hover:from-emerald-300 hover:via-emerald-400 hover:to-emerald-500 transition-all active:scale-[0.98]"
+              {/* Primary Direct Equip Button */}
+              <button
+                type="button"
+                data-testid="lootbox-direct-equip-btn"
+                onClick={handleEquipNow}
+                disabled={isEquipping || isEquipped}
+                className={`flex w-full items-center justify-center rounded-xl py-3.5 font-sans text-xs sm:text-sm font-black uppercase tracking-[0.16em] transition-all active:scale-[0.98] ${
+                  isEquipped
+                    ? "border border-emerald-400/60 bg-emerald-950/60 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)] cursor-default"
+                    : isEquipping
+                      ? "border border-emerald-500/40 bg-emerald-950/40 text-emerald-200/70 cursor-wait"
+                      : "border border-emerald-400/80 bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 text-[#02140d] shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.7),0_8px_24px_rgba(16,185,129,0.35)] hover:from-emerald-300 hover:via-emerald-400 hover:to-emerald-500 cursor-pointer"
+                }`}
               >
-                <span>Equip in Profile</span>
-              </Link>
+                <span>
+                  {isEquipped
+                    ? "EQUIPPED TO AVATAR"
+                    : isEquipping
+                      ? "EQUIPPING..."
+                      : "EQUIP NOW"}
+                </span>
+              </button>
+
+              {equipError && (
+                <p className="text-center font-mono text-[11px] text-rose-400">
+                  {equipError}
+                </p>
+              )}
 
               <div className="flex items-center gap-2">
                 <a
@@ -612,6 +683,17 @@ export function ClaimLootboxModal({
                 >
                   Collect & Close
                 </button>
+              </div>
+
+              {/* Tertiary Navigation Link to Profile Studio */}
+              <div className="mt-0.5 flex items-center justify-center">
+                <Link
+                  href="/profile"
+                  onClick={onClose}
+                  className="text-center font-mono text-[11px] text-cyan-400/80 hover:text-cyan-200 uppercase tracking-widest transition-colors py-0.5"
+                >
+                  Equip in Profile Studio
+                </Link>
               </div>
             </div>
           </div>

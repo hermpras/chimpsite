@@ -1,11 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import React from "react";
 import {
   ClaimLootboxModal,
   type WonTraitData,
   type PoolPreviewItem,
 } from "@/components/drops/ClaimLootboxModal";
+
+const { mockEquipUserTrait } = vi.hoisted(() => ({
+  mockEquipUserTrait: vi.fn(),
+}));
+
+vi.mock("@/lib/inventory/client", () => ({
+  equipUserTrait: mockEquipUserTrait,
+}));
 
 const MOCK_POOL_ITEMS: PoolPreviewItem[] = [
   {
@@ -119,7 +127,8 @@ describe("ClaimLootboxModal Component", () => {
     );
   });
 
-  it("handles sound toggle muting/unmuting", () => {
+  it("handles sound toggle muting/unmuting and persists to localStorage", () => {
+    localStorage.clear();
     render(
       <ClaimLootboxModal
         isOpen={true}
@@ -133,6 +142,97 @@ describe("ClaimLootboxModal Component", () => {
 
     fireEvent.click(soundBtn);
     expect(screen.getByTitle("Unmute SFX")).toBeInTheDocument();
+    expect(localStorage.getItem("elychimp_drops_sound_enabled")).toBe("false");
+
+    fireEvent.click(screen.getByTitle("Unmute SFX"));
+    expect(localStorage.getItem("elychimp_drops_sound_enabled")).toBe("true");
+  });
+
+  it("allows direct 1-click equipping from reveal phase and updates button state", async () => {
+    mockEquipUserTrait.mockResolvedValue({
+      success: true,
+      itemId: MOCK_WON_ITEM.id,
+      category: "WEAPON",
+    });
+    const handleEquipSuccess = vi.fn();
+
+    render(
+      <ClaimLootboxModal
+        isOpen={true}
+        onClose={() => {}}
+        claimedItem={MOCK_WON_ITEM}
+        isLoading={false}
+        onEquipSuccess={handleEquipSuccess}
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(2500);
+    });
+
+    const equipBtn = screen.getByTestId("lootbox-direct-equip-btn");
+    expect(equipBtn).toBeInTheDocument();
+    expect(equipBtn).toHaveTextContent("EQUIP NOW");
+
+    await act(async () => {
+      fireEvent.click(equipBtn);
+    });
+
+    expect(mockEquipUserTrait).toHaveBeenCalledWith(MOCK_WON_ITEM.id);
+    expect(handleEquipSuccess).toHaveBeenCalledWith(MOCK_WON_ITEM.id);
+    expect(equipBtn).toHaveTextContent("EQUIPPED TO AVATAR");
+    expect(equipBtn).toBeDisabled();
+  });
+
+  it("handles equip error gracefully and shows error notice", async () => {
+    mockEquipUserTrait.mockRejectedValue(new Error("Network connection lost"));
+
+    render(
+      <ClaimLootboxModal
+        isOpen={true}
+        onClose={() => {}}
+        claimedItem={MOCK_WON_ITEM}
+        isLoading={false}
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(2500);
+    });
+
+    const equipBtn = screen.getByTestId("lootbox-direct-equip-btn");
+    await act(async () => {
+      fireEvent.click(equipBtn);
+    });
+
+    expect(screen.getByText("Network connection lost")).toBeInTheDocument();
+    expect(equipBtn).toHaveTextContent("EQUIP NOW");
+    expect(equipBtn).not.toBeDisabled();
+  });
+
+  it("verifies enhanced Share on X tweet URL parameters with drops path and hashtags", () => {
+    render(
+      <ClaimLootboxModal
+        isOpen={true}
+        onClose={() => {}}
+        claimedItem={MOCK_WON_ITEM}
+        isLoading={false}
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(2500);
+    });
+
+    const shareLink = screen.getByRole("link", { name: /Share on X/i });
+    const href = shareLink.getAttribute("href") || "";
+    expect(href).toContain("twitter.com/intent/tweet");
+    expect(href).toContain(encodeURIComponent("Golden Katana"));
+    expect(href).toContain(encodeURIComponent("LEGENDARY #42"));
+    expect(href).toContain(encodeURIComponent("@Elychimp"));
+    expect(href).toContain(encodeURIComponent("@Enter_elysium"));
+    expect(href).toContain("hashtags=Elychimp,Elysium,NFT");
+    expect(href).toContain("%2Fdrops");
   });
 
   it("renders error state when error is provided", () => {

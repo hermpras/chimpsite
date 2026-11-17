@@ -1333,17 +1333,29 @@ export default function DropsPage() {
                                       return (
                                         <div className="relative z-10 mt-3 border-t border-[#163B44] pt-2.5">
                                           <div className="mb-1.5 flex items-center justify-between text-xs sm:text-sm font-mono">
-                                            <span className="flex items-center">
+                                            <span className="flex items-center gap-1.5">
                                               <span
                                                 className={
                                                   isSoldOut
                                                     ? "font-bold text-rose-400"
                                                     : isLowStock
-                                                      ? "font-bold text-rose-400"
+                                                      ? "font-bold text-amber-300"
                                                       : "text-gray-300 font-bold"
                                                 }
                                               >
                                                 {isSoldOut ? "Sold Out" : isLowStock ? "Low Stock" : "Stock"}
+                                              </span>
+                                              <span
+                                                data-testid={`stock-status-badge-${item.poolItemId}`}
+                                                className={`rounded border px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${
+                                                  isSoldOut
+                                                    ? "border-rose-500/50 bg-rose-950/60 text-rose-300"
+                                                    : isLowStock
+                                                      ? "border-amber-400/50 bg-amber-950/60 text-amber-300 animate-pulse"
+                                                      : "border-cyan-500/30 bg-cyan-950/40 text-cyan-300"
+                                                }`}
+                                              >
+                                                {isSoldOut ? "EXHAUSTED" : isLowStock ? "LOW STOCK" : "AVAILABLE"}
                                               </span>
                                             </span>
                                             <span className="text-gray-300 text-xs sm:text-sm font-medium">
@@ -1482,6 +1494,9 @@ export default function DropsPage() {
         isLoading={claimLoading}
         error={lootboxError}
         periodIndex={dropData?.period?.periodIndex}
+        onEquipSuccess={() => {
+          void loadUserInventory(address);
+        }}
       />
     </div>
   );

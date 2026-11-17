@@ -29,6 +29,7 @@ vi.mock("@/components/drops/ClaimLootboxModal", () => ({
     isLoading?: boolean;
     error?: string | null;
     periodIndex?: number;
+    onEquipSuccess?: (itemId: string) => void;
   }) => {
     if (!props.isOpen) return null;
     return (
@@ -42,6 +43,14 @@ vi.mock("@/components/drops/ClaimLootboxModal", () => ({
           </p>
         )}
         <button onClick={props.onClose}>Close Modal</button>
+        {props.onEquipSuccess && (
+          <button
+            data-testid="mock-trigger-equip-success"
+            onClick={() => props.onEquipSuccess?.(props.claimedItem?.id || "mock-item-id")}
+          >
+            Trigger Equip Success
+          </button>
+        )}
       </div>
     );
   },
@@ -768,6 +777,10 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       const soldOutBadges = screen.getAllByTestId("badge-sold-out");
       expect(soldOutBadges).toHaveLength(1);
       expect(soldOutBadges[0]).toHaveTextContent("Sold Out");
+
+      // Verify dynamic stock status badges
+      expect(screen.getByTestId("stock-status-badge-pool-item-sold-out")).toHaveTextContent("EXHAUSTED");
+      expect(screen.getByTestId("stock-status-badge-pool-item-available")).toHaveTextContent("AVAILABLE");
 
       // Cyber Helmet should not have a sold out badge
       expect(screen.getByText("Cyber Helmet")).toBeInTheDocument();
