@@ -654,15 +654,13 @@ export default function DropsPage() {
               <button
                 onClick={loadDropData}
                 disabled={isLoading}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#163B44] bg-[#102B33]/50 text-gray-300 hover:border-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 hover:shadow-[0_0_15px_rgba(251,191,36,0.2)] transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#34B7DD]/40 bg-[#07242C]/70 text-cyan-300 hover:border-cyan-400 hover:text-white hover:bg-[#0E3A47]/80 disabled:opacity-50 cursor-pointer transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
                 title="Refresh Drop Status"
                 aria-label="Refresh Drop Status"
               >
-                {isLoading ? (
-                  <ElychimpSpinner size="sm" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                />
               </button>
             </div>
           </div>

@@ -514,20 +514,20 @@ export function AdminWhitelist() {
                   <option value="FINALIZED">FINALIZED</option>
                   <option value="CLOSED">CLOSED</option>
                 </select>
-                <Button
-                  size="sm"
-                  variant="outline"
+                <button
+                  type="button"
                   disabled={loadingProgram || loadingSummary}
                   onClick={() => setReloadKey((k) => k + 1)}
-                  className="h-8 w-8 p-0 border-[#163B44] text-gray-300 hover:text-white hover:bg-[#102B33]/60"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#34B7DD]/40 bg-[#07242C]/70 text-cyan-300 hover:border-cyan-400 hover:text-white hover:bg-[#0E3A47]/80 disabled:opacity-50 cursor-pointer transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
                   title="Refresh Overview"
+                  aria-label="Refresh Overview"
                 >
                   <RefreshCw
                     className={`h-4 w-4 ${
                       loadingProgram || loadingSummary ? "animate-spin" : ""
                     }`}
                   />
-                </Button>
+                </button>
               </div>
             )}
           </div>

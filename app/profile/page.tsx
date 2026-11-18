@@ -284,9 +284,6 @@ function ProfileContent() {
   const [equippingItemId, setEquippingItemId] = useState<string | null>(null);
   const [equipError, setEquipError] = useState<string | null>(null);
   const [wardrobeFilter, setWardrobeFilter] = useState<WardrobeFilter>("ALL");
-  const [isRandomizing, setIsRandomizing] = useState(false);
-  const [isDownloadingPng, setIsDownloadingPng] = useState(false);
-  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const ownedCategories = new Set(inventoryItems.map((item) => item.trait.category));
 
   const inventoryMeta = React.useMemo(
@@ -303,14 +300,6 @@ function ProfileContent() {
     }
     return inventoryItems.filter((item) => item.trait.category === wardrobeFilter);
   }, [inventoryItems, wardrobeFilter, inventoryMeta.eligibleGiftItemIds]);
-
-  const canRandomizeFit = React.useMemo(
-    () =>
-      Object.values(inventoryMeta.availableCategoryCounts).some(
-        (count) => count >= 2,
-      ),
-    [inventoryMeta.availableCategoryCounts],
-  );
 
   const pendingIncomingGiftsCount = React.useMemo(
     () => receivedGifts.filter((g) => g.status === "PENDING").length,
@@ -478,121 +467,6 @@ function ProfileContent() {
       setEquipError(msg);
     } finally {
       setEquippingItemId(null);
-    }
-  };
-
-  const handleRandomizeFit = async () => {
-    if (isRandomizing || equippingItemId || !canRandomizeFit) return;
-
-    const chosenByCategory: Record<string, InventoryItemData> = {};
-    for (const cat of TRAIT_CATEGORIES) {
-      const unlockedInCategory = inventoryItems.filter(
-        (it) => it.trait.category === cat && !it.isLocked,
-      );
-      if (unlockedInCategory.length < 2) continue;
-
-      const currentEquipped = inventoryMeta.equippedByCategory[cat];
-      const alternatives = currentEquipped
-        ? unlockedInCategory.filter((it) => it.id !== currentEquipped.id)
-        : unlockedInCategory;
-      const pool = alternatives.length > 0 ? alternatives : unlockedInCategory;
-      const randomChoice = pool[Math.floor(Math.random() * pool.length)];
-      if (randomChoice) {
-        chosenByCategory[cat] = randomChoice;
-      }
-    }
-
-    const itemsToEquip = Object.values(chosenByCategory);
-    if (itemsToEquip.length === 0) return;
-
-    setIsRandomizing(true);
-    setEquipError(null);
-    const previousItems = [...inventoryItems];
-
-    setInventoryItems((prev) =>
-      prev.map((it) => {
-        const chosenForCat = chosenByCategory[it.trait.category];
-        if (chosenForCat) {
-          return { ...it, isEquipped: it.id === chosenForCat.id };
-        }
-        return it;
-      }),
-    );
-
-    try {
-      for (const item of itemsToEquip) {
-        await inventoryClient.equipUserTrait(item.id);
-      }
-      const newVersion = Date.now();
-      setAvatarVersion(newVersion);
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("chimphood_avatar_version", String(newVersion));
-          window.dispatchEvent(
-            new CustomEvent("avatar-updated", { detail: { version: newVersion } }),
-          );
-        } catch {}
-      }
-      if (address) {
-        inventoryClient
-          .fetchUserInventory(address)
-          .then((data) => {
-            if (data.items) {
-              setInventoryItems(data.items);
-            }
-          })
-          .catch(() => {});
-      }
-    } catch (err: unknown) {
-      console.error("Error randomizing fit:", err);
-      setInventoryItems(previousItems);
-      const msg =
-        err instanceof Error ? err.message : "Failed to randomize traits.";
-      setEquipError(msg);
-    } finally {
-      setIsRandomizing(false);
-    }
-  };
-
-  const handleDownloadAvatar = async () => {
-    if (!address || isDownloadingPng) return;
-    setIsDownloadingPng(true);
-    const avatarUrl = getAvatarPublicUrl(address, avatarVersion);
-    const filename = `elychimp-avatar-${shortenAddress(address)}.png`;
-
-    try {
-      let downloadHref = avatarUrl;
-      let shouldRevoke = false;
-      try {
-        const res = await fetch(avatarUrl);
-        if (res.ok && typeof res.blob === "function") {
-          const blob = await res.blob();
-          if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
-            downloadHref = URL.createObjectURL(blob);
-            shouldRevoke = true;
-          }
-        }
-      } catch {
-        // Fallback to direct link download
-      }
-
-      if (typeof document !== "undefined") {
-        const link = document.createElement("a");
-        link.href = downloadHref;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-
-      if (shouldRevoke && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
-        setTimeout(() => URL.revokeObjectURL(downloadHref), 1000);
-      }
-
-      setDownloadSuccess(true);
-      setTimeout(() => setDownloadSuccess(false), 2000);
-    } finally {
-      setIsDownloadingPng(false);
     }
   };
 
@@ -918,7 +792,7 @@ function ProfileContent() {
               {pendingIncomingGiftsCount > 0 && (
                 <span
                   data-testid="gifts-tab-badge"
-                  className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full border border-teal-400/50 bg-teal-500/20 px-1.5 font-mono text-[10px] font-bold leading-none text-teal-300"
+                  className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full border border-teal-400/50 bg-teal-500/20 px-2 font-mono text-xs font-bold leading-none text-teal-300"
                 >
                   {pendingIncomingGiftsCount}
                 </span>
@@ -1459,7 +1333,7 @@ function ProfileContent() {
 
                       {/* Active 5-Slot Loadout Breakdown */}
                       <div className="space-y-1.5 pt-1">
-                        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#8AA8B2] px-1">
+                        <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wider text-[#8AA8B2] px-1">
                           <span>Slot Loadout</span>
                           <span>Click to Filter</span>
                         </div>
@@ -1485,7 +1359,7 @@ function ProfileContent() {
                                 }`}
                               >
                                 <span
-                                  className={`inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                  className={`inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${
                                     theme?.badgeClass ||
                                     "border-[#163B44] bg-[#102B33] text-zinc-300"
                                   }`}
@@ -1506,45 +1380,6 @@ function ProfileContent() {
                           })}
                         </div>
                       </div>
-
-                      {/* Studio Actions: Randomize Fit & Download PNG */}
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#163B44]">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          data-testid="wardrobe-randomize-btn"
-                          onClick={handleRandomizeFit}
-                          disabled={
-                            !canRandomizeFit ||
-                            isRandomizing ||
-                            Boolean(equippingItemId)
-                          }
-                          title={
-                            canRandomizeFit
-                              ? "Equip a random combination of your owned traits"
-                              : "Collect at least 2 traits in any category to randomize your fit"
-                          }
-                          className="h-9 rounded-xl border-cyan-500/40 bg-cyan-950/30 px-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-cyan-200 whitespace-nowrap hover:border-cyan-400 hover:bg-cyan-500/20 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
-                        >
-                          {isRandomizing ? "Randomizing..." : "Randomize Fit"}
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          data-testid="wardrobe-download-btn"
-                          onClick={handleDownloadAvatar}
-                          disabled={!address || isDownloadingPng}
-                          className="h-9 rounded-xl border-cyan-400/40 bg-cyan-950/30 px-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-cyan-300 whitespace-nowrap hover:border-cyan-300 hover:bg-cyan-500/20 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
-                        >
-                          {isDownloadingPng
-                            ? "Preparing..."
-                            : downloadSuccess
-                              ? "Saved PNG"
-                              : "Download PNG"}
-                        </Button>
-                      </div>
                     </div>
 
                     {/* Right Column: Category Filter Bar & Trait Grid */}
@@ -1558,7 +1393,7 @@ function ProfileContent() {
                           type="button"
                           data-testid="wardrobe-filter-all"
                           onClick={() => setWardrobeFilter("ALL")}
-                          className={`rounded-xl border px-3 py-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                          className={`rounded-xl border px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
                             wardrobeFilter === "ALL"
                               ? "border-cyan-400/60 bg-cyan-500/15 text-cyan-300 shadow-[0_0_12px_rgba(52,183,221,0.18)]"
                               : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/50 hover:text-white"
@@ -1579,7 +1414,7 @@ function ProfileContent() {
                                   prev === cat ? "ALL" : cat,
                                 )
                               }
-                              className={`rounded-xl border px-3 py-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                              className={`rounded-xl border px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
                                 isActive
                                   ? "border-[#34B7DD] bg-[#102B33] text-cyan-200 shadow-[0_0_12px_rgba(52,183,221,0.2)]"
                                   : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/50 hover:text-white"
@@ -1597,7 +1432,7 @@ function ProfileContent() {
                               prev === "DUPLICATES" ? "ALL" : "DUPLICATES",
                             )
                           }
-                          className={`rounded-xl border px-3 py-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                          className={`rounded-xl border px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
                             wardrobeFilter === "DUPLICATES"
                               ? "border-teal-400/60 bg-teal-500/15 text-teal-200 shadow-[0_0_12px_rgba(20,184,166,0.2)]"
                               : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-teal-400/50 hover:text-white"

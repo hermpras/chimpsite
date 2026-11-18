@@ -190,15 +190,15 @@ export function GiftModal({
       aria-modal="true"
       aria-labelledby="gift-modal-title"
       data-testid="gift-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
     >
-      <div className="relative w-full max-w-lg rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 shadow-2xl">
+      <div className="relative w-full max-w-lg rounded-3xl border border-[#34B7DD]/40 bg-[#071F27]/95 p-6 sm:p-7 shadow-[0_0_50px_rgba(0,0,0,0.8),0_0_24px_rgba(52,183,221,0.15)] backdrop-blur-2xl">
         {/* Close Button */}
         <button
           onClick={handleClose}
           disabled={isSubmitting}
           data-testid="gift-modal-close"
-          className="absolute top-4 right-4 rounded-lg border border-[#163B44] bg-[#051D22] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:bg-[#102B33] hover:text-white cursor-pointer"
+          className="absolute top-4 right-4 rounded-xl border border-[#34B7DD]/40 bg-[#07242C]/70 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-cyan-300 hover:border-cyan-400 hover:text-white hover:bg-[#0E3A47]/80 cursor-pointer transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] disabled:opacity-50"
           aria-label="Close modal"
         >
           CLOSE
@@ -206,17 +206,17 @@ export function GiftModal({
 
         {/* Modal Header */}
         <div className="mb-5">
-          <h2 id="gift-modal-title" className="text-xl font-bold text-white">
+          <h2 id="gift-modal-title" className="text-xl sm:text-2xl font-black uppercase tracking-wide text-white">
             Gift Trait
           </h2>
-          <p className="text-xs text-gray-400">
+          <p className="mt-1 text-xs sm:text-sm text-[#8AA8B2]">
             Transfer an extra item in this category to another Elychimp holder on Elysium
           </p>
         </div>
 
         {/* Selected Trait Preview */}
-        <div className="mb-5 flex items-center gap-4 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-3.5">
-          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-[#102B33] border border-[#163B44]">
+        <div className="mb-5 flex items-center gap-4 rounded-2xl border border-[#163B44] bg-[#0B2026]/90 p-4">
+          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-[#102B33] border border-[#163B44]">
             {item.trait.imageUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -225,7 +225,7 @@ export function GiftModal({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-[10px] font-mono font-bold uppercase text-gray-400">
+              <div className="flex h-full w-full items-center justify-center text-xs font-mono font-bold uppercase text-gray-400">
                 {item.trait.category}
               </div>
             )}
@@ -239,20 +239,20 @@ export function GiftModal({
               >
                 {item.trait.category}
               </span>
-              <span className="rounded bg-[#102B33] px-2 py-0.5 font-mono text-xs text-gray-300">
+              <span className="rounded-md bg-[#102B33] px-2 py-0.5 font-mono text-xs text-gray-300">
                 #{item.edition}
               </span>
             </div>
-            <p className="mt-1 truncate font-semibold text-white">{item.trait.name}</p>
+            <p className="mt-1 truncate text-sm sm:text-base font-semibold text-white">{item.trait.name}</p>
           </div>
         </div>
 
         {/* Established Gifting Rules Banner */}
-        <div className="mb-5 space-y-1.5 rounded-lg border border-teal-500/20 bg-teal-950/20 p-3.5 text-xs sm:text-sm text-teal-200">
-          <div className="flex items-center gap-1.5 font-semibold text-teal-400">
+        <div className="mb-5 space-y-2 rounded-2xl border border-purple-500/30 bg-purple-950/20 p-4 text-xs sm:text-sm text-purple-200">
+          <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-xs sm:text-sm text-purple-300">
             <span>Gifting Invariants & Rules:</span>
           </div>
-          <ul className="list-inside list-disc space-y-1 text-xs sm:text-sm text-gray-300">
+          <ul className="list-inside list-disc space-y-1 text-xs sm:text-sm text-gray-300 leading-relaxed">
             <li>You must retain at least 1 item in the {item.trait.category} category.</li>
             <li>Maximum 1 gift sent per wallet per UTC day.</li>
             <li>Recipient must not already own this trait.</li>
@@ -266,7 +266,7 @@ export function GiftModal({
           <div
             role="alert"
             data-testid="gift-send-error"
-            className="mb-4 flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300"
+            className="mb-4 flex items-start gap-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs sm:text-sm text-rose-300"
           >
             <div className="flex-1">{error || searchError}</div>
           </div>
@@ -276,7 +276,7 @@ export function GiftModal({
           <div
             role="status"
             data-testid="gift-send-success"
-            className="mb-4 flex items-start gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300"
+            className="mb-4 flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs sm:text-sm text-emerald-300"
           >
             <div className="flex-1">{successMessage}</div>
           </div>
@@ -288,7 +288,7 @@ export function GiftModal({
             <div>
               <label
                 htmlFor="receiver-address-input"
-                className="mb-1.5 block text-xs font-medium text-gray-300"
+                className="mb-1.5 block text-xs sm:text-sm font-semibold text-gray-300"
               >
                 Recipient X (Twitter) Username or Wallet Address
               </label>
@@ -313,18 +313,18 @@ export function GiftModal({
                       }
                     }}
                     disabled={isSubmitting || isSearching}
-                    className="w-full rounded-lg border border-[#163B44] bg-[#0B2026]/90 px-3.5 py-2.5 font-mono text-sm text-white placeholder-gray-500 transition-colors focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none disabled:opacity-50"
+                    className="w-full rounded-xl border border-[#163B44] bg-[#051D22]/90 px-4 py-2.5 font-mono text-sm text-white placeholder-gray-500 transition-colors focus:border-[#34B7DD] focus:ring-1 focus:ring-[#34B7DD] focus:outline-none disabled:opacity-50"
                   />
                 </div>
                 {!isAddressFormat && trimmed && (
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
+                    variant="secondary"
                     data-testid="search-recipient-btn"
                     onClick={handleSearchRecipient}
                     disabled={isSearching || !trimmed}
-                    className="h-10 border-teal-500/30 text-teal-300 hover:bg-teal-500/10"
+                    className="h-11 px-4 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wider"
                   >
                     <span>{isSearching ? "Verifying..." : "Verify"}</span>
                   </Button>
@@ -334,7 +334,7 @@ export function GiftModal({
               {trimmed && clientValidationError && (
                 <p
                   data-testid="gift-validation-message"
-                  className="mt-1.5 text-xs text-amber-400"
+                  className="mt-1.5 text-xs sm:text-sm text-amber-400 font-medium"
                 >
                   {clientValidationError}
                 </p>
@@ -344,7 +344,7 @@ export function GiftModal({
               {verifiedRecipient && (
                 <div
                   data-testid="recipient-confirmation-card"
-                  className={`mt-3 flex items-center justify-between rounded-xl border p-3 ${
+                  className={`mt-3 flex items-center justify-between rounded-2xl border p-3.5 ${
                     verifiedRecipient.canReceive
                       ? "border-emerald-500/40 bg-emerald-950/20 text-emerald-200"
                       : "border-amber-500/40 bg-amber-950/20 text-amber-200"
@@ -400,7 +400,7 @@ export function GiftModal({
               )}
 
               {senderAddress && (
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs sm:text-sm text-gray-400">
                   Sending from: {shortenAddress(senderAddress)}
                 </p>
               )}
@@ -412,6 +412,7 @@ export function GiftModal({
                 variant="outline"
                 onClick={handleClose}
                 disabled={isSubmitting}
+                className="rounded-xl border-[#34B7DD]/40 bg-[#07242C]/70 text-cyan-300 hover:border-cyan-400 hover:bg-[#0E3A47]/80 hover:text-white font-extrabold text-xs sm:text-sm tracking-wider"
               >
                 Cancel
               </Button>
@@ -420,7 +421,7 @@ export function GiftModal({
                 variant="primary"
                 data-testid="send-gift-submit"
                 disabled={isSubmitDisabled}
-                className="bg-teal-600 hover:bg-teal-500 active:bg-teal-700"
+                className="rounded-xl font-black text-xs sm:text-sm tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Sending..." : "Confirm & Send Gift"}
               </Button>
@@ -430,9 +431,10 @@ export function GiftModal({
           <div className="flex justify-end pt-2">
             <Button
               type="button"
-              variant="outline"
+              variant="primary"
               data-testid="gift-success-done"
               onClick={handleClose}
+              className="rounded-xl font-black text-xs sm:text-sm tracking-wider px-6"
             >
               Done
             </Button>

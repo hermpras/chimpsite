@@ -1401,7 +1401,7 @@ export default function WhitelistPage() {
                   disabled={tasksLoading}
                   aria-label="Refresh Tasks"
                   title="Refresh Tasks"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#163B44] bg-[#102B33]/50 text-[#DBF2F9] hover:border-[#34B7DD]/60 hover:bg-[#34B7DD]/10 hover:text-white hover:shadow-[0_0_15px_rgba(52,183,221,0.2)] transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#34B7DD]/40 bg-[#07242C]/70 text-cyan-300 hover:border-cyan-400 hover:text-white hover:bg-[#0E3A47]/80 disabled:opacity-50 cursor-pointer transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
                 >
                   <RefreshCw className={`h-4 w-4 ${tasksLoading ? "animate-spin" : ""}`} />
                 </button>

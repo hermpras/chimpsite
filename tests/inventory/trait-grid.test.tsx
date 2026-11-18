@@ -391,7 +391,7 @@ describe("TraitGrid Component & Profile Inventory States", () => {
       expect(screen.getByText("Pilot Cap")).toBeInTheDocument();
     });
 
-    it("randomizes fit across categories with multiple unlocked traits", async () => {
+    it("verifies randomize and download buttons are removed and equips alternative trait directly", async () => {
       mockUseSiweAuth.mockReturnValue({
         status: "authenticated",
         sessionAddress: "0x1234567890123456789012345678901234567890",
@@ -430,8 +430,12 @@ describe("TraitGrid Component & Profile Inventory States", () => {
         </Providers>,
       );
 
+      // Verify randomize button and download button are no longer present
+      expect(screen.queryByTestId("wardrobe-randomize-btn")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("wardrobe-download-btn")).not.toBeInTheDocument();
+
       await waitFor(() => {
-        expect(screen.getByTestId("wardrobe-randomize-btn")).toBeEnabled();
+        expect(screen.getByTestId("equip-button-item-fur-alt")).toBeInTheDocument();
       });
 
       // Initially Diamond Grill #1 is equipped in FUR slot
@@ -439,8 +443,8 @@ describe("TraitGrid Component & Profile Inventory States", () => {
         "Diamond Grill #1",
       );
 
-      // Click Randomize Fit -> switches to the alternative unlocked trait Neon Fur #2
-      fireEvent.click(screen.getByTestId("wardrobe-randomize-btn"));
+      // Click Equip on Neon Fur #2
+      fireEvent.click(screen.getByTestId("equip-button-item-fur-alt"));
 
       await waitFor(() => {
         expect(mockEquipUserTrait).toHaveBeenCalledWith("item-fur-alt");
