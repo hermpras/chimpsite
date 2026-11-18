@@ -1665,12 +1665,6 @@ export default function WhitelistPage() {
                                       <span className="text-xs font-bold text-[#8AA8B2] uppercase">
                                         {taskMeta.label}
                                       </span>
-                                      {isActive && (
-                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-300 px-2 py-0.5 rounded-md border border-cyan-500/30 bg-cyan-950/50">
-                                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                                          Active
-                                        </span>
-                                      )}
                                     </div>
                                     {task.description && (
                                       <p className="text-xs sm:text-sm text-[#8AA8B2] leading-relaxed">
@@ -1862,12 +1856,6 @@ export default function WhitelistPage() {
                                     <span className="text-xs font-bold text-zinc-400 uppercase">
                                       {task.taskType}
                                     </span>
-                                    {isActive && (
-                                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-300 px-2 py-0.5 rounded-md border border-cyan-500/30 bg-cyan-950/50">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                                        Active
-                                      </span>
-                                    )}
                                   </div>
                                   {task.description && (
                                     <p className="text-xs sm:text-sm text-[#8AA8B2]">{task.description}</p>
