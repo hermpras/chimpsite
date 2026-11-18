@@ -848,15 +848,17 @@ export default function WhitelistPage() {
   // Calculate immediate step from live states
   const calculatedStep = isRevoked
     ? 5
-    : !isWalletConnected
-      ? 1
-      : !isXLinked
-        ? 2
-        : !isTasksComplete
-          ? 3
-          : !isTraitsComplete
-            ? 4
-            : 5;
+    : isWhitelistSecured
+      ? 5
+      : !isWalletConnected
+        ? 1
+        : !isXLinked
+          ? 2
+          : !isTasksComplete
+            ? 3
+            : !isTraitsComplete
+              ? 4
+              : 5;
 
   // Step accessibility check for sequential progression & backward navigation
   const isStepAccessible = useCallback(

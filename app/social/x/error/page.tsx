@@ -3,7 +3,6 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Link2Off, ShieldAlert } from "lucide-react";
 import { XLogo } from "@/components/icons/XLogo";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -110,14 +109,10 @@ function XErrorContent() {
         <div className="mb-6 flex flex-col items-center justify-center gap-3">
           <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl border border-rose-500/40 bg-rose-950/40 shadow-[0_0_30px_rgba(244,63,94,0.25)] backdrop-blur-md">
             <XLogo className="h-9 w-9 text-white" />
-            <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border border-rose-500 bg-[#04181C] text-rose-400 shadow-md">
-              <Link2Off className="h-4 w-4" />
-            </div>
           </div>
 
           <div className="inline-flex items-center gap-2">
             <Badge variant={info.badgeVariant} className="px-3 py-1 uppercase tracking-wider text-xs">
-              <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
               {info.tag}
             </Badge>
           </div>
@@ -141,9 +136,8 @@ function XErrorContent() {
           <Link href="/" className="w-full sm:w-auto">
             <Button
               size="lg"
-              className="w-full sm:w-auto gap-2.5 bg-[#34B7DD] text-[#04181C] hover:bg-[#6FCDE8] font-bold text-sm sm:text-base uppercase tracking-wider shadow-[0_0_20px_rgba(52,183,221,0.25)] px-8 py-4"
+              className="w-full sm:w-auto bg-[#34B7DD] text-[#04181C] hover:bg-[#6FCDE8] font-bold text-sm sm:text-base uppercase tracking-wider shadow-[0_0_20px_rgba(52,183,221,0.25)] px-8 py-4"
             >
-              <ArrowLeft className="h-4 w-4" />
               Return to Home
             </Button>
           </Link>

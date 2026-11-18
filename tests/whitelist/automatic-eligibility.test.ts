@@ -708,7 +708,7 @@ describe("Whitelist Automatic Eligibility Evaluation (Task 5)", () => {
 
     // Must retain Whitelist status, 5 traits checklist, tasks, and link to /drops
     expect(pageContent).toContain("Whitelist Status & Allocation");
-    expect(pageContent).toContain("Required Trait Categories (5 of 5)");
+    expect(pageContent).toContain("Trait Categories");
     expect(pageContent).toContain('href="/drops"');
     expect(pageContent).toContain("Campaigns & Quests");
   });

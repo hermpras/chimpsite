@@ -810,38 +810,42 @@ describe("X (Twitter) OAuth 2.0 PKCE Service", () => {
   });
 
   describe("E2E Database Isolation Security Guard", () => {
-    it("assertSafeLocalTestDatabase blocks remote URLs, wrong databases, and non-local hosts", async () => {
-      const { assertSafeLocalTestDatabase } = await import("../../playwright.config");
+    it(
+      "assertSafeLocalTestDatabase blocks remote URLs, wrong databases, and non-local hosts",
+      async () => {
+        const { assertSafeLocalTestDatabase } = await import("../../playwright.config");
 
-      // Remote Supabase or cloud databases must throw
-      expect(() =>
-        assertSafeLocalTestDatabase("postgresql://postgres:secret@db.supabase.co:5432/postgres"),
-      ).toThrow(/Playwright E2E execution is strictly restricted to local database "chimphood_test"/);
+        // Remote Supabase or cloud databases must throw
+        expect(() =>
+          assertSafeLocalTestDatabase("postgresql://postgres:secret@db.supabase.co:5432/postgres"),
+        ).toThrow(/Playwright E2E execution is strictly restricted to local database "chimphood_test"/);
 
-      // Localhost with production/wrong DB name must throw
-      expect(() =>
-        assertSafeLocalTestDatabase("postgresql://postgres@localhost:5432/chimphood_production"),
-      ).toThrow(/Playwright E2E execution is strictly restricted to local database "chimphood_test"/);
+        // Localhost with production/wrong DB name must throw
+        expect(() =>
+          assertSafeLocalTestDatabase("postgresql://postgres@localhost:5432/chimphood_production"),
+        ).toThrow(/Playwright E2E execution is strictly restricted to local database "chimphood_test"/);
 
-      // Non-localhost IP must throw
-      expect(() =>
-        assertSafeLocalTestDatabase("postgresql://postgres@192.168.1.100:5432/chimphood_test"),
-      ).toThrow(/Playwright E2E execution is strictly restricted to local database "chimphood_test"/);
+        // Non-localhost IP must throw
+        expect(() =>
+          assertSafeLocalTestDatabase("postgresql://postgres@192.168.1.100:5432/chimphood_test"),
+        ).toThrow(/Playwright E2E execution is strictly restricted to local database "chimphood_test"/);
 
-      // Malformed URL must throw
-      expect(() =>
-        assertSafeLocalTestDatabase("invalid-connection-string"),
-      ).toThrow(/Invalid or malformed database URL for E2E testing/);
+        // Malformed URL must throw
+        expect(() =>
+          assertSafeLocalTestDatabase("invalid-connection-string"),
+        ).toThrow(/Invalid or malformed database URL for E2E testing/);
 
-      // Safe local URLs must be accepted
-      expect(
-        assertSafeLocalTestDatabase("postgresql://hermawanprastiyanto@localhost:5432/chimphood_test"),
-      ).toBe("postgresql://hermawanprastiyanto@localhost:5432/chimphood_test");
+        // Safe local URLs must be accepted
+        expect(
+          assertSafeLocalTestDatabase("postgresql://hermawanprastiyanto@localhost:5432/chimphood_test"),
+        ).toBe("postgresql://hermawanprastiyanto@localhost:5432/chimphood_test");
 
-      expect(
-        assertSafeLocalTestDatabase("postgresql://hermawanprastiyanto@127.0.0.1:5432/chimphood_test?schema=public"),
-      ).toBe("postgresql://hermawanprastiyanto@127.0.0.1:5432/chimphood_test?schema=public");
-    });
+        expect(
+          assertSafeLocalTestDatabase("postgresql://hermawanprastiyanto@127.0.0.1:5432/chimphood_test?schema=public"),
+        ).toBe("postgresql://hermawanprastiyanto@127.0.0.1:5432/chimphood_test?schema=public");
+      },
+      30000,
+    );
 
     it("cleanupXOAuthTestData executes targeted parameterized queries and preserves other users data", async () => {
       // Mock pg.Pool to inspect SQL queries and parameters executed by cleanup

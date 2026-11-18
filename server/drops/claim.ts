@@ -324,63 +324,7 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
           );
         }
 
-        // 2. Invariant: Users holding an active/confirmed WL slot CANNOT claim drops
-        const existingWlSlot = await tx.wLSlot.findFirst({
-          where: {
-            userId: input.userId,
-            status: { in: ["ALLOCATED", "CONFIRMED"] },
-          },
-        });
-        if (existingWlSlot) {
-          throw new DropClaimError(
-            "WL_HOLDER_CLAIM_PROHIBITED",
-            "Users holding an allocated Whitelist slot cannot claim drops.",
-            403,
-          );
-        }
-
-        // 2b. Invariant: User must be registered with linked X identity & have completed mandatory tasks
-        let eligibility: UserDropEligibilityResult | null = null;
-        if (typeof tx.user?.findUnique === "function") {
-          eligibility = await checkUserDropEligibility(tx, input.userId, now);
-          if (!eligibility.isEligible) {
-            if (eligibility.hasAllocatedSlot) {
-              throw new DropClaimError(
-                "WL_HOLDER_CLAIM_PROHIBITED",
-                "Users holding an allocated Whitelist slot cannot claim drops.",
-                403,
-              );
-            }
-            if (!eligibility.hasLinkedX) {
-              throw new DropClaimError(
-                "X_IDENTITY_REQUIRED",
-                "You must link your X (Twitter) account before claiming drops.",
-                403,
-              );
-            }
-            if (!eligibility.areMandatoryTasksCompleted) {
-              throw new DropClaimError(
-                "MANDATORY_TASKS_INCOMPLETE",
-                `You must complete all mandatory campaign tasks (${eligibility.completedMandatoryTasksCount}/${eligibility.totalMandatoryTasksCount} completed) before claiming drops.`,
-                403,
-              );
-            }
-            if (eligibility.isBanned) {
-              throw new DropClaimError(
-                "USER_BANNED_FROM_CLAIMS",
-                "Your account is restricted from claiming drops.",
-                403,
-              );
-            }
-            throw new DropClaimError(
-              "DROP_ELIGIBILITY_REQUIREMENTS_NOT_MET",
-              eligibility.missingRequirements[0] || "You do not meet the requirements to claim drops.",
-              403,
-            );
-          }
-        }
-
-        // 3. Verify Drop and DropPeriod
+        // 2. Verify Drop and DropPeriod (Fail-fast before evaluating user eligibility)
         const period = await tx.dropPeriod.findUnique({
           where: { id: input.periodId },
           include: { drop: true },
@@ -422,6 +366,62 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
             "The 30-minute claim window for this period is not currently active.",
             400,
           );
+        }
+
+        // 3a. Invariant: Users holding an active/confirmed WL slot CANNOT claim drops
+        const existingWlSlot = await tx.wLSlot.findFirst({
+          where: {
+            userId: input.userId,
+            status: { in: ["ALLOCATED", "CONFIRMED"] },
+          },
+        });
+        if (existingWlSlot) {
+          throw new DropClaimError(
+            "WL_HOLDER_CLAIM_PROHIBITED",
+            "Users holding an allocated Whitelist slot cannot claim drops.",
+            403,
+          );
+        }
+
+        // 3b. Invariant: User must be registered with linked X identity & have completed mandatory tasks
+        let eligibility: UserDropEligibilityResult | null = null;
+        if (typeof tx.user?.findUnique === "function") {
+          eligibility = await checkUserDropEligibility(tx, input.userId, now);
+          if (!eligibility.isEligible) {
+            if (eligibility.hasAllocatedSlot) {
+              throw new DropClaimError(
+                "WL_HOLDER_CLAIM_PROHIBITED",
+                "Users holding an allocated Whitelist slot cannot claim drops.",
+                403,
+              );
+            }
+            if (!eligibility.hasLinkedX) {
+              throw new DropClaimError(
+                "X_IDENTITY_REQUIRED",
+                "You must link your X (Twitter) account before claiming drops.",
+                403,
+              );
+            }
+            if (!eligibility.areMandatoryTasksCompleted) {
+              throw new DropClaimError(
+                "MANDATORY_TASKS_INCOMPLETE",
+                `You must complete all mandatory campaign tasks (${eligibility.completedMandatoryTasksCount}/${eligibility.totalMandatoryTasksCount} completed) before claiming drops.`,
+                403,
+              );
+            }
+            if (eligibility.isBanned) {
+              throw new DropClaimError(
+                "USER_BANNED_FROM_CLAIMS",
+                "Your account is restricted from claiming drops.",
+                403,
+              );
+            }
+            throw new DropClaimError(
+              "DROP_ELIGIBILITY_REQUIREMENTS_NOT_MET",
+              eligibility.missingRequirements[0] || "You do not meet the requirements to claim drops.",
+              403,
+            );
+          }
         }
 
         // 4. Invariant: Strictly 1 claim per user per drop per period

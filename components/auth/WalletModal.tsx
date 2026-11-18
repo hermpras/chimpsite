@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Connector } from "wagmi";
-import { X } from "lucide-react";
 import { WalletIcon } from "./WalletIcons";
 
 interface WalletModalProps {
@@ -199,10 +198,10 @@ export function WalletModal({
           <button
             onClick={onClose}
             disabled={isConnecting}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#163B44] text-[#8AA8B2] hover:border-[#34B7DD]/60 hover:bg-[#102B33] hover:text-[#DBF2F9] transition-colors disabled:opacity-50 cursor-pointer"
+            className="rounded-lg border border-[#163B44] bg-[#051D22] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8AA8B2] hover:bg-[#102B33] hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
             aria-label="Close modal"
           >
-            <X className="h-4 w-4" />
+            CLOSE
           </button>
         </div>
 

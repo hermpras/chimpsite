@@ -51,6 +51,7 @@ function createDec012IntegrationStore() {
           return {
             ...user,
             wallet,
+            xIdentity: { id: `x-${user.id}`, xId: `xid-${user.id}`, username: `user_${user.id}`, userId: user.id },
             adminRole,
             banRecords,
           };

@@ -36,8 +36,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# load test secrets
+# load test secrets and artifacts
 tests/load/*session*.json
 tests/load/*sessions*.json
 tests/load/*.secret.json
+tests/load/*-manifest.json
+tests/load/results/
 .env*

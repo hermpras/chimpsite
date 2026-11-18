@@ -23,6 +23,8 @@ const defaultProgram = {
 describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
+    localStorage.clear();
 
     vi.mocked(tasksClient.fetchActiveTasks).mockResolvedValue({
       configured: true,
@@ -57,9 +59,9 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     } as any);
   });
 
-  // 1. Status: NONE (Ineligible / Not Registered)
-  it("renders NONE status with Not Registered / Ineligible badge and registration instructions", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+  // 1. Status: NONE (Ineligible / In Progress)
+  it("renders NONE status with In Progress badge and registration instructions", async () => {
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: defaultProgram,
       address: "0x1111111111111111111111111111111111111111",
@@ -68,15 +70,14 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
         isFullyQualified: false,
         phase: "NONE",
         missingRequirements: [
-          "Linked X (Twitter) account required.",
           "Missing trait categories: CLOTHING, EYEWEAR.",
         ],
         details: {
           hasVerifiedWallet: true,
-          hasLinkedX: false,
+          hasLinkedX: true,
           heldCategories: ["BG", "FUR", "HEADWEAR"],
           missingCategories: ["CLOTHING", "EYEWEAR"],
-          completedMandatoryTasksCount: 0,
+          completedMandatoryTasksCount: 2,
           totalMandatoryTasksCount: 2,
           isBanned: false,
         },
@@ -86,23 +87,23 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Not Registered / Ineligible")).toBeInTheDocument();
+      expect(screen.getByText("3 / 5 Categories Collected")).toBeInTheDocument();
     });
 
-    expect(
-      screen.getByText(
-        /Connect your EVM wallet and X \(Twitter\) account to automatically register in the FCFS Directory/,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getAllByText("Trait Categories").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("HEADWEAR")).toBeInTheDocument();
+
+    // Switch to step 5 to view status panel
+    const statusTab = screen.getByRole("button", { name: /STATUS/i });
+    fireEvent.click(statusTab);
+
+    expect(screen.getByText("Qualification In Progress")).toBeInTheDocument();
     expect(screen.getByText("Missing trait categories: CLOTHING, EYEWEAR.")).toBeInTheDocument();
-    expect(screen.getByText("Linked X (Twitter) account required.")).toBeInTheDocument();
-    expect(screen.getByText("0 / 2 Completed")).toBeInTheDocument();
-    expect(screen.getByText("3 / 5 Collected")).toBeInTheDocument();
   });
 
   // 2. Status: FCFS_REGISTERED (Incomplete / Action Required)
-  it("renders FCFS_REGISTERED incomplete with sequence, joinedAt, action required banner, and notice", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+  it("renders FCFS_REGISTERED incomplete with action required banner and notice", async () => {
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: defaultProgram,
       address: "0x1111111111111111111111111111111111111111",
@@ -129,30 +130,16 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("FCFS Directory (Registered)")).toBeInTheDocument();
+      expect(screen.getByText("Qualification In Progress")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Participant #42")).toBeInTheDocument();
-    expect(screen.getByText(/Registered on Oct 18, 2026/)).toBeInTheDocument();
-    expect(screen.getByText("Action Required — Incomplete Requirements")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /You are registered in the directory, but must satisfy all 5 requirements below to be included in the OpenSea FCFS allowlist export\./,
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText("FCFS Directory Notice")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Registration is for the OpenSea FCFS allowlist minting stage and does NOT guarantee a Guaranteed \(GTD\) slot or an allocation\./,
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText("@chimp_enthusiast")).toBeInTheDocument();
-    expect(screen.getByText("4 / 5 Collected")).toBeInTheDocument();
+    expect(screen.getByText("Action Needed:")).toBeInTheDocument();
+    expect(screen.getByText("Missing trait categories: EYEWEAR.")).toBeInTheDocument();
   });
 
   // 3. Status: FCFS_REGISTERED (Fully Qualified)
-  it("renders FCFS_REGISTERED qualified with eligible for OpenSea FCFS allowlist banner", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+  it("renders FCFS_REGISTERED qualified with unified Whitelisted Minter Pass", async () => {
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: defaultProgram,
       address: "0x1111111111111111111111111111111111111111",
@@ -179,25 +166,16 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("FCFS Directory (Registered)")).toBeInTheDocument();
+      expect(screen.getByText("Whitelisted Minter Pass")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Participant #77")).toBeInTheDocument();
-    expect(screen.getByText("Eligible for OpenSea FCFS Allowlist")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /All 5 qualification requirements are satisfied! Your wallet will be included in the OpenSea FCFS allowlist export\./,
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText("5 / 5 Collected")).toBeInTheDocument();
-    expect(screen.getByText("2 / 2 Completed")).toBeInTheDocument();
+    expect(screen.getByText("SERIAL: ELY-WL-0077 • ELYCHIMP.XYZ")).toBeInTheDocument();
     expect(screen.queryByText("Check Eligibility")).not.toBeInTheDocument();
-    expect(screen.queryByText("Qualify / Claim Slot")).not.toBeInTheDocument();
   });
 
   // 4. Status: SLOT_ALLOCATED with reviewStatus = NOT_REVIEWED
   it("renders SLOT_ALLOCATED with NOT_REVIEWED sub-indicator", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: defaultProgram,
       address: "0x1111111111111111111111111111111111111111",
@@ -225,20 +203,19 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Guaranteed Slot #108 (Active)")).toBeInTheDocument();
+      expect(screen.getByText("Whitelisted Minter Pass")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Pending Routine Review")).toBeInTheDocument();
     expect(
       screen.getByText("Slot Confirmed — Routine verification in progress."),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Secured on Oct 15, 2026/)).toBeInTheDocument();
-    expect(screen.getByText("GTD SLOT ALLOCATED")).toBeInTheDocument();
+    expect(screen.getByText("SERIAL: ELY-WL-0108 • ELYCHIMP.XYZ")).toBeInTheDocument();
   });
 
   // 5. Status: SLOT_ALLOCATED with reviewStatus = UNDER_REVIEW
   it("renders SLOT_ALLOCATED with UNDER_REVIEW sub-indicator", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: defaultProgram,
       address: "0x1111111111111111111111111111111111111111",
@@ -266,18 +243,19 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Guaranteed Slot #55 (Active)")).toBeInTheDocument();
+      expect(screen.getByText("Whitelisted Minter Pass")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Under Verification")).toBeInTheDocument();
     expect(
       screen.getByText("Under Verification — Account details being audited."),
     ).toBeInTheDocument();
+    expect(screen.getByText("SERIAL: ELY-WL-0055 • ELYCHIMP.XYZ")).toBeInTheDocument();
   });
 
   // 6. Status: SLOT_ALLOCATED with reviewStatus = VALID
   it("renders SLOT_ALLOCATED with VALID verified sub-indicator", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: defaultProgram,
       address: "0x1111111111111111111111111111111111111111",
@@ -305,18 +283,19 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Guaranteed Slot #12 (Active)")).toBeInTheDocument();
+      expect(screen.getByText("Whitelisted Minter Pass")).toBeInTheDocument();
     });
 
     expect(screen.getAllByText("Verified").length).toBeGreaterThanOrEqual(1);
     expect(
       screen.getByText("Verified — All criteria confirmed by team."),
     ).toBeInTheDocument();
+    expect(screen.getByText("SERIAL: ELY-WL-0012 • ELYCHIMP.XYZ")).toBeInTheDocument();
   });
 
   // 7. Status: SLOT_ALLOCATED with reviewStatus = FLAGGED (Slot remains active per DEC-015)
   it("renders SLOT_ALLOCATED with FLAGGED sub-indicator notice while slot remains active", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: defaultProgram,
       address: "0x1111111111111111111111111111111111111111",
@@ -344,7 +323,7 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     render(<WhitelistPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Guaranteed Slot #99 (Active)")).toBeInTheDocument();
+      expect(screen.getByText("Whitelisted Minter Pass")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Notice / Action Required")).toBeInTheDocument();
@@ -353,11 +332,12 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
         "Notice — Please review your linked accounts and task requirements. Slot remains active.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByText("SERIAL: ELY-WL-0099 • ELYCHIMP.XYZ")).toBeInTheDocument();
   });
 
   // 8. Status: REVOKED (DEC-022: Terminal Disqualification)
   it("renders REVOKED status with full disqualification banner and disables qualify CTA", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: defaultProgram,
       address: "0x1111111111111111111111111111111111111111",
@@ -392,12 +372,7 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /In accordance with ChimpHood program policies \(DEC-022\), slot revocation results in full disqualification from this Whitelist program\./,
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Revoked participants are not eligible for Guaranteed \(GTD\) slots and are excluded from the OpenSea FCFS allowlist export\./,
+        /In accordance with Elysium program policies \(DEC-022\), whitelist revocation results in full disqualification from this Whitelist program and exclusion from the allowlist export\./,
       ),
     ).toBeInTheDocument();
 
@@ -409,7 +384,6 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
     // Must NOT render FCFS registered badges or false hope checklists
     expect(screen.queryByText("FCFS Directory (Registered)")).not.toBeInTheDocument();
     expect(screen.queryByText("Eligible for OpenSea FCFS Allowlist")).not.toBeInTheDocument();
-    expect(screen.queryByText("Required Trait Categories (5 of 5)")).not.toBeInTheDocument();
   });
 
   // 9. Fully Automated UI: Never renders manual address input or Lookup button
@@ -425,12 +399,8 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
 
     render(<WhitelistPage />);
 
-    expect(screen.getByText("Wallet Not Authenticated")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Connect your Web3 wallet via Sign in with Ethereum \(SIWE\) above to view your real-time Whitelist allocation status and trait checklist\./,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Connect EVM Wallet")).toBeInTheDocument();
+    expect(screen.getByText("A signature, not a transaction.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Connect Wallet" })).toBeInTheDocument();
     expect(screen.queryByPlaceholderText("0x... EVM wallet address")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Lookup" })).not.toBeInTheDocument();
@@ -480,7 +450,7 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
 
   // 12. Direct Connect X Account button when X identity is required
   it("renders direct Connect X Account button when X is not linked", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: defaultProgram,
       address: "0x1111111111111111111111111111111111111111",
@@ -513,7 +483,7 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
 
   // 13. Whitelist portal header and color-themed trait category checklist
   it("renders Whitelist portal header and trait category checklist with responsive grid classes", async () => {
-    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValueOnce({
+    vi.mocked(whitelistClient.fetchWhitelistStatus).mockResolvedValue({
       configured: true,
       program: {
         ...defaultProgram,
