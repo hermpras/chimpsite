@@ -638,19 +638,19 @@ export default function DropsPage() {
           {/* Top Luxury Gold Accent Sheen */}
           <div className="pointer-events-none absolute inset-x-12 top-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#163B44] pb-5">
-            <div>
+          <div className="flex items-center justify-between gap-3 border-b border-[#163B44] pb-4 sm:pb-5">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5">
-                <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                <h2 className="font-display text-xl xs:text-2xl sm:text-3xl uppercase tracking-wider text-white">
                   Periodic Drop Cycle
                 </h2>
               </div>
-              <p className="text-sm sm:text-base text-[#8AA8B2] mt-1">
+              <p className="text-xs sm:text-base text-[#8AA8B2] mt-0.5 sm:mt-1">
                 1 claim per EVM wallet per period cycle.
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="shrink-0 flex items-center gap-2.5">
               <button
                 onClick={loadDropData}
                 disabled={isLoading}
