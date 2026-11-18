@@ -402,14 +402,12 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     });
 
     expect(
-      screen.getByText("Whitelist Qualification"),
+      screen.getByText("Whitelist Qualification: In Progress"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        /Connect your EVM wallet and X \(Twitter\) account, and complete the 5 trait categories and campaign tasks to qualify for the allowlist\./,
-      ),
+      screen.getByText("Action Needed — Incomplete Requirements"),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to Whitelist Portal" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Go to Whitelist Portal/i })).toHaveAttribute(
       "href",
       "/whitelist",
     );

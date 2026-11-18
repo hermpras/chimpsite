@@ -131,10 +131,9 @@ describe("Whitelist Page Status UI Integration (Phase 7 Task 7.2)", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Qualification In Progress")).toBeInTheDocument();
+      expect(screen.getByText("Action Needed:")).toBeInTheDocument();
+      expect(screen.getByText("Missing trait categories: EYEWEAR.")).toBeInTheDocument();
     });
-
-    expect(screen.getByText("Action Needed:")).toBeInTheDocument();
-    expect(screen.getByText("Missing trait categories: EYEWEAR.")).toBeInTheDocument();
   });
 
   // 3. Status: FCFS_REGISTERED (Fully Qualified)

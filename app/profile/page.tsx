@@ -225,6 +225,7 @@ function ProfileContent() {
   const { xName, xUsername: hookXUsername } = useXIdentity();
   const address = sessionAddress || walletAddress;
   const [wlData, setWlData] = useState<WhitelistStatusResponse | null>(null);
+  const [isWlLoading, setIsWlLoading] = useState(true);
   const [xStatusData, setXStatusData] = useState<{
     connected?: boolean;
     identity?: {
@@ -596,11 +597,32 @@ function ProfileContent() {
   };
 
   useEffect(() => {
+    let ignore = false;
     if (status === "authenticated" && address) {
+      setIsWlLoading(true);
       fetchWhitelistStatus(address)
-        .then(setWlData)
-        .catch((err) => console.error("Error fetching profile WL status:", err));
+        .then((data) => {
+          if (!ignore) {
+            setWlData(data);
+          }
+        })
+        .catch((err) => {
+          if (!ignore) {
+            console.error("Error fetching profile WL status:", err);
+          }
+        })
+        .finally(() => {
+          if (!ignore) {
+            setIsWlLoading(false);
+          }
+        });
+    } else {
+      setIsWlLoading(false);
     }
+
+    return () => {
+      ignore = true;
+    };
   }, [status, address, xLinked]);
 
   useEffect(() => {
@@ -1036,6 +1058,11 @@ function ProfileContent() {
                       Sign in with your Web3 wallet above to view your Whitelist allocation status, trait collection progress, and campaign tasks.
                     </p>
                   </div>
+                ) : isWlLoading && !wlData ? (
+                  <div className="space-y-4 animate-pulse" data-testid="whitelist-loading-skeleton">
+                    <div className="h-20 rounded-xl border border-[#163B44]/60 bg-[#071f27]/40" />
+                    <div className="h-28 rounded-xl border border-[#163B44]/60 bg-[#071f27]/40" />
+                  </div>
                 ) : (
                   <>
                     {/* 1. SLOT_ALLOCATED (Aktif) */}
@@ -1088,27 +1115,34 @@ function ProfileContent() {
                       );
                     })()}
 
-                    {/* 2. In Progress (FCFS incomplete OR with X connected) */}
+                    {/* 2. In Progress Qualification (When not allocated, not fully qualified, and not revoked) */}
                     {wlData?.status?.phase !== "REVOKED" &&
                       wlData?.status?.phase !== "SLOT_ALLOCATED" &&
-                      !wlData?.status?.isFullyQualified &&
-                      (wlData?.status?.phase === "FCFS_REGISTERED" || isXConnected) && (
+                      !wlData?.status?.isFullyQualified && (
                         <div
                           className="space-y-3 rounded-xl border border-cyan-500/40 bg-cyan-950/40 p-4"
-                          data-testid="fcfs-status-card"
+                          data-testid={wlData?.status?.phase === "NONE" ? "none-status-card" : "fcfs-status-card"}
                         >
-                          <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-zinc-200">
-                            <span className="font-bold text-white">
-                              Whitelist Qualification: In Progress
-                            </span>
-                            {wlData?.status?.joinedAt && (
-                              <>
-                                <span className="text-zinc-600">•</span>
-                                <span className="text-zinc-400 text-xs sm:text-sm">
-                                  Registered on {formatRegistrationDate(wlData.status.joinedAt)}
-                                </span>
-                              </>
-                            )}
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-sm sm:text-base text-zinc-200">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white">
+                                Whitelist Qualification: In Progress
+                              </span>
+                              {wlData?.status?.joinedAt && (
+                                <>
+                                  <span className="text-zinc-600">•</span>
+                                  <span className="text-zinc-400 text-xs sm:text-sm">
+                                    Registered on {formatRegistrationDate(wlData.status.joinedAt)}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            <Link
+                              href="/whitelist"
+                              className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/30 bg-[#071f27]/80 px-3 py-1 text-xs font-bold text-cyan-300 hover:border-cyan-400 hover:bg-cyan-950/60 hover:text-cyan-200 transition-all uppercase tracking-wider"
+                            >
+                              <span>Go to Whitelist Portal &rarr;</span>
+                            </Link>
                           </div>
 
                           <div className="rounded-lg border border-cyan-500/40 bg-cyan-950/50 p-3.5 text-xs sm:text-sm text-cyan-200">
@@ -1173,28 +1207,6 @@ function ProfileContent() {
                           <p className="text-rose-400 font-semibold">
                             Revoked participants are not eligible for Whitelist slots and are excluded from the allowlist export.
                           </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 5. NONE (Not Registered & X not connected) */}
-                    {(!wlData?.status || wlData?.status?.phase === "NONE") && !isXConnected && (
-                      <div
-                        className="rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-5 text-sm sm:text-base text-zinc-300 space-y-2.5"
-                        data-testid="none-status-card"
-                      >
-                        <p className="font-bold text-white text-base sm:text-lg">Whitelist Qualification</p>
-                        <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
-                          Connect your EVM wallet and X (Twitter) account, and complete the 5 trait categories and campaign tasks to qualify for the allowlist.
-                        </p>
-                        <div className="pt-2">
-                          <Link
-                            href="/whitelist"
-                            className="group relative overflow-hidden inline-flex items-center rounded-xl border border-cyan-400/70 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-500 text-black px-4 py-2 text-xs sm:text-sm font-black uppercase tracking-wider shadow-[0_0_20px_rgba(34,211,238,0.35)] hover:from-cyan-300 hover:via-teal-200 hover:to-cyan-400 hover:shadow-[0_0_28px_rgba(34,211,238,0.55)] hover:scale-[1.02] active:scale-[0.98] transition-all"
-                          >
-                            <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full" />
-                            <span>Go to Whitelist Portal</span>
-                          </Link>
                         </div>
                       </div>
                     )}
