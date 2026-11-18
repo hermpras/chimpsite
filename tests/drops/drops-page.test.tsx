@@ -252,6 +252,16 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         expect(
           screen.getByText(/Drop Pool Inventory \(5 Available Traits\)/i)
         ).toBeInTheDocument();
+      });
+
+      // Initially filters to LEGENDARY by default
+      expect(screen.getByText("Golden Katana")).toBeInTheDocument();
+      expect(screen.queryByText("Cyber Helmet")).not.toBeInTheDocument();
+
+      // Click ALL RARITIES to view all pool items
+      fireEvent.click(screen.getByTestId("drop-filter-rarity-all"));
+
+      await waitFor(() => {
         expect(screen.getByText("Golden Katana")).toBeInTheDocument();
         expect(screen.getByText("Cyber Helmet")).toBeInTheDocument();
         expect(screen.getByText("Neon Shades")).toBeInTheDocument();
@@ -796,6 +806,9 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         expect(screen.getByText("Golden Katana")).toBeInTheDocument();
       });
 
+      // Show all rarities so items across all 5 categories are rendered
+      fireEvent.click(screen.getByTestId("drop-filter-rarity-all"));
+
       // Category text elements with their respective styles
       const bgBadge = screen.getByText("BG");
       expect(bgBadge.className).toContain("text-sky-400");
@@ -857,6 +870,9 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         expect(screen.getByText("Ancient Katana")).toBeInTheDocument();
       });
 
+      // Show all rarities so both Ancient Katana and Cyber Helmet are visible
+      fireEvent.click(screen.getByTestId("drop-filter-rarity-all"));
+
       // Exactly 1 sold-out badge
       const soldOutBadges = screen.getAllByTestId("badge-sold-out");
       expect(soldOutBadges).toHaveLength(1);
@@ -889,8 +905,8 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       const metricsGrid = screen.getByText("Period Cycle").closest(".grid-cols-1");
       expect(metricsGrid?.className).toContain("sm:grid-cols-3");
 
-      // Pool inventory grid is 1 col on mobile, 2 on sm, 3 on md, 4 on lg
-      const poolGrid = screen.getByText("Golden Katana").closest(".grid-cols-1");
+      // Pool inventory grid is 2 cols on mobile, 2 on sm, 3 on md, 4 on lg
+      const poolGrid = screen.getByText("Golden Katana").closest(".grid-cols-2");
       expect(poolGrid?.className).toContain("sm:grid-cols-2");
       expect(poolGrid?.className).toContain("md:grid-cols-3");
       expect(poolGrid?.className).toContain("lg:grid-cols-4");
@@ -1066,19 +1082,22 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         );
       });
 
+      // Show all rarities so items across all categories are visible
+      fireEvent.click(screen.getByTestId("drop-filter-rarity-all"));
+
       // pool-item-5 is BG (user already owns a BG trait "trait-other-bg") -> neither OWNED nor NEEDED CATEGORY
       expect(screen.queryByTestId("drop-badge-owned-pool-item-5")).not.toBeInTheDocument();
       expect(screen.queryByTestId("drop-badge-needed-pool-item-5")).not.toBeInTheDocument();
 
       // pool-item-2 (HEADWEAR), pool-item-3 (EYEWEAR), pool-item-4 (FUR) are missing categories -> NEEDED CATEGORY
       expect(screen.getByTestId("drop-badge-needed-pool-item-2")).toHaveTextContent(
-        "NEEDED CATEGORY",
+        "NEEDED",
       );
       expect(screen.getByTestId("drop-badge-needed-pool-item-3")).toHaveTextContent(
-        "NEEDED CATEGORY",
+        "NEEDED",
       );
       expect(screen.getByTestId("drop-badge-needed-pool-item-4")).toHaveTextContent(
-        "NEEDED CATEGORY",
+        "NEEDED",
       );
     });
 
@@ -1107,6 +1126,9 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       await waitFor(() => {
         expect(screen.getByTestId("drop-pool-filter-bar")).toBeInTheDocument();
       });
+
+      // Switch to ALL rarities first to test multi-category filtering
+      fireEvent.click(screen.getByTestId("drop-filter-rarity-all"));
 
       // Filter by category HEADWEAR
       fireEvent.click(screen.getByTestId("drop-filter-cat-headwear"));

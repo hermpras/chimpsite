@@ -179,7 +179,7 @@ export default function DropsPage() {
   const [selectedPoolCategory, setSelectedPoolCategory] =
     useState<PoolCategoryFilter>("ALL");
   const [selectedPoolRarity, setSelectedPoolRarity] =
-    useState<PoolRarityFilter>("ALL");
+    useState<PoolRarityFilter>("LEGENDARY");
 
   const loadUserInventory = useCallback(async (targetAddress?: string | null) => {
     const addr = targetAddress ?? address;
@@ -1111,12 +1111,12 @@ export default function DropsPage() {
                             className="flex flex-col gap-2.5 rounded-2xl border border-[#163B44] bg-[#071F24]/80 p-3 sm:flex-row sm:items-center sm:justify-between"
                           >
                             {/* Category Filter Pills */}
-                            <div className="flex flex-wrap items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-1 px-1 sm:mx-0 sm:px-0 sm:flex-wrap">
                               <button
                                 type="button"
                                 data-testid="drop-filter-cat-all"
                                 onClick={() => setSelectedPoolCategory("ALL")}
-                                className={`rounded-xl border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                className={`shrink-0 whitespace-nowrap rounded-xl border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                                   selectedPoolCategory === "ALL"
                                     ? "border-amber-400/60 bg-amber-500/15 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.18)]"
                                     : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/50 hover:text-white"
@@ -1137,7 +1137,7 @@ export default function DropsPage() {
                                         prev === cat ? "ALL" : cat,
                                       )
                                     }
-                                    className={`rounded-xl border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                    className={`shrink-0 whitespace-nowrap rounded-xl border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                                       isActive
                                         ? "border-[#34B7DD] bg-[#102B33] text-cyan-200 shadow-[0_0_12px_rgba(52,183,221,0.2)]"
                                         : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/50 hover:text-white"
@@ -1156,7 +1156,7 @@ export default function DropsPage() {
                                       prev === "NEEDED" ? "ALL" : "NEEDED",
                                     )
                                   }
-                                  className={`rounded-xl border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                  className={`shrink-0 whitespace-nowrap rounded-xl border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                                     selectedPoolCategory === "NEEDED"
                                       ? "border-cyan-400 bg-cyan-500/20 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)]"
                                       : "border-cyan-500/40 bg-cyan-950/30 text-cyan-300 hover:border-cyan-400 hover:text-white"
@@ -1168,12 +1168,12 @@ export default function DropsPage() {
                             </div>
 
                             {/* Rarity Filter Pills */}
-                            <div className="flex flex-wrap items-center gap-1.5 border-t border-[#163B44] pt-2 sm:border-t-0 sm:pt-0">
+                            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 -mx-1 px-1 border-t border-[#163B44] pt-2 sm:border-t-0 sm:pt-0 sm:mx-0 sm:px-0 sm:flex-wrap">
                               <button
                                 type="button"
                                 data-testid="drop-filter-rarity-all"
                                 onClick={() => setSelectedPoolRarity("ALL")}
-                                className={`rounded-xl border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                className={`shrink-0 whitespace-nowrap rounded-xl border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                                   selectedPoolRarity === "ALL"
                                     ? "border-[#34B7DD]/60 bg-[#102B33] text-cyan-200"
                                     : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-[#34B7DD]/40 hover:text-white"
@@ -1195,7 +1195,7 @@ export default function DropsPage() {
                                           prev === r ? "ALL" : r,
                                         )
                                       }
-                                      className={`rounded-xl border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                      className={`shrink-0 whitespace-nowrap rounded-xl border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                                         isActive
                                           ? "border-amber-400/60 bg-amber-500/15 text-amber-300"
                                           : "border-[#163B44] bg-[#0B2026] text-zinc-400 hover:border-amber-400/40 hover:text-white"
@@ -1211,7 +1211,7 @@ export default function DropsPage() {
 
                           {filteredPoolItems.length > 0 ? (
                             /* Trait Card Grid */
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
                               {filteredPoolItems.map((item) => {
                                 const rarity = item.rarity?.toUpperCase() || "COMMON";
                                 const theme = RARITY_THEME[rarity] || RARITY_THEME.COMMON;
@@ -1235,7 +1235,7 @@ export default function DropsPage() {
                                 return (
                                   <div
                                     key={item.poolItemId}
-                                    className={`group relative flex flex-col justify-between rounded-2xl border p-4 transition-all duration-300 hover:-translate-y-1.5 overflow-hidden backdrop-blur-md ${theme.border} ${theme.bg} ${theme.glow} ${isSoldOut ? "opacity-75" : ""}`}
+                                    className={`group relative flex flex-col justify-between rounded-xl sm:rounded-2xl border p-2.5 sm:p-4 transition-all duration-300 hover:-translate-y-1.5 overflow-hidden backdrop-blur-md ${theme.border} ${theme.bg} ${theme.glow} ${isSoldOut ? "opacity-75" : ""}`}
                                   >
                                     {/* Top Luxury Foil Sheen */}
                                     <div
@@ -1249,16 +1249,16 @@ export default function DropsPage() {
 
                                     <div>
                                       {/* Card Top: Badges & Drop Probability */}
-                                      <div className="relative z-10 flex items-center justify-between gap-1.5 pb-2.5 border-b border-[#163B44]">
-                                        <div className="flex flex-wrap items-center gap-1.5 md:flex-col md:items-start md:gap-1.5">
+                                      <div className="relative z-10 flex items-center justify-between gap-1 pb-2 sm:pb-2.5 border-b border-[#163B44]">
+                                        <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 md:flex-col md:items-start">
                                           <span
-                                            className={`rounded-md border px-2 py-0.5 text-xs font-mono uppercase font-bold tracking-wider ${categoryStyle}`}
+                                            className={`rounded border px-1.5 py-0.5 text-[9px] sm:text-xs font-mono uppercase font-bold tracking-wider ${categoryStyle}`}
                                           >
                                             {item.category}
                                           </span>
-                                          <div className="inline-flex flex-wrap items-center gap-1.5">
+                                          <div className="inline-flex flex-wrap items-center gap-1 sm:gap-1.5">
                                             <span
-                                              className={`rounded-md border px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText} shadow-sm`}
+                                              className={`rounded border px-1.5 py-0.5 text-[9px] sm:text-xs font-bold uppercase tracking-wider ${theme.badgeBg} ${theme.badgeBorder} ${theme.badgeText} shadow-sm`}
                                             >
                                               {theme.prefix}
                                               {rarity}
@@ -1266,7 +1266,7 @@ export default function DropsPage() {
                                             {isSoldOut && (
                                               <span
                                                 data-testid="badge-sold-out"
-                                                className="rounded-md border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
+                                                className="rounded border border-rose-500/60 bg-rose-500/20 px-1.5 py-0.5 text-[9px] sm:text-xs font-bold uppercase tracking-wider text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
                                               >
                                                 Sold Out
                                               </span>
@@ -1274,7 +1274,7 @@ export default function DropsPage() {
                                             {isOwnedTrait && (
                                               <span
                                                 data-testid={`drop-badge-owned-${item.poolItemId}`}
-                                                className="rounded-md border border-emerald-500/50 bg-emerald-950/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300 shadow-sm"
+                                                className="rounded border border-emerald-500/50 bg-emerald-950/80 px-1.5 py-0.5 text-[8px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-300 shadow-sm"
                                               >
                                                 OWNED
                                               </span>
@@ -1282,17 +1282,17 @@ export default function DropsPage() {
                                             {isNeededCategory && (
                                               <span
                                                 data-testid={`drop-badge-needed-${item.poolItemId}`}
-                                                className="rounded-md border border-cyan-400/50 bg-cyan-950/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-200 shadow-sm"
+                                                className="rounded border border-cyan-400/50 bg-cyan-950/80 px-1.5 py-0.5 text-[8px] sm:text-[10px] font-bold uppercase tracking-wider text-cyan-200 shadow-sm"
                                               >
-                                                NEEDED CATEGORY
+                                                NEEDED
                                               </span>
                                             )}
                                           </div>
                                         </div>
 
                                         {/* Probability Drop Rate */}
-                                        <div className="shrink-0 flex items-center rounded-md border border-[#163B44] bg-black/60 px-2 py-0.5 shadow-inner">
-                                          <span className={`font-mono text-xs sm:text-sm font-extrabold ${theme.text}`}>
+                                        <div className="shrink-0 flex items-center rounded border border-[#163B44] bg-black/60 px-1.5 py-0.5 shadow-inner">
+                                          <span className={`font-mono text-[10px] sm:text-xs font-extrabold ${theme.text}`}>
                                             {item.probabilityPercent}%
                                           </span>
                                         </div>
@@ -1300,7 +1300,7 @@ export default function DropsPage() {
 
                                       {/* Showcase Pedestal: Centerpiece Trait Art */}
                                       <div
-                                        className={`relative my-3 flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border ${theme.pedestalBorder} ${theme.pedestalBg} p-2 transition-all duration-300 group-hover:scale-[1.02] shadow-inner`}
+                                        className={`relative my-2 sm:my-3 flex h-24 sm:h-32 w-full items-center justify-center overflow-hidden rounded-lg sm:rounded-xl border ${theme.pedestalBorder} ${theme.pedestalBg} p-2 transition-all duration-300 group-hover:scale-[1.02] shadow-inner`}
                                       >
                                         {/* Radial Light Halo */}
                                         <div
@@ -1318,10 +1318,10 @@ export default function DropsPage() {
                                           <img
                                             src={item.imageUrl}
                                             alt={item.traitName}
-                                            className="relative z-10 h-24 w-24 object-contain [image-rendering:pixelated] transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
+                                            className="relative z-10 h-16 w-16 sm:h-24 sm:w-24 object-contain [image-rendering:pixelated] transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"
                                           />
                                         ) : (
-                                          <span className="relative z-10 font-mono text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                          <span className="relative z-10 font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-500">
                                             {item.category}
                                           </span>
                                         )}
@@ -1330,7 +1330,7 @@ export default function DropsPage() {
                                       {/* Trait Title */}
                                       <div className="relative z-10">
                                         <p
-                                          className="truncate text-sm font-bold tracking-wide text-white group-hover:text-amber-200 transition-colors"
+                                          className="truncate text-xs sm:text-sm font-bold tracking-wide text-white group-hover:text-amber-200 transition-colors"
                                           title={item.traitName}
                                         >
                                           {item.traitName}
@@ -1357,9 +1357,9 @@ export default function DropsPage() {
                                         (stockPercent <= 20 || currentRemaining <= 2);
 
                                       return (
-                                        <div className="relative z-10 mt-3 border-t border-[#163B44] pt-2.5">
-                                          <div className="mb-1.5 flex items-center justify-between text-xs sm:text-sm font-mono">
-                                            <span className="flex items-center gap-1.5">
+                                        <div className="relative z-10 mt-2 sm:mt-3 border-t border-[#163B44] pt-2 sm:pt-2.5">
+                                          <div className="mb-1 flex items-center justify-between text-[10px] sm:text-xs font-mono">
+                                            <span className="flex items-center gap-1">
                                               <span
                                                 className={
                                                   isSoldOut
@@ -1373,7 +1373,7 @@ export default function DropsPage() {
                                               </span>
                                               <span
                                                 data-testid={`stock-status-badge-${item.poolItemId}`}
-                                                className={`rounded border px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${
+                                                className={`rounded border px-1 sm:px-1.5 py-0.5 text-[8px] sm:text-[9px] font-mono font-bold uppercase tracking-wider ${
                                                   isSoldOut
                                                     ? "border-rose-500/50 bg-rose-950/60 text-rose-300"
                                                     : isLowStock
@@ -1381,10 +1381,10 @@ export default function DropsPage() {
                                                       : "border-cyan-500/30 bg-cyan-950/40 text-cyan-300"
                                                 }`}
                                               >
-                                                {isSoldOut ? "EXHAUSTED" : isLowStock ? "LOW STOCK" : "AVAILABLE"}
+                                                {isSoldOut ? "EXHAUSTED" : isLowStock ? "LOW" : "AVAILABLE"}
                                               </span>
                                             </span>
-                                            <span className="text-gray-300 text-xs sm:text-sm font-medium">
+                                            <span className="text-gray-300 text-[10px] sm:text-xs font-medium">
                                               <span
                                                 className={`font-black ${
                                                   isSoldOut
@@ -1397,11 +1397,11 @@ export default function DropsPage() {
                                                 {currentRemaining}
                                               </span>
                                               <span className="text-gray-400 font-semibold">
-                                                /{allocated} left
+                                                /{allocated}
                                               </span>
                                             </span>
                                           </div>
-                                          <div className="h-2 w-full overflow-hidden rounded-full border border-[#163B44] bg-black/80 p-[1px]">
+                                          <div className="h-1.5 sm:h-2 w-full overflow-hidden rounded-full border border-[#163B44] bg-black/80 p-[1px]">
                                             <div
                                               className={`h-full rounded-full transition-all duration-500 ${
                                                 isSoldOut
