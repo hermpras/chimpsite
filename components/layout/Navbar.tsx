@@ -280,12 +280,6 @@ export function Navbar() {
             }}
             className="animate-mobile-item mt-5 flex flex-col items-center gap-3 border-t border-[#163B44]/80 pt-5"
           >
-            <div className="flex w-full items-center px-1">
-              <span className="font-mono-street text-[10px] tracking-wider text-[#8AA8B2]/70 uppercase">
-                Account & Wallet
-              </span>
-            </div>
-
             <WalletButton align="center" onAction={() => setMobileMenuOpen(false)} />
           </div>
         </div>
