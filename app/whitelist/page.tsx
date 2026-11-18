@@ -251,6 +251,15 @@ export default function WhitelistPage() {
   // Social Task UX: Open before verify & 10s countdown (scoped per wallet address)
   const [openedTasks, setOpenedTasks] = useState<Record<string, boolean>>({});
   const [countdownTasks, setCountdownTasks] = useState<Record<string, number>>({});
+  // Accordion state for completed tasks (default collapsed, clickable to toggle)
+  const [expandedTaskIds, setExpandedTaskIds] = useState<Record<string, boolean>>({});
+
+  const toggleTaskExpanded = (taskId: string) => {
+    setExpandedTaskIds((prev) => ({
+      ...prev,
+      [taskId]: !prev[taskId],
+    }));
+  };
 
   // Reset or load wallet-scoped opened tasks whenever address changes
   useEffect(() => {
@@ -264,6 +273,7 @@ export default function WhitelistPage() {
     setTaskErrors({});
     setTaskSuccess({});
     setCountdownTasks({});
+    setExpandedTaskIds({});
 
     if (!address) {
       setOpenedTasks({});
@@ -751,26 +761,51 @@ export default function WhitelistPage() {
 
   // --- Automatic View Transition Logic ---
   const { allMandatoryTasks, areAllMandatoryApproved } = useMemo(() => {
-    const allMandatory = campaigns.flatMap((c) => (c.tasks || []).filter((t) => t.isRequired));
+    const allMandatory = campaigns.flatMap((c) =>
+      (c.tasks || []).filter((t) => t.isRequired !== false),
+    );
 
     let approved = false;
     if (status === "authenticated" || statusResult?.status) {
       if (statusResult?.status?.phase === "REVOKED") {
         approved = false;
-      } else if (statusResult?.status?.phase === "SLOT_ALLOCATED") {
-        approved = true;
-      } else if (
-        statusResult?.status?.details &&
-        statusResult.status.details.totalMandatoryTasksCount > 0
-      ) {
-        approved =
-          statusResult.status.details.completedMandatoryTasksCount >=
-          statusResult.status.details.totalMandatoryTasksCount;
-      } else if (allMandatory.length > 0) {
-        approved = allMandatory.every((t) => {
-          const st = getTaskStatus(t);
-          return st.key === "APPROVED";
-        });
+      } else {
+        const hasLiveTasks = allMandatory.length > 0;
+        const allLiveApproved =
+          hasLiveTasks &&
+          allMandatory.every((t) => getTaskStatus(t).key === "APPROVED");
+        const someLiveApproved =
+          hasLiveTasks &&
+          allMandatory.some((t) => getTaskStatus(t).key === "APPROVED");
+
+        const details = statusResult?.status?.details;
+        const hasTaskCounts =
+          details &&
+          typeof details.totalMandatoryTasksCount === "number" &&
+          details.totalMandatoryTasksCount > 0;
+        const detailsComplete = hasTaskCounts
+          ? details.completedMandatoryTasksCount >=
+            Math.max(details.totalMandatoryTasksCount, allMandatory.length)
+          : false;
+
+        if (hasLiveTasks) {
+          if (allLiveApproved) {
+            approved = true;
+          } else if (
+            someLiveApproved ||
+            (hasTaskCounts && details.completedMandatoryTasksCount < allMandatory.length)
+          ) {
+            approved = false;
+          } else if (detailsComplete) {
+            approved = true;
+          } else {
+            approved = false;
+          }
+        } else if (hasTaskCounts) {
+          approved = details.completedMandatoryTasksCount >= details.totalMandatoryTasksCount;
+        } else if (statusResult?.status?.phase === "SLOT_ALLOCATED") {
+          approved = true;
+        }
       }
     }
 
@@ -848,17 +883,15 @@ export default function WhitelistPage() {
   // Calculate immediate step from live states
   const calculatedStep = isRevoked
     ? 5
-    : isWhitelistSecured
-      ? 5
-      : !isWalletConnected
-        ? 1
-        : !isXLinked
-          ? 2
-          : !isTasksComplete
-            ? 3
-            : !isTraitsComplete
-              ? 4
-              : 5;
+    : !isWalletConnected
+      ? 1
+      : !isXLinked
+        ? 2
+        : !isTasksComplete
+          ? 3
+          : !isTraitsComplete
+            ? 4
+            : 5;
 
   // Step accessibility check for sequential progression & backward navigation
   const isStepAccessible = useCallback(
@@ -870,13 +903,13 @@ export default function WhitelistPage() {
       if (stepNum === 2) return isWalletConnected;
       // Step 3 requires wallet and linked X account
       if (stepNum === 3) return isWalletConnected && isXLinked;
-      // Steps 4 and 5 require wallet, linked X, and all mandatory tasks completed
+      // Steps 4 and 5 require wallet, linked X, and (all mandatory tasks completed OR whitelist already secured)
       if (stepNum === 4 || stepNum === 5) {
-        return isWalletConnected && isXLinked && isTasksComplete;
+        return isWalletConnected && isXLinked && (isTasksComplete || isWhitelistSecured);
       }
       return false;
     },
-    [isRevoked, isWalletConnected, isXLinked, isTasksComplete],
+    [isRevoked, isWalletConnected, isXLinked, isTasksComplete, isWhitelistSecured],
   );
 
   // Determine if selectedStep is accessible; if not, ignore it so it falls back to calculatedStep
@@ -1349,8 +1382,8 @@ export default function WhitelistPage() {
               </Badge>
             </div>
 
-            {/* Step 3 Completed Banner & Continue CTA (for backward navigation) */}
-            {isTasksComplete && (
+            {/* Step 3 Banner & Continue CTA */}
+            {isTasksComplete ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-emerald-500/40 bg-emerald-950/30 p-4 sm:p-5 shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -1381,6 +1414,33 @@ export default function WhitelistPage() {
                 >
                   <span>Continue to Step 4 (Traits)</span>
                 </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-[#34B7DD]/40 bg-[#07242C]/70 p-4 sm:p-5 shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
+                <div className="flex items-center gap-3">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
+                  </span>
+                  <span className="font-bold text-white text-sm sm:text-base tracking-wide">
+                    New Quest Available
+                  </span>
+                </div>
+                {isWhitelistSecured && (
+                  <Button
+                    variant="outline"
+                    size="md"
+                    onClick={() => {
+                      setSelectedStep(5);
+                      if (typeof window !== "undefined") {
+                        window.history.replaceState(null, "", "#status");
+                      }
+                    }}
+                    className="w-full sm:w-auto shrink-0 border-[#34B7DD]/40 hover:border-cyan-400 text-cyan-300"
+                  >
+                    <span>View Whitelist Pass</span>
+                  </Button>
+                )}
               </div>
             )}
 
@@ -1439,124 +1499,96 @@ export default function WhitelistPage() {
                       )}
                     </div>
 
-                    {/* Compact Task List */}
+                    {/* Sequential Accordion Task List */}
                     <div className="space-y-3">
-                      {campaign.tasks.map((task) => {
-                        const taskStatus = getTaskStatus(task);
-                        const isSubmitting = submittingTaskId === task.id;
-                        const isSocial = isSocialTask(task);
-                        const destinationUrl = getTaskDestinationUrl(task);
-                        const taskMeta = getTaskTypeMeta(task);
-                        const taskInput = evidenceInputs[task.id] || {
-                          payload: "",
-                          submissionType:
-                            task.taskType === "IMAGE_URL" ||
-                            task.taskType === "TEXT_PROOF" ||
-                            task.taskType === "OAUTH_VERIFICATION"
-                              ? task.taskType
-                              : "URL",
-                        };
-                        const errorMsg = taskErrors[task.id];
-                        const successMsg = taskSuccess[task.id];
+                      {(() => {
+                        const firstUnapprovedIndex = campaign.tasks.findIndex(
+                          (t) => getTaskStatus(t).key !== "APPROVED",
+                        );
 
-                        if (isSocial) {
+                        return campaign.tasks.map((task, taskIndex) => {
+                          const taskStatus = getTaskStatus(task);
+                          const isCompleted = taskStatus.key === "APPROVED";
+                          const isSubmitting = submittingTaskId === task.id;
+                          const isSocial = isSocialTask(task);
+                          const destinationUrl = getTaskDestinationUrl(task);
+                          const taskMeta = getTaskTypeMeta(task);
                           const isProofRequired = isSocialProofTask(task);
                           const isTaskOpened = Boolean(openedTasks[task.id]);
                           const countdownSeconds = countdownTasks[task.id];
                           const isCountingDown =
                             typeof countdownSeconds === "number" && countdownSeconds > 0;
+                          const errorMsg = taskErrors[task.id];
+                          const successMsg = taskSuccess[task.id];
+                          const taskInput = evidenceInputs[task.id] || {
+                            payload: "",
+                            submissionType:
+                              task.taskType === "IMAGE_URL" ||
+                              task.taskType === "TEXT_PROOF" ||
+                              task.taskType === "OAUTH_VERIFICATION"
+                                ? task.taskType
+                                : "URL",
+                          };
 
-                          return (
-                            <div
-                              key={task.id}
-                              className="flex flex-col justify-between gap-3.5 rounded-xl border border-[#163B44] bg-[#051D22] p-4 hover:border-[#34B7DD]/60 hover:bg-[#07242B] hover:shadow-[0_0_20px_rgba(52,183,221,0.12)] md:flex-row md:items-center transition-all duration-200"
-                            >
-                              <div className="flex min-w-0 flex-1 items-start gap-3">
-                                <div className="min-w-0 flex-1 space-y-1">
-                                  <div className="flex flex-wrap items-center gap-1.5">
-                                    <h4 className="text-sm sm:text-base font-bold text-[#F8F7F4]">
-                                      {task.title}
-                                    </h4>
-                                    <span className="text-xs font-bold text-[#8AA8B2] uppercase">
-                                      {taskMeta.label}
+                          // Sequential Accordion States
+                          const isLocked =
+                            taskStatus.key === "NOT_SUBMITTED" &&
+                            firstUnapprovedIndex !== -1 &&
+                            taskIndex > firstUnapprovedIndex;
+
+                          const isActive = !isLocked && !isCompleted;
+                          const isExpanded = isActive || Boolean(expandedTaskIds[task.id]);
+
+                          // 1. Locked Task View (Compact, dimmed, non-interactive)
+                          if (isLocked) {
+                            return (
+                              <div
+                                key={task.id}
+                                className="flex items-center justify-between gap-3.5 rounded-xl border border-[#163B44]/40 bg-[#051D22]/40 p-4 opacity-50 cursor-not-allowed select-none transition-all duration-200"
+                              >
+                                <div className="flex min-w-0 flex-1 items-center gap-3">
+                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700/60 bg-zinc-900/60">
+                                    <span className="text-xs font-mono font-bold text-zinc-500">
+                                      {taskIndex + 1}
                                     </span>
                                   </div>
-                                  {task.description && (
-                                    <p className="text-xs sm:text-sm text-[#8AA8B2] leading-relaxed">
-                                      {task.description}
-                                    </p>
-                                  )}
-
-                                  {/* Mobile-friendly visible step hint when VERIFY TASK is locked */}
-                                  {taskStatus.key !== "APPROVED" && !isTaskOpened && (
-                                    <p className="pt-0.5 text-[11px] sm:text-xs font-medium text-cyan-300/90">
-                                      {isProofRequired
-                                        ? "Click OPEN X first to post your reply or quote and unlock the link input."
-                                        : "Click OPEN X first to unlock task verification."}
-                                    </p>
-                                  )}
-
-                                  {/* Proof input for Quote/Reply tasks */}
-                                  {isProofRequired && isTaskOpened && taskStatus.key !== "APPROVED" && (
-                                    <div className="pt-2 max-w-md space-y-1">
-                                      <div className="relative">
-                                        <input
-                                          type="url"
-                                          placeholder="Paste reply or quote URL (https://x.com/...)"
-                                          value={taskInput.payload}
-                                          onChange={(e) =>
-                                            setEvidenceInputs((prev) => ({
-                                              ...prev,
-                                              [task.id]: {
-                                                ...taskInput,
-                                                payload: e.target.value,
-                                              },
-                                            }))
-                                          }
-                                          disabled={isCountingDown || isSubmitting}
-                                          className="w-full rounded-xl border border-[#163B44] bg-black/60 px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-amber-400 focus:outline-none"
-                                        />
-                                      </div>
-                                      {!taskInput.payload.trim() && (
-                                        <p className="text-[11px] font-medium text-amber-300/90">
-                                          Paste your reply or quote link above to enable VERIFY TASK.
-                                        </p>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Submitted Proof Display for Approved Tasks */}
-                                  {isProofRequired && taskStatus.key === "APPROVED" && task.latestSubmission?.payload && (
-                                    <p className="pt-1 text-xs text-zinc-400 font-mono truncate">
-                                      Proof: <span className="text-zinc-200">{task.latestSubmission.payload}</span>
-                                    </p>
-                                  )}
-
-                                  {/* Rejection Note */}
-                                  {taskStatus.key === "REJECTED" && (
-                                    <div className="mt-1.5 rounded-xl border border-rose-500/40 bg-rose-950/40 p-2 text-xs sm:text-sm text-rose-300 space-y-0.5">
-                                      <span className="font-bold text-rose-200">Rejected: </span>
-                                      <span>
-                                        {task.latestSubmission?.reviewerNotes ||
-                                          "Submission was not approved."}
+                                  <div className="min-w-0 flex-1 space-y-0.5">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <h4 className="text-sm font-semibold text-zinc-400 truncate">
+                                        {task.title}
+                                      </h4>
+                                      <span className="text-[11px] font-bold text-zinc-500 uppercase">
+                                        {taskMeta.label}
                                       </span>
-                                      <p className="text-zinc-400">
-                                        You can correct and resubmit your evidence below.
-                                      </p>
                                     </div>
-                                  )}
-
-                                  {errorMsg && <p className="pt-1 text-xs sm:text-sm text-rose-400">{errorMsg}</p>}
-                                  {successMsg && <p className="pt-1 text-xs sm:text-sm text-emerald-400">{successMsg}</p>}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Badge
+                                    variant="outline"
+                                    className="border-zinc-700/50 bg-zinc-900/60 text-zinc-500 text-xs font-bold uppercase tracking-wider px-2.5 py-1"
+                                  >
+                                    Locked
+                                  </Badge>
                                 </div>
                               </div>
+                            );
+                          }
 
-                              {/* Action Buttons & Status */}
-                              <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 border-t border-[#163B44] md:border-t-0 md:pt-0">
-                                {taskStatus.key !== "NOT_SUBMITTED" && (
-                                  taskStatus.key === "APPROVED" ? (
+                          // 2. Social Tasks (Follow, Like, Repost, Reply, Quote)
+                          if (isSocial) {
+                            // 2a. Collapsed Completed View
+                            if (isCompleted && !isExpanded) {
+                              return (
+                                <div
+                                  key={task.id}
+                                  onClick={() => toggleTaskExpanded(task.id)}
+                                  className="flex items-center justify-between gap-3.5 rounded-xl border border-[#163B44]/70 bg-[#051D22]/80 p-4 hover:border-emerald-500/40 hover:bg-[#07242B] cursor-pointer transition-all duration-200 group"
+                                  title="Click to view details"
+                                >
+                                  <div className="flex min-w-0 flex-1 items-center gap-3">
                                     <span
-                                      className="inline-flex items-center justify-center h-[34px] w-[34px] rounded-full border border-emerald-500/50 bg-gradient-to-b from-[#0B382B]/95 via-[#06261D]/95 to-[#031A13]/95 text-emerald-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_0_16px_rgba(16,185,129,0.25)] backdrop-blur-xl transition-all duration-200 hover:border-emerald-400 hover:scale-105"
+                                      className="inline-flex items-center justify-center h-[34px] w-[34px] rounded-full border border-emerald-500/50 bg-gradient-to-b from-[#0B382B]/95 via-[#06261D]/95 to-[#031A13]/95 text-emerald-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_0_16px_rgba(16,185,129,0.25)] shrink-0 group-hover:scale-105 transition-transform"
                                       title="Task Completed"
                                       aria-label="Completed"
                                     >
@@ -1565,231 +1597,402 @@ export default function WhitelistPage() {
                                         strokeWidth={2.75}
                                       />
                                     </span>
-                                  ) : (
-                                    <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}>
-                                      {taskStatus.label}
-                                    </Badge>
-                                  )
-                                )}
-
-                                <a
-                                  href={destinationUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={() => markTaskOpened(task.id)}
-                                  className="inline-block"
-                                >
-                                  <Button variant="secondary" size="sm" type="button">
-                                    <span>OPEN X</span>
-                                  </Button>
-                                </a>
-
-                                {taskStatus.key === "APPROVED" ? (
-                                  <Button
-                                    variant="success"
-                                    size="sm"
-                                    disabled
-                                    className="disabled:opacity-90 cursor-default"
-                                  >
-                                    <span>DONE</span>
-                                  </Button>
-                                ) : isCountingDown ? (
-                                  <Button
-                                    variant="primary"
-                                    size="sm"
-                                    disabled
-                                    className="animate-pulse cursor-not-allowed"
-                                  >
-                                    <span>VERIFYING ({countdownSeconds}s)...</span>
-                                  </Button>
-                                ) : !isTaskOpened ? (
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    disabled
-                                    title="Please click 'OPEN X' first"
-                                    className="opacity-40 border-[#163B44] bg-[#051D22]/60 text-zinc-500 cursor-not-allowed shadow-none hover:border-[#163B44] hover:text-zinc-500"
-                                  >
-                                    <span>VERIFY TASK</span>
-                                  </Button>
-                                ) : isProofRequired && !taskInput.payload.trim() ? (
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    disabled
-                                    title="Paste your reply or quote link first"
-                                    className="opacity-40 border-[#163B44] bg-[#051D22]/60 text-zinc-500 cursor-not-allowed shadow-none hover:border-[#163B44] hover:text-zinc-500"
-                                  >
-                                    <span>VERIFY TASK</span>
-                                  </Button>
-                                ) : status !== "authenticated" ? (
-                                  <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => login()}
-                                  >
-                                    <span>CONNECT WALLET TO VERIFY</span>
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => handleSocialVerify(task)}
-                                    disabled={isSubmitting || isCountingDown}
-                                  >
-                                    {isSubmitting ? (
-                                      <span>COMPLETING...</span>
-                                    ) : (
-                                      <span>
-                                        {taskStatus.key === "REJECTED" ? "RETRY VERIFY" : "VERIFY TASK"}
-                                      </span>
-                                    )}
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        }
-
-                        // Standard Evidence Submission Task
-                        return (
-                          <div
-                            key={task.id}
-                            className="space-y-3 rounded-xl border border-[#163B44] bg-[#051D22] p-4 hover:border-[#34B7DD]/60 hover:bg-[#07242B] hover:shadow-[0_0_20px_rgba(52,183,221,0.12)] transition-all duration-200"
-                          >
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                              <div className="space-y-1">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  <h4 className="text-sm sm:text-base font-bold text-[#F8F7F4]">
-                                    {task.title}
-                                  </h4>
-                                  <span className="text-xs font-bold text-zinc-400 uppercase">
-                                    {task.taskType}
-                                  </span>
-                                </div>
-                                {task.description && (
-                                  <p className="text-xs sm:text-sm text-[#8AA8B2]">{task.description}</p>
-                                )}
-                              </div>
-
-                              <div className="flex shrink-0 items-center gap-1">
-                                <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}>
-                                  {taskStatus.label}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            {/* Pending Moderator Review info */}
-                            {taskStatus.key === "PENDING" && (
-                              <div className="space-y-1 rounded-xl border border-amber-500/40 bg-amber-950/40 p-3.5 text-xs sm:text-sm text-amber-300">
-                                <p className="flex items-center gap-1.5 font-bold text-amber-200">
-                                  Pending Moderator Review
-                                </p>
-                                <p className="font-mono text-xs sm:text-sm truncate text-zinc-300">
-                                  Submitted Proof: {task.latestSubmission?.payload}
-                                </p>
-                                <p className="text-zinc-400 text-xs sm:text-sm">
-                                  Your submission has been recorded and is awaiting review. Tasks are only counted as completed once approved.
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Approved Info */}
-                            {taskStatus.key === "APPROVED" && (
-                              <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3.5 text-xs sm:text-sm text-emerald-300">
-                                <p className="flex items-center gap-1.5 font-bold text-emerald-200">
-                                  Verified & Approved
-                                </p>
-                                {task.latestSubmission?.payload && (
-                                  <p className="mt-1 font-mono text-xs sm:text-sm truncate text-emerald-200">
-                                    Approved Proof: {task.latestSubmission.payload}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Rejected Info */}
-                            {taskStatus.key === "REJECTED" && (
-                              <div className="space-y-1 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3.5 text-xs sm:text-sm text-rose-300">
-                                <p className="flex items-center gap-1.5 font-bold text-rose-200">
-                                  Evidence Rejected
-                                </p>
-                                <p className="text-rose-200 font-medium">
-                                  {task.latestSubmission?.reviewerNotes ||
-                                    "Your submission was rejected by the moderator."}
-                                </p>
-                                <p className="text-zinc-400 text-xs sm:text-sm">
-                                  You can correct and resubmit your evidence below.
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Evidence Input Form (Not Submitted or Rejected) */}
-                            {(taskStatus.key === "NOT_SUBMITTED" || taskStatus.key === "REJECTED") && (
-                              <div className="pt-1">
-                                {status !== "authenticated" ? (
-                                  <p className="text-xs sm:text-sm text-zinc-500 italic">
-                                    Sign in to submit evidence for this task.
-                                  </p>
-                                ) : (
-                                  <div className="flex flex-col gap-2 sm:flex-row">
-                                    <input
-                                      type="text"
-                                      placeholder={
-                                        task.taskType === "TEXT_PROOF"
-                                          ? "Enter proof text or details..."
-                                          : "https://x.com/your_post_url..."
-                                      }
-                                      value={taskInput.payload}
-                                      onChange={(e) =>
-                                        setEvidenceInputs((prev) => ({
-                                          ...prev,
-                                          [task.id]: {
-                                            ...taskInput,
-                                            payload: e.target.value,
-                                          },
-                                        }))
-                                      }
-                                      className="flex-1 rounded-xl border border-[#163B44] bg-black/60 px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-amber-400 focus:outline-none"
-                                    />
-                                    <select
-                                      value={taskInput.submissionType}
-                                      onChange={(e) =>
-                                        setEvidenceInputs((prev) => ({
-                                          ...prev,
-                                          [task.id]: {
-                                            ...taskInput,
-                                            submissionType: e.target.value,
-                                          },
-                                        }))
-                                      }
-                                      className="rounded-xl border border-[#163B44] bg-zinc-800 px-2 py-1.5 text-xs text-zinc-200 focus:border-amber-400 focus:outline-none"
+                                    <div className="min-w-0 flex-1 space-y-0.5">
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        <h4 className="text-sm sm:text-base font-bold text-[#F8F7F4] truncate">
+                                          {task.title}
+                                        </h4>
+                                        <span className="text-xs font-bold text-[#8AA8B2] uppercase">
+                                          {taskMeta.label}
+                                        </span>
+                                      </div>
+                                      {isProofRequired && task.latestSubmission?.payload && (
+                                        <p className="text-xs text-zinc-400 font-mono truncate">
+                                          Proof: <span className="text-zinc-200">{task.latestSubmission.payload}</span>
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <Button
+                                      variant="success"
+                                      size="sm"
+                                      disabled
+                                      className="disabled:opacity-90 cursor-default"
                                     >
-                                      <option value="URL">URL</option>
-                                      <option value="IMAGE_URL">IMAGE_URL</option>
-                                      <option value="TEXT_PROOF">TEXT_PROOF</option>
-                                    </select>
+                                      <span>DONE</span>
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            // 2b. Expanded Active or Detailed View
+                            return (
+                              <div
+                                key={task.id}
+                                className={`flex flex-col justify-between gap-3.5 rounded-xl border p-4 transition-all duration-200 ${
+                                  isActive
+                                    ? "border-[#34B7DD]/60 bg-[#07242B] shadow-[0_0_24px_rgba(52,183,221,0.15)]"
+                                    : "border-[#163B44] bg-[#051D22] hover:border-[#34B7DD]/60 hover:bg-[#07242B]"
+                                } md:flex-row md:items-center`}
+                              >
+                                <div className="flex min-w-0 flex-1 items-start gap-3">
+                                  {isCompleted ? (
+                                    <span
+                                      onClick={() => toggleTaskExpanded(task.id)}
+                                      className="inline-flex items-center justify-center h-[34px] w-[34px] rounded-full border border-emerald-500/50 bg-gradient-to-b from-[#0B382B]/95 via-[#06261D]/95 to-[#031A13]/95 text-emerald-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_0_16px_rgba(16,185,129,0.25)] shrink-0 cursor-pointer"
+                                      title="Click to collapse"
+                                      aria-label="Completed"
+                                    >
+                                      <Check
+                                        className="h-4 w-4 text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]"
+                                        strokeWidth={2.75}
+                                      />
+                                    </span>
+                                  ) : (
+                                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#34B7DD]/60 bg-cyan-950/60 mt-0.5">
+                                      <span className="text-xs font-mono font-bold text-cyan-300">
+                                        {taskIndex + 1}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className="min-w-0 flex-1 space-y-1">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <h4 className="text-sm sm:text-base font-bold text-[#F8F7F4]">
+                                        {task.title}
+                                      </h4>
+                                      <span className="text-xs font-bold text-[#8AA8B2] uppercase">
+                                        {taskMeta.label}
+                                      </span>
+                                      {isActive && (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-300 px-2 py-0.5 rounded-md border border-cyan-500/30 bg-cyan-950/50">
+                                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                                          Active
+                                        </span>
+                                      )}
+                                    </div>
+                                    {task.description && (
+                                      <p className="text-xs sm:text-sm text-[#8AA8B2] leading-relaxed">
+                                        {task.description}
+                                      </p>
+                                    )}
+
+                                    {/* Mobile-friendly visible step hint when VERIFY TASK is locked */}
+                                    {taskStatus.key !== "APPROVED" && !isTaskOpened && (
+                                      <p className="pt-0.5 text-[11px] sm:text-xs font-medium text-cyan-300/90">
+                                        {isProofRequired
+                                          ? "Click OPEN X first to post your reply or quote and unlock the link input."
+                                          : "Click OPEN X first to unlock task verification."}
+                                      </p>
+                                    )}
+
+                                    {/* Proof input for Quote/Reply tasks */}
+                                    {isProofRequired && isTaskOpened && taskStatus.key !== "APPROVED" && (
+                                      <div className="pt-2 max-w-md space-y-1">
+                                        <div className="relative">
+                                          <input
+                                            type="url"
+                                            placeholder="Paste reply or quote URL (https://x.com/...)"
+                                            value={taskInput.payload}
+                                            onChange={(e) =>
+                                              setEvidenceInputs((prev) => ({
+                                                ...prev,
+                                                [task.id]: {
+                                                  ...taskInput,
+                                                  payload: e.target.value,
+                                                },
+                                              }))
+                                            }
+                                            disabled={isCountingDown || isSubmitting}
+                                            className="w-full rounded-xl border border-[#163B44] bg-black/60 px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-amber-400 focus:outline-none"
+                                          />
+                                        </div>
+                                        {!taskInput.payload.trim() && (
+                                          <p className="text-[11px] font-medium text-amber-300/90">
+                                            Paste your reply or quote link above to enable VERIFY TASK.
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Submitted Proof Display for Approved Tasks */}
+                                    {isProofRequired && taskStatus.key === "APPROVED" && task.latestSubmission?.payload && (
+                                      <p className="pt-1 text-xs text-zinc-400 font-mono truncate">
+                                        Proof: <span className="text-zinc-200">{task.latestSubmission.payload}</span>
+                                      </p>
+                                    )}
+
+                                    {/* Rejection Note */}
+                                    {taskStatus.key === "REJECTED" && (
+                                      <div className="mt-1.5 rounded-xl border border-rose-500/40 bg-rose-950/40 p-2 text-xs sm:text-sm text-rose-300 space-y-0.5">
+                                        <span className="font-bold text-rose-200">Rejected: </span>
+                                        <span>
+                                          {task.latestSubmission?.reviewerNotes ||
+                                            "Submission was not approved."}
+                                        </span>
+                                        <p className="text-zinc-400">
+                                          You can correct and resubmit your evidence below.
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {errorMsg && <p className="pt-1 text-xs sm:text-sm text-rose-400">{errorMsg}</p>}
+                                    {successMsg && <p className="pt-1 text-xs sm:text-sm text-emerald-400">{successMsg}</p>}
+                                  </div>
+                                </div>
+
+                                {/* Action Buttons & Status */}
+                                <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 border-t border-[#163B44] md:border-t-0 md:pt-0">
+                                  {taskStatus.key !== "NOT_SUBMITTED" && (
+                                    taskStatus.key === "APPROVED" ? (
+                                      <span
+                                        onClick={() => toggleTaskExpanded(task.id)}
+                                        className="inline-flex items-center justify-center h-[34px] w-[34px] rounded-full border border-emerald-500/50 bg-gradient-to-b from-[#0B382B]/95 via-[#06261D]/95 to-[#031A13]/95 text-emerald-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_0_16px_rgba(16,185,129,0.25)] backdrop-blur-xl transition-all duration-200 hover:border-emerald-400 hover:scale-105 cursor-pointer"
+                                        title="Click to collapse"
+                                        aria-label="Completed"
+                                      >
+                                        <Check
+                                          className="h-4 w-4 text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]"
+                                          strokeWidth={2.75}
+                                        />
+                                      </span>
+                                    ) : (
+                                      <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}>
+                                        {taskStatus.label}
+                                      </Badge>
+                                    )
+                                  )}
+
+                                  <a
+                                    href={destinationUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => markTaskOpened(task.id)}
+                                    className="inline-block"
+                                  >
+                                    <Button variant="secondary" size="sm" type="button">
+                                      <span>OPEN X</span>
+                                    </Button>
+                                  </a>
+
+                                  {taskStatus.key === "APPROVED" ? (
+                                    <Button
+                                      variant="success"
+                                      size="sm"
+                                      onClick={() => toggleTaskExpanded(task.id)}
+                                      className="disabled:opacity-90"
+                                    >
+                                      <span>DONE</span>
+                                    </Button>
+                                  ) : isCountingDown ? (
                                     <Button
                                       variant="primary"
                                       size="sm"
-                                      onClick={() => handleEvidenceSubmit(task)}
-                                      disabled={isSubmitting || !taskInput.payload.trim()}
+                                      disabled
+                                      className="animate-pulse cursor-not-allowed"
                                     >
-                                      {isSubmitting
-                                        ? "Submitting..."
-                                        : taskStatus.key === "REJECTED"
-                                          ? "Resubmit Evidence"
-                                          : "Submit Evidence"}
+                                      <span>VERIFYING ({countdownSeconds}s)...</span>
                                     </Button>
-                                  </div>
-                                )}
-                                {errorMsg && <p className="text-xs text-rose-400 mt-1">{errorMsg}</p>}
-                                {successMsg && <p className="text-xs text-emerald-400 mt-1">{successMsg}</p>}
+                                  ) : !isTaskOpened ? (
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      disabled
+                                      title="Please click 'OPEN X' first"
+                                      className="opacity-40 border-[#163B44] bg-[#051D22]/60 text-zinc-500 cursor-not-allowed shadow-none hover:border-[#163B44] hover:text-zinc-500"
+                                    >
+                                      <span>VERIFY TASK</span>
+                                    </Button>
+                                  ) : isProofRequired && !taskInput.payload.trim() ? (
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      disabled
+                                      title="Paste your reply or quote link first"
+                                      className="opacity-40 border-[#163B44] bg-[#051D22]/60 text-zinc-500 cursor-not-allowed shadow-none hover:border-[#163B44] hover:text-zinc-500"
+                                    >
+                                      <span>VERIFY TASK</span>
+                                    </Button>
+                                  ) : status !== "authenticated" ? (
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      onClick={() => login()}
+                                    >
+                                      <span>CONNECT WALLET TO VERIFY</span>
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      onClick={() => handleSocialVerify(task)}
+                                      disabled={isSubmitting || isCountingDown}
+                                    >
+                                      {isSubmitting ? (
+                                        <span>COMPLETING...</span>
+                                      ) : (
+                                        <span>
+                                          {taskStatus.key === "REJECTED" ? "RETRY VERIFY" : "VERIFY TASK"}
+                                        </span>
+                                      )}
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                            );
+                          }
+
+                          // 3. Standard Evidence Submission Tasks
+                          return (
+                            <div
+                              key={task.id}
+                              className={`space-y-3 rounded-xl border p-4 transition-all duration-200 ${
+                                isActive
+                                  ? "border-[#34B7DD]/60 bg-[#07242B] shadow-[0_0_24px_rgba(52,183,221,0.15)]"
+                                  : "border-[#163B44] bg-[#051D22] hover:border-[#34B7DD]/60 hover:bg-[#07242B]"
+                              }`}
+                            >
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="space-y-1">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <h4 className="text-sm sm:text-base font-bold text-[#F8F7F4]">
+                                      {task.title}
+                                    </h4>
+                                    <span className="text-xs font-bold text-zinc-400 uppercase">
+                                      {task.taskType}
+                                    </span>
+                                    {isActive && (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-300 px-2 py-0.5 rounded-md border border-cyan-500/30 bg-cyan-950/50">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                                        Active
+                                      </span>
+                                    )}
+                                  </div>
+                                  {task.description && (
+                                    <p className="text-xs sm:text-sm text-[#8AA8B2]">{task.description}</p>
+                                  )}
+                                </div>
+
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <Badge variant={taskStatus.badgeVariant} className={`text-xs px-2.5 py-1 ${taskStatus.colorClass}`}>
+                                    {taskStatus.label}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              {/* Pending Moderator Review info */}
+                              {taskStatus.key === "PENDING" && (
+                                <div className="space-y-1 rounded-xl border border-amber-500/40 bg-amber-950/40 p-3.5 text-xs sm:text-sm text-amber-300">
+                                  <p className="flex items-center gap-1.5 font-bold text-amber-200">
+                                    Pending Moderator Review
+                                  </p>
+                                  <p className="font-mono text-xs sm:text-sm truncate text-zinc-300">
+                                    Submitted Proof: {task.latestSubmission?.payload}
+                                  </p>
+                                  <p className="text-zinc-400 text-xs sm:text-sm">
+                                    Your submission has been recorded and is awaiting review. Tasks are only counted as completed once approved.
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Approved Info */}
+                              {taskStatus.key === "APPROVED" && (
+                                <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3.5 text-xs sm:text-sm text-emerald-300">
+                                  <p className="flex items-center gap-1.5 font-bold text-emerald-200">
+                                    Verified & Approved
+                                  </p>
+                                  {task.latestSubmission?.payload && (
+                                    <p className="mt-1 font-mono text-xs sm:text-sm truncate text-emerald-200">
+                                      Approved Proof: {task.latestSubmission.payload}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Rejected Info */}
+                              {taskStatus.key === "REJECTED" && (
+                                <div className="space-y-1 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3.5 text-xs sm:text-sm text-rose-300">
+                                  <p className="flex items-center gap-1.5 font-bold text-rose-200">
+                                    Evidence Rejected
+                                  </p>
+                                  <p className="text-rose-200 font-medium">
+                                    {task.latestSubmission?.reviewerNotes ||
+                                      "Your submission was rejected by the moderator."}
+                                  </p>
+                                  <p className="text-zinc-400 text-xs sm:text-sm">
+                                    You can correct and resubmit your evidence below.
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Evidence Input Form (Not Submitted or Rejected) */}
+                              {(taskStatus.key === "NOT_SUBMITTED" || taskStatus.key === "REJECTED") && (
+                                <div className="pt-1">
+                                  {status !== "authenticated" ? (
+                                    <p className="text-xs sm:text-sm text-zinc-500 italic">
+                                      Sign in to submit evidence for this task.
+                                    </p>
+                                  ) : (
+                                    <div className="flex flex-col gap-2 sm:flex-row">
+                                      <input
+                                        type="text"
+                                        placeholder={
+                                          task.taskType === "TEXT_PROOF"
+                                            ? "Enter proof text or details..."
+                                            : "https://x.com/your_post_url..."
+                                        }
+                                        value={taskInput.payload}
+                                        onChange={(e) =>
+                                          setEvidenceInputs((prev) => ({
+                                            ...prev,
+                                            [task.id]: {
+                                              ...taskInput,
+                                              payload: e.target.value,
+                                            },
+                                          }))
+                                        }
+                                        className="flex-1 rounded-xl border border-[#163B44] bg-black/60 px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-amber-400 focus:outline-none"
+                                      />
+                                      <select
+                                        value={taskInput.submissionType}
+                                        onChange={(e) =>
+                                          setEvidenceInputs((prev) => ({
+                                            ...prev,
+                                            [task.id]: {
+                                              ...taskInput,
+                                              submissionType: e.target.value,
+                                            },
+                                          }))
+                                        }
+                                        className="rounded-xl border border-[#163B44] bg-zinc-800 px-2 py-1.5 text-xs text-zinc-200 focus:border-amber-400 focus:outline-none"
+                                      >
+                                        <option value="URL">URL</option>
+                                        <option value="IMAGE_URL">IMAGE_URL</option>
+                                        <option value="TEXT_PROOF">TEXT_PROOF</option>
+                                      </select>
+                                      <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={() => handleEvidenceSubmit(task)}
+                                        disabled={isSubmitting || !taskInput.payload.trim()}
+                                      >
+                                        {isSubmitting
+                                          ? "Submitting..."
+                                          : taskStatus.key === "REJECTED"
+                                            ? "Resubmit Evidence"
+                                            : "Submit Evidence"}
+                                      </Button>
+                                    </div>
+                                  )}
+                                  {errorMsg && <p className="text-xs text-rose-400 mt-1">{errorMsg}</p>}
+                                  {successMsg && <p className="text-xs text-emerald-400 mt-1">{successMsg}</p>}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 ))

@@ -719,28 +719,23 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     expect(screen.getByText("FOLLOW / ONCE")).toBeInTheDocument();
     expect(screen.getByText("REPOST / ONCE")).toBeInTheDocument();
 
-    // Check OPEN X links
+    // Check sequential progression: Task 1 is active with OPEN X; Task 2 is locked until Task 1 is completed
+    expect(screen.getByText("Locked")).toBeInTheDocument();
     const openXButtons = screen.getAllByText("OPEN X");
-    expect(openXButtons.length).toBe(2);
+    expect(openXButtons.length).toBe(1);
 
     const followAnchor = openXButtons[0].closest("a");
     expect(followAnchor).toHaveAttribute("href", expect.stringMatching(/x\.com\/(chimphoodNFT|Elychimp)/));
 
-    const repostAnchor = openXButtons[1].closest("a");
-    expect(repostAnchor).toHaveAttribute(
-      "href",
-      "https://x.com/chimphoodNFT/status/1234567890",
-    );
-
-    // Gating check: Before clicking OPEN X, verify buttons are disabled VERIFY TASK and visible hint is shown
+    // Gating check: Before clicking OPEN X, verify button is disabled VERIFY TASK and visible hint is shown
     const disabledButtons = screen.getAllByRole("button", {
       name: /VERIFY TASK/i,
     });
-    expect(disabledButtons.length).toBe(2);
+    expect(disabledButtons.length).toBe(1);
     expect(disabledButtons[0]).toBeDisabled();
     expect(
-      screen.getAllByText("Click OPEN X first to unlock task verification.").length,
-    ).toBe(2);
+      screen.getByText("Click OPEN X first to unlock task verification."),
+    ).toBeInTheDocument();
 
     // Click OPEN X to open destination
     fireEvent.click(followAnchor!);
@@ -920,8 +915,21 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
             points: 10,
             isRequired: true,
             sortOrder: 1,
-            progress: null,
-            latestSubmission: null,
+            progress: {
+              id: "tp-1",
+              status: "VERIFIED",
+              verifiedAt: "2026-10-24T12:00:00Z",
+              completedAt: "2026-10-24T12:00:00Z",
+            },
+            latestSubmission: {
+              id: "sub-1",
+              submissionType: "URL",
+              payload: "https://x.com/Elychimp",
+              status: "APPROVED",
+              reviewerNotes: null,
+              reviewedAt: null,
+              createdAt: "2026-10-24T12:00:00Z",
+            },
           },
           {
             id: "task-social-reply",
@@ -956,16 +964,15 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     // On Wallet A: initially disabled
     expect(screen.queryByPlaceholderText(/Paste reply or quote URL/i)).not.toBeInTheDocument();
     const openXButtons = screen.getAllByText("OPEN X");
+    expect(openXButtons.length).toBe(1);
 
-    // Click OPEN X for both tasks on Wallet A
+    // Click OPEN X for the active reply task on Wallet A
     fireEvent.click(openXButtons[0].closest("a")!);
-    fireEvent.click(openXButtons[1].closest("a")!);
 
-    // Now on Wallet A, Follow verify is active and Reply proof input is shown (Reply verify is still disabled until proof is pasted)
+    // Now on Wallet A, Reply proof input is shown (Reply verify is still disabled until proof is pasted)
     const verifyButtonsOnWalletA = await screen.findAllByRole("button", { name: /VERIFY TASK/i });
-    expect(verifyButtonsOnWalletA.length).toBe(2);
-    expect(verifyButtonsOnWalletA[0]).toBeEnabled();
-    expect(verifyButtonsOnWalletA[1]).toBeDisabled();
+    expect(verifyButtonsOnWalletA.length).toBe(1);
+    expect(verifyButtonsOnWalletA[0]).toBeDisabled();
     expect(screen.getByPlaceholderText(/Paste reply or quote URL/i)).toBeInTheDocument();
 
     // Now SWITCH to Wallet B
@@ -980,13 +987,12 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     await waitFor(() => {
       // Proof input must be HIDDEN again
       expect(screen.queryByPlaceholderText(/Paste reply or quote URL/i)).not.toBeInTheDocument();
-      // Verify buttons must be disabled VERIFY TASK again
+      // Verify button must be disabled VERIFY TASK again
       const disabledButtons = screen.getAllByRole("button", {
         name: /VERIFY TASK/i,
       });
-      expect(disabledButtons.length).toBe(2);
+      expect(disabledButtons.length).toBe(1);
       expect(disabledButtons[0]).toBeDisabled();
-      expect(disabledButtons[1]).toBeDisabled();
     });
   });
 });
