@@ -2,6 +2,7 @@ import { prisma } from "@/server/db";
 import { authenticateRequest } from "@/server/auth/session";
 import { claimDrop, DropClaimError } from "@/server/drops/claim";
 import { safeTriggerAvatarUpdate } from "@/server/inventory/avatar-renderer";
+import { pushRecentDropPull, type RecentDropPull } from "@/lib/redis/recent-pulls";
 import { readLimitedBody } from "@/lib/auth/body-limit";
 import {
   checkRateLimit,
@@ -134,6 +135,32 @@ export async function POST(request: Request): Promise<Response> {
 
     // Task 3-C: Trigger background avatar re-render on inventory acquisition
     safeTriggerAvatarUpdate(prisma, session.userId);
+
+    // P2.1: Cache recent drop pull in Upstash Redis List (non-blocking background task)
+    const shortAddr =
+      session.address && session.address.length >= 10
+        ? `${session.address.slice(0, 6)}...${session.address.slice(-4)}`
+        : "Anonymous";
+    const claimedBy = (result as any).claimedBy || shortAddr;
+
+    const pullItem: RecentDropPull = {
+      id: result.claim.id,
+      traitName: result.trait?.name ?? "Unknown Trait",
+      category: result.trait?.category ?? "UNKNOWN",
+      rarity: result.trait?.rarity ?? "COMMON",
+      edition: result.inventoryItem?.edition ?? 1,
+      imageUrl: result.trait?.imageUrl || undefined,
+      claimedBy,
+      periodIndex: (result as any).periodIndex ?? 0,
+      claimedAt:
+        result.claim.claimedAt instanceof Date
+          ? result.claim.claimedAt.toISOString()
+          : new Date(result.claim.claimedAt || Date.now()).toISOString(),
+    };
+
+    void pushRecentDropPull(body.dropId, pullItem).catch((err) => {
+      console.warn("Non-blocking Redis recent pulls push warning:", err);
+    });
 
     return Response.json({
       success: true,

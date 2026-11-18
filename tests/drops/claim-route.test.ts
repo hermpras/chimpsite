@@ -29,9 +29,18 @@ vi.mock("@/server/drops/claim", () => ({
   },
 }));
 
+vi.mock("@/lib/redis/recent-pulls", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/redis/recent-pulls")>();
+  return {
+    ...actual,
+    pushRecentDropPull: vi.fn().mockResolvedValue(true),
+  };
+});
+
 import { authenticateRequest } from "@/server/auth/session";
 import { claimDrop, DropClaimError } from "@/server/drops/claim";
 import { checkRateLimit } from "@/lib/auth/rate-limit";
+import { pushRecentDropPull } from "@/lib/redis/recent-pulls";
 
 describe("POST /api/drops/claim route", () => {
   beforeEach(() => {
@@ -100,6 +109,13 @@ describe("POST /api/drops/claim route", () => {
     const body = await res.json();
     expect(body.success).toBe(true);
     expect(body.claimId).toBe("claim-1");
+    expect(pushRecentDropPull).toHaveBeenCalledWith(
+      "d1",
+      expect.objectContaining({
+        id: "claim-1",
+        traitName: "Jungle Mist",
+      }),
+    );
   });
 
   it("maps DropClaimError code and status properly", async () => {

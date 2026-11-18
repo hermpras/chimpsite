@@ -4,6 +4,10 @@ import {
   __clearTestDistributedLocks,
   __setTestRedis,
 } from "@/lib/redis/lock";
+import {
+  __clearTestRecentPulls,
+  __setTestRecentPullsRedis,
+} from "@/lib/redis/recent-pulls";
 
 const {
   mockDropFindFirst,
@@ -54,6 +58,7 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     __clearTestDistributedLocks();
+    __clearTestRecentPulls();
     mockEnsureActiveCyclePeriod.mockRejectedValue(new Error("Auto-replenish notice in GET /api/drops/current"));
     vi.spyOn(console, "warn").mockImplementation(() => {});
   });
@@ -1471,6 +1476,65 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
       } finally {
         process.removeListener("unhandledRejection", listener);
       }
+    });
+
+    it("10. Q4 Redis cache hit: returns cached recentPulls directly and skips database mockClaimFindMany", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return activePeriod;
+        if (query.where?.startsAt?.gte) return upcomingPeriod;
+        return null;
+      });
+
+      const cachedPulls = [
+        {
+          id: "redis-claim-1",
+          traitName: "Neon Visor",
+          category: "EYES",
+          rarity: "LEGENDARY",
+          edition: 7,
+          imageUrl: "https://elychimp.io/traits/neon-visor.png",
+          claimedBy: "@crypto_king",
+          periodIndex: 1,
+          claimedAt: "2026-11-18T00:00:00.000Z",
+        },
+      ];
+
+      const mockLrange = vi.fn().mockResolvedValue([JSON.stringify(cachedPulls[0])]);
+      __setTestRecentPullsRedis({ lrange: mockLrange } as any);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.active).toBe(true);
+      expect(data.recentPulls).toEqual(cachedPulls);
+      expect(mockClaimFindMany).not.toHaveBeenCalled();
+      expect(mockLrange).toHaveBeenCalled();
+    });
+
+    it("11. Q4 Redis cache failure: falls back gracefully to database mockClaimFindMany", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return activePeriod;
+        if (query.where?.startsAt?.gte) return upcomingPeriod;
+        return null;
+      });
+
+      const mockLrange = vi.fn().mockRejectedValue(new Error("Redis connection dropped"));
+      __setTestRecentPullsRedis({ lrange: mockLrange } as any);
+      mockClaimFindMany.mockResolvedValue(sampleClaims);
+
+      const req = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.active).toBe(true);
+      expect(data.recentPulls).toBeDefined();
+      expect(data.recentPulls).toHaveLength(2);
+      expect(mockClaimFindMany).toHaveBeenCalled();
     });
   });
 });

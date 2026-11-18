@@ -10,6 +10,11 @@ import {
   releaseDistributedLock,
   getDropReplenishLockKey,
 } from "@/lib/redis/lock";
+import {
+  getRecentDropPullsFromRedis,
+  seedRecentDropPullsToRedis,
+  type RecentDropPull,
+} from "@/lib/redis/recent-pulls";
 
 export const dynamic = "force-dynamic";
 
@@ -329,11 +334,20 @@ export async function GET(request: Request): Promise<Response> {
         })
       : Promise.resolve(null),
 
-    // Q4: Recent claims with isolated error handling (non-blocking optional query)
-    (async () => {
+    // Q4: Recent claims with Upstash Redis List caching & PostgreSQL fallback (non-blocking optional query)
+    (async (): Promise<RecentDropPull[]> => {
+      try {
+        const cached = await getRecentDropPullsFromRedis(drop.id, 8);
+        if (cached && cached.length > 0) {
+          return cached;
+        }
+      } catch {
+        // Fall back to database query below
+      }
+
       try {
         if (!prisma.claim?.findMany) return [];
-        return await prisma.claim.findMany({
+        const claims = await prisma.claim.findMany({
           where: {
             dropId: drop.id,
             status: "SUCCESS",
@@ -353,6 +367,38 @@ export async function GET(request: Request): Promise<Response> {
             },
           },
         });
+
+        const pulls: RecentDropPull[] = (claims || []).map((c) => {
+          const addr = c.user?.wallet?.address || "";
+          const shortAddr =
+            addr.length >= 10
+              ? `${addr.slice(0, 6)}...${addr.slice(-4)}`
+              : "Anonymous";
+          const claimedBy = c.user?.xIdentity?.username
+            ? `@${c.user.xIdentity.username}`
+            : shortAddr;
+
+          return {
+            id: c.id,
+            traitName: c.inventoryItem.trait.name,
+            category: c.inventoryItem.trait.category,
+            rarity: c.inventoryItem.trait.rarity,
+            edition: c.inventoryItem.edition,
+            imageUrl: c.inventoryItem.trait.imageUrl || undefined,
+            claimedBy,
+            periodIndex: c.period?.periodIndex ?? activePeriod.periodIndex,
+            claimedAt:
+              c.claimedAt instanceof Date
+                ? c.claimedAt.toISOString()
+                : new Date(c.claimedAt).toISOString(),
+          };
+        });
+
+        if (pulls.length > 0) {
+          void seedRecentDropPullsToRedis(drop.id, pulls).catch(() => {});
+        }
+
+        return pulls;
       } catch {
         // Non-blocking optional query: isolated failure defaults to empty array
         return [];
@@ -379,28 +425,7 @@ export async function GET(request: Request): Promise<Response> {
         )[0] ?? null;
   }
 
-  const recentPulls = (claimsResult || []).map((c) => {
-    const addr = c.user?.wallet?.address || "";
-    const shortAddr =
-      addr.length >= 10
-        ? `${addr.slice(0, 6)}...${addr.slice(-4)}`
-        : "Anonymous";
-    const claimedBy = c.user?.xIdentity?.username
-      ? `@${c.user.xIdentity.username}`
-      : shortAddr;
-
-    return {
-      id: c.id,
-      traitName: c.inventoryItem.trait.name,
-      category: c.inventoryItem.trait.category,
-      rarity: c.inventoryItem.trait.rarity,
-      edition: c.inventoryItem.edition,
-      imageUrl: c.inventoryItem.trait.imageUrl || undefined,
-      claimedBy,
-      periodIndex: c.period?.periodIndex ?? activePeriod.periodIndex,
-      claimedAt: c.claimedAt instanceof Date ? c.claimedAt.toISOString() : new Date(c.claimedAt).toISOString(),
-    };
-  });
+  const recentPulls = claimsResult || [];
 
   const nextCycleStartsAt = nextPeriod
     ? new Date(nextPeriod.startsAt)

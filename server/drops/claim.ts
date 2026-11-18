@@ -340,8 +340,9 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
         }
 
         // 2b. Invariant: User must be registered with linked X identity & have completed mandatory tasks
+        let eligibility: UserDropEligibilityResult | null = null;
         if (typeof tx.user?.findUnique === "function") {
-          const eligibility = await checkUserDropEligibility(tx, input.userId, now);
+          eligibility = await checkUserDropEligibility(tx, input.userId, now);
           if (!eligibility.isEligible) {
             if (eligibility.hasAllocatedSlot) {
               throw new DropClaimError(
@@ -561,13 +562,25 @@ export async function claimDrop(prisma: PrismaClient, input: ClaimDropInput) {
 
         const probabilities = calculateTransparentProbabilities(poolItems);
 
-        return {
+        const dropResult: {
+          claim: typeof claim;
+          inventoryItem: typeof inventoryItem;
+          trait: typeof inventoryItem.trait;
+          probabilities: PoolItemProbability[];
+          abuseFlags: typeof abuseFlags;
+          periodIndex?: number;
+          claimedBy?: string;
+        } = {
           claim,
           inventoryItem,
           trait: inventoryItem.trait,
           probabilities,
           abuseFlags,
+          periodIndex: period.periodIndex,
+          claimedBy: eligibility?.xUsername ? `@${eligibility.xUsername}` : undefined,
         };
+
+        return dropResult;
       });
 
       // Safely trigger automatic Whitelist eligibility evaluation if user now qualifies
