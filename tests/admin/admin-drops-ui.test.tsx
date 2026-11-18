@@ -18,6 +18,7 @@ vi.mock("@/lib/admin/client", () => ({
   adminCreateDropPeriod: vi.fn(),
   adminConfigurePeriodStock: vi.fn(),
   adminActivateDropPeriod: vi.fn(),
+  adminTriggerDropRollover: vi.fn(),
   adminListTraits: vi.fn(),
 }));
 
@@ -402,6 +403,61 @@ describe("Admin Drops Portal UI - B-1 Drop Configuration Component", () => {
       });
       expect(
         screen.getByText(/Reverted to 2-Hour Standard Mode!/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("displays Engine Architecture status and allows admin to force cycle rollover", async () => {
+    const { mockCurrentDrop, mockDropsList } = getMockDropData();
+    vi.mocked(dropsClient.fetchCurrentDrop).mockResolvedValue(mockCurrentDrop as any);
+    vi.mocked(adminClient.adminListDrops).mockResolvedValueOnce({
+      drops: mockDropsList as any,
+      total: 1,
+      limit: 50,
+      offset: 0,
+    });
+    vi.mocked(adminClient.adminGetDrop).mockResolvedValueOnce({
+      drop: mockDropsList[0],
+    });
+    vi.mocked(adminClient.adminTriggerDropRollover).mockResolvedValueOnce({
+      success: true,
+      message: "Cycle rollover successfully triggered. Active period is #2.",
+      period: {
+        id: "period-2",
+        periodIndex: 2,
+        startsAt: new Date().toISOString(),
+        endsAt: new Date(Date.now() + 7200000).toISOString(),
+        status: "ACTIVE",
+        totalStock: 25,
+      },
+    });
+
+    render(<AdminDrops />);
+
+    await waitFor(() => {
+      expect(screen.getByText("REDIS LIST: ACTIVE")).toBeInTheDocument();
+      expect(screen.getByText("LOCK ENGINE: REDIS + PG ADVISORY")).toBeInTheDocument();
+      expect(screen.getByText("CONDITIONAL POLLING: ETAG 304")).toBeInTheDocument();
+    });
+
+    const forceBtn = screen.getByRole("button", { name: /force cycle rollover/i });
+    expect(forceBtn).toBeInTheDocument();
+
+    // Click to show confirmation
+    fireEvent.click(forceBtn);
+
+    expect(
+      screen.getByText(/Confirm immediate cycle rollover for/i),
+    ).toBeInTheDocument();
+
+    // Click confirm
+    const confirmBtn = screen.getByRole("button", { name: /confirm rollover/i });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(adminClient.adminTriggerDropRollover).toHaveBeenCalledWith("drop-1");
+      expect(
+        screen.getByText(/Cycle rollover successfully triggered/i),
       ).toBeInTheDocument();
     });
   });

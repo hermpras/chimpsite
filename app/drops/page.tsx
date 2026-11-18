@@ -550,6 +550,34 @@ export default function DropsPage() {
       setClaimMessage(
         `Successfully claimed ${res.inventoryItem.trait.name} (Edition #${res.inventoryItem.edition})!`
       );
+
+      // Optimistic Stock Decrement: immediately decrement remaining stock in UI state
+      const claimedTraitId = res.inventoryItem?.trait?.id;
+      setDropData((prev) => {
+        if (!prev || !prev.stock) return prev;
+        const updatedPoolItems = prev.stock.poolItems.map((item) => {
+          if (
+            (claimedTraitId && item.traitId === claimedTraitId) ||
+            item.traitName === res.inventoryItem?.trait?.name
+          ) {
+            const newRemaining = Math.max(0, item.remainingStock - 1);
+            return { ...item, remainingStock: newRemaining };
+          }
+          return item;
+        });
+        const newTotalRemaining = Math.max(0, prev.stock.totalRemaining - 1);
+        return {
+          ...prev,
+          userHasClaimed: true,
+          stock: {
+            ...prev.stock,
+            totalRemaining: newTotalRemaining,
+            isExhausted: newTotalRemaining === 0,
+            poolItems: updatedPoolItems,
+          },
+        };
+      });
+
       // Refresh drop info & user inventory in the background without blocking the lootbox reveal
       void Promise.all([loadDropData(), loadUserInventory(address)]).catch((refreshErr) => {
         console.error("Failed background drop/inventory reload:", refreshErr);

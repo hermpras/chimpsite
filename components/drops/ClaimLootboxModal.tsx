@@ -170,6 +170,25 @@ function playTone(type: "tick" | "reveal" | "click") {
   }
 }
 
+// Mobile Tactile Haptics (Vibration API with safe fallback)
+function triggerHaptic(type: "tick" | "reveal" | "click") {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return;
+  try {
+    if (typeof navigator.vibrate === "function") {
+      if (type === "tick") {
+        navigator.vibrate(12);
+      } else if (type === "reveal") {
+        // Dramatic multi-pulse rumble for celebration: 40ms buzz, 30ms pause, 80ms buzz
+        navigator.vibrate([40, 30, 80]);
+      } else if (type === "click") {
+        navigator.vibrate(8);
+      }
+    }
+  } catch {
+    // Vibration API not supported or permissions policy blocked
+  }
+}
+
 const ROLLING_MESSAGES = [
   "Connecting to Elysium RNG Pod...",
   "Scanning Cryptographic Entropy...",
@@ -229,6 +248,7 @@ export function ClaimLootboxModal({
       setIsEquipped(true);
       if (soundEnabledRef.current) {
         playTone("click");
+        triggerHaptic("click");
       }
       if (onEquipSuccess) {
         onEquipSuccess(claimedItem.id);
@@ -313,6 +333,7 @@ export function ClaimLootboxModal({
       setPhase("REVEAL");
       if (soundEnabledRef.current) {
         playTone("reveal");
+        triggerHaptic("reveal");
       }
     }
   }, [isOpen, claimedItem, isLoading, minRollingDone, error]);
@@ -326,6 +347,7 @@ export function ClaimLootboxModal({
         const next = (prev + 1) % Math.max(1, poolItems.length);
         if (soundEnabledRef.current && Math.random() > 0.45) {
           playTone("tick");
+          triggerHaptic("tick");
         }
         return next;
       });
@@ -441,7 +463,10 @@ export function ClaimLootboxModal({
             try {
               localStorage.setItem("elychimp_drops_sound_enabled", String(next));
             } catch {}
-            if (next) playTone("click");
+            if (next) {
+              playTone("click");
+              triggerHaptic("click");
+            }
           }}
           className="rounded-lg border border-cyan-500/30 bg-[#07242c]/80 px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-300 hover:border-cyan-400 hover:text-white backdrop-blur transition-all cursor-pointer shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
           title={soundEnabled ? "Mute SFX" : "Unmute SFX"}

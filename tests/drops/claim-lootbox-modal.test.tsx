@@ -291,4 +291,54 @@ describe("ClaimLootboxModal Component", () => {
     expect(modalContainer).toBeInTheDocument();
     expect(modalContainer).toHaveClass("overflow-y-auto");
   });
+
+  it("triggers mobile haptic rumble on reveal when sound is enabled", () => {
+    const mockVibrate = vi.fn();
+    Object.defineProperty(navigator, "vibrate", {
+      value: mockVibrate,
+      writable: true,
+      configurable: true,
+    });
+    localStorage.setItem("elychimp_drops_sound_enabled", "true");
+
+    render(
+      <ClaimLootboxModal
+        isOpen={true}
+        onClose={() => {}}
+        claimedItem={MOCK_WON_ITEM}
+        isLoading={false}
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(2500);
+    });
+
+    expect(mockVibrate).toHaveBeenCalledWith([40, 30, 80]);
+  });
+
+  it("does not trigger mobile haptics when sound is muted", () => {
+    const mockVibrate = vi.fn();
+    Object.defineProperty(navigator, "vibrate", {
+      value: mockVibrate,
+      writable: true,
+      configurable: true,
+    });
+    localStorage.setItem("elychimp_drops_sound_enabled", "false");
+
+    render(
+      <ClaimLootboxModal
+        isOpen={true}
+        onClose={() => {}}
+        claimedItem={MOCK_WON_ITEM}
+        isLoading={false}
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(2500);
+    });
+
+    expect(mockVibrate).not.toHaveBeenCalled();
+  });
 });

@@ -1536,5 +1536,54 @@ describe("GET /api/drops/current (Public Drop Endpoint)", () => {
       expect(data.recentPulls).toHaveLength(2);
       expect(mockClaimFindMany).toHaveBeenCalled();
     });
+
+    it("12. ETag & HTTP 304: returns 304 Not Modified when If-None-Match matches active period ETag", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return activePeriod;
+        if (query.where?.startsAt?.gte) return upcomingPeriod;
+        return null;
+      });
+      mockClaimFindMany.mockResolvedValue(sampleClaims);
+
+      // Initial request without If-None-Match
+      const req1 = new Request("http://localhost:3000/api/drops/current", { method: "GET" });
+      const res1 = await GET(req1);
+      expect(res1.status).toBe(200);
+      const etag = res1.headers.get("ETag");
+      expect(etag).toBeDefined();
+      expect(etag).toMatch(/^W\/"[a-f0-9]{16}"$/);
+
+      // Subsequent request with matching If-None-Match
+      const req2 = new Request("http://localhost:3000/api/drops/current", {
+        method: "GET",
+        headers: { "If-None-Match": etag! },
+      });
+      const res2 = await GET(req2);
+      expect(res2.status).toBe(304);
+      expect(res2.headers.get("ETag")).toBe(etag);
+      const bodyText = await res2.text();
+      expect(bodyText).toBe("");
+    });
+
+    it("13. ETag & HTTP 200: returns full payload when If-None-Match does not match", async () => {
+      mockDropFindFirst.mockResolvedValue(baseDrop);
+      mockDropPeriodFindFirst.mockImplementation(async (query: any) => {
+        if (query.where?.startsAt?.lte && query.where?.endsAt?.gte) return activePeriod;
+        if (query.where?.startsAt?.gte) return upcomingPeriod;
+        return null;
+      });
+      mockClaimFindMany.mockResolvedValue(sampleClaims);
+
+      const req = new Request("http://localhost:3000/api/drops/current", {
+        method: "GET",
+        headers: { "If-None-Match": 'W/"stale-etag-value"' },
+      });
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.active).toBe(true);
+      expect(res.headers.get("ETag")).toBeDefined();
+    });
   });
 });

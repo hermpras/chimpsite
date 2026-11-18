@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { prisma } from "@/server/db";
 import {
   getUtcCycleForTime,
@@ -21,6 +22,11 @@ export const dynamic = "force-dynamic";
 const PUBLIC_CACHE_HEADERS = {
   "Cache-Control": "public, s-maxage=5, stale-while-revalidate=10",
 };
+
+function generateWeakEtag(seed: string): string {
+  const hash = createHash("sha256").update(seed).digest("hex").slice(0, 16);
+  return `W/"${hash}"`;
+}
 
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
@@ -56,6 +62,17 @@ export async function GET(request: Request): Promise<Response> {
     });
 
     const defaultCycle = getUtcCycleForTime(now);
+    const noDropEtag = generateWeakEtag(
+      `no-drop:${nonActiveDrop?.id ?? "none"}:${nonActiveDrop?.status ?? "none"}:${defaultCycle.startsAt}`
+    );
+
+    if (request.headers.get("if-none-match") === noDropEtag) {
+      return new Response(null, {
+        status: 304,
+        headers: { ...PUBLIC_CACHE_HEADERS, ETag: noDropEtag },
+      });
+    }
+
     return Response.json(
       {
         active: false,
@@ -75,7 +92,7 @@ export async function GET(request: Request): Promise<Response> {
           : undefined,
         nextCycle: defaultCycle,
       },
-      { headers: PUBLIC_CACHE_HEADERS },
+      { headers: { ...PUBLIC_CACHE_HEADERS, ETag: noDropEtag } },
     );
   }
 
@@ -259,6 +276,17 @@ export async function GET(request: Request): Promise<Response> {
       ? new Date(resolvedNextPeriod.endsAt)
       : new Date(nextStartsAt.getTime() + cycleDurationMs);
 
+    const betweenEtag = generateWeakEtag(
+      `between:${drop.id}:${nextStartsAt.getTime()}:${resolvedNextPeriod?.id ?? "none"}`
+    );
+
+    if (request.headers.get("if-none-match") === betweenEtag) {
+      return new Response(null, {
+        status: 304,
+        headers: { ...PUBLIC_CACHE_HEADERS, ETag: betweenEtag },
+      });
+    }
+
     return Response.json(
       {
         active: true,
@@ -288,7 +316,7 @@ export async function GET(request: Request): Promise<Response> {
             }
           : {}),
       },
-      { headers: PUBLIC_CACHE_HEADERS },
+      { headers: { ...PUBLIC_CACHE_HEADERS, ETag: betweenEtag } },
     );
   }
 
@@ -434,6 +462,20 @@ export async function GET(request: Request): Promise<Response> {
     ? new Date(nextPeriod.endsAt)
     : new Date(activePeriodEndsAt.getTime() + cycleDurationMs);
 
+  const activeEtag = generateWeakEtag(
+    `${drop.id}:${activePeriod.id}:${activePeriod.periodIndex}:${activePeriod.status}:${totalRemainingStock}:${claimWindowActive}:${recentPulls[0]?.id ?? "none"}:${nextPeriod?.id ?? "none"}`
+  );
+
+  if (request.headers.get("if-none-match") === activeEtag) {
+    return new Response(null, {
+      status: 304,
+      headers: {
+        ...PUBLIC_CACHE_HEADERS,
+        ETag: activeEtag,
+      },
+    });
+  }
+
   return Response.json(
     {
       active: true,
@@ -482,6 +524,11 @@ export async function GET(request: Request): Promise<Response> {
         poolItems: probabilities,
       },
     },
-    { headers: PUBLIC_CACHE_HEADERS },
+    {
+      headers: {
+        ...PUBLIC_CACHE_HEADERS,
+        ETag: activeEtag,
+      },
+    },
   );
 }

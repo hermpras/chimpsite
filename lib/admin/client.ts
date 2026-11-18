@@ -714,6 +714,19 @@ export async function adminActivateDropPeriod(dropId: string, periodId: string) 
   return data;
 }
 
+export async function adminTriggerDropRollover(dropId: string) {
+  const res = await fetch("/api/admin/drops/rollover", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dropId }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || "Failed to trigger cycle rollover.");
+  }
+  return data;
+}
+
 export interface AdminTraitRecord {
   id: string;
   slug: string;

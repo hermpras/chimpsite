@@ -24,6 +24,7 @@ import {
   adminUpdateDrop,
   adminConfigurePeriodStock,
   adminActivateDropPeriod,
+  adminTriggerDropRollover,
   adminListTraits,
   type AdminDropRecord,
   type AdminTraitRecord,
@@ -205,6 +206,29 @@ export function AdminDrops() {
       setActionError((err as Error).message || "Failed to update drop status.");
     } finally {
       setTogglingStatus(false);
+    }
+  };
+
+  // Manual Cycle Rollover state & action
+  const [isRollingOver, setIsRollingOver] = useState(false);
+  const [showRolloverConfirm, setShowRolloverConfirm] = useState(false);
+  const handleTriggerRollover = async () => {
+    const targetDropId = selectedDropDetail?.id || dropData?.drop?.id;
+    if (!targetDropId) return;
+    setIsRollingOver(true);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const res = await adminTriggerDropRollover(targetDropId);
+      setActionSuccess(res.message || "Cycle rollover successfully executed.");
+      setShowRolloverConfirm(false);
+      setLoadingCurrent(true);
+      fetchCurrentDrop().then(setDropData).finally(() => setLoadingCurrent(false));
+      setReloadKey((k) => k + 1);
+    } catch (err: unknown) {
+      setActionError((err as Error).message || "Failed to trigger cycle rollover.");
+    } finally {
+      setIsRollingOver(false);
     }
   };
 
@@ -868,6 +892,72 @@ export function AdminDrops() {
                     Period: {dropData.period?.status ?? "N/A"}
                   </span>
                 </div>
+              </div>
+
+              {/* Architecture & Live Operational Controls Bar */}
+              <div className="rounded-lg border border-[#163B44] bg-[#051D22]/80 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1.5">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-gray-300">
+                      Engine Status & Architecture
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded border border-emerald-500/30 bg-emerald-950/40 px-2 py-0.5 font-mono text-[11px] font-bold text-emerald-300">
+                        REDIS LIST: ACTIVE
+                      </span>
+                      <span className="rounded border border-cyan-500/30 bg-cyan-950/40 px-2 py-0.5 font-mono text-[11px] font-bold text-cyan-300">
+                        LOCK ENGINE: REDIS + PG ADVISORY
+                      </span>
+                      <span className="rounded border border-amber-500/30 bg-amber-950/40 px-2 py-0.5 font-mono text-[11px] font-bold text-amber-300">
+                        CONDITIONAL POLLING: ETAG 304
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isRollingOver || loadingCurrent}
+                      onClick={() => setShowRolloverConfirm(true)}
+                      className="border-cyan-500/40 text-cyan-300 hover:bg-cyan-950/30 text-xs font-mono font-bold"
+                    >
+                      {isRollingOver ? "Rolling Over..." : "Force Cycle Rollover"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Rollover Confirmation Inline Banner */}
+                {showRolloverConfirm && (
+                  <div className="mt-3.5 rounded border border-amber-500/40 bg-amber-950/40 p-3">
+                    <p className="text-xs text-amber-200">
+                      Confirm immediate cycle rollover for{" "}
+                      <span className="font-bold text-white">
+                        {dropData.drop.title}
+                      </span>
+                      ? This will close any expired periods, rollover to the current UTC cycle window, and replenish trait pool allocations under distributed lock protection.
+                    </p>
+                    <div className="mt-2.5 flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        disabled={isRollingOver}
+                        onClick={handleTriggerRollover}
+                        className="bg-amber-600 hover:bg-amber-500 text-black font-bold text-xs"
+                      >
+                        {isRollingOver ? "Executing Rollover..." : "Confirm Rollover"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isRollingOver}
+                        onClick={() => setShowRolloverConfirm(false)}
+                        className="text-xs text-gray-300"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Pool Items Table */}

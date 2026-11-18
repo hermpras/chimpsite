@@ -72,15 +72,36 @@ export interface CurrentDropResponse {
   };
 }
 
+let lastETag: string | null = null;
+let cachedCurrentDrop: CurrentDropResponse | null = null;
+
+export function __clearClientDropCache(): void {
+  lastETag = null;
+  cachedCurrentDrop = null;
+}
+
 export async function fetchCurrentDrop(): Promise<CurrentDropResponse> {
   try {
-    const res = await fetch("/api/drops/current");
+    const headers: Record<string, string> = {};
+    if (lastETag) {
+      headers["If-None-Match"] = lastETag;
+    }
+    const res = await fetch("/api/drops/current", { headers });
+    if (res.status === 304 && cachedCurrentDrop) {
+      return cachedCurrentDrop;
+    }
     if (!res.ok) {
       return { active: false, message: `Failed to fetch drop: ${res.statusText}` };
     }
-    return res.json();
+    const etag = res.headers.get("ETag");
+    if (etag) {
+      lastETag = etag;
+    }
+    const data = await res.json();
+    cachedCurrentDrop = data;
+    return data;
   } catch {
-    return { active: false, message: "Could not reach drop service." };
+    return cachedCurrentDrop || { active: false, message: "Could not reach drop service." };
   }
 }
 

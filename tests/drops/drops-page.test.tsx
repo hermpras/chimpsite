@@ -393,6 +393,84 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
         ).toBeInTheDocument();
       });
     });
+
+    it("optimistically decrements remaining stock and marks user as claimed immediately on claim", async () => {
+      vi.mocked(dropsClient.fetchCurrentDrop)
+        .mockResolvedValueOnce({
+          ...mockActiveDrop,
+          stock: {
+            totalAllocated: 10,
+            totalRemaining: 5,
+            isExhausted: false,
+            poolItems: [
+              {
+                poolItemId: "pool-katana-1",
+                traitId: "trait-katana",
+                traitName: "Golden Katana",
+                category: "CLOTHING",
+                rarity: "LEGENDARY",
+                remainingStock: 5,
+                allocatedStock: 10,
+                weight: 50,
+                probabilityPercent: 50,
+              },
+            ],
+          },
+        })
+        .mockResolvedValue({
+          ...mockActiveDrop,
+          stock: {
+            totalAllocated: 10,
+            totalRemaining: 4,
+            isExhausted: false,
+            poolItems: [
+              {
+                poolItemId: "pool-katana-1",
+                traitId: "trait-katana",
+                traitName: "Golden Katana",
+                category: "CLOTHING",
+                rarity: "LEGENDARY",
+                remainingStock: 4,
+                allocatedStock: 10,
+                weight: 50,
+                probabilityPercent: 50,
+              },
+            ],
+          },
+        });
+
+      vi.mocked(dropsClient.claimDropItem).mockResolvedValue({
+        success: true,
+        inventoryItem: {
+          id: "inv-katana-1",
+          edition: 1,
+          trait: {
+            id: "trait-katana",
+            name: "Golden Katana",
+            category: "CLOTHING",
+            rarity: "LEGENDARY",
+          },
+        },
+      });
+
+      render(<DropsPage />);
+
+      let claimBtn: HTMLElement | null = null;
+      await waitFor(() => {
+        claimBtn = screen.getByRole("button", { name: /Claim Trait Now/i });
+        expect(claimBtn).toBeInTheDocument();
+      });
+
+      // Initially stock shows 5
+      expect(screen.getAllByText("5").length).toBeGreaterThan(0);
+
+      fireEvent.click(claimBtn!);
+
+      // Optimistically decrements stock to 4
+      await waitFor(() => {
+        expect(screen.getAllByText("4").length).toBeGreaterThan(0);
+      });
+    });
   });
 
   describe("5. Already Claimed State", () => {
@@ -455,6 +533,9 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       });
 
       const refreshBtn = screen.getByTitle("Refresh Drop Status");
+      await waitFor(() => {
+        expect(refreshBtn).not.toBeDisabled();
+      });
       fireEvent.click(refreshBtn);
 
       await waitFor(() => {
@@ -662,6 +743,9 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       );
 
       const refreshBtn = screen.getByTitle("Refresh Drop Status");
+      await waitFor(() => {
+        expect(refreshBtn).not.toBeDisabled();
+      });
       fireEvent.click(refreshBtn);
 
       await waitFor(() => {
@@ -1265,6 +1349,9 @@ describe("DropsPage Component (app/drops/page.tsx)", () => {
       });
 
       const refreshBtn = screen.getByTitle("Refresh Drop Status");
+      await waitFor(() => {
+        expect(refreshBtn).not.toBeDisabled();
+      });
       fireEvent.click(refreshBtn);
 
       await waitFor(() => {
