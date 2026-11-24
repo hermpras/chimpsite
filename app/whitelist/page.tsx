@@ -1487,18 +1487,6 @@ export default function WhitelistPage() {
               ) : (
                 campaigns.map((campaign) => (
                   <div key={campaign.id} className="space-y-4">
-                    {/* Campaign Title & Instructions */}
-                    <div className="rounded-xl bg-[#051D22] border border-[#163B44] p-3.5 space-y-1">
-                      <h3 className="font-display text-sm sm:text-base tracking-wide uppercase text-white font-bold">
-                        {campaign.title}
-                      </h3>
-                      {campaign.description && (
-                        <p className="text-xs sm:text-sm text-[#8AA8B2]">
-                          {campaign.description}
-                        </p>
-                      )}
-                    </div>
-
                     {/* Sequential Accordion Task List */}
                     <div className="space-y-3">
                       {(() => {

@@ -119,7 +119,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     expect(screen.getByText("Loading campaigns & tasks...")).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText("Genesis ChimpHood Campaign")).toBeInTheDocument();
+      expect(screen.getByText("Follow Official X Handle")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Follow Official X Handle")).toBeInTheDocument();
@@ -153,7 +153,7 @@ describe("Whitelist Tasks & Evidence UI (app/whitelist/page.tsx)", () => {
     fireEvent.click(retryBtn);
 
     await waitFor(() => {
-      expect(screen.getByText("Genesis ChimpHood Campaign")).toBeInTheDocument();
+      expect(screen.getByText("Follow Official X Handle")).toBeInTheDocument();
     });
   });
 
