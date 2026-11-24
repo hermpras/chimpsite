@@ -253,11 +253,11 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
     ).toBeInTheDocument();
     expect(screen.getByText("Registered on Oct 20, 2026")).toBeInTheDocument();
     expect(
-      screen.getByText("Action Needed — Incomplete Requirements"),
+      screen.getByText("Action Needed: Incomplete Requirements"),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Complete all 5 criteria below to secure your official allowlist allocation.",
+        "Complete all 5 qualification criteria below to secure your official Whitelist status.",
       ),
     ).toBeInTheDocument();
 
@@ -303,7 +303,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
       ).toBeInTheDocument();
       expect(
         screen.getByText(
-          "All 5 qualification requirements are satisfied! Your wallet will be included in the official allowlist for minting.",
+          "All 5 qualification requirements are satisfied! Your wallet will be included in the official Whitelist for minting.",
         ),
       ).toBeInTheDocument();
     });
@@ -405,7 +405,7 @@ describe("Profile Page Whitelist Status UI Integration (Phase 7 Task 7.3)", () =
       screen.getByText("Whitelist Qualification: In Progress"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Action Needed — Incomplete Requirements"),
+      screen.getByText("Action Needed: Incomplete Requirements"),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Go to Whitelist Portal/i })).toHaveAttribute(
       "href",

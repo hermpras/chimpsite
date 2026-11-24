@@ -105,7 +105,7 @@ describe("Whitelist Stepper Navigation & Access Guard (app/whitelist/page.tsx)",
     // Query stepper buttons by text label
     const step1Btn = screen.getByRole("button", { name: /1\s*WALLET/i });
     const step2Btn = screen.getByRole("button", { name: /2\s*X SYNC/i });
-    const step3Btn = screen.getByRole("button", { name: /3\s*TASKS/i });
+    const step3Btn = screen.getByRole("button", { name: /3\s*QUESTS/i });
     const step4Btn = screen.getByRole("button", { name: /4\s*TRAITS/i });
     const step5Btn = screen.getByRole("button", { name: /5\s*STATUS/i });
 
@@ -153,7 +153,7 @@ describe("Whitelist Stepper Navigation & Access Guard (app/whitelist/page.tsx)",
 
     const step1Btn = screen.getByRole("button", { name: /1\s*WALLET/i });
     const step2Btn = screen.getByRole("button", { name: /2\s*X SYNC/i });
-    const step3Btn = screen.getByRole("button", { name: /3\s*TASKS/i });
+    const step3Btn = screen.getByRole("button", { name: /3\s*QUESTS/i });
     const step4Btn = screen.getByRole("button", { name: /4\s*TRAITS/i });
     const step5Btn = screen.getByRole("button", { name: /5\s*STATUS/i });
 
@@ -263,7 +263,7 @@ describe("Whitelist Stepper Navigation & Access Guard (app/whitelist/page.tsx)",
       expect(screen.getByText("Character & Wardrobe")).toBeInTheDocument();
     });
 
-    const step3Btn = screen.getByRole("button", { name: /3\s*TASKS/i });
+    const step3Btn = screen.getByRole("button", { name: /3\s*QUESTS/i });
     const step4Btn = screen.getByRole("button", { name: /4\s*TRAITS/i });
 
     // Step 3 should be enabled for backward navigation (e.g. to inspect task rules or version 2)
@@ -274,8 +274,8 @@ describe("Whitelist Stepper Navigation & Access Guard (app/whitelist/page.tsx)",
     fireEvent.click(step3Btn);
 
     await waitFor(() => {
-      expect(screen.getByText("Step 3 of 5 — Campaign Tasks")).toBeInTheDocument();
-      expect(screen.getByText("All Campaign Tasks Completed")).toBeInTheDocument();
+      expect(screen.getByText("Step 3 of 5 — Campaign Quests")).toBeInTheDocument();
+      expect(screen.getByText("All Campaign Quests Completed")).toBeInTheDocument();
     });
 
     // From step 3, user can click the Continue to Step 4 CTA button to go back forward

@@ -66,7 +66,7 @@ describe("Public Pages English Copy Rendering", () => {
       screen.getByRole("heading", { name: /Whitelist Qualification Criteria|Whitelist: GTD & FCFS/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: /Campaign Tasks & Evidence Review/i }),
+      screen.getByRole("heading", { name: /Campaign Quests & Evidence Review/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: /Wallet Security & (Non-Custodial Verification|Signature Auth|Identity)/i }),
@@ -158,7 +158,7 @@ describe("Public Pages English Copy Rendering", () => {
     );
     expect(screen.getByText("Whitelist Portal")).toBeInTheDocument();
     expect(screen.getByText("Whitelist Status & Allocation")).toBeInTheDocument();
-    expect(screen.getByText("Campaigns & Quests")).toBeInTheDocument();
+    expect(screen.getByText("Campaign Quests")).toBeInTheDocument();
     expect(screen.getByText("Trait Lootbox Drops")).toBeInTheDocument();
     expect(screen.getByText("Go to Drops")).toBeInTheDocument();
     expect(screen.queryByText("Gifts & Referral Allocation")).not.toBeInTheDocument();

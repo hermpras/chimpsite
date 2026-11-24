@@ -285,7 +285,7 @@ describe("ProfilePage X OAuth UX Improvements (I-4)", () => {
       expect(screen.getAllByText("@chimphood_og").length).toBeGreaterThanOrEqual(1);
       // Profile header description is neutral
       expect(
-        screen.getByText("One account for your X account and wallets; allowlists, trait drops, and gear follow it."),
+        screen.getByText("Your unified Web3 identity on Elysium for Whitelist status, trait drops, and gear."),
       ).toBeInTheDocument();
     });
 

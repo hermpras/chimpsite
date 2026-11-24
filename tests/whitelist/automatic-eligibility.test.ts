@@ -710,6 +710,6 @@ describe("Whitelist Automatic Eligibility Evaluation (Task 5)", () => {
     expect(pageContent).toContain("Whitelist Status & Allocation");
     expect(pageContent).toContain("Trait Categories");
     expect(pageContent).toContain('href="/drops"');
-    expect(pageContent).toContain("Campaigns & Quests");
+    expect(pageContent).toContain("Campaign Quests");
   });
 });

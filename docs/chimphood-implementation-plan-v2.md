@@ -696,7 +696,7 @@ flowchart TD
     - `X Handle`: Linked X avatar and handle.
     - `WL Qualification Status`: Interactive badges showing:
       - Trait Categories: `5/5 Categories` (emerald) or `X/5 Categories` (gray/amber).
-      - Campaign Tasks: `Completed` (emerald) or `Pending/Incomplete` (amber).
+      - Campaign Quests: `Completed` (emerald) or `Pending/Incomplete` (amber).
       - Ban Status: `Clean` (emerald) or `Banned` (red).
     - `Joined At`: Registration timestamp (`joinedAt`).
     - `Actions`:

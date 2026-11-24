@@ -9,7 +9,7 @@ const NAV_SECTIONS = [
   { id: "drops", title: "Trait Drops & Lootbox", short: "Drops & Lootbox" },
   { id: "gifts", title: "Peer Gifting & Duplicate Sharing", short: "Peer Gifts" },
   { id: "whitelist", title: "Whitelist Qualification Criteria", short: "Qualification" },
-  { id: "tasks", title: "Campaign Tasks & Evidence Review", short: "Quests & Review" },
+  { id: "tasks", title: "Campaign Quests & Evidence Review", short: "Quests & Review" },
   { id: "security", title: "Wallet Security & Verification", short: "Security & Auth" },
 ] as const;
 
@@ -621,7 +621,7 @@ export default function DocsPage() {
                   </span>
 
                   <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
-                    Campaign Tasks &amp; Evidence Review
+                    Campaign Quests &amp; Evidence Review
                   </h2>
 
                   <p className="text-sm sm:text-base text-[#B8D7E0] leading-relaxed font-normal">

@@ -1361,13 +1361,13 @@ export function AdminWhitelist() {
                     </div>
                   </div>
 
-                  {/* 2. Campaign Tasks Evidence */}
+                  {/* 2. Campaign Quests Evidence */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-white">2. Campaign Evidence Submissions</span>
                       <span className="text-gray-400">
                         {reviewDetail.campaigns.completedMandatoryTasksCount} /{" "}
-                        {reviewDetail.campaigns.totalMandatoryTasksCount} Tasks Completed
+                        {reviewDetail.campaigns.totalMandatoryTasksCount} Quests Completed
                       </span>
                     </div>
                     {reviewDetail.campaigns.submissions.length === 0 ? (
@@ -1592,7 +1592,7 @@ export function AdminWhitelist() {
                   <div>EVM Wallet Connected</div>
                   <div>X (Twitter) Account Linked</div>
                   <div>All 5 Trait Categories Collected</div>
-                  <div>Campaign Tasks Completed</div>
+                  <div>Campaign Quests Completed</div>
                   <div>Clean Account Standing (Not Banned)</div>
                 </div>
               </div>

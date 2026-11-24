@@ -1016,7 +1016,7 @@ export default function WhitelistPage() {
                 {[
                   { num: 1, label: "WALLET", done: isWalletConnected },
                   { num: 2, label: "X SYNC", done: isXLinked },
-                  { num: 3, label: "TASKS", done: isTasksComplete },
+                  { num: 3, label: "QUESTS", done: isTasksComplete },
                   { num: 4, label: "TRAITS", done: isTraitsComplete },
                   { num: 5, label: "STATUS", done: isWhitelistSecured },
                 ].map((step, idx) => {
@@ -1027,7 +1027,7 @@ export default function WhitelistPage() {
                       ? "Connect wallet first"
                       : step.num === 3
                         ? "Link X (Twitter) account first"
-                        : "Complete all campaign tasks first"
+                        : "Complete all campaign quests first"
                     : undefined;
 
                   return (
@@ -1378,7 +1378,7 @@ export default function WhitelistPage() {
               </div>
 
               <Badge variant="outline" className="border-amber-400/40 bg-amber-950/40 text-amber-300 text-xs font-bold uppercase tracking-wider px-3 py-1.5">
-                Step 3 of 5 — Campaign Tasks
+                Step 3 of 5 — Campaign Quests
               </Badge>
             </div>
 
@@ -1388,7 +1388,7 @@ export default function WhitelistPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-white text-sm sm:text-base">
-                      All Campaign Tasks Completed
+                      All Campaign Quests Completed
                     </span>
                     <Badge
                       variant="default"
@@ -1398,7 +1398,7 @@ export default function WhitelistPage() {
                     </Badge>
                   </div>
                   <p className="text-xs sm:text-sm text-[#8AA8B2]">
-                    All campaign tasks are verified. You can proceed to check your traits and Whitelist status.
+                    All campaign quests are verified. You can proceed to check your traits and Whitelist status.
                   </p>
                 </div>
                 <Button
@@ -1444,12 +1444,12 @@ export default function WhitelistPage() {
               </div>
             )}
 
-            {/* Campaign Tasks Section */}
+            {/* Campaign Quests Section */}
             <div id="tasks" className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.45)] space-y-5 scroll-mt-24">
               <div className="flex items-center justify-between gap-3 border-b border-[#163B44] pb-4">
                 <div>
                   <h2 className="font-display text-xl uppercase tracking-wider text-white">
-                    Campaigns & Quests
+                    Campaign Quests
                   </h2>
                   <p className="text-xs sm:text-sm text-[#8AA8B2]">
                     Community missions to earn Whitelist allocation
@@ -1459,8 +1459,8 @@ export default function WhitelistPage() {
                   type="button"
                   onClick={loadTasks}
                   disabled={tasksLoading}
-                  aria-label="Refresh Tasks"
-                  title="Refresh Tasks"
+                  aria-label="Refresh Quests"
+                  title="Refresh Quests"
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#34B7DD]/40 bg-[#07242C]/70 text-cyan-300 hover:border-cyan-400 hover:text-white hover:bg-[#0E3A47]/80 disabled:opacity-50 cursor-pointer transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
                 >
                   <RefreshCw className={`h-4 w-4 ${tasksLoading ? "animate-spin" : ""}`} />
@@ -2223,7 +2223,7 @@ export default function WhitelistPage() {
                     </Badge>
                   </div>
 
-                  {/* Step 3: Campaign Tasks Completion */}
+                  {/* Step 3: Campaign Quests Completion */}
                   <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-3.5 text-xs sm:text-sm space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
@@ -2231,7 +2231,7 @@ export default function WhitelistPage() {
                           3
                         </div>
                         <div>
-                          <span className="font-semibold text-zinc-400">Campaign Tasks:</span>
+                          <span className="font-semibold text-zinc-400">Campaign Quests:</span>
                           <span className="ml-2 font-bold text-amber-400">
                             {statusResult?.status?.details?.completedMandatoryTasksCount ?? 0} /{" "}
                             {statusResult?.status?.details?.totalMandatoryTasksCount ?? 0} Completed

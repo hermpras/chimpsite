@@ -633,7 +633,7 @@ function ProfileContent() {
                   </span>
                 </h1>
                 <p className="text-xs sm:text-sm text-[#8AA8B2] leading-relaxed max-w-xl font-normal">
-                  One account for your X account and wallets; allowlists, trait drops, and gear follow it.
+                  Your unified Web3 identity on Elysium for Whitelist status, trait drops, and gear.
                 </p>
               </div>
 
@@ -1004,7 +1004,7 @@ function ProfileContent() {
                               </span>
                               {wlData?.status?.joinedAt && (
                                 <>
-                                  <span className="text-zinc-600">•</span>
+                                  <span className="text-zinc-600">/</span>
                                   <span className="text-zinc-400 text-xs sm:text-sm">
                                     Registered on {formatRegistrationDate(wlData.status.joinedAt)}
                                   </span>
@@ -1021,10 +1021,10 @@ function ProfileContent() {
 
                           <div className="rounded-lg border border-cyan-500/40 bg-cyan-950/50 p-3.5 text-xs sm:text-sm text-cyan-200">
                             <div className="font-bold text-cyan-300 text-sm sm:text-base">
-                              Action Needed — Incomplete Requirements
+                              Action Needed: Incomplete Requirements
                             </div>
                             <p className="mt-1 text-zinc-300">
-                              Complete all 5 criteria below to secure your official allowlist allocation.
+                              Complete all 5 qualification criteria below to secure your official Whitelist status.
                             </p>
                           </div>
                         </div>
@@ -1042,7 +1042,7 @@ function ProfileContent() {
                           </span>
                           {wlData.status.joinedAt && (
                             <>
-                              <span className="text-zinc-600">•</span>
+                              <span className="text-zinc-600">/</span>
                               <span className="text-zinc-400 text-xs sm:text-sm">
                                 Registered on {formatRegistrationDate(wlData.status.joinedAt)}
                               </span>
@@ -1055,7 +1055,7 @@ function ProfileContent() {
                             Whitelist Qualified
                           </div>
                           <p className="mt-1 text-zinc-300">
-                            All 5 qualification requirements are satisfied! Your wallet will be included in the official allowlist for minting.
+                            All 5 qualification requirements are satisfied! Your wallet will be included in the official Whitelist for minting.
                           </p>
                         </div>
                       </div>
@@ -1085,7 +1085,7 @@ function ProfileContent() {
                       </div>
                     )}
 
-                    {/* Progress Section: 5 Trait Categories & Campaign Tasks (Hidden when REVOKED) */}
+                    {/* Progress Section: 5 Trait Categories & Campaign Quests (Hidden when REVOKED) */}
                     {wlData?.status?.phase !== "REVOKED" && (
                       <div
                         className="space-y-4 border-t border-[#163B44] pt-4"
@@ -1126,10 +1126,10 @@ function ProfileContent() {
                           </div>
                         </div>
 
-                        {/* Campaign Tasks Progress */}
+                        {/* Campaign Quests Progress */}
                         <div className="flex flex-col gap-2.5 rounded-xl border border-[#163B44] bg-[#0B2026]/80 p-4 sm:flex-row sm:items-center sm:justify-between text-sm sm:text-base">
                           <div>
-                            <span className="font-bold text-zinc-100 text-sm sm:text-base">Campaign Tasks</span>
+                            <span className="font-bold text-zinc-100 text-sm sm:text-base">Campaign Quests</span>
                             <p className="text-xs sm:text-sm text-[#8AA8B2] mt-0.5">
                               Complete all campaign quests to maintain whitelist eligibility
                             </p>
@@ -1152,13 +1152,26 @@ function ProfileContent() {
                           wlData.status.missingRequirements.length > 0 &&
                           !wlData.status.isFullyQualified &&
                           wlData.status.phase !== "SLOT_ALLOCATED" && (
-                            <div className="space-y-1.5 rounded-xl border border-cyan-500/30 bg-[#071f27]/80 p-4 text-sm text-cyan-200">
-                              <p className="font-bold text-cyan-300 text-sm sm:text-base">Action Needed:</p>
-                              <ul className="list-inside list-disc space-y-1 text-zinc-300 text-xs sm:text-sm leading-relaxed">
-                                {wlData.status.missingRequirements.map((req, i) => (
-                                  <li key={i}>{req}</li>
-                                ))}
-                              </ul>
+                            <div className="space-y-2 rounded-xl border border-cyan-500/30 bg-[#071f27]/80 p-4 text-sm text-cyan-200">
+                              <p className="font-bold text-cyan-300 text-sm sm:text-base">
+                                Pending Requirements to Complete:
+                              </p>
+                              <div className="space-y-1.5">
+                                {wlData.status.missingRequirements.map((req, i) => {
+                                  const cleanReq = req
+                                    .replace(/chimphood/gi, "Elychimp")
+                                    .replace(/"REPLY"/g, '"Reply"')
+                                    .replace(/"QUOTE"/g, '"Quote"');
+                                  return (
+                                    <div
+                                      key={i}
+                                      className="rounded-lg border border-cyan-500/15 bg-[#05181e]/80 px-3 py-2 text-xs sm:text-sm text-zinc-300 font-normal"
+                                    >
+                                      {cleanReq}
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                       </div>

@@ -100,8 +100,8 @@ export function WalletConnectCard() {
                     {shortenAddress(sessionAddress)}
                   </span>
                 </div>
-                <p className="font-mono text-xs sm:text-[13px] text-[#8AA8B2] truncate mt-0.5">
-                  {sessionAddress}
+                <p className="text-xs text-[#8AA8B2] mt-0.5">
+                  Elysium Network <span className="text-zinc-600">/</span> Connected
                 </p>
               </div>
               <Button
