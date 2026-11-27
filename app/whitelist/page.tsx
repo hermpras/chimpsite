@@ -981,8 +981,13 @@ export default function WhitelistPage() {
   }, [activeStepNumber]);
 
   return (
-    <div className="min-h-screen bg-[#04181C] text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="relative min-h-screen bg-[#04181C] text-slate-100 py-8 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      {/* Ambient background glow accents for visual depth */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[500px] w-[900px] rounded-full bg-cyan-500/5 blur-[120px]" />
+      <div className="pointer-events-none absolute top-1/3 -left-48 h-[400px] w-[400px] rounded-full bg-teal-500/5 blur-[100px]" />
+      <div className="pointer-events-none absolute bottom-10 -right-40 h-[500px] w-[500px] rounded-full bg-cyan-400/5 blur-[130px]" />
+
+      <div className="relative z-10 mx-auto max-w-5xl space-y-6">
         {/* =======================================================================
             HEADER & 5-STEP HORIZONTAL PROGRESS INDICATOR (Elyzuma Luxury Aesthetic)
         ======================================================================= */}
@@ -1054,25 +1059,25 @@ export default function WhitelistPage() {
                             window.history.replaceState(null, "", targetHash);
                           }
                         }}
-                        className={`flex items-center gap-1 sm:gap-1.5 shrink-0 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border transition-all text-[11px] sm:text-xs ${
+                        className={`flex items-center gap-1.5 sm:gap-2 shrink-0 px-2.5 sm:px-3.5 py-1.5 rounded-xl border transition-all text-xs sm:text-sm ${
                           !isAccessible
-                            ? "border-[#163B44]/40 bg-[#051D22]/40 text-zinc-600 cursor-not-allowed opacity-40 select-none"
+                            ? "border-cyan-500/15 bg-[#061d24]/70 text-[#8AA8B2] cursor-not-allowed select-none"
                             : step.done
                               ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 font-medium cursor-pointer hover:border-emerald-400"
                               : isActive
                                 ? "border-amber-400/60 bg-amber-950/40 text-amber-300 font-medium shadow-[0_0_12px_rgba(251,191,36,0.2)] cursor-pointer hover:border-amber-400/80"
-                                : "border-[#163B44] bg-[#051D22] text-zinc-400 cursor-pointer hover:text-white hover:border-cyan-500/50"
+                                : "border-cyan-500/20 bg-[#051D22] text-zinc-300 cursor-pointer hover:text-white hover:border-cyan-500/50"
                         }`}
                       >
                         <span
-                          className={`flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full text-[10px] sm:text-xs font-bold shrink-0 ${
+                          className={`flex h-5 w-5 sm:h-5.5 sm:w-5.5 items-center justify-center rounded-full text-xs sm:text-sm font-bold shrink-0 ${
                             !isAccessible
-                              ? "bg-zinc-900 text-zinc-600"
+                              ? "bg-[#0A2A32] text-slate-300/90 border border-cyan-500/20"
                               : step.done
                                 ? "bg-emerald-500 text-black font-bold"
                                 : isActive
                                   ? "bg-amber-400 text-black font-bold"
-                                  : "bg-zinc-800 text-zinc-400"
+                                  : "bg-zinc-800 text-zinc-300"
                           }`}
                         >
                           {step.num}
@@ -1082,7 +1087,9 @@ export default function WhitelistPage() {
                       {idx < 4 && (
                         <div
                           className={`hidden sm:block flex-1 h-0.5 min-w-3 ${
-                            step.done ? "bg-emerald-500/50" : "bg-zinc-700/60"
+                            step.done
+                              ? "bg-emerald-500/60 shadow-[0_0_6px_rgba(16,185,129,0.3)]"
+                              : "bg-cyan-500/20"
                           }`}
                         />
                       )}
@@ -1128,114 +1135,225 @@ export default function WhitelistPage() {
 
         {/* =======================================================================
             STRICTLY SEQUENTIAL FIVE-STEP VIEWS
-            - STEP 1 (WALLET): Only EVM Wallet connection active
-            - STEP 2 (X SYNC): Only X account connection active
-            - STEP 3 (TASKS): Campaign tasks active until all mandatory approved
+            - STEP 1 (WALLET): EVM Wallet connection active & Whitelist Journey preview
+            - STEP 2 (X SYNC): X account connection active
+            - STEP 3 (TASKS): Campaign tasks active until all verified
             - STEPS 4 & 5: Main Whitelist Layout (Left: Traits, Right: Status)
         ======================================================================= */}
 
         {/* =======================================================================
-            STEP 1 ACTIVE VIEW — CONNECT EVM WALLET
+            STEP 1 ACTIVE VIEW — UNIFIED CARD: CONNECT EVM WALLET & WHITELIST JOURNEY
             Visible when activeStepNumber === 1
         ======================================================================= */}
         <div className={activeStepNumber === 1 ? "block" : "hidden"}>
-          <div className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.45)] max-w-2xl mx-auto space-y-6">
-            <div className="border-b border-[#163B44] pb-4">
-              <div>
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#F59E0B]">
-                  Step 1 of 5
-                </span>
-                <h2 className="font-display text-xl sm:text-2xl uppercase tracking-wider text-white">
-                  Connect EVM Wallet
-                </h2>
-              </div>
-            </div>
+          <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] border border-cyan-500/25 bg-gradient-to-b from-[#0c2831]/90 via-[#071d24]/95 to-[#031116]/98 p-6 sm:p-8 lg:p-10 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),inset_0_0_24px_rgba(52,183,221,0.05),0_24px_50px_-12px_rgba(0,0,0,0.7)] max-w-5xl mx-auto">
+            {/* Top rim highlight line */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
-            {/* Notice / Instructions */}
-            <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-4 sm:p-5 space-y-2">
-              <p className="font-bold text-[#F8F7F4] text-base sm:text-lg">
-                A signature, not a transaction.
-              </p>
-              <p className="text-[#8AA8B2] leading-relaxed text-sm sm:text-base">
-                We only verify your public address. Signing in is an off-chain message that costs zero gas and cannot move any funds.
-              </p>
-            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
+              {/* LEFT COLUMN: EVM Wallet Authentication */}
+              <div className="lg:col-span-6 flex flex-col justify-between space-y-6">
+                <div className="space-y-5">
+                  <div className="border-b border-cyan-500/20 pb-4">
+                    <span className="text-sm font-bold uppercase tracking-wider text-[#F59E0B]">
+                      Step 1 of 5
+                    </span>
+                    <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white mt-1">
+                      Connect EVM Wallet
+                    </h2>
+                    <p className="mt-1.5 text-sm sm:text-base text-[#8AA8B2] leading-relaxed">
+                      Authenticate with your Web3 wallet to begin your official Elychimp Whitelist qualification on Elysium.
+                    </p>
+                  </div>
 
-            {authError && (
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3.5 text-xs sm:text-sm text-rose-300">
-                <span className="truncate">{authError}</span>
-                {dismissError && (
-                  <button
-                    onClick={dismissError}
-                    className="shrink-0 text-xs sm:text-sm font-medium underline text-rose-400 hover:text-rose-300 cursor-pointer"
-                  >
-                    Dismiss
-                  </button>
-                )}
-              </div>
-            )}
+                  {/* Security Notice Box */}
+                  <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-[#051D22]/90 to-[#031317]/90 p-5 space-y-2 shadow-inner">
+                    <p className="font-bold text-[#F8F7F4] text-base tracking-wide">
+                      A signature, not a transaction.
+                    </p>
+                    <p className="text-sm text-[#8AA8B2] leading-relaxed">
+                      We only verify ownership of your public address. Signing in is a secure off-chain cryptographic message that costs zero gas and cannot move any funds.
+                    </p>
+                  </div>
 
-            {/* Connection Actions */}
-            <div className="pt-2">
-              {isWalletConnected && status === "authenticated" ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-4 text-xs sm:text-sm">
-                    <div className="flex items-center gap-2.5">
-                      <div>
-                        <span className="font-bold text-white block text-sm">
-                          Wallet Already Connected
-                        </span>
-                        <span className="font-mono text-zinc-300 text-xs">
+                  {/* Whitelist Slot Binding Info Box */}
+                  <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-[#051D22]/90 to-[#031317]/90 p-5 space-y-2 shadow-inner">
+                    <p className="font-bold text-[#F8F7F4] text-base tracking-wide">
+                      Whitelist Reservation
+                    </p>
+                    <p className="text-sm text-[#8AA8B2] leading-relaxed">
+                      Your authenticated EVM address will be permanently assigned to your whitelist qualification record on Elysium. Connect the wallet you intend to mint with.
+                    </p>
+                  </div>
+
+                  {authError && (
+                    <div className="flex items-center justify-between gap-2 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3.5 text-xs sm:text-sm text-rose-300">
+                      <span className="truncate">{authError}</span>
+                      {dismissError && (
+                        <button
+                          onClick={dismissError}
+                          className="shrink-0 text-xs sm:text-sm font-medium underline text-rose-400 hover:text-rose-300 cursor-pointer"
+                        >
+                          Dismiss
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Connection Actions (Directly below boxes, perfectly anchored) */}
+                <div className="pt-2">
+                  {isWalletConnected && status === "authenticated" ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-4 text-sm">
+                        <div>
+                          <span className="font-bold text-white block text-sm sm:text-base">
+                            Wallet Already Connected
+                          </span>
+                          <span className="font-mono text-zinc-300 text-xs sm:text-sm">
+                            {address ? shortenAddress(address) : "—"}
+                          </span>
+                        </div>
+                        <Badge variant="default" className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 text-xs font-bold">
+                          Verified
+                        </Badge>
+                      </div>
+
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={() => {
+                          setSelectedStep(2);
+                          if (typeof window !== "undefined") {
+                            window.history.replaceState(null, "", "#x");
+                          }
+                        }}
+                        className="w-full font-bold uppercase tracking-wider"
+                      >
+                        <span>Continue to Step 2 (X Sync)</span>
+                      </Button>
+                    </div>
+                  ) : status === "wallet-only" || (status === "signing" && Boolean(address)) ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between rounded-xl border border-cyan-500/30 bg-[#051D22] px-4 py-3 text-sm">
+                        <span className="text-[#8AA8B2]">Wallet Address:</span>
+                        <span className="font-mono font-bold text-white">
                           {address ? shortenAddress(address) : "—"}
                         </span>
                       </div>
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        disabled={status === "signing" || Boolean(busyMessage)}
+                        onClick={() => void login?.()}
+                        className="w-full gap-2 font-bold uppercase tracking-wider"
+                      >
+                        <LogIn className="h-4 w-4 shrink-0" />
+                        <span>{busyMessage || "Sign In to Authenticate"}</span>
+                      </Button>
                     </div>
-                    <Badge variant="default" className="border-emerald-500/40 bg-emerald-950/60 text-emerald-300 text-xs font-bold">
-                      Verified
-                    </Badge>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      disabled={status === "signing" || Boolean(busyMessage)}
+                      onClick={handleConnectWallet}
+                      className="w-full font-bold uppercase tracking-wider"
+                    >
+                      <span>{busyMessage || "Connect Wallet & Sign In"}</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: The Whitelist Journey */}
+              <div className="lg:col-span-6 flex flex-col justify-between space-y-4 lg:border-l lg:border-cyan-500/20 lg:pl-10">
+                <div className="space-y-4">
+                  <div className="border-b border-cyan-500/20 pb-4">
+                    <h3 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white">
+                      The Whitelist Journey
+                    </h3>
+                    <p className="mt-1.5 text-sm sm:text-base text-[#8AA8B2] leading-relaxed">
+                      Complete all 5 qualification stages on Elysium to earn your official Elychimp Whitelist spot.
+                    </p>
                   </div>
 
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={() => {
-                      setSelectedStep(2);
-                      if (typeof window !== "undefined") {
-                        window.history.replaceState(null, "", "#x");
-                      }
-                    }}
-                    className="w-full"
-                  >
-                    <span>Continue to Step 2 (X Sync)</span>
-                  </Button>
+                  {/* 5 Vertical Step Cards */}
+                  <div className="space-y-2.5">
+                    {[
+                      {
+                        num: "01",
+                        title: "EVM Wallet",
+                        desc: "Connect your Web3 address via off-chain signature",
+                        active: true,
+                      },
+                      {
+                        num: "02",
+                        title: "X Identity Sync",
+                        desc: "Link X account for social proof and verification",
+                        active: false,
+                      },
+                      {
+                        num: "03",
+                        title: "Campaign Quests",
+                        desc: "Engage and complete community campaign tasks",
+                        active: false,
+                      },
+                      {
+                        num: "04",
+                        title: "5/5 Trait Outfit",
+                        desc: "Assemble 1 item in each of the 5 trait categories",
+                        active: false,
+                      },
+                      {
+                        num: "05",
+                        title: "Whitelist Secured",
+                        desc: "Final allocation locked for the official Elysium mint",
+                        active: false,
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.num}
+                        className={`rounded-2xl border p-4 transition-all ${
+                          item.active
+                            ? "border-amber-400/50 bg-amber-950/25 shadow-[0_0_16px_rgba(251,191,36,0.12)]"
+                            : "border-cyan-500/15 bg-[#051D22]/60 hover:border-cyan-500/30"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <span
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold font-mono ${
+                              item.active
+                                ? "bg-amber-400 text-black font-extrabold"
+                                : "bg-[#09252c] text-[#8AA8B2] border border-cyan-500/20"
+                            }`}
+                          >
+                            {item.num}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <span
+                              className={`text-sm font-bold uppercase tracking-wide block ${
+                                item.active ? "text-amber-200" : "text-white"
+                              }`}
+                            >
+                              {item.title}
+                            </span>
+                            <p className="text-xs sm:text-sm text-[#8AA8B2] mt-0.5 leading-snug">
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ) : status === "wallet-only" || (status === "signing" && Boolean(address)) ? (
-                <div className="space-y-3">
+
+                <div className="pt-2 text-center lg:text-left">
                   <p className="text-xs sm:text-sm text-[#8AA8B2]">
-                    Connected address: {address ? shortenAddress(address) : "—"}
+                    Minting exclusively on <span className="font-semibold text-cyan-300">Elysium blockchain</span>
                   </p>
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    disabled={status === "signing" || Boolean(busyMessage)}
-                    onClick={() => void login?.()}
-                    className="w-full gap-2"
-                  >
-                    <LogIn className="h-4 w-4 shrink-0" />
-                    <span>{busyMessage || "Sign In"}</span>
-                  </Button>
                 </div>
-              ) : (
-                <Button
-                  variant="primary"
-                  size="lg"
-                  disabled={status === "signing" || Boolean(busyMessage)}
-                  onClick={handleConnectWallet}
-                  className="w-full"
-                >
-                  <span>{busyMessage || "Connect Wallet"}</span>
-                </Button>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -1245,27 +1363,30 @@ export default function WhitelistPage() {
             Visible when activeStepNumber === 2
         ======================================================================= */}
         <div className={activeStepNumber === 2 ? "block" : "hidden"}>
-          <div className="rounded-2xl border border-[#163B44] bg-[#0B2026] p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.45)] max-w-2xl mx-auto space-y-6">
-            <div className="border-b border-[#163B44] pb-4">
+          <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] border border-cyan-500/25 bg-gradient-to-b from-[#0c2831]/90 via-[#071d24]/95 to-[#031116]/98 p-6 sm:p-8 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),inset_0_0_24px_rgba(52,183,221,0.05),0_24px_50px_-12px_rgba(0,0,0,0.7)] max-w-2xl mx-auto space-y-6">
+            {/* Top rim highlight line */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+
+            <div className="border-b border-cyan-500/20 pb-4">
               <div>
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#34B7DD]">
+                <span className="text-sm font-bold uppercase tracking-wider text-[#34B7DD]">
                   Step 2 of 5
                 </span>
-                <h2 className="font-display text-xl sm:text-2xl uppercase tracking-wider text-white">
+                <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-wider text-white mt-1">
                   X (Twitter) Identity
                 </h2>
               </div>
             </div>
 
             {/* Completed Step 1 Chip */}
-            <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3.5 text-xs sm:text-sm text-emerald-300">
+            <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/30 p-4 text-sm text-emerald-300">
               <span>
                 Step 1 Completed: EVM Wallet <strong className="font-mono text-white">{address ? shortenAddress(address) : "—"}</strong> verified.
               </span>
             </div>
 
             {/* Notice & Instructions */}
-            <div className="rounded-xl border border-[#163B44] bg-[#051D22] p-4 sm:p-5 space-y-2">
+            <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-[#051D22]/90 to-[#031317]/90 p-5 space-y-2 shadow-inner">
               <p className="font-bold text-[#F8F7F4] text-base sm:text-lg">
                 Connect X (Twitter) Account
               </p>
@@ -1278,7 +1399,7 @@ export default function WhitelistPage() {
             <div className="pt-2 space-y-3">
               {isXLinked ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-xl border border-cyan-500/40 bg-cyan-950/30 p-4 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between rounded-2xl border border-cyan-500/40 bg-cyan-950/30 p-4 text-xs sm:text-sm">
                     <div className="flex items-center gap-2.5">
                       <div>
                         <span className="font-bold text-white block text-sm">
@@ -1307,7 +1428,7 @@ export default function WhitelistPage() {
                         window.history.replaceState(null, "", "#tasks");
                       }
                     }}
-                    className="w-full"
+                    className="w-full font-bold uppercase tracking-wider"
                   >
                     <span>Continue to Step 3 (Tasks)</span>
                   </Button>
@@ -1317,7 +1438,7 @@ export default function WhitelistPage() {
                   {xConnectError && (
                     <div
                       role="alert"
-                      className="rounded-xl border border-rose-500/40 bg-rose-950/50 p-3.5 text-xs sm:text-sm text-rose-300"
+                      className="rounded-2xl border border-rose-500/40 bg-rose-950/50 p-3.5 text-xs sm:text-sm text-rose-300"
                     >
                       <p className="font-semibold text-rose-200">Failed to connect X</p>
                       <p className="text-xs sm:text-sm text-rose-400 mt-0.5">{xConnectError}</p>
@@ -1329,7 +1450,7 @@ export default function WhitelistPage() {
                     size="lg"
                     disabled={isConnectingX}
                     onClick={handleDirectConnectX}
-                    className="w-full"
+                    className="w-full font-bold uppercase tracking-wider"
                   >
                     {isConnectingX ? (
                       <span>Connecting to X...</span>
